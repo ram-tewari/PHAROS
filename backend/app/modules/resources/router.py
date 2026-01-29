@@ -464,7 +464,7 @@ async def list_resources_endpoint(
     return ResourceListResponse(items=items, total=total)
 
 
-@router.get("/resources/{resource_id}/status", response_model=ResourceStatus)
+@router.get("/{resource_id}/status", response_model=ResourceStatus)
 async def get_resource_status(
     resource_id: uuid.UUID, db: Session = Depends(get_sync_db)
 ):
@@ -686,7 +686,7 @@ async def create_resource_chunks(
         )
 
 
-@router.get("/resources/{resource_id}/chunks")
+@router.get("/{resource_id}/chunks")
 async def list_resource_chunks(
     resource_id: uuid.UUID,
     limit: int = 25,

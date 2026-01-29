@@ -25,7 +25,7 @@ from .schema import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/scholarly", tags=["scholarly"])
+router = APIRouter(prefix="/api/scholarly", tags=["scholarly"])
 
 
 @router.get(

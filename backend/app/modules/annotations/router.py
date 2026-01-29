@@ -26,7 +26,7 @@ from .schema import (
     AnnotationSearchResponse,
 )
 
-router = APIRouter(tags=["annotations"])
+router = APIRouter(prefix="/api/annotations", tags=["annotations"])
 
 
 def _get_annotation_service(db: Session = Depends(get_sync_db)) -> AnnotationService:

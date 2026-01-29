@@ -44,7 +44,7 @@ from .schema import (
 from .service import CollectionService
 
 
-router = APIRouter(prefix="/collections", tags=["collections"])
+router = APIRouter(prefix="/api/collections", tags=["collections"])
 
 
 def get_collection_service(db: Session = Depends(get_sync_db)) -> CollectionService:
