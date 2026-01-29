@@ -21,7 +21,8 @@ import logging
 from typing import Any, Optional
 
 try:
-    import redis
+    import os
+import redis
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -107,14 +108,28 @@ class CacheService:
             self.redis = redis_client
         else:
             try:
-                self.redis = redis.Redis(
-                    host=getattr(settings, "REDIS_HOST", "localhost"),
-                    port=getattr(settings, "REDIS_PORT", 6379),
-                    db=getattr(settings, "REDIS_CACHE_DB", 2),
-                    decode_responses=True,
-                    socket_connect_timeout=5,
-                    socket_timeout=5,
-                )
+                # Check for Upstash Redis first
+                upstash_url = os.getenv("UPSTASH_REDIS_REST_URL")
+                upstash_token = os.getenv("UPSTASH_REDIS_REST_TOKEN")
+                
+                if upstash_url and upstash_token:
+                    self.redis = redis.Redis.from_url(
+                        upstash_url,
+                        password=upstash_token,
+                        decode_responses=True,
+                        socket_connect_timeout=5,
+                        socket_timeout=5,
+                    )
+                    logger.info(f"Connected to Upstash Redis: {upstash_url}")
+                else:
+                    self.redis = redis.Redis(
+                        host=getattr(settings, "REDIS_HOST", "localhost"),
+                        port=getattr(settings, "REDIS_PORT", 6379),
+                        db=getattr(settings, "REDIS_CACHE_DB", 2),
+                        decode_responses=True,
+                        socket_connect_timeout=5,
+                        socket_timeout=5,
+                    )
             except Exception as e:
                 logger.error(f"Redis cache initialization failed: {e} - caching will be disabled")
                 self.redis = None

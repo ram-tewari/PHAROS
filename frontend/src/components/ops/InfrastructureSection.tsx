@@ -186,13 +186,13 @@ export function InfrastructureSection({
                 />
                 <MetricCard
                   title="Processing Rate"
-                  value={workers.processing_rate.toFixed(2)}
+                  value={workers.processing_rate?.toFixed(2) ?? '0.00'}
                   unit="tasks/s"
                 />
                 <MetricCard
                   title="Failed Tasks"
-                  value={workers.failed_tasks}
-                  status={workers.failed_tasks > 0 ? 'error' : 'success'}
+                  value={workers.failed_tasks ?? 0}
+                  status={(workers.failed_tasks ?? 0) > 0 ? 'error' : 'success'}
                 />
               </div>
             </div>
