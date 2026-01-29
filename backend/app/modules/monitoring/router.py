@@ -18,7 +18,7 @@ from typing import Dict, Any
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
-from ...shared.database import get_db
+from ...shared.database import get_sync_db
 from .service import MonitoringService
 from .schema import (
     PerformanceMetrics,
@@ -55,7 +55,7 @@ async def get_performance_metrics() -> Dict[str, Any]:
 
 @router.get("/recommendation-quality", response_model=RecommendationQualityMetrics)
 async def get_recommendation_quality_metrics(
-    time_window_days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_db)
+    time_window_days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_sync_db)
 ) -> Dict[str, Any]:
     """
     Get recommendation quality metrics.
@@ -77,7 +77,7 @@ async def get_recommendation_quality_metrics(
 
 @router.get("/user-engagement", response_model=UserEngagementMetrics)
 async def get_user_engagement_metrics(
-    time_window_days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_db)
+    time_window_days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_sync_db)
 ) -> Dict[str, Any]:
     """
     Get user engagement metrics.
@@ -133,7 +133,7 @@ async def ml_model_health_check() -> Dict[str, Any]:
 
 
 @router.get("/database", response_model=DatabaseMetrics)
-async def get_database_metrics(db: Session = Depends(get_db)) -> Dict[str, Any]:
+async def get_database_metrics(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
     """
     Get comprehensive database metrics including connection pool status,
     database type, and health information.
@@ -273,7 +273,7 @@ async def get_worker_status() -> Dict[str, Any]:
 
 
 @router.get("/health", response_model=HealthCheckResponse)
-async def health_check(db: Session = Depends(get_db)) -> Dict[str, Any]:
+async def health_check(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
     """
     Overall health check for the system.
 
