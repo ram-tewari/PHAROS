@@ -22,7 +22,7 @@ from typing import Any, Optional
 
 try:
     import os
-import redis
+    import redis
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False

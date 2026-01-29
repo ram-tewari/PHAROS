@@ -61,7 +61,7 @@ from .service import (
 )
 
 
-router = APIRouter(prefix="", tags=["resources"])
+router = APIRouter(prefix="/api/resources", tags=["resources"])
 logger = logging.getLogger(__name__)
 
 
@@ -84,7 +84,7 @@ class ResourceAccepted(BaseModel):
     ingestion_status: str = "pending"
 
 
-@router.get("/resources/health", response_model=Dict[str, Any])
+@router.get("/health", response_model=Dict[str, Any])
 async def health_check(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
     """
     Health check endpoint for Resources module.
@@ -217,7 +217,7 @@ async def create_resource_endpoint(
         ) from exc
 
 
-@router.post("/resources/upload", response_model=ResourceAccepted)
+@router.post("/upload", response_model=ResourceAccepted)
 async def upload_resource_file(
     file: UploadFile = File(..., description="File to upload (PDF, HTML, TXT)"),
     title: Optional[str] = None,
@@ -396,7 +396,7 @@ async def upload_resource_file(
         )
 
 
-@router.get("/resources/{resource_id}", response_model=ResourceRead)
+@router.get("/{resource_id}", response_model=ResourceRead)
 async def get_resource_endpoint(
     resource_id: uuid.UUID, db: Session = Depends(get_sync_db)
 ):
@@ -415,7 +415,7 @@ class ResourceListResponse(BaseModel):
     total: int
 
 
-@router.get("/resources", response_model=ResourceListResponse)
+@router.get("", response_model=ResourceListResponse)
 async def list_resources_endpoint(
     q: Optional[str] = None,
     classification_code: Optional[str] = None,
