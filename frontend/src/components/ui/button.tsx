@@ -8,16 +8,16 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90 hover:shadow-md hover:scale-[1.02]",
+          "bg-primary text-primary-foreground shadow-md hover:shadow-lg hover:shadow-[0_4px_12px_rgba(54,36,23,0.3)] dark:hover:shadow-[0_4px_12px_rgba(241,218,191,0.3)] hover:scale-[1.02]",
         destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90 hover:shadow-md hover:scale-[1.02]",
+          "bg-destructive text-destructive-foreground shadow-md hover:shadow-lg hover:scale-[1.02]",
         outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-accent-foreground/20 hover:shadow-md",
+          "border-2 border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground hover:border-primary hover:shadow-md",
         secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 hover:shadow-md hover:scale-[1.02]",
+          "bg-secondary text-secondary-foreground shadow-md hover:shadow-lg hover:scale-[1.02]",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline hover:text-primary/80",
-        success: "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-sm hover:bg-[hsl(var(--success))]/90 hover:shadow-md hover:scale-[1.02]",
+        success: "bg-[hsl(var(--success))] text-[hsl(var(--success-foreground))] shadow-md hover:shadow-lg hover:scale-[1.02]",
       },
       size: {
         default: "h-10 px-4 py-2",
