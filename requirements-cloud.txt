@@ -41,3 +41,6 @@ numpy==2.2.3
 
 # Vector Database
 qdrant-client==1.12.1
+
+# File encoding detection
+chardet==5.2.0
