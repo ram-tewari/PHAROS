@@ -10,10 +10,10 @@ import { WorkbenchLayout } from '@/layouts/WorkbenchLayout';
  * Renders WorkbenchLayout with sidebar, header, and nested routes.
  */
 const AuthLayout = () => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, accessToken } = useAuth();
 
   // Redirect to login if not authenticated
-  if (!isAuthenticated) {
+  if (!isAuthenticated || !accessToken) {
     return <Navigate to="/login" />;
   }
 

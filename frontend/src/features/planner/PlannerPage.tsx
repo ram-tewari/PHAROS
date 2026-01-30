@@ -128,14 +128,6 @@ export function PlannerPage() {
         });
         addPlan(plan);
       }
-
-        addPlan(newPlan);
-      } else {
-        // TODO: Call real API when backend is ready
-        // const response = await axios.post('/api/planning/generate', { description });
-        // addPlan(response.data);
-        throw new Error('Backend API not yet implemented');
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to generate plan');
     } finally {

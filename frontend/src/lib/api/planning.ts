@@ -2,7 +2,7 @@
  * Phase 5: Implementation Planner - API Client
  */
 
-import { apiClient } from './client';
+import { apiClient } from '@/core/api/client';
 import type { Plan, Task } from '@/types/planner';
 
 export interface GeneratePlanRequest {

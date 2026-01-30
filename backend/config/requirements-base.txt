@@ -40,3 +40,5 @@ email-validator==2.1.0
 
 # Data Processing
 numpy==2.2.3
+jsonschema>=4.17.0
+chardet>=5.0.0

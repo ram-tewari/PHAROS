@@ -44,3 +44,6 @@ qdrant-client==1.12.1
 
 # File encoding detection
 chardet==5.2.0
+
+# JSON schema validation
+jsonschema==4.23.0

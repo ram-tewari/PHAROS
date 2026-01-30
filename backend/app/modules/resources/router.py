@@ -140,7 +140,7 @@ async def health_check(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
         }
 
 
-@router.post("/resources", response_model=ResourceAccepted)
+@router.post("", response_model=ResourceAccepted)
 async def create_resource_endpoint(
     payload: ResourceIngestRequest,
     background: BackgroundTasks,
@@ -476,7 +476,7 @@ async def get_resource_status(
     return resource  # ResourceStatus uses from_attributes
 
 
-@router.put("/resources/{resource_id}", response_model=ResourceRead)
+@router.put("/{resource_id}", response_model=ResourceRead)
 async def update_resource_endpoint(
     resource_id: uuid.UUID, payload: ResourceUpdate, db: Session = Depends(get_sync_db)
 ):
@@ -489,7 +489,7 @@ async def update_resource_endpoint(
         )
 
 
-@router.delete("/resources/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{resource_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_resource_endpoint(
     resource_id: uuid.UUID, db: Session = Depends(get_sync_db)
 ):
@@ -508,7 +508,7 @@ class ClassificationOverrideRequest(BaseModel):
     )
 
 
-@router.put("/resources/{resource_id}/classify", response_model=ResourceRead)
+@router.put("/{resource_id}/classify", response_model=ResourceRead)
 async def classify_resource_override(
     resource_id: uuid.UUID,
     payload: ClassificationOverrideRequest,
@@ -619,7 +619,7 @@ async def create_resource_chunks(
     try:
         # Load resource content from archive
         from pathlib import Path
-    import chardet
+        import chardet
 
         archive_path = Path(resource.identifier)
         if not archive_path.exists():

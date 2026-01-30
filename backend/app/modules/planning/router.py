@@ -5,15 +5,15 @@ Planning Module API Router
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from backend.app.shared.database import get_db
-from backend.app.modules.planning.service import MultiHopAgent, ArchitectureParser
-from backend.app.modules.planning.schema import (
+from app.shared.database import get_db
+from app.modules.planning.service import MultiHopAgent, ArchitectureParser
+from app.modules.planning.schema import (
     GeneratePlanRequest,
     RefinePlanRequest,
     PlanningResult,
     ArchitectureParseResult,
 )
-from backend.app.modules.planning.model import PlanningSession
+from app.modules.planning.model import PlanningSession
 
 router = APIRouter(prefix="/planning", tags=["planning"])
 
@@ -91,7 +91,7 @@ async def get_plan(
     if not session:
         raise HTTPException(status_code=404, detail=f"Planning session {plan_id} not found")
     
-    from backend.app.modules.planning.schema import PlanningStep
+    from app.modules.planning.schema import PlanningStep
     
     steps = [PlanningStep(**step) for step in session.steps]
     
