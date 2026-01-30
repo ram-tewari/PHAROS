@@ -186,8 +186,8 @@ TOOL_SCHEMAS = {
 # Tool handlers
 async def search_resources_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for search_resources tool"""
-    from backend.app.modules.search.service import SearchService
-    from backend.app.shared.database import get_db
+    from ..search.service import SearchService
+    from ...shared.database import get_sync_db
 
     db = next(get_db())
     try:
@@ -204,8 +204,8 @@ async def search_resources_handler(arguments: Dict[str, Any], context: Dict[str,
 
 async def get_hover_info_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for get_hover_info tool"""
-    from backend.app.modules.graph.router import get_hover_information
-    from backend.app.shared.database import get_db
+    from ..graph.router import get_hover_information
+    from ...shared.database import get_sync_db
 
     db = next(get_db())
     try:
@@ -223,8 +223,8 @@ async def get_hover_info_handler(arguments: Dict[str, Any], context: Dict[str, A
 
 async def compute_graph_metrics_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for compute_graph_metrics tool"""
-    from backend.app.modules.graph.service import GraphService
-    from backend.app.shared.database import get_db
+    from ..graph.service import GraphService
+    from ...shared.database import get_sync_db
 
     db = next(get_db())
     try:
@@ -237,8 +237,8 @@ async def compute_graph_metrics_handler(arguments: Dict[str, Any], context: Dict
 
 async def detect_communities_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for detect_communities tool"""
-    from backend.app.modules.graph.service import CommunityDetectionService
-    from backend.app.shared.database import get_db
+    from ..graph.service import CommunityDetectionService
+    from ...shared.database import get_sync_db
 
     db = next(get_db())
     try:
@@ -254,8 +254,8 @@ async def detect_communities_handler(arguments: Dict[str, Any], context: Dict[st
 
 async def generate_plan_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for generate_plan tool"""
-    from backend.app.modules.planning.service import MultiHopAgent
-    from backend.app.shared.database import get_db
+    from ..planning.service import MultiHopAgent
+    from ...shared.database import get_sync_db
 
     db = next(get_db())
     try:
@@ -272,8 +272,8 @@ async def generate_plan_handler(arguments: Dict[str, Any], context: Dict[str, An
 
 async def parse_architecture_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for parse_architecture tool"""
-    from backend.app.modules.planning.service import ArchitectureParser
-    from backend.app.shared.database import get_db
+    from ..planning.service import ArchitectureParser
+    from ...shared.database import get_sync_db
 
     db = next(get_db())
     try:
@@ -287,9 +287,9 @@ async def parse_architecture_handler(arguments: Dict[str, Any], context: Dict[st
 
 async def link_pdf_to_code_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
     """Handler for link_pdf_to_code tool"""
-    from backend.app.modules.resources.service import AutoLinkingService
-    from backend.app.shared.database import get_db
-    from backend.app.shared.embeddings import EmbeddingGenerator
+    from ..resources.service import AutoLinkingService
+    from ...shared.database import get_sync_db
+    from ...shared.embeddings import EmbeddingGenerator
 
     db = next(get_db())
     try:
