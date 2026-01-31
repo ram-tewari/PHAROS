@@ -182,7 +182,10 @@ apiClient.interceptors.response.use(
         // Update localStorage
         localStorage.setItem('access_token', access_token);
 
-        // Update Axios header for the retry request
+        // Update Axios default header for all future requests
+        apiClient.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
+
+        // Update the retry request header
         originalRequest.headers.Authorization = `Bearer ${access_token}`;
 
         // Retry original request
