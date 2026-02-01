@@ -55,14 +55,14 @@ export function InfrastructureSection({
               />
               <MetricCard
                 title="Avg Query Time"
-                value={database.query_performance.avg_query_time_ms}
+                value={database?.query_performance?.avg_query_time_ms ?? 0}
                 unit="ms"
-                status={database.query_performance.avg_query_time_ms > 100 ? 'warning' : 'success'}
+                status={(database?.query_performance?.avg_query_time_ms ?? 0) > 100 ? 'warning' : 'success'}
               />
               <MetricCard
                 title="Slow Queries"
-                value={database.query_performance.slow_queries}
-                status={database.query_performance.slow_queries > 10 ? 'warning' : 'success'}
+                value={database?.query_performance?.slow_queries ?? 0}
+                status={(database?.query_performance?.slow_queries ?? 0) > 10 ? 'warning' : 'success'}
               />
             </div>
           ) : (
@@ -181,18 +181,18 @@ export function InfrastructureSection({
               <div className="grid gap-4 md:grid-cols-3">
                 <MetricCard
                   title="Queue Length"
-                  value={workers.queue_length}
-                  status={workers.queue_length > 100 ? 'warning' : 'success'}
+                  value={workers?.queue_length ?? 0}
+                  status={(workers?.queue_length ?? 0) > 100 ? 'warning' : 'success'}
                 />
                 <MetricCard
                   title="Processing Rate"
-                  value={workers.processing_rate?.toFixed(2) ?? '0.00'}
+                  value={workers?.processing_rate?.toFixed(2) ?? '0.00'}
                   unit="tasks/s"
                 />
                 <MetricCard
                   title="Failed Tasks"
-                  value={workers.failed_tasks ?? 0}
-                  status={(workers.failed_tasks ?? 0) > 0 ? 'error' : 'success'}
+                  value={workers?.failed_tasks ?? 0}
+                  status={(workers?.failed_tasks ?? 0) > 0 ? 'error' : 'success'}
                 />
               </div>
             </div>
