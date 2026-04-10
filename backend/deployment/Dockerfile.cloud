@@ -1,4 +1,4 @@
-# Neo Alexandria Cloud API - Lightweight Dockerfile
+# Pharos Cloud API - Lightweight Dockerfile
 # Optimized for Render Free Tier (512MB RAM)
 
 FROM python:3.11-slim

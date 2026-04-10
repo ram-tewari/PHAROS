@@ -1,8 +1,7 @@
-"""Main CLI application for Pharos CLI.
+"""Main CLI application for Pharos CLI."""
 
-This module uses lazy imports to optimize startup time.
-All command modules are imported only when their commands are invoked.
-"""
+import sys
+from typing import Optional
 
 import typer
 
@@ -10,39 +9,58 @@ from pharos_cli.version import __version__
 from pharos_cli.utils.console import get_console, set_color_mode
 from pharos_cli.utils.color import ColorMode
 from pharos_cli.utils.pager import PagerMode, get_pager_manager
-from pharos_cli.utils.lazy_import import LazyModule
 
-# Lazy-loaded command modules - imported only when command is invoked
-_command_modules = {
-    'auth': LazyModule('pharos_cli.commands.auth'),
-    'config': LazyModule('pharos_cli.commands.config'),
-    'resource': LazyModule('pharos_cli.commands.resource'),
-    'collection': LazyModule('pharos_cli.commands.collection'),
-    'search': LazyModule('pharos_cli.commands.search'),
-    'graph': LazyModule('pharos_cli.commands.graph'),
-    'batch': LazyModule('pharos_cli.commands.batch'),
-    'chat': LazyModule('pharos_cli.commands.chat'),
-    'recommend': LazyModule('pharos_cli.commands.recommend'),
-    'annotation': LazyModule('pharos_cli.commands.annotation'),
-    'quality': LazyModule('pharos_cli.commands.quality'),
-    'taxonomy': LazyModule('pharos_cli.commands.taxonomy'),
-    'code': LazyModule('pharos_cli.commands.code'),
-    'rag': LazyModule('pharos_cli.commands.rag'),
-    'system': LazyModule('pharos_cli.commands.system'),
-    'backup': LazyModule('pharos_cli.commands.backup'),
-}
-
-app = typer.Typer(
-    name="pharos",
-    help="Pharos CLI - Command-line interface for Pharos knowledge management system",
-    add_completion=False,
-    )
-
+# Import command modules directly
+from pharos_cli.commands.auth import auth_app
+from pharos_cli.commands.config import config_app
+from pharos_cli.commands.resource import resource_app
+from pharos_cli.commands.collection import collection_app
+from pharos_cli.commands.search import search_app
+from pharos_cli.commands.graph import graph_app
+from pharos_cli.commands.batch import batch_app
+from pharos_cli.commands.chat import chat_app
+from pharos_cli.commands.recommend import recommend_app
+from pharos_cli.commands.annotation import annotation_app
+from pharos_cli.commands.quality import quality_app
+from pharos_cli.commands.taxonomy import taxonomy_app
+from pharos_cli.commands.code import code_app
+from pharos_cli.commands.rag import rag_app
+from pharos_cli.commands.system import system_app
+from pharos_cli.commands.backup import backup_app
+from pharos_cli.commands.rules import rules_app
 
 # Global color mode variable
 _color_option: ColorMode = ColorMode.AUTO
 # Global pager mode variable
 _pager_option: PagerMode = PagerMode.AUTO
+
+
+app = typer.Typer(
+    name="pharos",
+    help="Pharos CLI - Command-line interface for Pharos knowledge management system",
+    add_completion=False,
+    no_args_is_help=True,
+    pretty_exceptions_enable=False,
+)
+
+# Register subcommands
+app.add_typer(auth_app)
+app.add_typer(config_app)
+app.add_typer(resource_app)
+app.add_typer(collection_app)
+app.add_typer(search_app)
+app.add_typer(graph_app)
+app.add_typer(batch_app)
+app.add_typer(chat_app)
+app.add_typer(recommend_app)
+app.add_typer(annotation_app)
+app.add_typer(quality_app)
+app.add_typer(taxonomy_app)
+app.add_typer(code_app)
+app.add_typer(rag_app)
+app.add_typer(system_app)
+app.add_typer(backup_app)
+app.add_typer(rules_app)
 
 
 @app.callback()
@@ -70,6 +88,12 @@ def main_callback(
         False,
         "--no-pager",
         help="Disable pager output (equivalent to --pager never)",
+    ),
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Enable verbose output",
     ),
 ) -> None:
     """Pharos CLI - Command-line interface for Pharos knowledge management system."""
@@ -105,105 +129,12 @@ def main_callback(
     # Apply pager mode to pager manager
     pager_manager = get_pager_manager()
     pager_manager.mode = _pager_option
+    
+    if verbose:
+        console = get_console()
+        console.print(f"[dim]Verbose mode enabled[/dim]")
 
 
-# Register subcommands using invoke_with_callback approach
-# This allows lazy loading of command modules
-@app.command("auth")
-def auth_cmd(ctx: typer.Context) -> None:
-    """Authentication commands."""
-    _get_command_app('auth')
-    ctx.invoke(_get_command_app('auth'), obj={})
-
-@app.command("config")
-def config_cmd(ctx: typer.Context) -> None:
-    """Configuration commands."""
-    _get_command_app('config')
-    ctx.invoke(_get_command_app('config'), obj={})
-
-@app.command("resource")
-def resource_cmd(ctx: typer.Context) -> None:
-    """Resource management commands."""
-    _get_command_app('resource')
-    ctx.invoke(_get_command_app('resource'), obj={})
-
-@app.command("collection")
-def collection_cmd(ctx: typer.Context) -> None:
-    """Collection management commands."""
-    _get_command_app('collection')
-    ctx.invoke(_get_command_app('collection'), obj={})
-
-@app.command("search")
-def search_cmd(ctx: typer.Context) -> None:
-    """Search for resources."""
-    _get_command_app('search')
-    ctx.invoke(_get_command_app('search'), obj={})
-
-@app.command("graph")
-def graph_cmd(ctx: typer.Context) -> None:
-    """Knowledge graph and citation commands."""
-    _get_command_app('graph')
-    ctx.invoke(_get_command_app('graph'), obj={})
-
-@app.command("batch")
-def batch_cmd(ctx: typer.Context) -> None:
-    """Batch operations for resources and collections."""
-    _get_command_app('batch')
-    ctx.invoke(_get_command_app('batch'), obj={})
-
-@app.command("chat")
-def chat_cmd(ctx: typer.Context) -> None:
-    """Interactive chat with your knowledge base."""
-    _get_command_app('chat')
-    ctx.invoke(_get_command_app('chat'), obj={})
-
-@app.command("recommend")
-def recommend_cmd(ctx: typer.Context) -> None:
-    """Get recommendations for resources."""
-    _get_command_app('recommend')
-    ctx.invoke(_get_command_app('recommend'), obj={})
-
-@app.command("annotate")
-def annotate_cmd(ctx: typer.Context) -> None:
-    """Annotation management commands."""
-    _get_command_app('annotate')
-    ctx.invoke(_get_command_app('annotate'), obj={})
-
-@app.command("quality")
-def quality_cmd(ctx: typer.Context) -> None:
-    """Quality assessment commands."""
-    _get_command_app('quality')
-    ctx.invoke(_get_command_app('quality'), obj={})
-
-@app.command("taxonomy")
-def taxonomy_cmd(ctx: typer.Context) -> None:
-    """Taxonomy and classification commands."""
-    _get_command_app('taxonomy')
-    ctx.invoke(_get_command_app('taxonomy'), obj={})
-
-@app.command("code")
-def code_cmd(ctx: typer.Context) -> None:
-    """Code analysis and intelligence commands."""
-    _get_command_app('code')
-    ctx.invoke(_get_command_app('code'), obj={})
-
-@app.command("ask")
-def rag_cmd(ctx: typer.Context) -> None:
-    """Ask questions and get answers from your knowledge base."""
-    _get_command_app('rag')
-    ctx.invoke(_get_command_app('rag'), obj={})
-
-@app.command("system")
-def system_cmd(ctx: typer.Context) -> None:
-    """System management commands."""
-    _get_command_app('system')
-    ctx.invoke(_get_command_app('system'), obj={})
-
-@app.command("backup")
-def backup_cmd(ctx: typer.Context) -> None:
-    """Backup and restore commands."""
-    _get_command_app('backup')
-    ctx.invoke(_get_command_app('backup'), obj={})
 @app.command()
 def version() -> None:
     """Show version information."""
@@ -236,7 +167,7 @@ def completion(
             completion_script = get_completion_script(
                 prog_name=prog_name,
                 complete_var=complete_var,
-                shell=shell.lower()
+                shell=shell.lower()  # nosec B604: Validated shell type from whitelist
             )
             
             # Print the completion script

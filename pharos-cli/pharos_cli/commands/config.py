@@ -25,6 +25,12 @@ config_app = typer.Typer(
 )
 
 
+@config_app.callback()
+def config_callback():
+    """Configuration commands for Pharos CLI."""
+    pass
+
+
 def prompt_api_url() -> str:
     """Prompt for API URL."""
     console = get_console()

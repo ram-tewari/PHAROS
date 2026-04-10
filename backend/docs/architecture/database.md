@@ -4,7 +4,7 @@ Database schema, models, and migration strategies for Pharos.
 
 ## Database Support
 
-Neo Alexandria supports both SQLite and PostgreSQL with automatic detection.
+Pharos supports both SQLite and PostgreSQL with automatic detection.
 
 ### SQLite (Development)
 

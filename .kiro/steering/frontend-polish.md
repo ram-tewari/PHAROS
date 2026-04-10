@@ -2,7 +2,7 @@
 
 ## Purpose
 
-This document provides a comprehensive checklist for making Neo Alexandria's frontend look professional and visually stunning without changing backend functionality. It serves as the single source of truth for UI/UX standards.
+This document provides a comprehensive checklist for making Pharos's frontend look professional and visually stunning without changing backend functionality. It serves as the single source of truth for UI/UX standards.
 
 ## 🎨 TIER 1: VISUAL DESIGN SYSTEM (Foundation)
 

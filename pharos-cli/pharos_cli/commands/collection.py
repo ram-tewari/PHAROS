@@ -29,6 +29,12 @@ collection_app = typer.Typer(
 )
 
 
+@collection_app.callback()
+def collection_callback():
+    """Collection management commands for Pharos CLI."""
+    pass
+
+
 def get_collection_client() -> CollectionClient:
     """Get a CollectionClient instance."""
     config = load_config()

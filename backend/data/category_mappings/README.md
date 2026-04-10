@@ -1,6 +1,6 @@
 # Category Mapping Files
 
-This directory contains JSON files that map external dataset categories to Neo Alexandria's taxonomy node IDs.
+This directory contains JSON files that map external dataset categories to Pharos's taxonomy node IDs.
 
 ## Purpose
 
@@ -10,7 +10,7 @@ When training models on external datasets (arXiv, AG News, Wikipedia, etc.), we 
 
 ```json
 {
-  "name": "Dataset Name to Neo Alexandria Taxonomy Mapping",
+  "name": "Dataset Name to Pharos Taxonomy Mapping",
   "version": "1.0",
   "description": "Brief description",
   "created": "2025-11-16",
@@ -62,7 +62,7 @@ python backend/scripts/load_external_data.py \
 
 ```json
 {
-  "name": "Wikipedia to Neo Alexandria Taxonomy Mapping",
+  "name": "Wikipedia to Pharos Taxonomy Mapping",
   "version": "1.0",
   "mappings": {
     "Category:Machine_learning": ["ml-node-1"],

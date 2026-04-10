@@ -24,6 +24,12 @@ rag_app = typer.Typer(
 )
 
 
+@rag_app.callback()
+def rag_callback():
+    """Ask questions and get answers from your knowledge base using RAG."""
+    pass
+
+
 def get_rag_client() -> RAGClient:
     """Get a RAGClient instance."""
     from pharos_cli.config.settings import load_config

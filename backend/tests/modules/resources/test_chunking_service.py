@@ -308,7 +308,11 @@ class TestChunkStorage:
             service.store_chunks(resource_id, chunks)
 
     def test_store_chunks_embedding_failure(self, mock_db, sample_resource):
-        """Test chunk storage when embedding generation fails."""
+        """Test chunk storage when embedding generation fails.
+
+        The service fails fast on embedding errors to preserve transaction
+        integrity — no partial chunks should be stored.
+        """
         # Mock embedding service that fails
         failing_service = Mock()
         failing_service.generate_embedding = Mock(
@@ -331,15 +335,12 @@ class TestChunkStorage:
         chunks = [{"content": "Test", "chunk_index": 0, "chunk_metadata": {}}]
         resource_id = str(sample_resource.id)
 
-        # Should not raise exception, but log warning and continue
-        stored_chunks = service.store_chunks(resource_id, chunks)
+        # Fail-fast: exception propagates and transaction is rolled back
+        with pytest.raises(Exception, match="Embedding failed"):
+            service.store_chunks(resource_id, chunks)
 
-        # Should have stored chunks
-        assert len(stored_chunks) == 1
-        assert stored_chunks[0].chunk_metadata["embedding_generated"] is False
-        
-        # Should NOT have rolled back
-        assert not mock_db.rollback.called
+        # Should have rolled back on failure
+        assert mock_db.rollback.called
 
 
 class TestChunkResourceIntegration:

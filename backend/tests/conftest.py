@@ -59,7 +59,8 @@ from app.database.models import (  # noqa: F401
     ClassificationCode,
     ModelVersion,
     ABTestExperiment,
-    PlanningSession,  )
+    PlanningSession,
+)
 from app.modules.auth.model import OAuthAccount  # noqa: F401
 
 
@@ -191,7 +192,7 @@ async def async_client(async_db_session):
 
     This provides a true async HTTP client for testing async endpoints.
     Uses httpx.AsyncClient with ASGITransport.
-    
+
     In test mode, modules are not auto-registered. Tests that need specific
     modules should register them manually using app.include_router().
     """
@@ -201,7 +202,7 @@ async def async_client(async_db_session):
 
     # Create app instance for testing (database already initialized by fixture)
     app = create_app()
-    
+
     # Note: Modules are now auto-registered in create_app(), no need to manually register
 
     async def override_get_async_db():
@@ -223,8 +224,14 @@ async def async_client(async_db_session):
     app.dependency_overrides[get_sync_db] = override_get_sync_db
 
     # Create AsyncClient with ASGITransport
+    # Pass Origin header so CSRF middleware allows state-changing requests.
+    # The httpx AsyncClient base_url is http://test, so Origin must match.
     transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+        headers={"Origin": "http://test"},
+    ) as client:
         yield client
 
     app.dependency_overrides.clear()
@@ -239,65 +246,106 @@ async def async_client(async_db_session):
 def test_settings():
     """
     Provide real Settings instance with test values.
-    
+
     This fixture replaces all Settings mocking with real Settings instances
     configured via environment variables. This ensures tests work with actual
     Settings behavior rather than mocked objects.
-    
+
     Returns:
         Settings instance configured for testing
     """
     import os
     from app.config.settings import Settings
-    
+
     # Store original environment
     original_env = {}
     test_env_vars = {
-        'TEST_MODE': 'true',
-        'JWT_SECRET_KEY': 'test-secret-key-for-testing-only',
-        'JWT_ALGORITHM': 'HS256',
-        'JWT_ACCESS_TOKEN_EXPIRE_MINUTES': '30',
-        'JWT_REFRESH_TOKEN_EXPIRE_DAYS': '7',
-        'DATABASE_URL': 'sqlite:///:memory:',
-        'POSTGRES_SERVER': 'localhost',
-        'POSTGRES_USER': 'test_user',
-        'POSTGRES_PASSWORD': 'test_password',
-        'POSTGRES_DB': 'test_db',
-        'POSTGRES_PORT': '5432',
-        'REDIS_HOST': 'localhost',
-        'REDIS_PORT': '6379',
-        'RATE_LIMIT_FREE_TIER': '100',
-        'RATE_LIMIT_PREMIUM_TIER': '1000',
-        'RATE_LIMIT_ADMIN_TIER': '0',
-        'CHUNK_ON_RESOURCE_CREATE': 'false',
-        'GRAPH_EXTRACTION_ENABLED': 'true',
-        'SYNTHETIC_QUESTIONS_ENABLED': 'false',
-        'DEFAULT_RETRIEVAL_STRATEGY': 'parent-child',
-        'ENV': 'dev',
+        "TEST_MODE": "true",
+        "JWT_SECRET_KEY": "test-secret-key-for-testing-only-min-32-chars",
+        "JWT_ALGORITHM": "HS256",
+        "JWT_ACCESS_TOKEN_EXPIRE_MINUTES": "30",
+        "JWT_REFRESH_TOKEN_EXPIRE_DAYS": "7",
+        "DATABASE_URL": "sqlite:///:memory:",
+        "POSTGRES_SERVER": "localhost",
+        "POSTGRES_USER": "test_user",
+        "POSTGRES_PASSWORD": "test_password",
+        "POSTGRES_DB": "test_db",
+        "POSTGRES_PORT": "5432",
+        "REDIS_HOST": "localhost",
+        "REDIS_PORT": "6379",
+        "RATE_LIMIT_FREE_TIER": "100",
+        "RATE_LIMIT_PREMIUM_TIER": "1000",
+        "RATE_LIMIT_ADMIN_TIER": "10000",
+        "CHUNK_ON_RESOURCE_CREATE": "false",
+        "GRAPH_EXTRACTION_ENABLED": "true",
+        "SYNTHETIC_QUESTIONS_ENABLED": "false",
+        "DEFAULT_RETRIEVAL_STRATEGY": "parent-child",
+        "ENV": "dev",
+        "MODE": "CLOUD",
+        "QUEUE_SIZE": "10",
+        "TASK_TTL": "86400",
+        "WORKER_POLL_INTERVAL": "2",
     }
-    
+
     # Set test environment variables
     for key, value in test_env_vars.items():
         original_env[key] = os.environ.get(key)
         os.environ[key] = value
-    
+
     # Clear the settings cache to force reload
     from app.config.settings import get_settings
+
     get_settings.cache_clear()
-    
+
     # Create settings instance - bypass validation for tests
     settings = Settings()
-    
+
     yield settings
-    
+
     # Restore original environment
     for key, value in original_env.items():
         if value is None:
             os.environ.pop(key, None)
         else:
             os.environ[key] = value
-    
+
     # Clear cache again to restore original settings
+    get_settings.cache_clear()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def override_get_settings(test_settings):
+    """
+    Override get_settings dependency with test settings.
+
+    This autouse fixture ensures all tests use the test_settings instance
+    when calling get_settings(). It clears the cache and sets up the override
+    before each test, and cleans up after each test.
+    """
+    from app.config.settings import get_settings, Settings
+
+    # Clear cache to ensure fresh settings
+    get_settings.cache_clear()
+
+    # Store original function
+    original_get_settings = get_settings
+
+    # Create a wrapper that returns test_settings
+    def _get_test_settings() -> Settings:
+        return test_settings
+
+    # We can't directly override lru_cache, but we can patch the module
+    import app.config.settings as settings_module
+
+    original_cached = settings_module.get_settings
+
+    # Replace with our test version
+    settings_module.get_settings = _get_test_settings
+
+    yield test_settings
+
+    # Restore original
+    settings_module.get_settings = original_cached
     get_settings.cache_clear()
 
 
@@ -305,11 +353,11 @@ def test_settings():
 def mock_redis():
     """
     Mock Redis client for rate limiting tests.
-    
+
     Returns a MagicMock that simulates Redis operations.
     """
     from unittest.mock import MagicMock
-    
+
     mock_client = MagicMock()
     mock_client.get.return_value = None
     mock_client.incr.return_value = 1
@@ -319,7 +367,7 @@ def mock_redis():
     mock_client.execute.return_value = [1, True]
     mock_client.__enter__.return_value = mock_client
     mock_client.__exit__.return_value = None
-    
+
     return mock_client
 
 
@@ -367,9 +415,14 @@ def auth_token(test_user: User) -> str:
     Returns:
         Valid JWT token string that can be used in Authorization headers
     """
-    from app.shared.oauth2 import create_access_token
+    from app.shared.security import create_access_token
 
-    token = create_access_token(data={"sub": test_user.username})
+    token = create_access_token(
+        data={
+            "username": test_user.username,
+            "user_id": str(test_user.id),
+        }
+    )
     return token
 
 
@@ -382,6 +435,95 @@ def auth_headers(auth_token: str) -> dict:
         Dict with Authorization header ready to use in requests
     """
     return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture(scope="function")
+def bypass_auth(db_session: Session, test_user: User) -> TestClient:
+    """
+    Fixture to bypass authentication in tests via dependency override.
+
+    This fixture creates a TestClient with authentication bypassed,
+    allowing tests to access protected endpoints without JWT tokens.
+
+    Usage:
+        def test_protected_endpoint(bypass_auth):
+            response = bypass_auth.get("/protected-endpoint")
+            assert response.status_code == 200
+
+    Note: This fixture should be used when you need to test protected
+    endpoints without providing valid JWT tokens. For testing actual
+    authentication flows, use authenticated_client instead.
+
+    This fixture:
+    - Creates a test app with dependency overrides
+    - Overrides get_current_user to return a mock user
+    - Overrides module-specific auth dependencies (_get_current_user_id)
+    - Returns a TestClient ready for use in tests
+    """
+    from app.shared.security import get_current_user, TokenData
+    from app.shared.database import get_sync_db, get_db
+
+    # Create app instance for testing
+    app = create_app()
+
+    def override_get_sync_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    async def override_get_async_db():
+        try:
+            yield db_session
+        finally:
+            pass
+
+    async def mock_get_current_user(token: str = None) -> TokenData:
+        """Mock get_current_user that returns test user without token validation."""
+        return TokenData(
+            user_id=str(test_user.id),
+            username=test_user.username,
+            scopes=[],
+            tier="free",
+        )
+
+    # Override dependencies
+    app.dependency_overrides[get_sync_db] = override_get_sync_db
+    app.dependency_overrides[get_db] = override_get_async_db
+    app.dependency_overrides[get_current_user] = mock_get_current_user
+
+    # Also override module-specific auth dependencies
+    try:
+        from app.modules.recommendations.router import _get_current_user_id
+
+        app.dependency_overrides[_get_current_user_id] = lambda db=None: test_user.id
+    except ImportError:
+        pass
+
+    try:
+        from app.modules.annotations.router import (
+            _get_current_user_id as annotations_get_user,
+        )
+
+        app.dependency_overrides[annotations_get_user] = lambda: str(test_user.id)
+    except ImportError:
+        pass
+
+    # Create and return the test client
+    # Pass X-Test-Auth-Bypass header so the auth middleware allows the request
+    # through to the dependency-overridden handlers.
+    # Pass Origin header so the CSRF middleware allows state-changing requests.
+    with TestClient(
+        app,
+        headers={
+            "X-Test-Auth-Bypass": "true",
+            "Origin": "http://testserver",
+        },
+    ) as test_client:
+        yield test_client
+
+    # Cleanup
+    app.dependency_overrides.clear()
 
 
 # ============================================================================
@@ -399,7 +541,7 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, None, 
 
     NOTE: This client bypasses authentication middleware for convenience.
     Use authenticated_client if you need to test with actual JWT tokens.
-    
+
     In test mode, modules are not auto-registered. Tests that need specific
     modules should register them manually using app.include_router().
     """
@@ -407,7 +549,7 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, None, 
 
     # Create app instance for testing
     app = create_app()
-    
+
     # Note: Modules are now auto-registered in create_app(), no need to manually register
 
     def override_get_sync_db():
@@ -445,7 +587,18 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, None, 
     except ImportError:
         pass
 
-    with TestClient(app) as test_client:
+    # Pass X-Test-Auth-Bypass header so the auth middleware allows requests
+    # through to the dependency-overridden handlers. This matches the behavior
+    # of the bypass_auth fixture and is required because the auth middleware
+    # runs before dependency injection.
+    # Pass Origin header so the CSRF middleware allows state-changing requests.
+    with TestClient(
+        app,
+        headers={
+            "X-Test-Auth-Bypass": "true",
+            "Origin": "http://testserver",
+        },
+    ) as test_client:
         yield test_client
 
     app.dependency_overrides.clear()
@@ -487,7 +640,8 @@ def authenticated_client(
     app.dependency_overrides[get_sync_db] = override_get_sync_db
     app.dependency_overrides[get_db] = override_get_async_db
 
-    with TestClient(app) as test_client:
+    # Pass Origin header so CSRF middleware allows state-changing requests.
+    with TestClient(app, headers={"Origin": "http://testserver"}) as test_client:
         yield test_client
 
     app.dependency_overrides.clear()
@@ -522,7 +676,8 @@ def unauthenticated_client(db_session: Session) -> Generator[TestClient, None, N
     app.dependency_overrides[get_sync_db] = override_get_sync_db
     app.dependency_overrides[get_db] = override_get_async_db
 
-    with TestClient(app) as test_client:
+    # Pass Origin header so CSRF middleware allows state-changing requests.
+    with TestClient(app, headers={"Origin": "http://testserver"}) as test_client:
         yield test_client
 
     app.dependency_overrides.clear()
@@ -635,7 +790,7 @@ def create_test_resource(db_session: Session):
     Factory fixture for creating test resources.
 
     Returns a function that creates resources with sensible defaults.
-    
+
     Note: The embedding field is stored as Text in the database, so we
     serialize list embeddings to JSON strings for SQLite compatibility.
     """
@@ -650,7 +805,7 @@ def create_test_resource(db_session: Session):
             "quality_score": 0.0,
         }
         defaults.update(kwargs)
-        
+
         # Serialize embedding to JSON string if it's a list
         # Resource.embedding column is Text type, not JSON
         if "embedding" in defaults and isinstance(defaults["embedding"], list):

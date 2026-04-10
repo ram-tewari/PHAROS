@@ -17,7 +17,24 @@ from app.modules.recommendations.collaborative import (
     CollaborativeFilteringService,
     NCFModel,
 )
-from app.database.models import UserInteraction, Resource
+from app.database.models import UserInteraction, Resource, User
+from app.shared.security import get_password_hash
+
+
+def _create_user(db_session, user_uuid, suffix=""):
+    """Create a User row satisfying UserInteraction.user_id FK."""
+    user = User(
+        id=user_uuid,
+        email=f"user_{user_uuid}{suffix}@example.com",
+        username=f"user_{str(user_uuid)[:8]}{suffix}",
+        hashed_password=get_password_hash("testpassword"),
+        full_name="Test User",
+        role="user",
+        is_active=True,
+        is_verified=True,
+    )
+    db_session.add(user)
+    return user
 
 
 # ============================================================================
@@ -183,6 +200,8 @@ def test_user_item_matrix_construction(db_session, golden_data):
         user_id: uuid4()
         for user_id in set(i["user_id"] for i in input_data["interactions"])
     }
+    for golden_uid, uuid_val in user_map.items():
+        _create_user(db_session, uuid_val, suffix=f"_{golden_uid}")
     resource_map = {}
 
     for interaction_data in input_data["interactions"]:
@@ -269,6 +288,7 @@ def test_negative_sampling_for_training(db_session, golden_data):
     from uuid import uuid4
 
     user_id = uuid4()
+    _create_user(db_session, user_id)
     resource_map = {res_id: uuid4() for res_id in input_data["all_resources"]}
 
     for res_id, uuid_id in resource_map.items():
@@ -378,6 +398,7 @@ def test_train_with_insufficient_data(db_session):
     from uuid import uuid4
 
     user_id = uuid4()
+    _create_user(db_session, user_id)
 
     # Create only 5 interactions (below threshold of 10)
     for i in range(5):

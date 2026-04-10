@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide covers deploying the Neo Alexandria Cloud API to Render's free tier. The Cloud API is a lightweight control plane that dispatches repository ingestion tasks to edge workers without loading heavy ML dependencies.
+This guide covers deploying the Pharos Cloud API to Render's free tier. The Cloud API is a lightweight control plane that dispatches repository ingestion tasks to edge workers without loading heavy ML dependencies.
 
 ## Prerequisites
 
@@ -123,7 +123,7 @@ services:
 1. Log in to [Render Dashboard](https://dashboard.render.com)
 2. Click "New +" → "Web Service"
 3. Connect your GitHub repository
-4. Select the repository containing Neo Alexandria
+4. Select the repository containing Pharos
 
 ### Step 3: Configure Service
 
@@ -473,6 +473,6 @@ Rollback to previous deployment:
 
 ## Support
 
-- **Documentation**: [Neo Alexandria Docs](../README.md)
-- **Issues**: [GitHub Issues](https://github.com/your-org/neo-alexandria-2.0/issues)
+- **Documentation**: [Pharos Docs](../README.md)
+- **Issues**: [GitHub Issues](https://github.com/your-org/pharos/issues)
 - **Render Support**: [Render Documentation](https://render.com/docs)

@@ -447,22 +447,26 @@ class SearchService:
                 for rel in chunk_paths[chunk_id]:
                     source_entity = rel.source_entity
                     target_entity = rel.target_entity
-                    graph_path.append({
-                        "entity_id": str(source_entity.id),
-                        "entity_name": source_entity.name,
-                        "entity_type": source_entity.type,
-                        "relation_type": rel.relation_type,
-                        "weight": rel.weight,
-                    })
+                    graph_path.append(
+                        {
+                            "entity_id": str(source_entity.id),
+                            "entity_name": source_entity.name,
+                            "entity_type": source_entity.type,
+                            "relation_type": rel.relation_type,
+                            "weight": rel.weight,
+                        }
+                    )
                     # Add target entity as final node
                     if rel == chunk_paths[chunk_id][-1]:
-                        graph_path.append({
-                            "entity_id": str(target_entity.id),
-                            "entity_name": target_entity.name,
-                            "entity_type": target_entity.type,
-                            "relation_type": None,
-                            "weight": None,
-                        })
+                        graph_path.append(
+                            {
+                                "entity_id": str(target_entity.id),
+                                "entity_name": target_entity.name,
+                                "entity_type": target_entity.type,
+                                "relation_type": None,
+                                "weight": None,
+                            }
+                        )
 
                 results.append(
                     {

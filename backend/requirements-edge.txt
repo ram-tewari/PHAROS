@@ -1,0 +1,34 @@
+# Pharos Edge Requirements
+# Edge-specific dependencies (with GPU support)
+
+-r requirements-base.txt
+
+# PyTorch with CUDA 11.8 support (RTX 4070 / consumer GPUs)
+# Pull CUDA 11.8 compiled wheels — do NOT install vanilla torch from PyPI
+--extra-index-url https://download.pytorch.org/whl/cu118
+torch==2.7.1+cu118
+torchvision==0.22.1+cu118
+torchaudio==2.7.1+cu118
+
+# Transformers with GPU support
+transformers>=4.36.0
+accelerate>=0.25.0
+bitsandbytes>=0.41.0  # For quantization
+
+# Sentence Transformers (with GPU support, nomic-ai models require >=2.3.0)
+sentence-transformers>=2.3.0
+
+# Required by nomic-ai/nomic-embed-text-v1 custom model code
+einops>=0.7.0
+
+# FAISS for local vector search
+faiss-cpu>=1.7.0
+# faiss-gpu>=1.7.0  # Uncomment for GPU support
+
+# Qdrant (local vector database)
+qdrant-client>=1.7.0
+
+# Additional ML utilities
+scikit-learn>=1.3.0
+numpy>=1.24.0
+pandas>=2.0.0

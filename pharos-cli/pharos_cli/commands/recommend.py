@@ -23,6 +23,12 @@ recommend_app = typer.Typer(
 )
 
 
+@recommend_app.callback()
+def recommend_callback():
+    """Get recommendations for resources."""
+    pass
+
+
 def get_recommendation_client() -> RecommendationClient:
     """Get a RecommendationClient instance."""
     from pharos_cli.config.settings import load_config

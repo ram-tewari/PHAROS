@@ -2,6 +2,7 @@
 
 import pytest
 from datetime import timedelta
+from unittest.mock import AsyncMock, patch
 from jose import JWTError
 
 from app.shared.security import (
@@ -162,15 +163,50 @@ class TestTokenValidation:
         # Create a token
         token = create_access_token({"user_id": 1, "username": "test"})
 
-        # Tamper with the token (change last character)
-        tampered_token = token[:-1] + ("a" if token[-1] != "a" else "b")
+        # Tamper with the signature portion (after the last dot)
+        parts = token.rsplit(".", 1)
+        # Reverse the signature to ensure it's invalid
+        tampered_sig = parts[1][::-1] if parts[1][::-1] != parts[1] else parts[1] + "X"
+        tampered_token = parts[0] + "." + tampered_sig
 
         with pytest.raises(JWTError):
             decode_token(tampered_token)
 
 
 class TestTokenRevocation:
-    """Test token revocation system."""
+    """Test token revocation system.
+
+    Uses a mock cache to avoid requiring a running Redis instance.
+    """
+
+    @pytest.fixture(autouse=True)
+    def mock_cache(self):
+        """Mock the cache module used by token revocation."""
+        self._store = {}
+
+        class FakeCache:
+            def __init__(self, store):
+                self._store = store
+
+            def get(self, key):
+                return self._store.get(key)
+
+            def set(self, key, value, ttl=None):
+                self._store[key] = value
+
+        fake = FakeCache(self._store)
+        with (
+            patch("app.shared.security.cache", fake, create=True),
+            patch.dict("sys.modules", {}),
+        ):
+            # Patch at the point of import inside revoke_token / is_token_revoked
+            import app.shared.cache as cache_mod
+
+            original = getattr(cache_mod, "cache", None)
+            cache_mod.cache = fake
+            yield fake
+            if original is not None:
+                cache_mod.cache = original
 
     @pytest.mark.asyncio
     async def test_token_not_revoked_initially(self):
@@ -185,10 +221,8 @@ class TestTokenRevocation:
         """Test that revoking token marks it as revoked."""
         token = create_access_token({"user_id": 1, "username": "test"})
 
-        # Revoke the token
         await revoke_token(token)
 
-        # Check if revoked
         is_revoked = await is_token_revoked(token)
         assert is_revoked is True
 
@@ -197,7 +231,6 @@ class TestTokenRevocation:
         """Test revoking token with custom TTL."""
         token = create_access_token({"user_id": 1, "username": "test"})
 
-        # Revoke with 1 hour TTL
         await revoke_token(token, ttl=3600)
 
         is_revoked = await is_token_revoked(token)
@@ -209,20 +242,23 @@ class TestTokenRevocation:
         token1 = create_access_token({"user_id": 1, "username": "user1"})
         token2 = create_access_token({"user_id": 2, "username": "user2"})
 
-        # Revoke only token1
         await revoke_token(token1)
 
         assert await is_token_revoked(token1) is True
         assert await is_token_revoked(token2) is False
 
 
-class TestTestModeBypass:
-    """Test TEST_MODE authentication bypass."""
+class TestModeConfiguration:
+    """Test TEST_MODE configuration setting.
 
-    def test_test_mode_enabled_in_settings(self):
-        """Test that TEST_MODE can be enabled in settings."""
+    Note: TEST_MODE is a configuration setting but does NOT bypass authentication.
+    Authentication bypass in tests is handled via the bypass_auth fixture in conftest.py.
+    """
+
+    def test_test_mode_setting_exists(self):
+        """Test that TEST_MODE setting exists in settings."""
         settings = get_settings()
-        # Just verify the setting exists
+        # Verify the setting exists
         assert hasattr(settings, "TEST_MODE")
         assert isinstance(settings.TEST_MODE, bool)
 
@@ -233,17 +269,17 @@ class TestTokenData:
     def test_token_data_creation(self):
         """Test creating TokenData instance."""
         token_data = TokenData(
-            user_id=123, username="testuser", scopes=["read", "write"], tier="premium"
+            user_id="123", username="testuser", scopes=["read", "write"], tier="premium"
         )
 
-        assert token_data.user_id == 123
+        assert token_data.user_id == "123"
         assert token_data.username == "testuser"
         assert token_data.scopes == ["read", "write"]
         assert token_data.tier == "premium"
 
     def test_token_data_defaults(self):
         """Test TokenData default values."""
-        token_data = TokenData(user_id=1, username="test")
+        token_data = TokenData(user_id="1", username="test")
 
         assert token_data.scopes == []
         assert token_data.tier == "free"
@@ -252,10 +288,33 @@ class TestTokenData:
 class TestIntegrationScenarios:
     """Test complete authentication scenarios."""
 
+    @pytest.fixture(autouse=True)
+    def mock_cache(self):
+        """Mock the cache module used by token revocation."""
+        self._store = {}
+
+        class FakeCache:
+            def __init__(self, store):
+                self._store = store
+
+            def get(self, key):
+                return self._store.get(key)
+
+            def set(self, key, value, ttl=None):
+                self._store[key] = value
+
+        fake = FakeCache(self._store)
+        import app.shared.cache as cache_mod
+
+        original = getattr(cache_mod, "cache", None)
+        cache_mod.cache = fake
+        yield fake
+        if original is not None:
+            cache_mod.cache = original
+
     @pytest.mark.asyncio
     async def test_complete_authentication_flow(self):
         """Test complete authentication flow from token creation to validation."""
-        # 1. Create user data
         user_data = {
             "user_id": 456,
             "username": "integration_user",
@@ -263,39 +322,31 @@ class TestIntegrationScenarios:
             "scopes": ["read", "write", "admin"],
         }
 
-        # 2. Create access token
         access_token = create_access_token(user_data)
         assert access_token is not None
 
-        # 3. Verify token is not revoked
         assert await is_token_revoked(access_token) is False
 
-        # 4. Decode and validate token
         payload = decode_token(access_token)
         assert payload["user_id"] == 456
         assert payload["username"] == "integration_user"
         assert validate_token_type(payload, "access") is True
 
-        # 5. Revoke token
         await revoke_token(access_token)
 
-        # 6. Verify token is now revoked
         assert await is_token_revoked(access_token) is True
 
     @pytest.mark.asyncio
     async def test_refresh_token_flow(self):
         """Test refresh token creation and validation."""
-        # 1. Create refresh token
         user_data = {"user_id": 789, "username": "refresh_user"}
         refresh_token = create_refresh_token(user_data)
 
-        # 2. Decode and validate
         payload = decode_token(refresh_token)
         assert payload["user_id"] == 789
         assert payload["username"] == "refresh_user"
         assert validate_token_type(payload, "refresh") is True
         assert validate_token_type(payload, "access") is False
 
-        # 3. Verify refresh token can be revoked
         await revoke_token(refresh_token)
         assert await is_token_revoked(refresh_token) is True

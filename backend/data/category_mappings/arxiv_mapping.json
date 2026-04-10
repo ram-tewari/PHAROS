@@ -1,7 +1,7 @@
 {
-  "name": "arXiv to Neo Alexandria Taxonomy Mapping",
+  "name": "arXiv to Pharos Taxonomy Mapping",
   "version": "1.0",
-  "description": "Maps arXiv categories to Neo Alexandria taxonomy node IDs",
+  "description": "Maps arXiv categories to Pharos taxonomy node IDs",
   "created": "2025-11-16",
   "mappings": {
     "cs.AI": ["ml-node-1"],

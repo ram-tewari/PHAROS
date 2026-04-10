@@ -536,7 +536,7 @@ See `backend/docker/README.md` for production deployment guide.
 - [PostgreSQL Documentation](https://www.postgresql.org/docs/15/)
 - [Redis Documentation](https://redis.io/documentation)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
-- [Neo Alexandria Architecture](./docs/architecture/overview.md)
+- [Pharos Architecture](./docs/architecture/overview.md)
 
 ## Support
 

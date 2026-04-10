@@ -1,0 +1,8 @@
+# Pharos Requirements
+# This file points to the base requirements. Use the appropriate
+# deployment-specific file for your environment:
+# - requirements-base.txt: Shared dependencies (always required)
+# - requirements-cloud.txt: Cloud deployment (no GPU)
+# - requirements-edge.txt: Edge deployment (with GPU)
+
+-r requirements-base.txt

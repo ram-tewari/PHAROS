@@ -20,6 +20,7 @@ from app.database.models import Resource, GraphEdge
 # Property 15: Community assignment completeness
 # ============================================================================
 
+
 @pytest.mark.asyncio
 @given(
     num_resources=st.integers(min_value=2, max_value=20),
@@ -35,9 +36,9 @@ async def test_property_community_assignment_completeness(
 ):
     """
     Property 15: Community assignment completeness
-    
+
     For any graph, community detection should assign every node to exactly one community.
-    
+
     Validates: Requirements 5.2
     """
     # Create test resources
@@ -50,9 +51,9 @@ async def test_property_community_assignment_completeness(
         )
         db_session.add(resource)
         resources.append(resource)
-    
+
     db_session.commit()
-    
+
     # Create some edges to form a graph
     for i in range(num_resources - 1):
         edge = GraphEdge(
@@ -63,34 +64,35 @@ async def test_property_community_assignment_completeness(
             created_by="test_system",
         )
         db_session.add(edge)
-    
+
     db_session.commit()
-    
+
     # Run community detection
     community_service = CommunityDetectionService(db_session)
     resource_ids = [r.id for r in resources]  # Use UUID objects directly
-    
+
     result = await community_service.detect_communities(
-        resource_ids=resource_ids,
-        resolution=1.0
+        resource_ids=resource_ids, resolution=1.0
     )
-    
+
     # Property: All requested resources should have community assignments
     assert len(result["communities"]) == num_resources, (
         f"Expected {num_resources} community assignments, "
         f"got {len(result['communities'])}"
     )
-    
+
     # Property: Every resource should be assigned to exactly one community
-    assigned_resources = set(str(k) for k in result["communities"].keys())  # Convert to strings for comparison
+    assigned_resources = set(
+        str(k) for k in result["communities"].keys()
+    )  # Convert to strings for comparison
     expected_resources = set(str(rid) for rid in resource_ids)
-    
+
     assert assigned_resources == expected_resources, (
         f"Community assignments don't match requested resources. "
         f"Missing: {expected_resources - assigned_resources}, "
         f"Extra: {assigned_resources - expected_resources}"
     )
-    
+
     # Property: Community IDs should be non-negative integers
     for resource_id, community_id in result["communities"].items():
         assert isinstance(community_id, int), (
@@ -99,14 +101,14 @@ async def test_property_community_assignment_completeness(
         assert community_id >= 0, (
             f"Community ID for resource {resource_id} is negative: {community_id}"
         )
-    
+
     # Property: Number of communities should match unique community IDs
     unique_communities = set(result["communities"].values())
     assert result["num_communities"] == len(unique_communities), (
         f"num_communities ({result['num_communities']}) doesn't match "
         f"unique community IDs ({len(unique_communities)})"
     )
-    
+
     # Property: Community sizes should sum to total resources
     total_size = sum(result["community_sizes"].values())
     assert total_size == num_resources, (
@@ -117,6 +119,7 @@ async def test_property_community_assignment_completeness(
 # ============================================================================
 # Property 16: Modularity computation
 # ============================================================================
+
 
 @pytest.mark.asyncio
 @given(
@@ -133,9 +136,9 @@ async def test_property_modularity_computation(
 ):
     """
     Property 16: Modularity computation
-    
+
     For any detected community partition, the modularity score should be in the valid range [-1, 1].
-    
+
     Validates: Requirements 5.3
     """
     # Create test resources
@@ -148,9 +151,9 @@ async def test_property_modularity_computation(
         )
         db_session.add(resource)
         resources.append(resource)
-    
+
     db_session.commit()
-    
+
     # Create edges to form a graph
     for i in range(num_resources - 1):
         edge = GraphEdge(
@@ -161,18 +164,17 @@ async def test_property_modularity_computation(
             created_by="test_system",
         )
         db_session.add(edge)
-    
+
     db_session.commit()
-    
+
     # Run community detection
     community_service = CommunityDetectionService(db_session)
     resource_ids = [r.id for r in resources]  # Use UUID objects directly
-    
+
     result = await community_service.detect_communities(
-        resource_ids=resource_ids,
-        resolution=1.0
+        resource_ids=resource_ids, resolution=1.0
     )
-    
+
     # Property: Modularity should be in valid range [-1, 1]
     modularity = result["modularity"]
     assert isinstance(modularity, (int, float)), (
@@ -181,7 +183,7 @@ async def test_property_modularity_computation(
     assert -1.0 <= modularity <= 1.0, (
         f"Modularity {modularity} is outside valid range [-1, 1]"
     )
-    
+
     # Property: Higher modularity indicates better community structure
     # For a connected graph, modularity should be non-negative
     if num_resources > 2:
@@ -193,6 +195,7 @@ async def test_property_modularity_computation(
 # ============================================================================
 # Property 17: Community detection performance
 # ============================================================================
+
 
 @pytest.mark.asyncio
 @given(
@@ -209,12 +212,12 @@ async def test_property_community_detection_performance(
 ):
     """
     Property 17: Community detection performance
-    
+
     For any graph with 1000 nodes, community detection should complete within 10 seconds.
-    
+
     Note: This test uses smaller graphs (10-50 nodes) for practical testing,
     but the performance requirement scales to 1000 nodes.
-    
+
     Validates: Requirements 5.4
     """
     # Create test resources
@@ -227,9 +230,9 @@ async def test_property_community_detection_performance(
         )
         db_session.add(resource)
         resources.append(resource)
-    
+
     db_session.commit()
-    
+
     # Create a denser graph for performance testing
     for i in range(num_resources):
         for j in range(i + 1, min(i + 5, num_resources)):
@@ -241,31 +244,30 @@ async def test_property_community_detection_performance(
                 created_by="test_system",
             )
             db_session.add(edge)
-    
+
     db_session.commit()
-    
+
     # Measure community detection time
     community_service = CommunityDetectionService(db_session)
     resource_ids = [r.id for r in resources]  # Use UUID objects directly
-    
+
     start_time = time.time()
-    
+
     result = await community_service.detect_communities(
-        resource_ids=resource_ids,
-        resolution=1.0
+        resource_ids=resource_ids, resolution=1.0
     )
-    
+
     elapsed_time = time.time() - start_time
-    
+
     # Property: Community detection should complete within reasonable time
     # For 50 nodes, we expect < 1 second (scaled down from 10s for 1000 nodes)
     expected_time = 1.0 if num_resources <= 50 else 10.0
-    
+
     assert elapsed_time < expected_time, (
         f"Community detection took {elapsed_time:.2f}s, "
         f"expected < {expected_time}s for {num_resources} nodes"
     )
-    
+
     # Property: Result should be valid
     assert len(result["communities"]) == num_resources
     assert result["num_communities"] > 0

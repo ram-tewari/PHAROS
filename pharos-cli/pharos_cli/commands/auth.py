@@ -25,6 +25,12 @@ auth_app = typer.Typer(
 )
 
 
+@auth_app.callback()
+def auth_callback():
+    """Authentication commands for Pharos CLI."""
+    pass
+
+
 # OAuth2 callback server
 class OAuthCallbackHandler(BaseHTTPRequestHandler):
     """HTTP handler for OAuth2 callback."""

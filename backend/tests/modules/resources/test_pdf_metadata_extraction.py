@@ -24,14 +24,14 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a PDF with complete metadata
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
@@ -39,28 +39,28 @@ class TestPDFMetadataExtraction:
         c.setAuthor("John Doe")
         c.setSubject("Test Subject")
         c.setKeywords("test, metadata, pdf")
-        
+
         c.drawString(100, 750, "Page 1 content")
         c.showPage()
         c.drawString(100, 750, "Page 2 content")
         c.showPage()
         c.save()
-        
+
         pdf_bytes = buffer.getvalue()
-        
+
         # Extract with metadata
         result = extract_pdf(pdf_bytes, extract_metadata=True)
-        
+
         # Verify text extraction
         assert "Page 1 content" in result["text"]
         assert "Page 2 content" in result["text"]
-        
+
         # Verify page boundaries
         assert "page_boundaries" in result
         assert len(result["page_boundaries"]) == 2
         assert result["page_boundaries"][0]["page_num"] == 1
         assert result["page_boundaries"][1]["page_num"] == 2
-        
+
         # Verify structured metadata
         assert "structured_metadata" in result
         metadata = result["structured_metadata"]
@@ -76,14 +76,14 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a PDF without metadata
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
@@ -91,19 +91,19 @@ class TestPDFMetadataExtraction:
         c.drawString(100, 750, "Content without metadata")
         c.showPage()
         c.save()
-        
+
         pdf_bytes = buffer.getvalue()
-        
+
         # Extract with metadata
         result = extract_pdf(pdf_bytes, extract_metadata=True)
-        
+
         # Verify text extraction still works
         assert "Content without metadata" in result["text"]
-        
+
         # Verify page boundaries still work
         assert "page_boundaries" in result
         assert len(result["page_boundaries"]) == 1
-        
+
         # Verify structured metadata exists but may have default values
         assert "structured_metadata" in result
         metadata = result["structured_metadata"]
@@ -121,14 +121,14 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a single-page PDF
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
@@ -136,15 +136,15 @@ class TestPDFMetadataExtraction:
         c.drawString(100, 750, "This is the only page")
         c.showPage()
         c.save()
-        
+
         pdf_bytes = buffer.getvalue()
-        
+
         # Extract with metadata
         result = extract_pdf(pdf_bytes, extract_metadata=True)
-        
+
         # Verify text extraction
         assert "This is the only page" in result["text"]
-        
+
         # Verify exactly one page boundary
         assert "page_boundaries" in result
         assert len(result["page_boundaries"]) == 1
@@ -152,7 +152,7 @@ class TestPDFMetadataExtraction:
         assert boundary["page_num"] == 1
         assert boundary["start_char"] == 0
         assert boundary["end_char"] > 0
-        
+
         # Verify metadata
         assert "structured_metadata" in result
         assert result["structured_metadata"]["title"] == "Single Page Document"
@@ -164,14 +164,14 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a PDF
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
@@ -179,19 +179,19 @@ class TestPDFMetadataExtraction:
         c.drawString(100, 750, "Test content")
         c.showPage()
         c.save()
-        
+
         pdf_bytes = buffer.getvalue()
-        
+
         # Extract without metadata (default behavior)
         result = extract_pdf(pdf_bytes, extract_metadata=False)
-        
+
         # Verify text extraction works
         assert "Test content" in result["text"]
-        
+
         # Verify metadata fields are NOT present
         assert "page_boundaries" not in result
         assert "structured_metadata" not in result
-        
+
         # Title should be None (backward compatibility)
         assert result["title"] is None
 
@@ -202,39 +202,41 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a PDF with abstract section
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
         c.setTitle("Research Paper")
-        
+
         # Add abstract section on first page
         c.drawString(100, 750, "Abstract")
         c.drawString(100, 730, "This is the abstract of the research paper.")
         c.drawString(100, 710, "It contains important information about the study.")
         c.showPage()
         c.save()
-        
+
         pdf_bytes = buffer.getvalue()
-        
+
         # Extract with metadata
         result = extract_pdf(pdf_bytes, extract_metadata=True)
-        
+
         # Verify abstract extraction
         assert "structured_metadata" in result
         metadata = result["structured_metadata"]
-        
+
         # Abstract should be extracted (heuristic-based)
         if "abstract" in metadata and metadata["abstract"]:
-            assert "abstract" in metadata["abstract"].lower() or \
-                   "research paper" in metadata["abstract"].lower()
+            assert (
+                "abstract" in metadata["abstract"].lower()
+                or "research paper" in metadata["abstract"].lower()
+            )
 
     def test_extract_from_fetched_with_pdf_metadata(self):
         """Test extract_from_fetched passes extract_metadata flag for PDFs."""
@@ -243,14 +245,14 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a PDF
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
@@ -258,19 +260,19 @@ class TestPDFMetadataExtraction:
         c.drawString(100, 750, "Fetched content")
         c.showPage()
         c.save()
-        
+
         pdf_bytes = buffer.getvalue()
-        
+
         # Simulate fetched data
         fetched_data = {
             "content_type": "application/pdf",
             "content_bytes": pdf_bytes,
             "url": "https://example.com/test.pdf",
         }
-        
+
         # Extract with metadata flag
         result = extract_from_fetched(fetched_data, extract_metadata=True)
-        
+
         # Verify metadata was extracted
         assert "page_boundaries" in result
         assert "structured_metadata" in result
@@ -283,39 +285,39 @@ class TestPDFMetadataExtraction:
             import fitz
         except ImportError:
             pytest.skip("PyMuPDF (fitz) not available")
-        
+
         # Skip if reportlab is not available
         try:
             from reportlab.pdfgen import canvas
             from reportlab.lib.pagesizes import letter
         except ImportError:
             pytest.skip("reportlab not available for PDF generation")
-        
+
         # Create a 5-page PDF
         buffer = io.BytesIO()
         c = canvas.Canvas(buffer, pagesize=letter)
-        
+
         for i in range(5):
             c.drawString(100, 750, f"Page {i + 1} content here")
             c.showPage()
-        
+
         c.save()
         pdf_bytes = buffer.getvalue()
-        
+
         # Extract with metadata
         result = extract_pdf(pdf_bytes, extract_metadata=True)
-        
+
         # Verify page boundaries
         assert "page_boundaries" in result
         boundaries = result["page_boundaries"]
         assert len(boundaries) == 5
-        
+
         # Verify sequential page numbers
         for i, boundary in enumerate(boundaries):
             assert boundary["page_num"] == i + 1
             assert boundary["start_char"] >= 0
             assert boundary["end_char"] > boundary["start_char"]
-        
+
         # Verify no overlaps
         for i in range(len(boundaries) - 1):
             current = boundaries[i]
@@ -328,17 +330,19 @@ class TestPDFMetadataExtraction:
         # Mock PyMuPDF to fail
         with patch("app.utils.content_extractor.fitz", None):
             # Mock pdfminer to succeed
-            with patch("app.utils.content_extractor.pdfminer_extract_text") as mock_pdfminer:
+            with patch(
+                "app.utils.content_extractor.pdfminer_extract_text"
+            ) as mock_pdfminer:
                 mock_pdfminer.return_value = "Extracted text from pdfminer"
-                
+
                 pdf_bytes = b"%PDF-1.4\nfake pdf"
-                
+
                 # Extract with metadata flag
                 result = extract_pdf(pdf_bytes, extract_metadata=True)
-                
+
                 # Verify text extraction works
                 assert result["text"] == "Extracted text from pdfminer"
-                
+
                 # Verify metadata fields are present but empty
                 # (pdfminer doesn't support page boundaries)
                 assert "page_boundaries" in result

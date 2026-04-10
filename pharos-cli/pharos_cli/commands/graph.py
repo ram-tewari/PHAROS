@@ -23,6 +23,12 @@ graph_app = typer.Typer(
 )
 
 
+@graph_app.callback()
+def graph_callback():
+    """Knowledge graph and citation commands."""
+    pass
+
+
 def get_graph_client() -> GraphClient:
     """Get a graph client instance.
 

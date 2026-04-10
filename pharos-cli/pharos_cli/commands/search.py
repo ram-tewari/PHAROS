@@ -18,6 +18,12 @@ search_app = typer.Typer(
 )
 
 
+@search_app.callback()
+def search_callback():
+    """Search for resources in your knowledge base."""
+    pass
+
+
 def get_search_client() -> SearchClient:
     """Get a search client instance.
 

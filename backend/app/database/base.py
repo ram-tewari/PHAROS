@@ -438,16 +438,16 @@ def with_row_lock_sync(
 class OptimisticLockError(Exception):
     """
     Exception raised when optimistic lock check fails.
-    
+
     This indicates that the record was modified by another transaction
     between the read and the update attempt.
-    
+
     Attributes:
         resource_id: ID of the resource that had a conflict
         expected_version: Version number that was expected
         actual_version: Current version number in database
     """
-    
+
     def __init__(self, resource_id: str, expected_version: int, actual_version: int):
         self.resource_id = resource_id
         self.expected_version = expected_version
@@ -467,32 +467,32 @@ async def update_with_optimistic_lock(
 ) -> tuple:
     """
     Update a record with optimistic concurrency control.
-    
+
     This function implements optimistic locking by checking the version
     column before updating. If the current version doesn't match the
     expected version, it raises OptimisticLockError.
-    
+
     Args:
         session: SQLAlchemy async session
         model_class: SQLAlchemy model class (must have 'version' column)
         record_id: Primary key value of the record to update
         expected_version: Expected version number from previous read
         update_data: Dictionary of fields to update
-    
+
     Returns:
         tuple: (updated_record, new_version)
-    
+
     Raises:
         OptimisticLockError: If version mismatch (concurrent modification)
         ValueError: If record not found
-    
+
     Example:
         # Read resource with version
         resource = await session.get(Resource, resource_id)
         version = resource.version
-        
+
         # ... user modifies data ...
-        
+
         # Update with version check
         try:
             updated, new_version = await update_with_optimistic_lock(
@@ -504,25 +504,23 @@ async def update_with_optimistic_lock(
             pass
     """
     from sqlalchemy import select, update
-    
+
     # First, get current version
     stmt = select(model_class).where(model_class.id == record_id)
     result = await session.execute(stmt)
     record = result.scalar_one_or_none()
-    
+
     if record is None:
         raise ValueError(f"Record not found: {record_id}")
-    
+
     # Check version
     if record.version != expected_version:
-        raise OptimisticLockError(
-            str(record_id), expected_version, record.version
-        )
-    
+        raise OptimisticLockError(str(record_id), expected_version, record.version)
+
     # Update with incremented version
     new_version = expected_version + 1
     update_data_with_version = {**update_data, "version": new_version}
-    
+
     # Perform update with version check in WHERE clause
     update_stmt = (
         update(model_class)
@@ -531,16 +529,16 @@ async def update_with_optimistic_lock(
         .values(**update_data_with_version)
         .returning(model_class)
     )
-    
+
     result = await session.execute(update_stmt)
     updated_record = result.scalar_one_or_none()
-    
+
     if updated_record is None:
         # Version changed between our check and update (race condition)
         raise OptimisticLockError(
             str(record_id), expected_version, expected_version + 1
         )
-    
+
     return updated_record, new_version
 
 
@@ -553,43 +551,41 @@ def update_with_optimistic_lock_sync(
 ) -> tuple:
     """
     Synchronous version of update_with_optimistic_lock for background tasks.
-    
+
     Update a record with optimistic concurrency control in sync context.
-    
+
     Args:
         session: SQLAlchemy sync session
         model_class: SQLAlchemy model class (must have 'version' column)
         record_id: Primary key value of the record to update
         expected_version: Expected version number from previous read
         update_data: Dictionary of fields to update
-    
+
     Returns:
         tuple: (updated_record, new_version)
-    
+
     Raises:
         OptimisticLockError: If version mismatch (concurrent modification)
         ValueError: If record not found
     """
     from sqlalchemy import select, update
-    
+
     # First, get current version
     stmt = select(model_class).where(model_class.id == record_id)
     result = session.execute(stmt)
     record = result.scalar_one_or_none()
-    
+
     if record is None:
         raise ValueError(f"Record not found: {record_id}")
-    
+
     # Check version
     if record.version != expected_version:
-        raise OptimisticLockError(
-            str(record_id), expected_version, record.version
-        )
-    
+        raise OptimisticLockError(str(record_id), expected_version, record.version)
+
     # Update with incremented version
     new_version = expected_version + 1
     update_data_with_version = {**update_data, "version": new_version}
-    
+
     # Perform update with version check in WHERE clause
     update_stmt = (
         update(model_class)
@@ -598,16 +594,16 @@ def update_with_optimistic_lock_sync(
         .values(**update_data_with_version)
         .returning(model_class)
     )
-    
+
     result = session.execute(update_stmt)
     updated_record = result.scalar_one_or_none()
-    
+
     if updated_record is None:
         # Version changed between our check and update (race condition)
         raise OptimisticLockError(
             str(record_id), expected_version, expected_version + 1
         )
-    
+
     return updated_record, new_version
 
 

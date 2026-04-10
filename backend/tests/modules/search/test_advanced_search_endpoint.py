@@ -13,9 +13,9 @@ import uuid
 from app.main import app
 from app.shared.database import get_sync_db
 from app.database.models import (
-    Resource, 
-    DocumentChunk, 
-    GraphEntity, 
+    Resource,
+    DocumentChunk,
+    GraphEntity,
     GraphRelationship,
 )
 
@@ -384,7 +384,8 @@ def test_advanced_search_empty_query(client):
     """
     # Make request with empty query
     response = client.post(
-        "/api/search/advanced", json={"query": "", "strategy": "parent-child", "top_k": 10}
+        "/api/search/advanced",
+        json={"query": "", "strategy": "parent-child", "top_k": 10},
     )
 
     # Assert error response

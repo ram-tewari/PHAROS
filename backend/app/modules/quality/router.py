@@ -250,7 +250,9 @@ async def get_degradation_report(
     )
 
 
-@quality_router.post("/summaries/{resource_id}/evaluate", status_code=status.HTTP_202_ACCEPTED)
+@quality_router.post(
+    "/summaries/{resource_id}/evaluate", status_code=status.HTTP_202_ACCEPTED
+)
 async def evaluate_summary(
     resource_id: str,
     use_g_eval: bool = Query(
@@ -822,6 +824,283 @@ async def get_evaluation_metrics(
 
 
 @quality_router.get("/evaluation/history")
+async def get_evaluation_history(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(50, ge=1, le=100, description="Results per page"),
+    min_faithfulness: Optional[float] = Query(
+        None, ge=0.0, le=1.0, description="Minimum faithfulness score"
+    ),
+    min_answer_relevance: Optional[float] = Query(
+        None, ge=0.0, le=1.0, description="Minimum answer relevance score"
+    ),
+    min_context_precision: Optional[float] = Query(
+        None, ge=0.0, le=1.0, description="Minimum context precision score"
+    ),
+    db: Session = Depends(get_sync_db),
+):
+    """Get paginated RAG evaluation history with optional score filters.
+
+    Retrieves historical evaluation records with support for filtering by
+    minimum score thresholds and pagination.
+
+    Args:
+        page: Page number (1-indexed)
+        limit: Results per page (1-100)
+        min_faithfulness: Optional minimum faithfulness score filter
+        min_answer_relevance: Optional minimum answer relevance score filter
+        min_context_precision: Optional minimum context precision score filter
+        db: Database session
+
+    Returns:
+        Paginated list of evaluation records with metadata
+    """
+    # Build query with filters
+    query = db.query(RAGEvaluation)
+
+    if min_faithfulness is not None:
+        query = query.filter(RAGEvaluation.faithfulness_score >= min_faithfulness)
+
+    if min_answer_relevance is not None:
+        query = query.filter(
+            RAGEvaluation.answer_relevance_score >= min_answer_relevance
+        )
+
+    if min_context_precision is not None:
+        query = query.filter(
+            RAGEvaluation.context_precision_score >= min_context_precision
+        )
+
+    # Get total count
+    total = query.count()
+
+    # Apply pagination
+    offset = (page - 1) * limit
+    evaluations = (
+        query.order_by(RAGEvaluation.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    # Format response
+    evaluation_list = []
+    for eval_record in evaluations:
+        chunk_ids = (
+            json.loads(eval_record.retrieved_chunk_ids)
+            if eval_record.retrieved_chunk_ids
+            else []
+        )
+
+        evaluation_list.append(
+            RAGEvaluationResponse(
+                id=str(eval_record.id),
+                query=eval_record.query,
+                expected_answer=eval_record.expected_answer,
+                generated_answer=eval_record.generated_answer,
+                retrieved_chunk_ids=chunk_ids,
+                faithfulness_score=eval_record.faithfulness_score,
+                answer_relevance_score=eval_record.answer_relevance_score,
+                context_precision_score=eval_record.context_precision_score,
+                created_at=eval_record.created_at,
+            )
+        )
+
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "evaluations": evaluation_list,
+    }
+
+
+# ============================================================================
+# RAG Evaluation Router (Phase 17.5 - Advanced RAG)
+# ============================================================================
+# Separate router for RAG evaluation endpoints with prefix /api/v1/rag/evaluation
+# This router is registered in app/__init__.py to fix 404 errors
+
+rag_evaluation_router = APIRouter(prefix="/evaluation", tags=["rag-evaluation"])
+
+
+@rag_evaluation_router.post(
+    "/submit",
+    response_model=RAGEvaluationResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+async def submit_evaluation(
+    evaluation: RAGEvaluationCreate,
+    db: Session = Depends(get_sync_db),
+):
+    """Submit RAG evaluation data with RAGAS metrics.
+
+    Stores ground-truth evaluation data and metrics for measuring RAG system
+    performance. Supports RAGAS metrics: faithfulness, answer relevance, and
+    context precision.
+
+    Args:
+        evaluation: RAG evaluation data including query, answers, chunks, and scores
+        db: Database session
+
+    Returns:
+        Created RAG evaluation record with UUID and timestamp
+
+    Raises:
+        HTTPException: If validation fails or database error occurs
+    """
+    import uuid
+
+    # Create RAG evaluation record
+    rag_eval = RAGEvaluation(
+        id=str(uuid.uuid4()),
+        query=evaluation.query,
+        expected_answer=evaluation.expected_answer,
+        generated_answer=evaluation.generated_answer,
+        retrieved_chunk_ids=json.dumps(evaluation.retrieved_chunk_ids),
+        faithfulness_score=evaluation.faithfulness_score,
+        answer_relevance_score=evaluation.answer_relevance_score,
+        context_precision_score=evaluation.context_precision_score,
+        created_at=datetime.utcnow(),
+    )
+
+    try:
+        db.add(rag_eval)
+        db.commit()
+        db.refresh(rag_eval)
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to store evaluation: {str(e)}",
+        )
+
+    # Parse retrieved_chunk_ids back to list for response
+    chunk_ids = (
+        json.loads(rag_eval.retrieved_chunk_ids) if rag_eval.retrieved_chunk_ids else []
+    )
+
+    return RAGEvaluationResponse(
+        id=str(rag_eval.id),
+        query=rag_eval.query,
+        expected_answer=rag_eval.expected_answer,
+        generated_answer=rag_eval.generated_answer,
+        retrieved_chunk_ids=chunk_ids,
+        faithfulness_score=rag_eval.faithfulness_score,
+        answer_relevance_score=rag_eval.answer_relevance_score,
+        context_precision_score=rag_eval.context_precision_score,
+        created_at=rag_eval.created_at,
+    )
+
+
+@rag_evaluation_router.get("/metrics")
+async def get_evaluation_metrics(
+    start_date: Optional[str] = Query(None, description="Start date (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date (YYYY-MM-DD)"),
+    db: Session = Depends(get_sync_db),
+):
+    """Get aggregated RAG evaluation metrics over time.
+
+    Computes average scores for faithfulness, answer relevance, and context
+    precision across all evaluations in the specified date range.
+
+    Args:
+        start_date: Optional start date filter (YYYY-MM-DD)
+        end_date: Optional end date filter (YYYY-MM-DD)
+        db: Database session
+
+    Returns:
+        Aggregated metrics including averages, counts, and score distributions
+    """
+    # Parse date filters
+    start_dt = None
+    end_dt = None
+
+    if start_date:
+        try:
+            start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid start_date format. Use YYYY-MM-DD",
+            )
+
+    if end_date:
+        try:
+            end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid end_date format. Use YYYY-MM-DD",
+            )
+
+    # Default to last 30 days if no dates provided
+    if not start_dt and not end_dt:
+        end_dt = datetime.utcnow()
+        start_dt = end_dt - timedelta(days=30)
+    elif not start_dt:
+        start_dt = end_dt - timedelta(days=30)
+    elif not end_dt:
+        end_dt = datetime.utcnow()
+
+    # Build query with date filters
+    query = db.query(RAGEvaluation).filter(
+        and_(RAGEvaluation.created_at >= start_dt, RAGEvaluation.created_at <= end_dt)
+    )
+
+    evaluations = query.all()
+
+    if not evaluations:
+        return {
+            "total_evaluations": 0,
+            "date_range": {"start": start_dt.isoformat(), "end": end_dt.isoformat()},
+            "metrics": {
+                "faithfulness": {"avg": None, "min": None, "max": None, "count": 0},
+                "answer_relevance": {"avg": None, "min": None, "max": None, "count": 0},
+                "context_precision": {
+                    "avg": None,
+                    "min": None,
+                    "max": None,
+                    "count": 0,
+                },
+            },
+        }
+
+    # Aggregate metrics
+    faithfulness_scores = [
+        e.faithfulness_score for e in evaluations if e.faithfulness_score is not None
+    ]
+    answer_relevance_scores = [
+        e.answer_relevance_score
+        for e in evaluations
+        if e.answer_relevance_score is not None
+    ]
+    context_precision_scores = [
+        e.context_precision_score
+        for e in evaluations
+        if e.context_precision_score is not None
+    ]
+
+    def compute_stats(scores):
+        if not scores:
+            return {"avg": None, "min": None, "max": None, "count": 0}
+        return {
+            "avg": sum(scores) / len(scores),
+            "min": min(scores),
+            "max": max(scores),
+            "count": len(scores),
+        }
+
+    return {
+        "total_evaluations": len(evaluations),
+        "date_range": {"start": start_dt.isoformat(), "end": end_dt.isoformat()},
+        "metrics": {
+            "faithfulness": compute_stats(faithfulness_scores),
+            "answer_relevance": compute_stats(answer_relevance_scores),
+            "context_precision": compute_stats(context_precision_scores),
+        },
+    }
+
+
+@rag_evaluation_router.get("/history")
 async def get_evaluation_history(
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(50, ge=1, le=100, description="Results per page"),

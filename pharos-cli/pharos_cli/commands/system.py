@@ -27,6 +27,12 @@ system_app = typer.Typer(
 )
 
 
+@system_app.callback()
+def system_callback():
+    """System management commands for Pharos CLI."""
+    pass
+
+
 def get_system_client() -> SystemClient:
     """Get a system client instance.
 

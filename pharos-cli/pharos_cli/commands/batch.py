@@ -66,6 +66,12 @@ batch_app = typer.Typer(
 )
 
 
+@batch_app.callback()
+def batch_callback():
+    """Batch operations for resources and collections."""
+    pass
+
+
 def get_resource_client() -> ResourceClient:
     """Get a ResourceClient instance."""
     config = load_config()

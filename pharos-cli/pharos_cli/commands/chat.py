@@ -25,6 +25,12 @@ chat_app = typer.Typer(
     add_completion=False,
 )
 
+
+@chat_app.callback()
+def chat_callback():
+    """Interactive chat with your knowledge base."""
+    pass
+
 # History file location
 HISTORY_DIR = Path(os.path.expanduser("~/.pharos"))
 HISTORY_FILE = HISTORY_DIR / "chat_history.txt"

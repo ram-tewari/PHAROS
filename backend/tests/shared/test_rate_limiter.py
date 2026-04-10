@@ -13,22 +13,11 @@ import time
 from unittest.mock import Mock, MagicMock, patch, AsyncMock
 
 from app.shared.rate_limiter import RateLimiter
-from app.config.settings import Settings
 
 
 # ============================================================================
 # Fixtures
 # ============================================================================
-
-
-@pytest.fixture
-def test_settings():
-    """Create test settings with known rate limits."""
-    return Settings(
-        RATE_LIMIT_FREE_TIER=100,
-        RATE_LIMIT_PREMIUM_TIER=1000,
-        RATE_LIMIT_ADMIN_TIER=0,
-    )
 
 
 @pytest.fixture
@@ -38,14 +27,14 @@ def mock_redis():
     redis_mock.get = Mock(return_value=None)
     redis_mock.incr = Mock(return_value=1)
     redis_mock.expire = Mock(return_value=True)
-    
+
     # Setup pipeline mock
     pipeline_mock = Mock()
     pipeline_mock.incr = Mock(return_value=pipeline_mock)
     pipeline_mock.expire = Mock(return_value=pipeline_mock)
     pipeline_mock.execute = Mock(return_value=[1, True])
     redis_mock.pipeline = Mock(return_value=pipeline_mock)
-    
+
     return redis_mock
 
 
@@ -59,11 +48,10 @@ def mock_cache(mock_redis):
 
 @pytest.fixture
 def rate_limiter(mock_cache, test_settings):
-    """Create a RateLimiter instance with mocked dependencies."""
-    with patch('app.shared.rate_limiter.get_settings', return_value=test_settings):
-        limiter = RateLimiter(cache=mock_cache)
-        limiter.settings = test_settings
-        return limiter
+    """Create a RateLimiter instance with test settings."""
+    limiter = RateLimiter(cache=mock_cache)
+    limiter.settings = test_settings
+    return limiter
 
 
 # ============================================================================
@@ -77,11 +65,11 @@ async def test_check_rate_limit_free_tier_first_request(rate_limiter, mock_redis
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     mock_redis.get.return_value = None
-    
+
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is True
     assert "X-RateLimit-Limit" in headers
     assert "X-RateLimit-Remaining" in headers
@@ -95,11 +83,11 @@ async def test_check_rate_limit_premium_tier(rate_limiter, mock_redis):
     user_id = 2
     tier = "premium"
     endpoint = "/api/search"
-    
+
     mock_redis.get.return_value = "50"
-    
+
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is True
     assert headers["X-RateLimit-Limit"] == "1000"
 
@@ -110,9 +98,9 @@ async def test_check_rate_limit_admin_tier_unlimited(rate_limiter):
     user_id = 3
     tier = "admin"
     endpoint = "/api/admin"
-    
+
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is True
     assert headers["X-RateLimit-Limit"] == "0"
 
@@ -123,12 +111,12 @@ async def test_check_rate_limit_exceeded(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     # At free tier limit
     mock_redis.get.return_value = "100"
-    
+
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is False
     assert headers["X-RateLimit-Remaining"] == "0"
 
@@ -139,12 +127,12 @@ async def test_check_rate_limit_sliding_window(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     # First request
     mock_redis.get.return_value = None
     allowed1, headers1 = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
     assert allowed1 is True
-    
+
     # Second request
     mock_redis.get.return_value = "1"
     allowed2, headers2 = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
@@ -157,11 +145,11 @@ async def test_check_rate_limit_ttl_set(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     mock_redis.get.return_value = None
-    
+
     await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     # Verify pipeline was used
     mock_redis.pipeline.assert_called()
 
@@ -197,7 +185,7 @@ def test_get_tier_limit_unknown(rate_limiter):
 def test_get_rate_limit_headers(rate_limiter):
     """Test rate limit header generation."""
     headers = rate_limiter._get_rate_limit_headers(100, 50, 1234567890)
-    
+
     assert headers["X-RateLimit-Limit"] == "100"
     assert headers["X-RateLimit-Remaining"] == "50"
     assert headers["X-RateLimit-Reset"] == "1234567890"
@@ -214,13 +202,13 @@ async def test_check_rate_limit_redis_error(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     # Simulate Redis error
     mock_redis.get.side_effect = Exception("Redis connection failed")
-    
+
     # Should fail open
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is True
     assert headers == {}
 
@@ -231,15 +219,15 @@ async def test_check_rate_limit_concurrent_requests(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     mock_redis.get.return_value = "50"
-    
+
     # Simulate concurrent requests
     results = []
     for _ in range(5):
         allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
         results.append(allowed)
-    
+
     # All should be allowed (under limit)
     assert all(results)
 
@@ -250,12 +238,12 @@ async def test_check_rate_limit_exactly_at_limit(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     # Exactly at limit
     mock_redis.get.return_value = "100"
-    
+
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is False
 
 
@@ -265,10 +253,10 @@ async def test_check_rate_limit_over_limit(rate_limiter, mock_redis):
     user_id = 1
     tier = "free"
     endpoint = "/api/resources"
-    
+
     # Over limit
     mock_redis.get.return_value = "150"
-    
+
     allowed, headers = await rate_limiter.check_rate_limit(user_id, tier, endpoint)
-    
+
     assert allowed is False

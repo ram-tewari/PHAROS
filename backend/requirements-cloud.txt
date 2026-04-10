@@ -1,0 +1,29 @@
+# Pharos Cloud Requirements
+# Cloud-specific dependencies (no GPU dependencies)
+
+-r requirements-base.txt
+
+# Cloud-specific packages
+# Note: No torch/transformers for GPU - use CPU-only embeddings
+
+# Sentence Transformers (CPU-only)
+sentence-transformers>=2.2.0
+
+# OpenAI (for cloud-based embeddings if needed)
+openai>=1.0.0
+
+# Anthropic (for cloud-based LLM if needed)
+anthropic>=0.7.0
+
+# Upstash Redis (for cloud task queue)
+upstash-redis>=0.15.0
+
+# Qdrant Cloud (for vector storage)
+qdrant-client>=1.7.0
+
+# Neon PostgreSQL (for serverless database)
+psycopg2-binary>=2.9.9
+
+# Additional cloud utilities
+boto3>=1.33.0  # AWS SDK (optional)
+google-cloud-storage>=2.14.0  # Google Cloud Storage (optional)

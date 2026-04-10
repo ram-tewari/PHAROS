@@ -26,6 +26,12 @@ backup_app = typer.Typer(
 )
 
 
+@backup_app.callback()
+def backup_callback():
+    """Backup and restore commands for Pharos CLI."""
+    pass
+
+
 def get_system_client() -> SystemClient:
     """Get a SystemClient instance."""
     config = load_config()

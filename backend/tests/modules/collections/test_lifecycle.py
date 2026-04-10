@@ -259,4 +259,3 @@ class TestCollectionLifecycle:
         )
 
         assert collection is None, "Collection should be deleted from database"
-

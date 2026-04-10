@@ -107,6 +107,7 @@ async def inactive_user(async_db_session):
 # authenticate_user() Tests
 # ============================================================================
 
+
 @pytest.mark.asyncio
 async def test_authenticate_user_with_valid_username(async_db_session, test_user):
     """Test authenticating user with valid username and password."""

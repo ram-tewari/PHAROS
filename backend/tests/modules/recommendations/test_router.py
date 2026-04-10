@@ -54,7 +54,7 @@ def test_get_recommendations_hybrid_success(client, db_session, test_user):
     db_session.commit()
 
     # Make request
-    response = client.get("/recommendations?limit=5&strategy=hybrid")
+    response = client.get("/api/recommendations?limit=5&strategy=hybrid")
 
     # Verify response
     assert response.status_code == 200
@@ -83,7 +83,7 @@ def test_get_recommendations_with_strategy_parameter(client, db_session, test_us
     strategies = ["collaborative", "content", "graph", "hybrid"]
 
     for strategy in strategies:
-        response = client.get(f"/recommendations?strategy={strategy}&limit=5")
+        response = client.get(f"/api/recommendations?strategy={strategy}&limit=5")
 
         # Should return 200 (may have empty recommendations for cold start)
         assert response.status_code == 200
@@ -103,7 +103,7 @@ def test_get_recommendations_with_invalid_strategy(client, db_session, test_user
     """
     # test_user is already created by fixture
 
-    response = client.get("/recommendations?strategy=invalid_strategy")
+    response = client.get("/api/recommendations?strategy=invalid_strategy")
 
     assert response.status_code == 400
     assert "Invalid strategy" in response.json()["detail"]
@@ -132,7 +132,7 @@ def test_get_recommendations_with_quality_filter(client, db_session, test_user):
 
     db_session.commit()
 
-    response = client.get("/recommendations?min_quality=0.6&limit=10")
+    response = client.get("/api/recommendations?min_quality=0.6&limit=10")
 
     assert response.status_code == 200
 
@@ -151,7 +151,7 @@ def test_get_recommendations_with_diversity_override(client, db_session, test_us
     """
     # test_user is already created by fixture
 
-    response = client.get("/recommendations?diversity=0.8&limit=5")
+    response = client.get("/api/recommendations?diversity=0.8&limit=5")
 
     assert response.status_code == 200
 
@@ -178,7 +178,7 @@ def test_get_recommendations_pagination(client, db_session, test_user):
 
     # Test different limits
     for limit in [5, 10, 20]:
-        response = client.get(f"/recommendations?limit={limit}")
+        response = client.get(f"/api/recommendations?limit={limit}")
 
         assert response.status_code == 200
 

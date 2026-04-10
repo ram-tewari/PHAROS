@@ -37,7 +37,7 @@ class TestTaxonomyCategoryFlow:
         }
 
         # Create category via API
-        response = client.post("/api/taxonomy/categories", json=category_data)
+        response = client.post("/taxonomy/categories", json=category_data)
 
         # Verify API response
         assert response.status_code in [200, 201], (
@@ -124,7 +124,7 @@ class TestResourceClassificationFlow:
 
             # Classify resource via API (new endpoint format)
             response = client.post(
-                f"/api/taxonomy/classify/{resource.id}",
+                f"/taxonomy/classify/{resource.id}",
                 params={"use_ml": True, "use_rules": False},
             )
 

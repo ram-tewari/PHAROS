@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Living Library is Neo Alexandria's document management interface, providing powerful tools for organizing, viewing, and analyzing academic papers, code files, and other documents.
+The Living Library is Pharos's document management interface, providing powerful tools for organizing, viewing, and analyzing academic papers, code files, and other documents.
 
 ## Features
 

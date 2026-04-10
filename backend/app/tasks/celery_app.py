@@ -142,6 +142,12 @@ celery_app.conf.beat_schedule = {
         "schedule": crontab(hour=4, minute=0),
         "options": {"queue": "default", "priority": 3},
     },
+    # Phase 6: Heuristic sieve - nightly at 1 AM
+    "heuristic-sieve-nightly": {
+        "task": "app.tasks.celery_tasks.heuristic_sieve_task",
+        "schedule": crontab(hour=1, minute=0),
+        "options": {"queue": "default", "priority": 5},
+    },
 }
 
 # Import tasks to register them with Celery

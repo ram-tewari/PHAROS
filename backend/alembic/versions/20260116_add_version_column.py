@@ -1,11 +1,11 @@
 """Add version column for optimistic locking
 
 Revision ID: 20260116_add_version_column
-Revises: 
+Revises:
 Create Date: 2026-01-16
 
-This migration adds a 'version' column to the resources table for 
-optimistic concurrency control. The version is incremented on each 
+This migration adds a 'version' column to the resources table for
+optimistic concurrency control. The version is incremented on each
 update to detect concurrent modifications.
 
 Related files:
@@ -37,12 +37,12 @@ def upgrade() -> None:
             server_default="1",
         ),
     )
-    
+
     print("Added 'version' column to resources table for optimistic locking")
 
 
 def downgrade() -> None:
     """Remove version column from resources table."""
     op.drop_column("resources", "version")
-    
+
     print("Removed 'version' column from resources table")

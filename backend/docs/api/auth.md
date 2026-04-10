@@ -212,8 +212,30 @@ Google OAuth2 callback endpoint (handled automatically).
 - `code` - Authorization code from Google
 - `state` - CSRF protection token
 
-**Response (200 OK):**
-Redirects to frontend with tokens in URL.
+**Response (302 Found):**
+Redirects to frontend with tokens in **HTTP-only cookies** (not URL parameters).
+
+**Security Features:**
+- Access token and refresh token set in `HttpOnly` cookies
+- `Secure` flag set in production (HTTPS only)
+- `SameSite=Lax` to prevent CSRF attacks
+- Automatic token management by the browser
+
+**Cookie Details:**
+| Cookie | Max-Age | Security |
+|--------|---------|----------|
+| `access_token` | 30 minutes | HttpOnly, Secure, SameSite=Lax |
+| `refresh_token` | 7 days | HttpOnly, Secure, SameSite=Lax |
+
+**Redirect Flow:**
+```
+1. User completes Google authorization
+2. Backend exchanges code for tokens
+3. Backend sets tokens in HTTP-only cookies
+4. Backend redirects to: {FRONTEND_URL}/auth/success
+5. Frontend receives cookies automatically
+6. Subsequent API requests include cookies
+```
 
 **Setup:**
 1. Create OAuth2 credentials at [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
@@ -223,6 +245,7 @@ Redirects to frontend with tokens in URL.
 GOOGLE_CLIENT_ID=your-client-id
 GOOGLE_CLIENT_SECRET=your-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
+FRONTEND_URL=http://localhost:3000
 ```
 
 ---
@@ -255,8 +278,30 @@ GitHub OAuth2 callback endpoint (handled automatically).
 - `code` - Authorization code from GitHub
 - `state` - CSRF protection token
 
-**Response (200 OK):**
-Redirects to frontend with tokens in URL.
+**Response (302 Found):**
+Redirects to frontend with tokens in **HTTP-only cookies** (not URL parameters).
+
+**Security Features:**
+- Access token and refresh token set in `HttpOnly` cookies
+- `Secure` flag set in production (HTTPS only)
+- `SameSite=Lax` to prevent CSRF attacks
+- Automatic token management by the browser
+
+**Cookie Details:**
+| Cookie | Max-Age | Security |
+|--------|---------|----------|
+| `access_token` | 30 minutes | HttpOnly, Secure, SameSite=Lax |
+| `refresh_token` | 7 days | HttpOnly, Secure, SameSite=Lax |
+
+**Redirect Flow:**
+```
+1. User completes GitHub authorization
+2. Backend exchanges code for tokens
+3. Backend sets tokens in HTTP-only cookies
+4. Backend redirects to: {FRONTEND_URL}/auth/success
+5. Frontend receives cookies automatically
+6. Subsequent API requests include cookies
+```
 
 **Setup:**
 1. Create OAuth App at [GitHub Developer Settings](https://github.com/settings/developers)
@@ -266,6 +311,7 @@ Redirects to frontend with tokens in URL.
 GITHUB_CLIENT_ID=your-client-id
 GITHUB_CLIENT_SECRET=your-client-secret
 GITHUB_REDIRECT_URI=http://localhost:8000/auth/github/callback
+FRONTEND_URL=http://localhost:3000
 ```
 
 ---
@@ -308,6 +354,40 @@ GITHUB_REDIRECT_URI=http://localhost:8000/auth/github/callback
 ```
 
 **Note:** Refresh tokens have minimal claims and longer expiration.
+
+## Security Enhancements (Phase 21.5)
+
+### Cookie-Based Token Transmission
+
+As of Phase 21.5, OAuth2 callbacks transmit tokens via **HTTP-only cookies** instead of URL parameters. This provides significant security improvements:
+
+| Aspect | Old (URL Parameters) | New (HTTP-only Cookies) |
+|--------|---------------------|------------------------|
+| Token Exposure | Visible in browser history | Never exposed to JavaScript |
+| Referer Header | Tokens leaked to third parties | Tokens never sent |
+| Server Logs | Tokens logged in access logs | Tokens in secure cookies |
+| XSS Protection | Tokens accessible via JS | HttpOnly blocks JS access |
+| CSRF Protection | None (tokens in URL) | SameSite=Lax prevents CSRF |
+
+### Cookie Security Attributes
+
+All authentication cookies include the following security attributes:
+
+- **HttpOnly**: Prevents JavaScript access, protecting against XSS attacks
+- **Secure**: Cookie only transmitted over HTTPS connections
+- **SameSite=Lax**: Prevents CSRF attacks while allowing normal navigation
+- **Max-Age**: Automatic expiration (access: 30min, refresh: 7 days)
+
+### Frontend Integration
+
+Frontend applications should:
+
+1. Use `credentials: 'include'` for all API requests
+2. Handle OAuth2 callbacks at `/auth/callback` or `/auth/success`
+3. Redirect to authenticated area after successful callback
+4. Implement proper logout that clears local state
+
+See [Frontend Cookie Authentication Guide](../../frontend/docs/guides/cookie-authentication.md) for detailed implementation instructions.
 
 ---
 

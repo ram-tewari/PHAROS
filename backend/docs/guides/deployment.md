@@ -212,6 +212,31 @@ curl https://pharos.onrender.com/api/v1/ingestion/worker/status
 
 ## Security
 
+### Required Secrets
+
+**Critical Security Configuration**:
+
+The following environment variables must be set in production:
+
+| Variable | Description | Requirements |
+|----------|-------------|--------------|
+| `JWT_SECRET_KEY` | JWT signing key | Minimum 32 characters, cryptographically random |
+| `POSTGRES_PASSWORD` | PostgreSQL password | Strong password, minimum 16 characters |
+| `PHAROS_ADMIN_TOKEN` | API ingestion token | Minimum 32 characters, cryptographically random |
+
+**Generating Secure Secrets**:
+
+```bash
+# Generate JWT secret (Linux/macOS)
+openssl rand -hex 32
+
+# Generate JWT secret (Python)
+python -c "import secrets; print(secrets.token_hex(32))"
+
+# Generate admin token
+python -c "import secrets; print(secrets.token_urlsafe(32))"
+```
+
 ### Authentication
 
 **Ingestion Endpoint**:
@@ -231,6 +256,7 @@ curl https://pharos.onrender.com/api/v1/ingestion/worker/status
 3. **Use HTTPS** for all external services
 4. **Monitor logs** for authentication failures
 5. **Limit queue size** to prevent abuse
+6. **Validate secrets** at startup - app will fail if secrets are not set in production
 
 ## Performance
 

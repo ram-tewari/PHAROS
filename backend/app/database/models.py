@@ -301,13 +301,47 @@ class DocumentChunk(Base):
     )
 
     # Content and metadata
-    content: Mapped[str] = mapped_column(Text, nullable=False)
+    # Nullable: code chunks omit raw content — content lives on GitHub.
+    # Document (PDF) chunks still populate this field.
+    content: Mapped[str | None] = mapped_column(Text, nullable=True)
     chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
 
     # Flexible metadata supporting both PDF and code
     # For PDFs: {"page": 1, "coordinates": [x, y]}
     # For Code: {"start_line": 10, "end_line": 25, "function_name": "calculate_loss", "file_path": "src/model.py"}
     chunk_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
+    # ── Hybrid GitHub Storage (Phase 2) ───────────────────────────────────
+    # When is_remote=True the raw source lives on GitHub; content is NULL.
+    # Fetch on-demand via GitHubFetcher using these pointer fields.
+
+    # Flag distinguishing remote (code) chunks from inline (PDF) chunks
+    is_remote: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+
+    # Full GitHub raw URL, e.g.
+    # https://raw.githubusercontent.com/owner/repo/SHA/path/to/file.py
+    github_uri: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+
+    # Pinned commit SHA or branch name for reproducible fetches
+    branch_reference: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # Source line span within the file (1-based, inclusive)
+    start_line: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    end_line: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # AST symbol information
+    ast_node_type: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )  # "function", "class", "method", "module"
+    symbol_name: Mapped[str | None] = mapped_column(
+        String(512), nullable=True
+    )  # fully-qualified name, e.g. "auth.oauth.handle_oauth_callback"
+
+    # Semantic summary used for embedding generation (signature + docstring).
+    # Stored so the embedding can be re-generated without re-fetching GitHub.
+    semantic_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(
@@ -393,35 +427,43 @@ class ChunkLink(Base):
 class PlanningSession(Base):
     """
     Stores multi-hop planning sessions for iterative refinement.
-    
+
     Part of the AI Planning infrastructure.
     """
+
     __tablename__ = "planning_sessions"
-    
+
     # Primary key
     id: Mapped[str] = mapped_column(String, primary_key=True)  # UUID string
-    
+
     # Planning data
     task_description: Mapped[str] = mapped_column(Text, nullable=False)
     context: Mapped[dict] = mapped_column(JSON, nullable=False)
-    steps: Mapped[list] = mapped_column(JSON, nullable=False)  # List of PlanningStep dicts
+    steps: Mapped[list] = mapped_column(
+        JSON, nullable=False
+    )  # List of PlanningStep dicts
     dependencies: Mapped[list] = mapped_column(JSON, nullable=False)  # List of tuples
-    status: Mapped[str] = mapped_column(String(50), nullable=False)  # "active", "completed", "failed"
-    
+    status: Mapped[str] = mapped_column(
+        String(50), nullable=False
+    )  # "active", "completed", "failed"
+
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp()
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
     )
-    
+
     # Indexes
     __table_args__ = (
         Index("idx_planning_status", "status"),
         Index("idx_planning_created", "created_at"),
     )
-    
+
     def __repr__(self) -> str:
         return f"<PlanningSession(id={self.id!r}, status={self.status!r}, steps={len(self.steps)})>"
 
@@ -831,9 +873,7 @@ class GraphCentralityCache(Base):
         index=True,
     )
     in_degree: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
-    out_degree: Mapped[int] = mapped_column(
-        Integer, nullable=False, server_default="0"
-    )
+    out_degree: Mapped[int] = mapped_column(Integer, nullable=False, server_default="0")
     betweenness: Mapped[float] = mapped_column(
         Float, nullable=False, server_default="0.0"
     )
@@ -843,7 +883,9 @@ class GraphCentralityCache(Base):
     )
 
     # Relationship
-    resource: Mapped["Resource"] = relationship("Resource", back_populates="centrality_cache")
+    resource: Mapped["Resource"] = relationship(
+        "Resource", back_populates="centrality_cache"
+    )
 
     __table_args__ = (
         Index("idx_centrality_resource", "resource_id"),
@@ -878,7 +920,9 @@ class CommunityAssignment(Base):
     )
 
     # Relationship
-    resource: Mapped["Resource"] = relationship("Resource", back_populates="community_assignments")
+    resource: Mapped["Resource"] = relationship(
+        "Resource", back_populates="community_assignments"
+    )
 
     __table_args__ = (
         Index("idx_community_resource", "resource_id"),
@@ -1718,6 +1762,141 @@ class RetrainingRun(Base):
         )
 
 
+# ============================================================================
+# Pattern Learning Engine Models
+# ============================================================================
+
+
+class DeveloperProfileRecord(Base):
+    """
+    Persisted developer coding profile generated by the Pattern Learning Engine.
+
+    Stores the JSON profile produced by AST parsing and Git history analysis
+    for a given repository and user.
+    """
+
+    __tablename__ = "developer_profiles"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+
+    # Link to user who triggered the analysis
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    # Repository identification
+    repository_url: Mapped[str] = mapped_column(String(1024), nullable=False)
+    repository_name: Mapped[str] = mapped_column(String(255), nullable=False, default="")
+    branch: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+    # The full JSON profile (DeveloperProfile schema)
+    profile_data: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    # Analysis metadata
+    total_files_analyzed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_commits_analyzed: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    languages_detected: Mapped[str | None] = mapped_column(
+        Text, nullable=True
+    )  # JSON array as text
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    # Indexes
+    __table_args__ = (
+        Index("ix_developer_profiles_user_repo", "user_id", "repository_url"),
+    )
+
+    # Relationships
+    user: Mapped["User"] = relationship("User", backref="developer_profiles")
+
+    def __repr__(self) -> str:
+        return (
+            f"<DeveloperProfileRecord(repo={self.repository_name!r}, "
+            f"user_id={self.user_id!r})>"
+        )
+
+
+# ============================================================================
+# Feedback Loop: Proposed Rules
+# ============================================================================
+
+
+class RuleStatus(str, enum.Enum):
+    """Status lifecycle for auto-extracted coding rules."""
+
+    PENDING_REVIEW = "PENDING_REVIEW"
+    ACTIVE = "ACTIVE"
+    REJECTED = "REJECTED"
+
+
+class ProposedRule(Base):
+    """
+    A coding rule extracted by the local LLM from a surviving Git diff.
+
+    Created by the local extraction worker and triaged via the CLI.
+    Active rules feed into the context assembly pipeline.
+    """
+
+    __tablename__ = "proposed_rules"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+
+    # Source provenance
+    repository: Mapped[str] = mapped_column(String(1024), nullable=False)
+    commit_sha: Mapped[str] = mapped_column(String(40), nullable=False)
+    file_path: Mapped[str] = mapped_column(String(1024), nullable=False)
+
+    # The raw diff that triggered extraction
+    diff_payload: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # LLM-extracted rule (JSON schema)
+    rule_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    rule_description: Mapped[str] = mapped_column(Text, nullable=False)
+    rule_schema: Mapped[dict] = mapped_column(JSON, nullable=False)
+
+    # Confidence score from the local LLM (0.0–1.0)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+
+    # Review lifecycle
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default=RuleStatus.PENDING_REVIEW.value
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    __table_args__ = (
+        Index("ix_proposed_rules_status", "status"),
+        Index("ix_proposed_rules_repo_sha", "repository", "commit_sha"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<ProposedRule(name={self.rule_name!r}, status={self.status!r})>"
+
+
 # Export all models for easy importing
 __all__ = [
     # Enums
@@ -1760,4 +1939,9 @@ __all__ = [
     "ABTestExperiment",
     "PredictionLog",
     "RetrainingRun",
+    # Pattern learning engine models
+    "DeveloperProfileRecord",
+    # Feedback loop models
+    "RuleStatus",
+    "ProposedRule",
 ]

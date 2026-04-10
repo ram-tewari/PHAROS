@@ -8,6 +8,7 @@ represents a different approach to generating recommendations.
 Based on Fowler's "Replace Conditional with Polymorphism" refactoring technique.
 """
 
+import json
 from abc import ABC, abstractmethod
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
@@ -261,9 +262,14 @@ class ContentBasedStrategy(RecommendationStrategy):
             similarities = []
             for resource in candidates:
                 if resource.embedding:
-                    similarity = self._cosine_similarity(
-                        user_profile, resource.embedding
-                    )
+                    try:
+                        if isinstance(resource.embedding, str):
+                            resource_emb = json.loads(resource.embedding)
+                        else:
+                            resource_emb = resource.embedding
+                    except (json.JSONDecodeError, TypeError):
+                        continue
+                    similarity = self._cosine_similarity(user_profile, resource_emb)
                     similarities.append((str(resource.id), similarity))
 
             # Sort by similarity and take top-k
@@ -328,7 +334,14 @@ class ContentBasedStrategy(RecommendationStrategy):
             )
 
             if resource and resource.embedding:
-                embeddings.append(resource.embedding)
+                try:
+                    if isinstance(resource.embedding, str):
+                        resource_emb = json.loads(resource.embedding)
+                    else:
+                        resource_emb = resource.embedding
+                except (json.JSONDecodeError, TypeError):
+                    continue
+                embeddings.append(resource_emb)
                 # Weight by interaction type (could be improved)
                 weight = self._get_interaction_weight(interaction.interaction_type)
                 weights.append(weight)

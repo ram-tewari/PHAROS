@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Resources module is the core domain module responsible for managing resource entities in Neo Alexandria. It handles URL ingestion, content processing, metadata extraction, and the complete resource lifecycle from creation to deletion.
+The Resources module is the core domain module responsible for managing resource entities in Pharos. It handles URL ingestion, content processing, metadata extraction, and the complete resource lifecycle from creation to deletion.
 
 ## Purpose
 

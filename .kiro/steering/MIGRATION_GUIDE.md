@@ -68,7 +68,7 @@ Benefit: Load only what's needed
 **New**: Read `.kiro/steering/product.md`
 
 Examples:
-- "What is Neo Alexandria?" → `product.md`
+- "What is Pharos?" → `product.md`
 - "Who are the users?" → `product.md`
 - "What are we NOT building?" → `product.md`
 

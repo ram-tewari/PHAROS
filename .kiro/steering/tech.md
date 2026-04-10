@@ -2,11 +2,11 @@
 
 ## Architecture
 
-**Type**: Hybrid Edge-Cloud with Modular Monolith
+**Type**: Hybrid Edge-Cloud with Modular Monolith + LLM Memory Layer
 **Pattern**: Vertical slices with shared kernel
-**Deployment**: Cloud API (Render) + Edge Worker (Local GPU)
-**Status**: Production (Phase 19 Complete)
-**Focus**: Code intelligence and research management for developers
+**Deployment**: Cloud API (Render) + Edge Worker (Local GPU) + LLM Integration (Ronin)
+**Status**: Production (Phase 4 Complete, Phase 5-9 Planned)
+**Focus**: Code intelligence, research management, and LLM context provision for developers
 
 ### Architectural Principles
 
@@ -14,14 +14,21 @@
 2. **Event-Driven Communication**: Modules communicate via event bus (no direct imports)
 3. **Shared Kernel**: Cross-cutting concerns (database, cache, embeddings, AI) in shared layer
 4. **Zero Circular Dependencies**: Enforced by module isolation rules
-5. **API-First Design**: All functionality exposed via REST API
+5. **API-First Design**: All functionality exposed via REST API for LLM and IDE integration
+6. **Hybrid Storage**: Metadata + embeddings local, code fetched from GitHub on-demand (17x storage reduction)
+7. **Self-Improving**: Pattern learning engine extracts knowledge from code history
 
 ### Module Structure
 
-**13 Domain Modules**:
+**14 Domain Modules** (Standalone Pharos):
 - Annotations, Authority, Collections, Curation, Graph
 - Monitoring, Quality, Recommendations, Resources, Scholarly
-- Search, Taxonomy
+- Search, Taxonomy, **PDF Ingestion** (Phase 4)
+
+**Planned Modules** (Pharos + Ronin Integration):
+- **Context Retrieval** (Phase 7) - Assemble context for LLM queries
+- **Pattern Learning** (Phase 6) - Extract patterns from code history
+- **GitHub Integration** (Phase 5) - Hybrid storage with on-demand code fetching
 
 **Each Module Contains**:
 - `router.py` - FastAPI endpoints
@@ -37,6 +44,7 @@
 - Vector embeddings
 - AI operations (summarization, extraction)
 - Redis caching
+- GitHub API client (Phase 5)
 
 ### Event-Driven Communication
 
@@ -53,6 +61,7 @@
 - Curation: `curation.reviewed`, `curation.approved`
 - Metadata: `metadata.extracted`, `equations.parsed`, `tables.extracted`
 - Advanced RAG: `resource.chunked`, `resource.chunking_failed`
+- **PDF Ingestion** (Phase 4): `pdf.ingested`, `pdf.annotated`, `pdf.linked_to_code`
 
 **Event Flow Example**:
 ```
@@ -62,6 +71,12 @@
 4. Scholarly module subscribes → extracts metadata
 5. Graph module subscribes → extracts citations
 6. All happen asynchronously, no blocking
+
+Phase 4 Example:
+1. User uploads PDF → pdf_ingestion module emits pdf.ingested
+2. User annotates chunk → emits pdf.annotated
+3. Graph module subscribes → creates concept entities
+4. Graph module links PDF to code → emits pdf.linked_to_code
 ```
 
 ## Backend Stack
@@ -71,6 +86,34 @@
 - **FastAPI** - Web framework for REST API
 - **Uvicorn** - ASGI server
 - **Pydantic** - Data validation and serialization
+
+### Pharos + Ronin Integration Stack
+
+**LLM Integration**:
+- **API-First Design**: All Pharos features accessible via REST API
+- **Context Assembly**: Package code + papers + patterns for LLM consumption
+- **Pattern Learning**: Extract successful patterns from code history
+- **Hybrid Storage**: Metadata local, code fetched from GitHub on-demand
+
+**GitHub Integration** (Phase 5):
+- **PyGithub** - GitHub API client for code fetching
+- **GitHub REST API** - Fetch file contents, repository metadata
+- **Rate Limiting**: 5000 requests/hour (authenticated)
+- **Caching**: Redis cache for fetched code (1 hour TTL)
+
+**Pattern Learning Engine** (Phase 6):
+- **AST Analysis**: Extract structural patterns from code
+- **Style Profiler**: Learn naming conventions, error handling, preferences
+- **Success Tracking**: Identify high-quality code patterns (quality > 0.8)
+- **Failure Analysis**: Track bugs, refactorings, and fixes
+
+**Context Retrieval Pipeline** (Phase 7):
+- **Semantic Search**: HNSW vector search (<250ms)
+- **GraphRAG Traversal**: Multi-hop graph queries (<200ms)
+- **Pattern Matching**: Find similar code from history (<100ms)
+- **Research Retrieval**: Relevant papers with annotations (<150ms)
+- **Code Fetching**: On-demand from GitHub (<100ms, cached)
+- **Total Time**: <800ms for complete context assembly
 
 ### Database
 - **SQLite** - Development and small deployments
@@ -85,6 +128,14 @@
 - **FAISS** - Vector similarity search
 - **spaCy** - NLP processing
 - **Tree-Sitter** - Multi-language code parsing (AST generation)
+- **PyMuPDF** (Phase 4) - PDF extraction with academic fidelity
+
+### Document Processing (Phase 4)
+- **PyMuPDF (fitz)** - PDF text extraction preserving structure
+- **Equation Detection** - Heuristic detection of mathematical equations
+- **Table Detection** - Grid structure and table extraction
+- **Figure Detection** - Image block identification
+- **Coordinate Preservation** - Page-level bounding boxes for all elements
 
 ### Task Processing
 - **Celery** - Async task queue
@@ -151,12 +202,18 @@
 - 10K+ concurrent embeddings
 - 1K+ collections per user
 - 100+ requests/second
+- **1000+ codebases indexed** (Pharos + Ronin)
+- **10K+ codebases supported** (with hybrid GitHub storage)
+- **<1s context retrieval** for LLM queries
+- **<2s pattern learning** from code history
 
 ### Resource Limits
 - Memory: 4GB minimum, 8GB recommended
 - Storage: 10GB minimum for models and data
+- **Storage (Hybrid)**: 2GB for 1000 codebases (metadata + embeddings only)
 - CPU: 2+ cores recommended
 - GPU: Optional, improves ML performance 10x
+- **Network**: Required for GitHub API access (hybrid storage mode)
 
 ## Database Strategy
 
@@ -338,6 +395,13 @@ GRAPH_WEIGHT_CLASSIFICATION=0.1
 
 # Testing
 TEST_DATABASE_URL=sqlite:///:memory:
+
+# Pharos + Ronin Integration (Phase 5+)
+GITHUB_TOKEN=ghp_xxxxxxxxxxxxx  # For hybrid storage
+GITHUB_CACHE_TTL=3600  # 1 hour
+CONTEXT_RETRIEVAL_TIMEOUT=1000  # 1 second
+PATTERN_LEARNING_TIMEOUT=2000  # 2 seconds
+MAX_CODEBASES=1000  # Limit for hybrid storage
 ```
 
 ## API Standards

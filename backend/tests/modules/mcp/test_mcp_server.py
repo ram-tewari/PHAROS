@@ -25,7 +25,7 @@ class TestToolRegistry:
     def test_register_tool(self):
         """Test registering a tool"""
         registry = ToolRegistry()
-        
+
         registry.register(
             name="test_tool",
             description="Test tool",
@@ -33,7 +33,7 @@ class TestToolRegistry:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {"success": True},
         )
-        
+
         tool = registry.get_tool("test_tool")
         assert tool is not None
         assert tool["definition"].name == "test_tool"
@@ -42,7 +42,7 @@ class TestToolRegistry:
     def test_list_tools(self):
         """Test listing all tools"""
         registry = ToolRegistry()
-        
+
         registry.register(
             name="tool1",
             description="Tool 1",
@@ -50,7 +50,7 @@ class TestToolRegistry:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         registry.register(
             name="tool2",
             description="Tool 2",
@@ -58,7 +58,7 @@ class TestToolRegistry:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         tools = registry.list_tools()
         assert len(tools) == 2
         assert tools[0].name == "tool1"
@@ -67,7 +67,7 @@ class TestToolRegistry:
     def test_validate_valid_arguments(self):
         """Test validating valid arguments"""
         registry = ToolRegistry()
-        
+
         registry.register(
             name="test_tool",
             description="Test tool",
@@ -82,14 +82,14 @@ class TestToolRegistry:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         # Should not raise
         registry.validate_arguments("test_tool", {"name": "John", "age": 30})
 
     def test_validate_invalid_arguments(self):
         """Test validating invalid arguments"""
         registry = ToolRegistry()
-        
+
         registry.register(
             name="test_tool",
             description="Test tool",
@@ -103,7 +103,7 @@ class TestToolRegistry:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         # Should raise ValueError
         with pytest.raises(ValueError):
             registry.validate_arguments("test_tool", {"age": 30})
@@ -121,10 +121,11 @@ class TestMCPServer:
     @pytest.mark.asyncio
     async def test_invoke_valid_tool(self, mcp_server):
         """Test invoking a valid tool"""
+
         # Register a test tool
         async def test_handler(args, ctx):
             return {"result": "success"}
-        
+
         mcp_server.tool_registry.register(
             name="test_tool",
             description="Test tool",
@@ -132,14 +133,14 @@ class TestMCPServer:
             output_schema={"type": "object"},
             handler=test_handler,
         )
-        
+
         # Invoke the tool
         result = await mcp_server.invoke_tool(
             session_id=None,
             tool_name="test_tool",
             arguments={},
         )
-        
+
         assert result.success is True
         assert result.result == {"result": "success"}
         assert result.error is None
@@ -152,7 +153,7 @@ class TestMCPServer:
             tool_name="nonexistent_tool",
             arguments={},
         )
-        
+
         assert result.success is False
         assert result.error is not None
         assert "not found" in result.error.lower()
@@ -174,14 +175,14 @@ class TestMCPServer:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         # Invoke with invalid arguments
         result = await mcp_server.invoke_tool(
             session_id=None,
             tool_name="test_tool",
             arguments={},  # Missing required_field
         )
-        
+
         assert result.success is False
         assert result.error is not None
 
@@ -191,7 +192,7 @@ class TestMCPServer:
             user_id=None,
             context={"key": "value"},
         )
-        
+
         assert session.session_id is not None
         assert session.context == {"key": "value"}
         assert session.status == "active"
@@ -203,10 +204,10 @@ class TestMCPServer:
             user_id=None,
             context={"key": "value"},
         )
-        
+
         # Retrieve the session
         retrieved_session = mcp_server.get_session(created_session.session_id)
-        
+
         assert retrieved_session is not None
         assert retrieved_session.session_id == created_session.session_id
         assert retrieved_session.context == {"key": "value"}
@@ -223,11 +224,11 @@ class TestMCPServer:
             user_id=None,
             context={},
         )
-        
+
         # Close the session
         success = mcp_server.close_session(created_session.session_id)
         assert success is True
-        
+
         # Verify session is closed
         retrieved_session = mcp_server.get_session(created_session.session_id)
         assert retrieved_session.status == "closed"
@@ -247,7 +248,7 @@ class TestMCPServer:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         mcp_server.tool_registry.register(
             name="tool2",
             description="Tool 2",
@@ -255,6 +256,6 @@ class TestMCPServer:
             output_schema={"type": "object"},
             handler=lambda args, ctx: {},
         )
-        
+
         tools = mcp_server.list_tools()
         assert len(tools) == 2

@@ -4,7 +4,7 @@ Resource management endpoints for content ingestion, retrieval, and curation.
 
 ## Overview
 
-The Resources API provides CRUD operations for managing knowledge resources. Resources are the core content units in Neo Alexandria, representing articles, papers, documents, and other knowledge artifacts.
+The Resources API provides CRUD operations for managing knowledge resources. Resources are the core content units in Pharos, representing articles, papers, documents, and other knowledge artifacts.
 
 ## Endpoints
 

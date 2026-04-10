@@ -32,7 +32,9 @@ class PageParams(BaseModel):
 
     page: int = Field(default=1, ge=1, description="Page number (1-indexed)")
     per_page: int = Field(default=25, ge=1, le=100, description="Items per page")
-    limit: int = Field(default=25, ge=1, le=100, description="Items per page (alias for per_page)")
+    limit: int = Field(
+        default=25, ge=1, le=100, description="Items per page (alias for per_page)"
+    )
     offset: int = Field(default=0, ge=0, description="Offset for pagination")
 
 
@@ -48,14 +50,18 @@ class SortParams(BaseModel):
 
     sort_by: Optional[str] = Field(default=None, description="Field to sort by")
     sort_order: SortOrder = Field(default=SortOrder.DESC, description="Sort order")
-    sort_dir: Optional[str] = Field(default="desc", description="Sort direction (alias for sort_order)")
+    sort_dir: Optional[str] = Field(
+        default="desc", description="Sort direction (alias for sort_order)"
+    )
 
 
 class ResourceFilters(BaseModel):
     """Resource filtering parameters."""
 
     q: Optional[str] = Field(default=None, description="Search query")
-    classification_code: Optional[str] = Field(default=None, description="Filter by classification code")
+    classification_code: Optional[str] = Field(
+        default=None, description="Filter by classification code"
+    )
     type: Optional[str] = Field(default=None, description="Filter by resource type")
     format: Optional[str] = Field(default=None, description="Filter by format")
     language: Optional[str] = Field(default=None, description="Filter by language")
@@ -65,13 +71,25 @@ class ResourceFilters(BaseModel):
     min_quality: Optional[float] = Field(
         default=None, ge=0.0, le=1.0, description="Minimum quality score"
     )
-    created_from: Optional[str] = Field(default=None, description="Filter by created date from")
-    created_to: Optional[str] = Field(default=None, description="Filter by created date to")
-    updated_from: Optional[str] = Field(default=None, description="Filter by updated date from")
-    updated_to: Optional[str] = Field(default=None, description="Filter by updated date to")
+    created_from: Optional[str] = Field(
+        default=None, description="Filter by created date from"
+    )
+    created_to: Optional[str] = Field(
+        default=None, description="Filter by created date to"
+    )
+    updated_from: Optional[str] = Field(
+        default=None, description="Filter by updated date from"
+    )
+    updated_to: Optional[str] = Field(
+        default=None, description="Filter by updated date to"
+    )
     subject: Optional[str] = Field(default=None, description="Filter by subject")
-    subject_any: Optional[list[str]] = Field(default=None, description="Filter by any of these subjects")
-    subject_all: Optional[list[str]] = Field(default=None, description="Filter by all of these subjects")
+    subject_any: Optional[list[str]] = Field(
+        default=None, description="Filter by any of these subjects"
+    )
+    subject_all: Optional[list[str]] = Field(
+        default=None, description="Filter by all of these subjects"
+    )
     creator: Optional[str] = Field(default=None, description="Filter by creator")
 
 

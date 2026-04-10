@@ -60,10 +60,14 @@ class ValueObject(BaseDomainObject):
         pass
 
 
-def validate_range(value: float, min_value: float, max_value: float, field_name: str) -> None:
+def validate_range(
+    value: float, min_value: float, max_value: float, field_name: str
+) -> None:
     """Validate value is within range."""
     if not min_value <= value <= max_value:
-        raise ValueError(f"{field_name} must be between {min_value} and {max_value}, got {value}")
+        raise ValueError(
+            f"{field_name} must be between {min_value} and {max_value}, got {value}"
+        )
 
 
 # Quality dimension weights for overall score calculation

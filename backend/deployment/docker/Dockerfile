@@ -1,4 +1,4 @@
-# Neo Alexandria 2.0 - Production Docker Configuration
+# Pharos 2.0 - Production Docker Configuration
 FROM python:3.11-slim
 
 # Set environment variables

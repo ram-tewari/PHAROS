@@ -208,8 +208,11 @@ class TestDatabaseTypeDetection:
 class TestDatabaseInitialization:
     """Test database initialization behavior."""
 
-    def test_init_database_uses_settings_by_default(self):
+    def test_init_database_uses_settings_by_default(self, monkeypatch):
         """Test that init_database uses settings.get_database_url() when no URL provided."""
+        # Ensure DATABASE_URL env var doesn't short-circuit the settings lookup.
+        monkeypatch.delenv("DATABASE_URL", raising=False)
+
         # This test verifies the integration with settings
         with patch("app.config.settings.get_settings") as mock_get_settings:
             mock_settings = MagicMock()

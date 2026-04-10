@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 # Try to import CrossEncoder from sentence-transformers
 try:
     from sentence_transformers import CrossEncoder
+
     CROSSENCODER_AVAILABLE = True
 except ImportError:
     CROSSENCODER_AVAILABLE = False
@@ -46,13 +47,13 @@ class RerankingService:
         """Lazy load the cross-encoder model on first use."""
         if self._model_loaded:
             return
-        
+
         self._model_loaded = True
-        
+
         if not CROSSENCODER_AVAILABLE:
             logger.warning("CrossEncoder not available, reranking will be skipped")
             return
-            
+
         try:
             logger.info(f"Loading cross-encoder model: {self.model_name}")
             self.model = CrossEncoder(self.model_name, max_length=512)
@@ -116,14 +117,10 @@ class RerankingService:
 
             # Compute relevance scores using cross-encoder
             scores = self.model.predict(pairs)
-            
+
             # Combine IDs with new scores and sort by score descending
-            reranked = sorted(
-                zip(valid_ids, scores), 
-                key=lambda x: x[1], 
-                reverse=True
-            )
-            
+            reranked = sorted(zip(valid_ids, scores), key=lambda x: x[1], reverse=True)
+
             # Convert scores to float for consistency
             reranked = [(rid, float(score)) for rid, score in reranked]
 
@@ -133,4 +130,3 @@ class RerankingService:
             logger.error(f"Error during reranking: {e}")
             # Fall back to original ranking
             return candidates[:top_k] if top_k else candidates
-

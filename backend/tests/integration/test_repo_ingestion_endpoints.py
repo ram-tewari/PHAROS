@@ -15,6 +15,18 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 from fastapi.testclient import TestClient
 
+try:
+    import celery  # noqa: F401
+
+    CELERY_AVAILABLE = True
+except ImportError:
+    CELERY_AVAILABLE = False
+
+pytestmark = pytest.mark.skipif(
+    not CELERY_AVAILABLE,
+    reason="celery is not installed; repo ingestion tests require celery",
+)
+
 
 @pytest.mark.integration
 class TestRepoIngestionEndpoints:
@@ -182,7 +194,9 @@ class TestRepoIngestionEndpoints:
         test_file.write_text("test content")
 
         # Make API request
-        response = client.post("/api/resources/ingest-repo", json={"path": str(test_file)})
+        response = client.post(
+            "/api/resources/ingest-repo", json={"path": str(test_file)}
+        )
 
         # Verify HTTP response status
         assert response.status_code == 400, (

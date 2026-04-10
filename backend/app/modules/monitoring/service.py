@@ -193,7 +193,7 @@ class MonitoringService:
         """
         try:
             from sqlalchemy import select, func
-            
+
             cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
 
             # Total users with profiles
@@ -205,15 +205,17 @@ class MonitoringService:
 
             # Active users (with interactions in time window)
             result = db.execute(
-                select(func.count(func.distinct(UserInteraction.user_id)))
-                .where(UserInteraction.interaction_timestamp >= cutoff_date)
+                select(func.count(func.distinct(UserInteraction.user_id))).where(
+                    UserInteraction.interaction_timestamp >= cutoff_date
+                )
             )
             active_users = result.scalar() or 0
 
             # Total interactions
             result = db.execute(
-                select(func.count(UserInteraction.id))
-                .where(UserInteraction.interaction_timestamp >= cutoff_date)
+                select(func.count(UserInteraction.id)).where(
+                    UserInteraction.interaction_timestamp >= cutoff_date
+                )
             )
             total_interactions = result.scalar() or 0
 
@@ -238,8 +240,7 @@ class MonitoringService:
 
             # Positive interaction rate
             result = db.execute(
-                select(func.count(UserInteraction.id))
-                .where(
+                select(func.count(UserInteraction.id)).where(
                     UserInteraction.interaction_timestamp >= cutoff_date,
                     UserInteraction.is_positive == 1,
                 )

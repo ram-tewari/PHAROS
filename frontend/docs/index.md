@@ -37,7 +37,7 @@ frontend/docs/
 
 ## Project History
 
-Evolution of the Neo Alexandria frontend:
+Evolution of the Pharos frontend:
 
 - [Phase 0: Fresh Start](history/phase0-fresh-start.md) - Clean slate and 8-phase roadmap (January 2026)
 - [Phase 1: Workbench Navigation](history/phase1-workbench.md) - Foundation implementation (January 22, 2026) ✅
@@ -240,4 +240,4 @@ Recommended extensions:
 ---
 
 **Last Updated**: January 22, 2026
-**Maintainer**: Neo Alexandria Team
+**Maintainer**: Pharos Team

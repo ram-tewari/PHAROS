@@ -7,7 +7,7 @@ How to integrate with the Model Context Protocol (MCP) server in Pharos.
 
 ## Overview
 
-The MCP (Model Context Protocol) server provides a standardized interface for AI agents and tools to interact with Neo Alexandria's capabilities. It exposes backend features as MCP tools with schema validation, authentication, rate limiting, and session management.
+The MCP (Model Context Protocol) server provides a standardized interface for AI agents and tools to interact with Pharos's capabilities. It exposes backend features as MCP tools with schema validation, authentication, rate limiting, and session management.
 
 ## Features
 
@@ -40,7 +40,7 @@ Enterprise-grade security features:
 
 ### 4. Available Tools
 
-Neo Alexandria capabilities exposed as MCP tools:
+Pharos capabilities exposed as MCP tools:
 
 - `search_resources`: Search knowledge base
 - `get_hover_info`: Get code hover information

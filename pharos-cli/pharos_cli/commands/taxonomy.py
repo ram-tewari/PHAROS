@@ -23,6 +23,12 @@ taxonomy_app = typer.Typer(
 )
 
 
+@taxonomy_app.callback()
+def taxonomy_callback():
+    """Taxonomy and classification commands."""
+    pass
+
+
 def get_taxonomy_client() -> TaxonomyClient:
     """Get a taxonomy client instance.
 

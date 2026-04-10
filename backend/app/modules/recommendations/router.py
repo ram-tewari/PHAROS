@@ -32,7 +32,9 @@ from .schema import RecommendationResponse, RecommendedResource
 from app.utils.performance_monitoring import metrics
 
 
-recommendations_router = APIRouter(prefix="/recommendations", tags=["recommendations"])
+recommendations_router = APIRouter(
+    prefix="/api/recommendations", tags=["recommendations"]
+)
 
 
 # ============================================================================

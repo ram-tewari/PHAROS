@@ -55,10 +55,14 @@ class ValueObject(BaseDomainObject):
         pass
 
 
-def validate_range(value: float, min_value: float, max_value: float, field_name: str) -> None:
+def validate_range(
+    value: float, min_value: float, max_value: float, field_name: str
+) -> None:
     """Validate value is within range."""
     if not min_value <= value <= max_value:
-        raise ValueError(f"{field_name} must be between {min_value} and {max_value}, got {value}")
+        raise ValueError(
+            f"{field_name} must be between {min_value} and {max_value}, got {value}"
+        )
 
 
 def validate_non_empty(value: str, field_name: str) -> None:
@@ -160,12 +164,13 @@ class Recommendation(ValueObject):
         """Get the ranking position."""
         return self.recommendation_score.rank
 
-    def is_high_quality(self, score_threshold: float = 0.7, confidence_threshold: float = 0.8) -> bool:
+    def is_high_quality(
+        self, score_threshold: float = 0.7, confidence_threshold: float = 0.8
+    ) -> bool:
         """Check if recommendation meets high quality criteria."""
-        return (
-            self.recommendation_score.is_high_score(score_threshold)
-            and self.recommendation_score.is_high_confidence(confidence_threshold)
-        )
+        return self.recommendation_score.is_high_score(
+            score_threshold
+        ) and self.recommendation_score.is_high_confidence(confidence_threshold)
 
     def is_top_recommendation(self, top_k: int = 5) -> bool:
         """Check if this is a top-ranked recommendation."""
@@ -179,7 +184,11 @@ class Recommendation(ValueObject):
 
     def get(self, key: str, default: Any = None) -> Any:
         """Get attribute value by key (dict-like interface)."""
-        key_mapping = {"score": "get_score", "confidence": "get_confidence", "rank": "get_rank"}
+        key_mapping = {
+            "score": "get_score",
+            "confidence": "get_confidence",
+            "rank": "get_rank",
+        }
         if key in key_mapping:
             return getattr(self, key_mapping[key])()
         return getattr(self, key, default)

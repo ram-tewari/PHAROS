@@ -23,7 +23,7 @@ Events Subscribed:
 __version__ = "1.0.0"
 __domain__ = "quality"
 
-from .router import quality_router
+from .router import quality_router, rag_evaluation_router
 from .service import QualityService
 from .evaluator import SummarizationEvaluator
 from .schema import (
@@ -42,6 +42,7 @@ from .handlers import register_handlers
 
 __all__ = [
     "quality_router",
+    "rag_evaluation_router",
     "QualityService",
     "SummarizationEvaluator",
     "QualityDetailsResponse",

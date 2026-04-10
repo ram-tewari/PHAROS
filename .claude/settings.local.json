@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m pytest tests/modules/resources tests/shared/test_settings.py --tb=no -rf -q)",
+      "Read(//tmp/**)",
+      "Read(//c/Users/rooma/PycharmProjects/pharos/backend/**)",
+      "Bash(python -c ':*)",
+      "Bash(python -m pytest tests/modules/recommendations/test_router.py --tb=no -q)",
+      "Bash(python -m pytest tests/modules/recommendations/test_router.py::test_get_recommendations_with_invalid_strategy --tb=long)",
+      "Bash(python -m pytest tests/modules/quality/test_rag_evaluation_endpoints.py --tb=line -q)",
+      "Bash(python -m pytest tests/modules/quality/test_rag_evaluation_endpoints.py::TestGetEvaluationHistory::test_get_history_empty_results --tb=short)",
+      "Bash(python -m pytest tests/modules/quality/test_rag_evaluation_endpoints.py tests/modules/search/test_advanced_search_endpoint.py tests/modules/resources/test_chunking_endpoints.py --tb=no -q)",
+      "Bash(python -m pytest tests/modules/search/test_advanced_search_endpoint.py::test_advanced_search_empty_query --tb=short)",
+      "Bash(python -m pytest tests/modules/search/test_advanced_search_endpoint.py --tb=no -q)",
+      "Bash(python -m pytest tests/modules/quality/test_rag_evaluation_endpoints.py tests/modules/resources/test_chunking_endpoints.py --tb=no -q)",
+      "Bash(python -m pytest tests/modules/quality/test_rag_evaluation_endpoints.py --tb=no -q)",
+      "Bash(python -m pytest tests/modules/resources/test_chunking_endpoints.py --tb=line -q)",
+      "Bash(python -m pytest tests/modules/resources/test_chunking_endpoints.py --tb=no -q)",
+      "Bash(python -m pytest tests/shared/test_csrf.py::TestCSRFMiddleware::test_head_request_without_origin_passes --tb=long)",
+      "Bash(python -m pytest tests/shared/test_redirect_validation.py::TestValidateRedirectUrl::test_valid_https_url_in_production -x --no-header)",
+      "Bash(python -m pytest tests/modules/curation/ --no-header)",
+      "Bash(python -m pytest --no-header -q)",
+      "Bash(python -m pytest tests/modules/auth/test_auth_endpoints.py::test_login_with_valid_credentials -x --no-header)",
+      "Bash(python -m pytest tests/modules/auth/test_auth_endpoints.py --no-header)",
+      "Bash(python -m pytest tests/integration/test_repo_ingestion_endpoints.py -x --no-header)",
+      "Bash(python -m pytest tests/integration/test_url_security.py -x --no-header)",
+      "Bash(python -c \"import app.routers.ingestion\")",
+      "Bash(python -c \"from app.routers.ingestion import get_redis_client; print\\(get_redis_client\\)\")",
+      "Bash(/c/Users/rooma/PycharmProjects/pharos/backend/.venv/Scripts/pip3.exe install:*)"
+    ]
+  }
+}

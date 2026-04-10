@@ -256,7 +256,7 @@ class RepoIngestionService:
                     git_url,
                     temp_path,
                     depth=1,  # Shallow clone for efficiency
-                    timeout=300,  # 5 minute timeout
+                    # timeout parameter removed for Git < 2.47 compatibility
                 )
             except git.GitCommandError as e:
                 raise ValueError(f"Failed to clone repository: {e}")

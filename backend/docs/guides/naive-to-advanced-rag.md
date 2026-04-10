@@ -4,7 +4,7 @@
 
 ## Overview
 
-This guide walks you through migrating from Neo Alexandria's naive RAG implementation (whole-document retrieval) to the advanced RAG architecture (chunking, graph-based retrieval, synthetic questions).
+This guide walks you through migrating from Pharos's naive RAG implementation (whole-document retrieval) to the advanced RAG architecture (chunking, graph-based retrieval, synthetic questions).
 
 ## Table of Contents
 

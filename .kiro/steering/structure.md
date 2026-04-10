@@ -5,10 +5,11 @@
 ```
 pharos/
 ├── AGENTS.md                          # Agent routing and context rules
+├── PHAROS_RONIN_VISION.md             # Complete Pharos + Ronin vision document
 ├── .kiro/                             # Kiro IDE configuration
 │   ├── steering/                      # Project steering docs
-│   │   ├── product.md                 # Product vision and goals
-│   │   ├── tech.md                    # Tech stack and constraints
+│   │   ├── product.md                 # Product vision and goals (updated with Ronin)
+│   │   ├── tech.md                    # Tech stack and constraints (updated with Ronin)
 │   │   └── structure.md               # This file
 │   └── specs/                         # Feature specifications
 │       ├── backend/                   # Backend feature specs (21)
@@ -16,26 +17,31 @@ pharos/
 │       └── README.md                  # Spec organization guide
 ├── backend/                           # Python/FastAPI backend
 │   ├── app/                           # Application code
-│   │   ├── modules/                   # Vertical slice modules (13 total)
+│   │   ├── modules/                   # Vertical slice modules (14 current, 3 planned)
 │   │   │   ├── annotations/           # Text highlights and notes
 │   │   │   ├── authority/             # Subject authority trees
 │   │   │   ├── collections/           # Collection management
 │   │   │   ├── curation/              # Content review
 │   │   │   ├── graph/                 # Knowledge graph and citations
 │   │   │   ├── monitoring/            # System health and metrics
+│   │   │   ├── pdf_ingestion/         # PDF upload and GraphRAG (Phase 4)
 │   │   │   ├── quality/               # Quality assessment
 │   │   │   ├── recommendations/       # Hybrid recommendations
 │   │   │   ├── resources/             # Resource CRUD
 │   │   │   ├── scholarly/             # Academic metadata
 │   │   │   ├── search/                # Hybrid search
-│   │   │   └── taxonomy/              # ML classification
+│   │   │   ├── taxonomy/              # ML classification
+│   │   │   ├── context_retrieval/     # 📋 Phase 7: LLM context assembly
+│   │   │   ├── pattern_learning/      # 📋 Phase 6: Pattern extraction
+│   │   │   └── github_integration/    # 📋 Phase 5: Hybrid storage
 │   │   ├── shared/                    # Shared kernel
 │   │   │   ├── database.py            # Database sessions
 │   │   │   ├── event_bus.py           # Event system
 │   │   │   ├── base_model.py          # Base models
 │   │   │   ├── embeddings.py          # Vector embeddings
 │   │   │   ├── ai_core.py             # AI operations
-│   │   │   └── cache.py               # Redis cache
+│   │   │   ├── cache.py               # Redis cache
+│   │   │   └── github_client.py       # 📋 Phase 5: GitHub API client
 │   │   ├── database/                  # Database models and config
 │   │   ├── domain/                    # Domain objects
 │   │   ├── events/                    # Event system
@@ -57,13 +63,17 @@ pharos/
 │   │   │   ├── graph.md               # Graph/citation endpoints
 │   │   │   ├── recommendations.md     # Recommendation endpoints
 │   │   │   ├── quality.md             # Quality endpoints
-│   │   │   └── monitoring.md          # Health/monitoring endpoints
+│   │   │   ├── monitoring.md          # Health/monitoring endpoints
+│   │   │   ├── context.md             # 📋 Phase 7: Context retrieval API
+│   │   │   └── patterns.md            # 📋 Phase 6: Pattern learning API
 │   │   ├── architecture/              # Architecture documentation
 │   │   │   ├── overview.md            # System architecture
 │   │   │   ├── database.md            # Schema and models
 │   │   │   ├── event-system.md        # Event bus
 │   │   │   ├── modules.md             # Vertical slices
-│   │   │   └── decisions.md           # ADRs
+│   │   │   ├── decisions.md           # ADRs
+│   │   │   ├── hybrid-storage.md      # 📋 Phase 5: GitHub storage strategy
+│   │   │   └── ronin-integration.md   # 📋 Phase 7: LLM integration
 │   │   ├── guides/                    # Developer guides
 │   │   │   ├── setup.md               # Installation
 │   │   │   ├── workflows.md           # Development tasks
@@ -108,6 +118,15 @@ pharos/
 - Target users
 - Non-goals and boundaries
 - Success metrics
+- **Pharos + Ronin vision** (self-improving coding system)
+
+**Source**: `PHAROS_RONIN_VISION.md`
+- Complete technical vision for Pharos + Ronin integration
+- Use case workflows (understanding old code, creating new code)
+- Self-improving loop explanation
+- Integration architecture diagrams
+- API endpoint specifications
+- Implementation roadmap (Phases 5-9)
 
 ### Technical Stack
 **Source**: `.kiro/steering/tech.md`
@@ -128,6 +147,7 @@ pharos/
 - `recommendations.md` - Recommendation endpoints
 - `quality.md` - Quality assessment endpoints
 - `monitoring.md` - Health and monitoring endpoints
+- **Phase 4**: `app/modules/pdf_ingestion/README.md` - PDF ingestion API
 
 ### Architecture
 **Source**: `backend/docs/architecture/` (modular structure)
@@ -171,19 +191,23 @@ Each module contains:
 - `handlers.py` - Event handlers
 - `README.md` - Module documentation
 
-**Complete Module List (13 modules)**:
+**Complete Module List (14 modules + 3 planned)**:
 - `annotations/` - Text highlights, notes, and tags on resources
 - `authority/` - Subject authority and classification trees
 - `collections/` - Collection management and resource organization
 - `curation/` - Content review and batch operations
 - `graph/` - Knowledge graph, citations, and discovery
 - `monitoring/` - System health, metrics, and observability
+- `pdf_ingestion/` - **Phase 4**: PDF upload, extraction, annotation, and GraphRAG linking
 - `quality/` - Multi-dimensional quality assessment
 - `recommendations/` - Hybrid recommendation engine (NCF, content, graph)
 - `resources/` - Resource CRUD operations and metadata
 - `scholarly/` - Academic metadata extraction (equations, tables, citations)
 - `search/` - Hybrid search (keyword, semantic, full-text)
 - `taxonomy/` - ML-based classification and taxonomy management
+- `context_retrieval/` - **Phase 7 (Planned)**: LLM context assembly for Ronin
+- `pattern_learning/` - **Phase 6 (Planned)**: Extract patterns from code history
+- `github_integration/` - **Phase 5 (Planned)**: Hybrid storage with on-demand code fetching
 
 **Module Communication**: All modules communicate via event bus (no direct imports)
 
@@ -324,25 +348,38 @@ Each module contains:
 - ✅ Legacy code cleanup (Phase 14)
 - ✅ Production hardening (Phase 17) - Authentication, OAuth2, Rate Limiting
 - ✅ Advanced RAG architecture (Phase 17.5) - Parent-child chunking, GraphRAG, Evaluation
+- ✅ Code repository analysis (Phase 18) - AST-based chunking for code
+- ✅ Hybrid edge-cloud orchestration (Phase 19) - Production deployment
+- ✅ **PDF Ingestion & GraphRAG (Phase 4)** - Research paper management with code linking
 
 ### Architecture Achievements
-- ✅ 13 self-contained modules with event-driven communication
+- ✅ 14 self-contained modules with event-driven communication
 - ✅ Shared kernel for cross-cutting concerns
 - ✅ Zero circular dependencies between modules
-- ✅ 97+ API routes across all modules
+- ✅ 100+ API routes across all modules (3 new PDF routes)
 - ✅ Event bus with <1ms latency (p95)
 - ✅ JWT authentication with OAuth2 social login
 - ✅ Tiered rate limiting (Free, Premium, Admin)
-- ✅ Advanced RAG with 5 new database tables
-- ✅ Parent-child chunking and GraphRAG retrieval
+- ✅ Advanced RAG with parent-child chunking
 - ✅ Knowledge graph with semantic triples
 - ✅ RAG evaluation metrics (RAGAS)
+- ✅ **PDF extraction with academic fidelity (PyMuPDF)**
+- ✅ **GraphRAG linking between PDFs and code**
+- ✅ **Unified search across research papers and codebase**
 
-### Planned
-- 📋 Code repository analysis (Phase 18)
-- 📋 AST-based chunking for code
-- 📋 Frontend-backend integration completion
-- 📋 API versioning
+### Current Focus (Phase 5-9: Pharos + Ronin Integration)
+- 📋 Phase 5: Hybrid GitHub Storage (metadata only, 17x storage reduction)
+- 📋 Phase 6: Pattern Learning Engine (extract patterns from code history)
+- 📋 Phase 7: Ronin Integration API (context retrieval, pattern learning endpoints)
+- 📋 Phase 8: Self-Improving Loop (track modifications, learn from refactorings)
+- 📋 Phase 9: Production Deployment (load testing with 1000 codebases)
+
+### Future Focus (Phase 10+: Enhanced Capabilities)
+- 📋 Phase 10: Frontend UI for PDF upload and annotation
+- 📋 Phase 11: Visual graph explorer
+- 📋 Phase 12: Advanced extraction (LaTeX equations, table structure)
+- 📋 Phase 13: IDE/Editor plugins with Ronin integration
+- 📋 Phase 14: Universal CLI interface
 
 ## Related Documentation
 
@@ -353,6 +390,21 @@ Each module contains:
 - [API Reference](../../backend/docs/api/overview.md)
 - [Architecture Overview](../../backend/docs/architecture/overview.md)
 - [Developer Setup Guide](../../backend/docs/guides/setup.md)
+
+### Phase 4: PDF Ingestion & GraphRAG
+- [Module README](../../backend/app/modules/pdf_ingestion/README.md) - Complete API documentation
+- [Implementation Details](../../backend/PHASE_4_IMPLEMENTATION.md) - Technical specification
+- [Quick Start Guide](../../backend/PHASE_4_QUICKSTART.md) - Getting started
+- [Integration Guide](../../backend/PHASE_4_MIGRATION.md) - Integration instructions
+- [Integration Complete](../../backend/PHASE_4_INTEGRATION_COMPLETE.md) - Verification results
+
+### Pharos + Ronin Vision (Phases 5-9)
+- [Complete Vision](../../PHAROS_RONIN_VISION.md) - Full technical vision document
+- [Product Roadmap](.kiro/steering/product.md) - Updated with Ronin integration
+- [Tech Stack](.kiro/steering/tech.md) - Updated with hybrid storage and LLM integration
+- Phase 5 Spec (Planned): Hybrid GitHub Storage
+- Phase 6 Spec (Planned): Pattern Learning Engine
+- Phase 7 Spec (Planned): Ronin Integration API
 
 ---
 

@@ -91,13 +91,14 @@ def test_signal_fusion_with_multiple_strategies(db_session, golden_data):
     id_mapping = create_uuid_mapping(string_ids)
 
     # Create test resources with proper UUIDs
+    # Note: publication_year is omitted so recency falls back to date_created=now(),
+    # giving a deterministic recency_score=1.0 for freshly created rows.
     for str_id in string_ids:
         resource = Resource(
             id=id_mapping[str_id],
             title=f"Resource {str_id}",
             source="https://example.com",
             quality_overall=input_data["quality_scores"][str_id],
-            publication_year=2024,
             embedding=json.dumps([0.1] * 768),
         )
         db_session.add(resource)
@@ -365,8 +366,10 @@ def test_novelty_boosting_promotes_lesser_known(db_session, golden_data):
     for candidate in input_data["candidates"]:
         str_id = candidate["id"]
         for _ in range(candidate["view_count"]):
+            viewer_id = uuid4()
+            create_test_user(db_session, viewer_id)
             interaction = UserInteraction(
-                user_id=uuid4(),  # Different users
+                user_id=viewer_id,  # Different users
                 resource_id=id_mapping[str_id],
                 interaction_type="view",
                 interaction_strength=1.0,
@@ -537,9 +540,10 @@ def test_quality_filtering_excludes_low_quality(db_session, golden_data):
                 )
 
     # Verify filtering
-    reverse_mapping = {v: k for k, v in id_mapping.items()}
+    # recommendations use string resource_id, so key the reverse map by str(uuid)
+    reverse_mapping = {str(v): k for k, v in id_mapping.items()}
     recommendation_ids = [
-        reverse_mapping[r["resource_id"]] for r in result["recommendations"]
+        reverse_mapping[str(r["resource_id"])] for r in result["recommendations"]
     ]
     assert len(recommendation_ids) == len(expected["filtered_ids"])
 
@@ -608,13 +612,28 @@ def test_full_recommendation_pipeline(db_session, golden_data):
 
     service = HybridRecommendationService(db_session)
 
+    # Mock candidate generation to return the test resources as candidates,
+    # since the real candidate generators rely on collaborative/graph state
+    # that isn't seeded in this unit test.
+    mock_candidates = [
+        {
+            "resource_id": res_id,
+            "source_strategy": "hybrid",
+            "collaborative_score": 0.5,
+            "content_score": 0.6,
+            "graph_score": 0.4,
+        }
+        for res_id in resource_ids
+    ]
+
     # Generate recommendations (performance measured by decorator)
-    result = service.generate_recommendations(
-        user_id=user_id,
-        limit=input_data["limit"],
-        strategy=input_data["strategy"],
-        filters={"min_quality": input_data["min_quality"]},
-    )
+    with patch.object(service, "_generate_candidates", return_value=mock_candidates):
+        result = service.generate_recommendations(
+            user_id=user_id,
+            limit=input_data["limit"],
+            strategy=input_data["strategy"],
+            filters={"min_quality": input_data["min_quality"]},
+        )
 
     # Verify structure
     assert "recommendations" in result

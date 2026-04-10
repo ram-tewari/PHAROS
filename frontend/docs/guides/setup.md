@@ -2,7 +2,7 @@
 
 Installation and environment configuration for Pharos Frontend.
 
-> **Phase 1 Complete**: Neo Alexandria frontend now has a complete workbench layout with command palette, sidebar navigation, and theme system.
+> **Phase 1 Complete**: Pharos frontend now has a complete workbench layout with command palette, sidebar navigation, and theme system.
 
 ## Prerequisites
 
@@ -114,7 +114,7 @@ All tests should pass:
 
 ### Phase 1 Architecture
 
-Neo Alexandria frontend uses a **component-based architecture** with clear separation of concerns:
+Pharos frontend uses a **component-based architecture** with clear separation of concerns:
 
 ```
 frontend/src/

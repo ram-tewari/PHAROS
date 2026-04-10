@@ -88,9 +88,10 @@ def create_pending_resource(db: Session, payload: Dict[str, Any]) -> db_models.R
     # Import authority control service (optional - gracefully handle if not available)
     creator_value = payload.get("creator")
     publisher_value = payload.get("publisher")
-    
+
     try:
         from ...modules.authority.service import AuthorityControl
+
         authority = AuthorityControl(db)
         if creator_value:
             creator_value = authority.normalize_creator(creator_value)
@@ -133,10 +134,14 @@ def create_pending_resource(db: Session, payload: Dict[str, Any]) -> db_models.R
     try:
         # Ensure handlers are registered (in case app didn't initialize them)
         from .handlers import register_handlers
-        if "resource.created" not in event_bus._handlers or len(event_bus._handlers.get("resource.created", [])) == 0:
+
+        if (
+            "resource.created" not in event_bus._handlers
+            or len(event_bus._handlers.get("resource.created", [])) == 0
+        ):
             logger.info("Registering resource handlers (not initialized by app)")
             register_handlers()
-        
+
         event_bus.emit(
             SystemEvent.RESOURCE_CREATED.value,
             {
@@ -218,18 +223,20 @@ def _fetch_and_extract_content(
     logger.info(f"Fetching content from {target_url}")
     fetched = ce.fetch_url(target_url)
     logger.info("Content fetched successfully, extracting text")
-    
+
     # Extract metadata for PDFs
     content_type = (fetched.get("content_type") or "").lower()
     is_pdf = "application/pdf" in content_type or target_url.lower().endswith(".pdf")
-    
+
     extracted = ce.extract_from_fetched(fetched, extract_metadata=is_pdf)
     text_clean = clean_text(extracted.get("text", ""))
     logger.info(f"Text extracted and cleaned, length: {len(text_clean)} characters")
-    
+
     if is_pdf and extracted.get("page_boundaries"):
-        logger.info(f"Extracted {len(extracted.get('page_boundaries', []))} page boundaries from PDF")
-    
+        logger.info(
+            f"Extracted {len(extracted.get('page_boundaries', []))} page boundaries from PDF"
+        )
+
     return fetched, extracted, text_clean
 
 
@@ -449,7 +456,9 @@ def process_ingestion(
     increment_active_ingestions()
     start_time = datetime.now(timezone.utc)
 
-    logger.info(f"[INGESTION START] Resource {resource_id} - Starting background ingestion")
+    logger.info(
+        f"[INGESTION START] Resource {resource_id} - Starting background ingestion"
+    )
 
     # Emit ingestion.started event
     event_bus.emit(
@@ -469,6 +478,7 @@ def process_ingestion(
         else:
             # Import SessionLocal here to ensure it's initialized
             from ...shared.database import SessionLocal as _SessionLocal
+
             if _SessionLocal is None:
                 logger.error("SessionLocal is None - database not initialized")
                 return
@@ -509,12 +519,14 @@ def process_ingestion(
             fetched, extracted, text_clean = _fetch_and_extract_content(target_url)
         except Exception as fetch_error:
             # Mark resource as failed with error details
-            logger.error(f"[INGESTION ERROR] {resource_id} - Failed to fetch URL: {fetch_error}")
+            logger.error(
+                f"[INGESTION ERROR] {resource_id} - Failed to fetch URL: {fetch_error}"
+            )
             resource.ingestion_status = "error"
             resource.ingestion_error = f"Failed to fetch URL: {str(fetch_error)}. Please verify the URL is correct or upload the content as a PDF."
             resource.ingestion_completed_at = datetime.now(timezone.utc)
             session.commit()
-            
+
             # Emit error event
             event_bus.emit(
                 SystemEvent.INGESTION_FAILED.value,
@@ -528,15 +540,17 @@ def process_ingestion(
                 priority=EventPriority.HIGH,
             )
             return
-        
+
         # Validate content was actually fetched
         if not text_clean or len(text_clean) < 50:
-            logger.error(f"[INGESTION ERROR] {resource_id} - Insufficient content fetched ({len(text_clean)} chars)")
+            logger.error(
+                f"[INGESTION ERROR] {resource_id} - Insufficient content fetched ({len(text_clean)} chars)"
+            )
             resource.ingestion_status = "error"
             resource.ingestion_error = "URL returned insufficient content. The page may be empty, require authentication, or block automated access. Please verify the URL or upload as PDF."
             resource.ingestion_completed_at = datetime.now(timezone.utc)
             session.commit()
-            
+
             event_bus.emit(
                 SystemEvent.INGESTION_FAILED.value,
                 {
@@ -549,8 +563,10 @@ def process_ingestion(
                 priority=EventPriority.HIGH,
             )
             return
-        
-        logger.info(f"[INGESTION] {resource_id} - Fetched {len(text_clean)} chars of content")
+
+        logger.info(
+            f"[INGESTION] {resource_id} - Fetched {len(text_clean)} chars of content"
+        )
 
         # Resolve AI core
         if ai is not None:
@@ -568,7 +584,9 @@ def process_ingestion(
         # Query: Generate AI content
         logger.info(f"[INGESTION] {resource_id} - Generating AI summary and tags")
         summary, tags_raw = _generate_ai_content(ai_core, text_clean)
-        logger.info(f"[INGESTION] {resource_id} - Generated summary ({len(summary)} chars) and {len(tags_raw)} tags")
+        logger.info(
+            f"[INGESTION] {resource_id} - Generated summary ({len(summary)} chars) and {len(tags_raw)} tags"
+        )
 
         # Query: Normalize tags
         from ...modules.authority.service import AuthorityControl
@@ -576,7 +594,9 @@ def process_ingestion(
         logger.info(f"[INGESTION] {resource_id} - Normalizing tags")
         authority = AuthorityControl(session)
         normalized_tags = authority.normalize_subjects(tags_raw)
-        logger.info(f"[INGESTION] {resource_id} - Normalized to {len(normalized_tags)} tags")
+        logger.info(
+            f"[INGESTION] {resource_id} - Normalized to {len(normalized_tags)} tags"
+        )
 
         # Query: Classify resource
         from ...modules.taxonomy.classification_service import ClassificationService
@@ -588,14 +608,14 @@ def process_ingestion(
         else:
             title_final = resource.title or extracted_title or "Untitled"
         description_final = resource.description or summary or None
-        
+
         # Classify the resource
         try:
             classification_result = classifier.classify_resource(
                 resource_id=str(resource.id),
                 use_ml=True,
                 use_rules=True,
-                apply_to_resource=False  # We'll apply it manually
+                apply_to_resource=False,  # We'll apply it manually
             )
             classification_code = classification_result.get("primary")
         except Exception as e:
@@ -643,18 +663,24 @@ def process_ingestion(
             chunk_on_create = getattr(settings, "CHUNK_ON_RESOURCE_CREATE", True)
 
             if chunk_on_create and text_clean:
-                logger.info(f"[INGESTION] {resource_id} - Starting chunking ({len(text_clean)} chars)")
+                logger.info(
+                    f"[INGESTION] {resource_id} - Starting chunking ({len(text_clean)} chars)"
+                )
 
                 # Import ChunkingService (defined later in this file)
                 # We need to use the class from this module
                 try:
                     # Create chunking service with settings from config
-                    chunking_strategy = getattr(settings, "CHUNKING_STRATEGY", "semantic")
+                    chunking_strategy = getattr(
+                        settings, "CHUNKING_STRATEGY", "semantic"
+                    )
                     chunk_size = getattr(settings, "CHUNK_SIZE", 500)
                     chunk_overlap = getattr(settings, "CHUNK_OVERLAP", 50)
-                    
-                    logger.info(f"Chunking config: strategy={chunking_strategy}, size={chunk_size}, overlap={chunk_overlap}")
-                    
+
+                    logger.info(
+                        f"Chunking config: strategy={chunking_strategy}, size={chunk_size}, overlap={chunk_overlap}"
+                    )
+
                     chunking_service = ChunkingService(
                         db=session,
                         strategy=chunking_strategy,
@@ -667,8 +693,12 @@ def process_ingestion(
                     # Prepare chunk metadata with page boundaries for PDFs
                     base_chunk_metadata = {"source": "ingestion_pipeline"}
                     if is_pdf and extracted.get("page_boundaries"):
-                        base_chunk_metadata["page_boundaries"] = extracted.get("page_boundaries")
-                        logger.info(f"Including {len(extracted.get('page_boundaries', []))} page boundaries in chunk metadata")
+                        base_chunk_metadata["page_boundaries"] = extracted.get(
+                            "page_boundaries"
+                        )
+                        logger.info(
+                            f"Including {len(extracted.get('page_boundaries', []))} page boundaries in chunk metadata"
+                        )
 
                     # Chunk the content
                     chunks = chunking_service.chunk_resource(
@@ -692,8 +722,12 @@ def process_ingestion(
                     )
         except Exception as config_error:
             # If configuration check fails, skip chunking but don't fail ingestion
-            logger.error(f"Chunking configuration check failed: {config_error}", exc_info=True)
-            logger.warning(f"Skipping chunking for resource {resource_id} due to configuration error")
+            logger.error(
+                f"Chunking configuration check failed: {config_error}", exc_info=True
+            )
+            logger.warning(
+                f"Skipping chunking for resource {resource_id} due to configuration error"
+            )
 
         # Modifier: Perform ML classification
         _perform_ml_classification(session, resource.id)
@@ -725,29 +759,39 @@ def process_ingestion(
         resource.quality_score = float(quality)
         resource.date_modified = resource.date_modified or datetime.now(timezone.utc)
         resource.format = fetched.get("content_type")
-        
+
         # Store PDF structured metadata in existing scholarly fields
         if is_pdf and extracted.get("structured_metadata"):
             pdf_metadata = extracted.get("structured_metadata", {})
-            
+
             # Store title if not already set and available in PDF metadata
-            if pdf_metadata.get("title") and (not resource.title or resource.title == "Untitled"):
+            if pdf_metadata.get("title") and (
+                not resource.title or resource.title == "Untitled"
+            ):
                 resource.title = pdf_metadata["title"]
-                logger.info(f"Set resource title from PDF metadata: {pdf_metadata['title']}")
-            
+                logger.info(
+                    f"Set resource title from PDF metadata: {pdf_metadata['title']}"
+                )
+
             # Store authors in the authors field
             if pdf_metadata.get("authors"):
                 resource.authors = pdf_metadata["authors"]
-                logger.info(f"Set resource authors from PDF metadata: {pdf_metadata['authors']}")
-            
+                logger.info(
+                    f"Set resource authors from PDF metadata: {pdf_metadata['authors']}"
+                )
+
             # Store abstract in description if not already set
             if pdf_metadata.get("abstract") and not resource.description:
                 resource.description = pdf_metadata["abstract"]
                 logger.info(f"Set resource description from PDF abstract")
-            
+
             # Store subject/keywords if available
             if pdf_metadata.get("keywords"):
-                keywords = pdf_metadata["keywords"].split(",") if isinstance(pdf_metadata["keywords"], str) else []
+                keywords = (
+                    pdf_metadata["keywords"].split(",")
+                    if isinstance(pdf_metadata["keywords"], str)
+                    else []
+                )
                 keywords = [k.strip() for k in keywords if k.strip()]
                 if keywords:
                     # Merge with existing tags
@@ -755,12 +799,12 @@ def process_ingestion(
                     existing_tags.update(keywords)
                     resource.subject = list(existing_tags)
                     logger.info(f"Added {len(keywords)} keywords from PDF metadata")
-        
+
         session.add(resource)
-        
+
         # Modifier: Mark ingestion completed BEFORE commit
         _mark_ingestion_completed(session, resource)
-        
+
         # Commit the main resource data
         session.commit()
         logger.info(f"Resource {resource_id} data committed successfully")
@@ -780,7 +824,9 @@ def process_ingestion(
 
         # Modifier: Extract citations
         try:
-            _extract_citations(session, str(resource.id), fetched.get("content_type", ""))
+            _extract_citations(
+                session, str(resource.id), fetched.get("content_type", "")
+            )
         except Exception as e:
             logger.warning(f"Citation extraction failed (non-fatal): {e}")
 
@@ -1711,21 +1757,29 @@ class ChunkingService:
                             chunk_metadata["embedding_generated"] = True
                             # Store embedding vector in metadata for now
                             # TODO: Add dedicated embedding column to DocumentChunk model
-                            chunk_metadata["embedding_vector"] = embedding.tolist() if hasattr(embedding, 'tolist') else list(embedding)
+                            chunk_metadata["embedding_vector"] = (
+                                embedding.tolist()
+                                if hasattr(embedding, "tolist")
+                                else list(embedding)
+                            )
                         else:
                             chunk_metadata["embedding_generated"] = False
                     except Exception as e:
                         # Re-raise embedding errors to ensure transaction integrity
-                        logger.error(f"Embedding generation failed for chunk {chunk_index}: {e}")
+                        logger.error(
+                            f"Embedding generation failed for chunk {chunk_index}: {e}"
+                        )
                         raise
                 else:
                     chunk_metadata["embedding_generated"] = False
 
-                chunk_data_with_embeddings.append({
-                    "content": content,
-                    "chunk_index": chunk_index,
-                    "chunk_metadata": chunk_metadata
-                })
+                chunk_data_with_embeddings.append(
+                    {
+                        "content": content,
+                        "chunk_index": chunk_index,
+                        "chunk_metadata": chunk_metadata,
+                    }
+                )
 
             # STEP 2: Create all chunk records (only after all embeddings succeed)
             for chunk_data in chunk_data_with_embeddings:
@@ -1748,24 +1802,24 @@ class ChunkingService:
                 else:
                     # Flush to make objects available in current transaction
                     self.db.flush()
-            
+
             # Verify chunks were actually stored
             chunk_count = (
                 self.db.query(db_models.DocumentChunk)
                 .filter(db_models.DocumentChunk.resource_id == resource_uuid)
                 .count()
             )
-            
+
             logger.info(
                 f"Successfully stored {len(stored_chunks)} chunks for resource {resource_id} "
                 f"(verified {chunk_count} chunks in database)"
             )
-            
+
             if chunk_count != len(stored_chunks):
                 logger.warning(
                     f"Chunk count mismatch: stored {len(stored_chunks)} but found {chunk_count} in database"
                 )
-            
+
             return stored_chunks
 
         except Exception as e:
@@ -1923,7 +1977,6 @@ class ChunkingService:
             raise
 
 
-
 # ============================================================================
 # Auto-Linking Service
 # ============================================================================
@@ -1932,25 +1985,25 @@ class ChunkingService:
 class AutoLinkingService:
     """
     Service for automatically linking PDF chunks to code chunks based on semantic similarity.
-    
+
     Uses existing embedding infrastructure to compute cosine similarity between chunks
     and creates bidirectional links when similarity exceeds threshold (default 0.7).
-    
+
     Attributes:
         db: Database session
         embedding_generator: EmbeddingGenerator instance from shared.embeddings
         similarity_threshold: Minimum similarity score for creating links (default 0.7)
     """
-    
+
     def __init__(
         self,
         db: Session,
         embedding_generator: Optional[Any] = None,
-        similarity_threshold: float = 0.7
+        similarity_threshold: float = 0.7,
     ):
         """
         Initialize auto-linking service.
-        
+
         Args:
             db: Database session
             embedding_generator: Optional EmbeddingGenerator instance
@@ -1958,60 +2011,61 @@ class AutoLinkingService:
         """
         self.db = db
         self.similarity_threshold = similarity_threshold
-        
+
         # Use existing EmbeddingGenerator from shared kernel
         if embedding_generator is None:
             from ...shared.embeddings import EmbeddingGenerator
+
             self.embedding_generator = EmbeddingGenerator()
         else:
             self.embedding_generator = embedding_generator
-    
+
     def _compute_cosine_similarity(
-        self,
-        embedding1: List[float],
-        embedding2: List[float]
+        self, embedding1: List[float], embedding2: List[float]
     ) -> float:
         """
         Compute cosine similarity between two embedding vectors.
-        
+
         Args:
             embedding1: First embedding vector
             embedding2: Second embedding vector
-            
+
         Returns:
             Cosine similarity score (0.0-1.0)
         """
         import numpy as np
-        
+
         # Convert to numpy arrays
         vec1 = np.array(embedding1)
         vec2 = np.array(embedding2)
-        
+
         # Compute cosine similarity
         dot_product = np.dot(vec1, vec2)
         norm1 = np.linalg.norm(vec1)
         norm2 = np.linalg.norm(vec2)
-        
+
         if norm1 == 0 or norm2 == 0:
             return 0.0
-        
+
         similarity = dot_product / (norm1 * norm2)
         return float(similarity)
-    
-    def _get_chunk_embedding(self, chunk: db_models.DocumentChunk) -> Optional[List[float]]:
+
+    def _get_chunk_embedding(
+        self, chunk: db_models.DocumentChunk
+    ) -> Optional[List[float]]:
         """
         Get embedding for a chunk from metadata or generate if missing.
-        
+
         Args:
             chunk: DocumentChunk instance
-            
+
         Returns:
             Embedding vector as list of floats, or None if unavailable
         """
         # Check if embedding exists in chunk metadata
         if chunk.chunk_metadata and "embedding_vector" in chunk.chunk_metadata:
             return chunk.chunk_metadata["embedding_vector"]
-        
+
         # Generate embedding if missing
         try:
             embedding = self.embedding_generator.generate_embedding(chunk.content)
@@ -2026,25 +2080,25 @@ class AutoLinkingService:
                 return embedding
         except Exception as e:
             logger.warning(f"Failed to generate embedding for chunk {chunk.id}: {e}")
-        
+
         return None
-    
+
     def _create_link(
         self,
         source_chunk_id: uuid.UUID,
         target_chunk_id: uuid.UUID,
         similarity_score: float,
-        link_type: str
+        link_type: str,
     ) -> db_models.ChunkLink:
         """
         Create a chunk link in the database.
-        
+
         Args:
             source_chunk_id: Source chunk ID
             target_chunk_id: Target chunk ID
             similarity_score: Similarity score
             link_type: Link type ("pdf_to_code", "code_to_pdf", "bidirectional")
-            
+
         Returns:
             Created ChunkLink instance
         """
@@ -2056,58 +2110,57 @@ class AutoLinkingService:
         )
         self.db.add(link)
         return link
-    
+
     async def link_pdf_to_code(
-        self,
-        pdf_resource_id: str,
-        similarity_threshold: Optional[float] = None
+        self, pdf_resource_id: str, similarity_threshold: Optional[float] = None
     ) -> List[db_models.ChunkLink]:
         """
         Link PDF chunks to code chunks based on semantic similarity.
-        
+
         Computes cosine similarity between all PDF chunks and existing code chunks,
         creating bidirectional links when similarity exceeds threshold.
-        
+
         Args:
             pdf_resource_id: PDF resource ID
             similarity_threshold: Optional override for similarity threshold
-            
+
         Returns:
             List of created ChunkLink instances
         """
         threshold = similarity_threshold or self.similarity_threshold
         created_links = []
-        
+
         try:
             # Convert resource_id to UUID
             import uuid as uuid_module
+
             try:
                 resource_uuid = uuid_module.UUID(pdf_resource_id)
             except (ValueError, TypeError):
                 raise ValueError(f"Invalid resource_id format: {pdf_resource_id}")
-            
+
             # Get PDF resource
             pdf_resource = (
                 self.db.query(db_models.Resource)
                 .filter(db_models.Resource.id == resource_uuid)
                 .first()
             )
-            
+
             if not pdf_resource:
                 logger.warning(f"PDF resource not found: {pdf_resource_id}")
                 return []
-            
+
             # Get all chunks for PDF resource
             pdf_chunks = (
                 self.db.query(db_models.DocumentChunk)
                 .filter(db_models.DocumentChunk.resource_id == resource_uuid)
                 .all()
             )
-            
+
             if not pdf_chunks:
                 logger.info(f"No chunks found for PDF resource: {pdf_resource_id}")
                 return []
-            
+
             # Get all code chunks (chunks from resources with code-related formats)
             # For now, we'll get all chunks from other resources
             # In production, this would filter by resource type/format
@@ -2116,55 +2169,49 @@ class AutoLinkingService:
                 .filter(db_models.DocumentChunk.resource_id != resource_uuid)
                 .all()
             )
-            
+
             if not code_chunks:
                 logger.info("No code chunks found for linking")
                 return []
-            
+
             logger.info(
                 f"Linking {len(pdf_chunks)} PDF chunks to {len(code_chunks)} code chunks"
             )
-            
+
             # Compute similarities and create links
             for pdf_chunk in pdf_chunks:
                 pdf_embedding = self._get_chunk_embedding(pdf_chunk)
                 if not pdf_embedding:
                     continue
-                
+
                 for code_chunk in code_chunks:
                     code_embedding = self._get_chunk_embedding(code_chunk)
                     if not code_embedding:
                         continue
-                    
+
                     # Compute similarity
                     similarity = self._compute_cosine_similarity(
                         pdf_embedding, code_embedding
                     )
-                    
+
                     # Create link if above threshold
                     if similarity >= threshold:
                         # Create bidirectional links
                         link1 = self._create_link(
-                            pdf_chunk.id,
-                            code_chunk.id,
-                            similarity,
-                            "pdf_to_code"
+                            pdf_chunk.id, code_chunk.id, similarity, "pdf_to_code"
                         )
                         link2 = self._create_link(
-                            code_chunk.id,
-                            pdf_chunk.id,
-                            similarity,
-                            "code_to_pdf"
+                            code_chunk.id, pdf_chunk.id, similarity, "code_to_pdf"
                         )
                         created_links.extend([link1, link2])
-            
+
             # Commit all links
             self.db.commit()
-            
+
             logger.info(
                 f"Created {len(created_links)} links for PDF resource {pdf_resource_id}"
             )
-            
+
             # Emit chunk.linked event
             event_bus.emit(
                 "chunk.linked",
@@ -2175,65 +2222,66 @@ class AutoLinkingService:
                 },
                 priority=EventPriority.NORMAL,
             )
-            
+
             return created_links
-            
+
         except Exception as e:
-            logger.error(f"Auto-linking failed for PDF {pdf_resource_id}: {e}", exc_info=True)
+            logger.error(
+                f"Auto-linking failed for PDF {pdf_resource_id}: {e}", exc_info=True
+            )
             self.db.rollback()
             raise
-    
+
     async def link_code_to_pdfs(
-        self,
-        code_resource_id: str,
-        similarity_threshold: Optional[float] = None
+        self, code_resource_id: str, similarity_threshold: Optional[float] = None
     ) -> List[db_models.ChunkLink]:
         """
         Link code chunks to PDF chunks based on semantic similarity.
-        
+
         Computes cosine similarity between all code chunks and existing PDF chunks,
         creating bidirectional links when similarity exceeds threshold.
-        
+
         Args:
             code_resource_id: Code resource ID
             similarity_threshold: Optional override for similarity threshold
-            
+
         Returns:
             List of created ChunkLink instances
         """
         threshold = similarity_threshold or self.similarity_threshold
         created_links = []
-        
+
         try:
             # Convert resource_id to UUID
             import uuid as uuid_module
+
             try:
                 resource_uuid = uuid_module.UUID(code_resource_id)
             except (ValueError, TypeError):
                 raise ValueError(f"Invalid resource_id format: {code_resource_id}")
-            
+
             # Get code resource
             code_resource = (
                 self.db.query(db_models.Resource)
                 .filter(db_models.Resource.id == resource_uuid)
                 .first()
             )
-            
+
             if not code_resource:
                 logger.warning(f"Code resource not found: {code_resource_id}")
                 return []
-            
+
             # Get all chunks for code resource
             code_chunks = (
                 self.db.query(db_models.DocumentChunk)
                 .filter(db_models.DocumentChunk.resource_id == resource_uuid)
                 .all()
             )
-            
+
             if not code_chunks:
                 logger.info(f"No chunks found for code resource: {code_resource_id}")
                 return []
-            
+
             # Get all PDF chunks (chunks from resources with PDF format)
             # For now, we'll get all chunks from other resources
             # In production, this would filter by resource type/format
@@ -2242,55 +2290,49 @@ class AutoLinkingService:
                 .filter(db_models.DocumentChunk.resource_id != resource_uuid)
                 .all()
             )
-            
+
             if not pdf_chunks:
                 logger.info("No PDF chunks found for linking")
                 return []
-            
+
             logger.info(
                 f"Linking {len(code_chunks)} code chunks to {len(pdf_chunks)} PDF chunks"
             )
-            
+
             # Compute similarities and create links
             for code_chunk in code_chunks:
                 code_embedding = self._get_chunk_embedding(code_chunk)
                 if not code_embedding:
                     continue
-                
+
                 for pdf_chunk in pdf_chunks:
                     pdf_embedding = self._get_chunk_embedding(pdf_chunk)
                     if not pdf_embedding:
                         continue
-                    
+
                     # Compute similarity
                     similarity = self._compute_cosine_similarity(
                         code_embedding, pdf_embedding
                     )
-                    
+
                     # Create link if above threshold
                     if similarity >= threshold:
                         # Create bidirectional links
                         link1 = self._create_link(
-                            code_chunk.id,
-                            pdf_chunk.id,
-                            similarity,
-                            "code_to_pdf"
+                            code_chunk.id, pdf_chunk.id, similarity, "code_to_pdf"
                         )
                         link2 = self._create_link(
-                            pdf_chunk.id,
-                            code_chunk.id,
-                            similarity,
-                            "pdf_to_code"
+                            pdf_chunk.id, code_chunk.id, similarity, "pdf_to_code"
                         )
                         created_links.extend([link1, link2])
-            
+
             # Commit all links
             self.db.commit()
-            
+
             logger.info(
                 f"Created {len(created_links)} links for code resource {code_resource_id}"
             )
-            
+
             # Emit chunk.linked event
             event_bus.emit(
                 "chunk.linked",
@@ -2301,10 +2343,12 @@ class AutoLinkingService:
                 },
                 priority=EventPriority.NORMAL,
             )
-            
+
             return created_links
-            
+
         except Exception as e:
-            logger.error(f"Auto-linking failed for code {code_resource_id}: {e}", exc_info=True)
+            logger.error(
+                f"Auto-linking failed for code {code_resource_id}: {e}", exc_info=True
+            )
             self.db.rollback()
             raise

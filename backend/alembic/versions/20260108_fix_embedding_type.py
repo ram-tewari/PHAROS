@@ -23,7 +23,9 @@ def upgrade() -> None:
 
     if bind.dialect.name == "postgresql":
         # Change from JSON to TEXT to avoid casting issues with NULL
-        op.execute("ALTER TABLE resources ALTER COLUMN embedding TYPE TEXT USING embedding::text")
+        op.execute(
+            "ALTER TABLE resources ALTER COLUMN embedding TYPE TEXT USING embedding::text"
+        )
     else:
         # SQLite: JSON is already flexible, no change needed
         pass
@@ -35,7 +37,9 @@ def downgrade() -> None:
 
     if bind.dialect.name == "postgresql":
         # Change back from TEXT to JSON
-        op.execute("ALTER TABLE resources ALTER COLUMN embedding TYPE JSON USING embedding::json")
+        op.execute(
+            "ALTER TABLE resources ALTER COLUMN embedding TYPE JSON USING embedding::json"
+        )
     else:
         # SQLite: no change needed
         pass

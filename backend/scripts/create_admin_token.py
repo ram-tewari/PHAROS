@@ -19,23 +19,24 @@ sys.path.insert(0, str(backend_dir))
 
 from app.config.settings import get_settings
 
+
 def create_admin_token(days_valid: int = 30) -> str:
     """Create a long-lived admin token.
-    
+
     Args:
         days_valid: Number of days the token should be valid (default: 30)
-        
+
     Returns:
         JWT token string
     """
     settings = get_settings()
-    
+
     # Admin user data
     admin_email = "admin@neoalexandria.dev"
-    
+
     # Token expiration
     expire = datetime.utcnow() + timedelta(days=days_valid)
-    
+
     # Token payload
     payload = {
         "sub": admin_email,
@@ -44,14 +45,14 @@ def create_admin_token(days_valid: int = 30) -> str:
         "tier": "admin",
         "is_premium": True,
     }
-    
+
     # Generate token
     token = jwt.encode(
         payload,
         settings.JWT_SECRET_KEY.get_secret_value(),
-        algorithm=settings.JWT_ALGORITHM
+        algorithm=settings.JWT_ALGORITHM,
     )
-    
+
     return token
 
 
@@ -61,10 +62,10 @@ def main():
     print("Neo Alexandria Admin Token Generator")
     print("=" * 80)
     print()
-    
+
     # Generate token
     token = create_admin_token(days_valid=30)
-    
+
     print("✅ Admin token generated successfully!")
     print()
     print("Token Details:")

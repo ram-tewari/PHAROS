@@ -12,7 +12,7 @@ Tests cover:
 import pytest
 import pytest_asyncio
 import uuid
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi import status
 from sqlalchemy import select
 
@@ -137,7 +137,8 @@ async def test_login_with_nonexistent_user(async_client):
 async def test_login_with_inactive_user(async_client, inactive_user):
     """Test login with inactive user account."""
     response = await async_client.post(
-        "/api/auth/login", data={"username": "inactiveuser", "password": "inactivepass123"}
+        "/api/auth/login",
+        data={"username": "inactiveuser", "password": "inactivepass123"},
     )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
@@ -159,7 +160,9 @@ async def test_token_refresh_with_valid_token(async_client, test_user):
     refresh_token = login_response.json()["refresh_token"]
 
     # Refresh the token
-    response = await async_client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
+    response = await async_client.post(
+        "/api/auth/refresh", json={"refresh_token": refresh_token}
+    )
 
     assert response.status_code == status.HTTP_200_OK
     data = response.json()
@@ -190,7 +193,9 @@ async def test_token_refresh_with_access_token(async_client, test_user):
     access_token = login_response.json()["access_token"]
 
     # Try to refresh with access token (wrong type)
-    response = await async_client.post("/api/auth/refresh", json={"refresh_token": access_token})
+    response = await async_client.post(
+        "/api/auth/refresh", json={"refresh_token": access_token}
+    )
 
     assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
@@ -233,37 +238,42 @@ async def test_logout_without_token(async_client):
 
 
 @pytest.mark.asyncio
-async def test_google_login_initiation(async_client):
+async def test_google_login_initiation(async_client, test_settings):
     """Test initiating Google OAuth2 flow."""
-    with patch("app.modules.auth.service.get_settings") as mock_settings:
-        mock_settings.return_value.GOOGLE_CLIENT_ID = "test_client_id"
-        mock_settings.return_value.GOOGLE_CLIENT_SECRET.get_secret_value.return_value = "test_secret"
-        mock_settings.return_value.GOOGLE_REDIRECT_URI = "http://localhost/callback"
+    from app.shared.oauth2 import GoogleOAuth2Provider
 
+    mock_provider_instance = AsyncMock(spec=GoogleOAuth2Provider)
+    mock_provider_instance.get_authorization_url.return_value = (
+        "https://accounts.google.com/o/oauth2/v2/auth?client_id=test"
+    )
+
+    with patch(
+        "app.modules.auth.router.get_google_provider",
+        return_value=mock_provider_instance,
+    ):
         response = await async_client.get("/api/auth/google")
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
 
-        assert "authorization_url" in data
-        assert "state" in data
-        assert "accounts.google.com" in data["authorization_url"]
+    assert "authorization_url" in data
+    assert "state" in data
+    assert "accounts.google.com" in data["authorization_url"]
 
 
 @pytest.mark.asyncio
-async def test_google_login_not_configured(async_client):
+async def test_google_login_not_configured(async_client, test_settings):
     """Test Google OAuth2 when not configured."""
-    with patch("app.modules.auth.service.get_settings") as mock_settings:
-        mock_settings.return_value.GOOGLE_CLIENT_ID = None
-        mock_settings.return_value.GOOGLE_CLIENT_SECRET = None
+    test_settings.GOOGLE_CLIENT_ID = None
+    test_settings.GOOGLE_CLIENT_SECRET = None
 
-        response = await async_client.get("/api/auth/google")
+    response = await async_client.get("/api/auth/google")
 
-        assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
+    assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
 
 
 @pytest.mark.asyncio
-async def test_google_callback_success(async_client, async_db_session):
+async def test_google_callback_success(async_client, async_db_session, test_settings):
     """Test successful Google OAuth2 callback."""
     mock_token_data = {"access_token": "mock_google_token"}
     mock_user_info = {
@@ -272,34 +282,42 @@ async def test_google_callback_success(async_client, async_db_session):
         "name": "Google User",
     }
 
-    with (
-        patch("app.modules.auth.service.get_settings") as mock_settings,
-        patch("app.modules.auth.router.get_google_provider") as mock_provider,
+    mock_provider_instance = AsyncMock()
+    mock_provider_instance.exchange_code_for_token.return_value = mock_token_data
+    mock_provider_instance.get_user_info.return_value = mock_user_info
+
+    with patch(
+        "app.modules.auth.router.get_google_provider",
+        return_value=mock_provider_instance,
     ):
-        mock_settings.return_value.GOOGLE_CLIENT_ID = "test_client_id"
-        mock_settings.return_value.GOOGLE_CLIENT_SECRET.get_secret_value.return_value = "test_secret"
-
-        mock_provider_instance = AsyncMock()
-        mock_provider_instance.exchange_code_for_token.return_value = mock_token_data
-        mock_provider_instance.get_user_info.return_value = mock_user_info
-        mock_provider.return_value = mock_provider_instance
-
         response = await async_client.get(
-            "/api/auth/google/callback", params={"code": "test_code", "state": "test_state"}
+            "/api/auth/google/callback",
+            params={"code": "test_code", "state": "test_state"},
         )
 
-        assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
-        location = response.headers["location"]
-        
-        assert "access_token=" in location
-        assert "refresh_token=" in location
+    assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+    location = response.headers["location"]
 
-        # Verify user was created
-        stmt = select(User).where(User.email == "google@example.com")
-        result = await async_db_session.execute(stmt)
-        user = result.scalar_one_or_none()
-        assert user is not None
-        assert user.username == "Google User"
+    # Tokens should NOT be in URL (security improvement)
+    assert "access_token=" not in location
+    assert "refresh_token=" not in location
+    assert location == "http://localhost:5173/auth/callback"
+
+    # Verify cookies are set (httpx doesn't expose cookie attributes,
+    # but we can verify the cookies are present)
+    cookies = response.cookies
+    assert "access_token" in cookies
+    assert "refresh_token" in cookies
+    # Cookie values should be non-empty JWT tokens
+    assert len(cookies["access_token"]) > 100  # JWT tokens are long
+    assert len(cookies["refresh_token"]) > 100
+
+    # Verify user was created
+    stmt = select(User).where(User.email == "google@example.com")
+    result = await async_db_session.execute(stmt)
+    user = result.scalar_one_or_none()
+    assert user is not None
+    assert user.username == "Google User"
 
 
 # ============================================================================
@@ -308,69 +326,82 @@ async def test_google_callback_success(async_client, async_db_session):
 
 
 @pytest.mark.asyncio
-async def test_github_login_initiation(async_client):
+async def test_github_login_initiation(async_client, test_settings):
     """Test initiating GitHub OAuth2 flow."""
-    with patch("app.modules.auth.service.get_settings") as mock_settings:
-        mock_settings.return_value.GITHUB_CLIENT_ID = "test_client_id"
-        mock_settings.return_value.GITHUB_CLIENT_SECRET.get_secret_value.return_value = "test_secret"
-        mock_settings.return_value.GITHUB_REDIRECT_URI = "http://localhost/callback"
+    from app.shared.oauth2 import GitHubOAuth2Provider
 
+    mock_provider_instance = AsyncMock(spec=GitHubOAuth2Provider)
+    mock_provider_instance.get_authorization_url.return_value = (
+        "https://github.com/login/oauth/authorize?client_id=test"
+    )
+
+    with patch(
+        "app.modules.auth.router.get_github_provider",
+        return_value=mock_provider_instance,
+    ):
         response = await async_client.get("/api/auth/github")
 
-        assert response.status_code == status.HTTP_200_OK
-        data = response.json()
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
 
-        assert "authorization_url" in data
-        assert "state" in data
-        assert "github.com" in data["authorization_url"]
+    assert "authorization_url" in data
+    assert "state" in data
+    assert "github.com" in data["authorization_url"]
 
 
 @pytest.mark.asyncio
-async def test_github_login_not_configured(async_client):
+async def test_github_login_not_configured(async_client, test_settings):
     """Test GitHub OAuth2 when not configured."""
-    with patch("app.modules.auth.service.get_settings") as mock_settings:
-        mock_settings.return_value.GITHUB_CLIENT_ID = None
-        mock_settings.return_value.GITHUB_CLIENT_SECRET = None
+    test_settings.GITHUB_CLIENT_ID = None
+    test_settings.GITHUB_CLIENT_SECRET = None
 
-        response = await async_client.get("/api/auth/github")
+    response = await async_client.get("/api/auth/github")
 
-        assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
+    assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
 
 
 @pytest.mark.asyncio
-async def test_github_callback_success(async_client, async_db_session):
+async def test_github_callback_success(async_client, async_db_session, test_settings):
     """Test successful GitHub OAuth2 callback."""
     mock_token_data = {"access_token": "mock_github_token"}
     mock_user_info = {"id": 12345, "login": "githubuser", "email": "github@example.com"}
 
-    with (
-        patch("app.modules.auth.service.get_settings") as mock_settings,
-        patch("app.modules.auth.router.get_github_provider") as mock_provider,
+    mock_provider_instance = AsyncMock()
+    mock_provider_instance.exchange_code_for_token.return_value = mock_token_data
+    mock_provider_instance.get_user_info.return_value = mock_user_info
+
+    with patch(
+        "app.modules.auth.router.get_github_provider",
+        return_value=mock_provider_instance,
     ):
-        mock_settings.return_value.GITHUB_CLIENT_ID = "test_client_id"
-        mock_settings.return_value.GITHUB_CLIENT_SECRET.get_secret_value.return_value = "test_secret"
-
-        mock_provider_instance = AsyncMock()
-        mock_provider_instance.exchange_code_for_token.return_value = mock_token_data
-        mock_provider_instance.get_user_info.return_value = mock_user_info
-        mock_provider.return_value = mock_provider_instance
-
         response = await async_client.get(
-            "/api/auth/github/callback", params={"code": "test_code", "state": "test_state"}
+            "/api/auth/github/callback",
+            params={"code": "test_code", "state": "test_state"},
         )
 
-        assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
-        location = response.headers["location"]
-        
-        assert "access_token=" in location
-        assert "refresh_token=" in location
+    assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
+    location = response.headers["location"]
 
-        # Verify user was created
-        stmt = select(User).where(User.email == "github@example.com")
-        result = await async_db_session.execute(stmt)
-        user = result.scalar_one_or_none()
-        assert user is not None
-        assert user.username == "githubuser"
+    # Tokens should NOT be in URL (security improvement)
+    assert "access_token=" not in location
+    assert "refresh_token=" not in location
+    assert location == "http://localhost:5173/auth/callback"
+
+    # Verify cookies are set (httpx doesn't expose cookie attributes,
+    # but we can verify the cookies are present)
+    cookies = response.cookies
+    assert "access_token" in cookies
+    assert "refresh_token" in cookies
+    # Cookie values should be non-empty JWT tokens
+    assert len(cookies["access_token"]) > 100  # JWT tokens are long
+    assert len(cookies["refresh_token"]) > 100
+
+    # Verify user was created
+    stmt = select(User).where(User.email == "github@example.com")
+    result = await async_db_session.execute(stmt)
+    user = result.scalar_one_or_none()
+    assert user is not None
+    assert user.username == "githubuser"
 
 
 # ============================================================================
@@ -446,7 +477,8 @@ async def test_get_rate_limit_status_premium_tier(async_client, premium_user):
     """Test getting rate limit status for premium tier user."""
     # Login first
     login_response = await async_client.post(
-        "/api/auth/login", data={"username": "premiumuser", "password": "premiumpass123"}
+        "/api/auth/login",
+        data={"username": "premiumuser", "password": "premiumpass123"},
     )
 
     access_token = login_response.json()["access_token"]
@@ -477,7 +509,9 @@ async def test_get_rate_limit_without_auth(async_client):
 
 
 @pytest.mark.asyncio
-async def test_oauth_account_linking_to_existing_user(async_client, test_user, async_db_session):
+async def test_oauth_account_linking_to_existing_user(
+    async_client, test_user, async_db_session
+):
     """Test linking OAuth account to existing user with same email."""
     mock_token_data = {"access_token": "mock_token"}
     mock_user_info = {
@@ -499,7 +533,8 @@ async def test_oauth_account_linking_to_existing_user(async_client, test_user, a
         mock_provider.return_value = mock_provider_instance
 
         response = await async_client.get(
-            "/api/auth/google/callback", params={"code": "test_code", "state": "test_state"}
+            "/api/auth/google/callback",
+            params={"code": "test_code", "state": "test_state"},
         )
 
         assert response.status_code == status.HTTP_307_TEMPORARY_REDIRECT
@@ -514,4 +549,3 @@ async def test_oauth_account_linking_to_existing_user(async_client, test_user, a
 
         assert oauth_account is not None
         assert oauth_account.user_id == test_user.id
-

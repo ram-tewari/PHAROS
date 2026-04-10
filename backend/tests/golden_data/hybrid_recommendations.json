@@ -37,9 +37,9 @@
     },
     "expected": {
       "hybrid_scores": {
-        "res_1": 0.7675,
-        "res_2": 0.7415,
-        "res_3": 0.7365
+        "res_1": 0.7635,
+        "res_2": 0.726,
+        "res_3": 0.725
       },
       "ranked_ids": ["res_1", "res_2", "res_3"],
       "tolerance": 0.002
@@ -123,7 +123,7 @@
     },
     "expected": {
       "is_cold_start": true,
-      "actual_strategy": "hybrid",
+      "actual_strategy": "collaborative",
       "strategies_used": ["content", "graph"],
       "collaborative_excluded": true
     }

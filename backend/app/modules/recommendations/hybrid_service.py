@@ -798,6 +798,7 @@ class HybridRecommendationService:
                         "is_cold_start": is_cold_start,
                         "diversity_applied": False,
                         "novelty_applied": False,
+                        "gini_coefficient": 0.0,
                     },
                 }
 
@@ -816,6 +817,7 @@ class HybridRecommendationService:
                         "is_cold_start": is_cold_start,
                         "diversity_applied": False,
                         "novelty_applied": False,
+                        "gini_coefficient": 0.0,
                     },
                 }
 

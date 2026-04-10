@@ -14,10 +14,13 @@ logger = logging.getLogger(__name__)
 # Try to import FlagEmbedding for BGE-M3 model
 try:
     from FlagEmbedding import BGEM3FlagModel
+
     BGEM3_AVAILABLE = True
 except ImportError:
     BGEM3_AVAILABLE = False
-    logger.info("FlagEmbedding not available, using TF-IDF fallback for sparse embeddings")
+    logger.info(
+        "FlagEmbedding not available, using TF-IDF fallback for sparse embeddings"
+    )
 
 
 class SparseEmbeddingService:
@@ -45,19 +48,19 @@ class SparseEmbeddingService:
         """Lazy load the sparse embedding model on first use."""
         if self._model_loaded:
             return
-        
+
         self._model_loaded = True
-        
+
         if not BGEM3_AVAILABLE:
             logger.warning("BGE-M3 model not available, using TF-IDF fallback")
             return
-            
+
         try:
             logger.info(f"Loading BGE-M3 model: {self.model_name}")
             self.model = BGEM3FlagModel(
                 self.model_name,
                 use_fp16=True,  # Memory efficient
-                device="cpu"  # Start with CPU, can be changed to "cuda" if available
+                device="cpu",  # Start with CPU, can be changed to "cuda" if available
             )
             logger.info("BGE-M3 model loaded successfully")
         except Exception as e:
@@ -87,12 +90,12 @@ class SparseEmbeddingService:
 
             # Use BGE-M3 model to generate sparse embedding
             output = self.model.encode(
-                [text], 
+                [text],
                 return_sparse=True,
                 return_dense=False,
-                return_colbert_vecs=False
+                return_colbert_vecs=False,
             )
-            sparse_vec = output.get('lexical_weights', [{}])[0]
+            sparse_vec = output.get("lexical_weights", [{}])[0]
             return {int(k): float(v) for k, v in sparse_vec.items()}
 
         except Exception as e:

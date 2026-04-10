@@ -161,8 +161,8 @@ class TestProfileComputation:
         service = UserProfileService(db_session)
 
         # Create resources with embeddings
-        embedding1 = [0.1] * 768
-        embedding2 = [0.2] * 768
+        embedding1 = json.dumps([0.1] * 768)
+        embedding2 = json.dumps([0.2] * 768)
 
         resource1 = Resource(
             title="Test Resource 1", description="Test content 1", embedding=embedding1
@@ -271,7 +271,9 @@ class TestTemporalWeighting:
         # Create resource with embedding
         embedding = [0.5] * 768
         resource = Resource(
-            title="Test Resource", description="Test content", embedding=embedding
+            title="Test Resource",
+            description="Test content",
+            embedding=json.dumps(embedding),
         )
         db_session.add(resource)
         db_session.commit()
@@ -302,7 +304,9 @@ class TestTemporalWeighting:
         # Create resource with embedding
         embedding = [0.5] * 768
         resource = Resource(
-            title="Test Resource", description="Test content", embedding=embedding
+            title="Test Resource",
+            description="Test content",
+            embedding=json.dumps(embedding),
         )
         db_session.add(resource)
         db_session.commit()
@@ -331,10 +335,14 @@ class TestTemporalWeighting:
 
         # Create two resources with different embeddings
         resource1 = Resource(
-            title="Recent Resource", description="Recent content", embedding=[1.0] * 768
+            title="Recent Resource",
+            description="Recent content",
+            embedding=json.dumps([1.0] * 768),
         )
         resource2 = Resource(
-            title="Old Resource", description="Old content", embedding=[0.0] * 768
+            title="Old Resource",
+            description="Old content",
+            embedding=json.dumps([0.0] * 768),
         )
         db_session.add_all([resource1, resource2])
         db_session.commit()

@@ -39,6 +39,7 @@ from slugify import slugify
 try:
     import pybreaker
     from ..shared.circuit_breaker import http_content_breaker
+
     CIRCUIT_BREAKER_AVAILABLE = True
 except ImportError:
     CIRCUIT_BREAKER_AVAILABLE = False
@@ -87,9 +88,7 @@ def _do_fetch_url(url: str, timeout: float = 10.0) -> Dict[str, Any]:
         else:
             try:
                 headers_norm = (
-                    dict(raw_headers.items())
-                    if hasattr(raw_headers, "items")
-                    else {}
+                    dict(raw_headers.items()) if hasattr(raw_headers, "items") else {}
                 )
             except Exception:
                 headers_norm = {}
@@ -115,7 +114,7 @@ def fetch_url(url: str, timeout: float = 10.0) -> Dict[str, Any]:
 
     Returns a dict with final URL, status code, headers, raw content bytes, and HTML text when applicable.
     Raises ValueError on network or HTTP errors.
-    
+
     The circuit breaker opens after 3 consecutive failures and attempts
     recovery after 60 seconds to prevent cascading failures.
     """
@@ -126,9 +125,13 @@ def fetch_url(url: str, timeout: float = 10.0) -> Dict[str, Any]:
         else:
             # No circuit breaker available, call directly
             return _do_fetch_url(url, timeout)
-    except pybreaker.CircuitBreakerError if CIRCUIT_BREAKER_AVAILABLE else Exception as e:
+    except (
+        pybreaker.CircuitBreakerError if CIRCUIT_BREAKER_AVAILABLE else Exception
+    ) as e:
         logger.error(f"Circuit breaker open for URL fetching, failing fast: {url}")
-        raise ValueError(f"Service temporarily unavailable (circuit breaker open): {url}") from e
+        raise ValueError(
+            f"Service temporarily unavailable (circuit breaker open): {url}"
+        ) from e
     except (
         httpx.HTTPError,
         httpx.RequestError,
@@ -149,7 +152,7 @@ def extract_text(html: str) -> Dict[str, Any]:
 
     Prefer readability-lxml if available; fallback to BeautifulSoup-only.
     Always strip scripts/styles and return plain text.
-    
+
     If readability extracts too little content (< 500 words), fall back to
     full BeautifulSoup extraction to capture more complete content.
     """
@@ -165,7 +168,7 @@ def extract_text(html: str) -> Dict[str, Any]:
             soup = BeautifulSoup(summary_html, "html.parser")
             _strip_scripts_and_styles(soup)
             readability_text = soup.get_text("\n", strip=True)
-            
+
             # Check if readability extracted enough content
             # If less than 500 words, it might be too aggressive
             word_count = len(readability_text.split())
@@ -174,7 +177,7 @@ def extract_text(html: str) -> Dict[str, Any]:
             else:
                 logger.info(
                     "Readability extracted only %d words, falling back to full extraction",
-                    word_count
+                    word_count,
                 )
         except Exception as exc:
             logger.debug("Readability extraction failed: %s", exc)
@@ -186,13 +189,13 @@ def extract_text(html: str) -> Dict[str, Any]:
     if not text:
         soup = BeautifulSoup(html, "html.parser")
         _strip_scripts_and_styles(soup)
-        
+
         # Best-effort title
         if title is None:
             t = soup.find("title")
             if t and t.text:
                 title = t.text.strip() or None
-        
+
         # Extract text from main content areas
         # Try to find main content containers first
         main_content = None
@@ -200,7 +203,7 @@ def extract_text(html: str) -> Dict[str, Any]:
             main_content = soup.select_one(selector)
             if main_content:
                 break
-        
+
         # If we found a main content area, extract from there
         # Otherwise, extract from body
         if main_content:
@@ -240,14 +243,14 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
     text_content = ""
     page_boundaries = []
     structured_metadata = {}
-    
+
     # Primary: PyMuPDF
     if fitz is not None:  # pragma: no cover - depends on optional lib
         try:
             with fitz.open(stream=content_bytes, filetype="pdf") as doc:
                 parts = []
                 current_offset = 0
-                
+
                 # Extract metadata from PDF info dictionary
                 if extract_metadata and doc.metadata:
                     metadata = doc.metadata
@@ -255,12 +258,12 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
                     structured_metadata["authors"] = metadata.get("author") or None
                     structured_metadata["subject"] = metadata.get("subject") or None
                     structured_metadata["keywords"] = metadata.get("keywords") or None
-                
+
                 # Extract text page by page
                 for page_num, page in enumerate(doc, start=1):
                     page_text = page.get_text("text")
                     parts.append(page_text)
-                    
+
                     # Track page boundaries if metadata extraction is enabled
                     if extract_metadata:
                         page_length = len(page_text)
@@ -268,17 +271,23 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
                             # Add newline between pages
                             if page_num > 1:
                                 current_offset += 1  # Account for newline
-                            page_boundaries.append({
-                                "start_char": current_offset,
-                                "end_char": current_offset + page_length,
-                                "page_num": page_num
-                            })
+                            page_boundaries.append(
+                                {
+                                    "start_char": current_offset,
+                                    "end_char": current_offset + page_length,
+                                    "page_num": page_num,
+                                }
+                            )
                             current_offset += page_length
-                
+
                 text_content = "\n".join(parts).strip()
-                
+
                 # Try to extract abstract from first page if not in metadata
-                if extract_metadata and not structured_metadata.get("abstract") and len(parts) > 0:
+                if (
+                    extract_metadata
+                    and not structured_metadata.get("abstract")
+                    and len(parts) > 0
+                ):
                     first_page = parts[0].lower()
                     # Look for abstract section
                     abstract_markers = ["abstract", "summary"]
@@ -287,7 +296,7 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
                             # Simple heuristic: extract text after abstract marker
                             marker_pos = first_page.find(marker)
                             # Find next section or take next 500 chars
-                            abstract_text = parts[0][marker_pos:marker_pos + 500]
+                            abstract_text = parts[0][marker_pos : marker_pos + 500]
                             # Clean up
                             lines = abstract_text.split("\n")
                             if len(lines) > 1:
@@ -295,10 +304,10 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
                                 abstract_text = "\n".join(lines[1:]).strip()
                                 structured_metadata["abstract"] = abstract_text[:500]
                             break
-                            
+
         except Exception as exc:
             logger.info("PyMuPDF failed to parse PDF: %s", exc)
-    
+
     # Fallback: pdfminer (no page boundary support)
     if not text_content and pdfminer_extract_text is not None:  # pragma: no cover
         try:
@@ -306,23 +315,27 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
             text_content = (pdfminer_extract_text(buf) or "").strip()
             # pdfminer doesn't provide page boundaries or metadata
             if extract_metadata:
-                logger.warning("pdfminer fallback: page boundaries and metadata not available")
+                logger.warning(
+                    "pdfminer fallback: page boundaries and metadata not available"
+                )
         except Exception as exc:
             logger.info("pdfminer failed to parse PDF: %s", exc)
-    
+
     result = {
         "title": structured_metadata.get("title") if extract_metadata else None,
-        "text": text_content or ""
+        "text": text_content or "",
     }
-    
+
     if extract_metadata:
         result["page_boundaries"] = page_boundaries
         result["structured_metadata"] = structured_metadata
-    
+
     return result
 
 
-def extract_from_fetched(fetched: Dict[str, Any], extract_metadata: bool = False) -> Dict[str, Any]:
+def extract_from_fetched(
+    fetched: Dict[str, Any], extract_metadata: bool = False
+) -> Dict[str, Any]:
     """Extract title/text from fetched response supporting HTML and PDF.
 
     Args:

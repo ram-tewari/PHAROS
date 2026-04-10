@@ -2,7 +2,7 @@
 
 ## Overview
 
-Phase 19 introduces a hybrid edge-cloud architecture that splits Neo Alexandria's backend into two complementary components to optimize cost and performance:
+Phase 19 introduces a hybrid edge-cloud architecture that splits Pharos's backend into two complementary components to optimize cost and performance:
 
 1. **Cloud API (Control Plane)** - Lightweight FastAPI service on Render Free Tier
 2. **Edge Worker (Compute Plane)** - GPU-accelerated Python worker on local hardware

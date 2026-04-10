@@ -12,6 +12,10 @@ Functions:
 - get_embedding_service: Get pre-loaded embedding service from worker
 """
 
-from .celery_app import celery_app, get_embedding_service
+try:
+    from .celery_app import celery_app, get_embedding_service
+except ImportError:
+    celery_app = None
+    get_embedding_service = None
 
 __all__ = ["celery_app", "get_embedding_service"]

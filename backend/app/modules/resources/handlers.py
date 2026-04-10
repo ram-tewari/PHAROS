@@ -72,16 +72,18 @@ def handle_resource_created(event: Event) -> None:
         try:
             # Fetch the resource to get its content
             resource = db.query(Resource).filter(Resource.id == resource_id).first()
-            
+
             if not resource:
                 logger.warning(f"Resource {resource_id} not found, skipping chunking")
                 return
-            
+
             # Get content from resource description (or other text field)
             content = resource.description or ""
-            
+
             if not content or len(content.strip()) < 100:
-                logger.info(f"Resource {resource_id} has insufficient content for chunking (length: {len(content)})")
+                logger.info(
+                    f"Resource {resource_id} has insufficient content for chunking (length: {len(content)})"
+                )
                 return
 
             # Initialize chunking service
@@ -94,8 +96,7 @@ def handle_resource_created(event: Event) -> None:
 
             # Perform chunking with content
             chunks = chunking_service.chunk_resource(
-                resource_id=str(resource_id),
-                content=content
+                resource_id=str(resource_id), content=content
             )
 
             logger.info(

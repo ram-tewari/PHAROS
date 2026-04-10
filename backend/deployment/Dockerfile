@@ -1,4 +1,4 @@
-# Neo Alexandria 2.0 - Backend Dockerfile
+# Pharos 2.0 - Backend Dockerfile
 # Multi-stage build for optimized production image
 
 # Stage 1: Builder

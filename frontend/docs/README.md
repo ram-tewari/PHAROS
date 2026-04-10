@@ -1,4 +1,4 @@
-# Neo Alexandria Frontend Documentation
+# Pharos Frontend Documentation
 
 **Version**: 2.0
 **Status**: Phase 1 Complete ✅
@@ -6,7 +6,7 @@
 
 ## Overview
 
-Neo Alexandria's frontend is a "Second Brain" interface for code and knowledge management. Built with React 18, TypeScript, and TanStack Router, it provides an intelligent workspace for developers to explore, annotate, and understand their codebases.
+Pharos's frontend is a "Second Brain" interface for code and knowledge management. Built with React 18, TypeScript, and TanStack Router, it provides an intelligent workspace for developers to explore, annotate, and understand their codebases.
 
 ## Documentation Structure
 
@@ -316,4 +316,4 @@ The frontend uses a centralized API client (`src/core/api/client.ts`) that:
 ---
 
 **Last Updated**: January 22, 2026
-**Maintainer**: Neo Alexandria Team
+**Maintainer**: Pharos Team

@@ -5,6 +5,6 @@ This module provides MCP server infrastructure for tool registration and invocat
 It exposes backend capabilities as MCP-compatible tools for frontend integration.
 """
 
-from .router import router
+from .router import router, mcp_router
 
-__all__ = ["router"]
+__all__ = ["router", "mcp_router"]

@@ -36,4 +36,6 @@ class MCPSession(Base):
     )
 
     def __repr__(self):
-        return f"<MCPSession(id={self.id}, user_id={self.user_id}, status={self.status})>"
+        return (
+            f"<MCPSession(id={self.id}, user_id={self.user_id}, status={self.status})>"
+        )

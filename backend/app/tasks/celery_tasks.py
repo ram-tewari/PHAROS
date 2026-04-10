@@ -1311,3 +1311,242 @@ def ingest_repo_task(
             # Permanent error - don't retry
             logger.error(f"Permanent error in repository ingestion: {e}")
             raise
+
+
+# ============================================================================
+# Phase 6: Heuristic Sieve — Nightly Temporal Survival Filter
+# ============================================================================
+
+
+@celery_app.task(
+    bind=True,
+    base=DatabaseTask,
+    max_retries=2,
+    default_retry_delay=300,
+    name="app.tasks.celery_tasks.heuristic_sieve_task",
+)
+def heuristic_sieve_task(self, db=None):
+    """
+    Nightly scheduled task that identifies coding patterns surviving the
+    temporal heuristic window and pushes them to a Redis queue for local
+    LLM extraction.
+
+    Algorithm:
+    1. Fetch commits from FEEDBACK_SURVIVAL_DAYS ago via the GitHub API.
+    2. For each modified Python file, compute an AST structural fingerprint.
+    3. Compare the fingerprint against the current state of the main branch.
+    4. If the structure survived intact, push the diff payload to the
+       ``pharos_extraction_jobs`` Redis queue.
+
+    This task is the cloud-side orchestrator; the heavy LLM inference
+    happens on the local extraction worker that consumes the queue.
+    """
+    import ast
+    import hashlib
+    import json
+    from datetime import datetime, timedelta, timezone
+
+    import httpx
+    import redis
+
+    from ..config.settings import get_settings
+
+    settings = get_settings()
+
+    if not settings.FEEDBACK_LOOP_ENABLED:
+        logger.info("Feedback loop disabled — skipping heuristic sieve")
+        return {"status": "skipped", "reason": "FEEDBACK_LOOP_ENABLED=False"}
+
+    owner = settings.FEEDBACK_GITHUB_OWNER
+    repo = settings.FEEDBACK_GITHUB_REPO
+    if not owner or not repo:
+        logger.warning("FEEDBACK_GITHUB_OWNER/REPO not configured — skipping")
+        return {"status": "skipped", "reason": "missing owner/repo config"}
+
+    survival_days = settings.FEEDBACK_SURVIVAL_DAYS
+    cutoff = datetime.now(timezone.utc) - timedelta(days=survival_days)
+    cutoff_iso = cutoff.strftime("%Y-%m-%dT%H:%M:%SZ")
+
+    headers = {"Accept": "application/vnd.github+json"}
+    gh_token = settings.GITHUB_API_TOKEN
+    if gh_token:
+        headers["Authorization"] = f"Bearer {gh_token.get_secret_value()}"
+
+    api_base = f"https://api.github.com/repos/{owner}/{repo}"
+
+    jobs_pushed = 0
+
+    try:
+        with httpx.Client(timeout=30) as client:
+            # Step 1: Fetch commits from the cutoff window
+            resp = client.get(
+                f"{api_base}/commits",
+                params={"since": cutoff_iso, "per_page": 100},
+                headers=headers,
+            )
+            resp.raise_for_status()
+            commits = resp.json()
+
+            if not commits:
+                logger.info("No commits found in the survival window")
+                return {"status": "ok", "jobs_pushed": 0}
+
+            # Step 2: For each commit, inspect Python file diffs
+            r = redis.Redis(
+                host=settings.REDIS_HOST,
+                port=settings.REDIS_PORT,
+                db=0,
+                decode_responses=True,
+            )
+
+            for commit_data in commits:
+                sha = commit_data["sha"]
+
+                # Get the full commit with file diffs
+                detail_resp = client.get(
+                    f"{api_base}/commits/{sha}",
+                    headers=headers,
+                )
+                detail_resp.raise_for_status()
+                detail = detail_resp.json()
+
+                for file_info in detail.get("files", []):
+                    filename = file_info.get("filename", "")
+                    if not filename.endswith(".py"):
+                        continue
+                    if file_info.get("status") not in ("modified", "added"):
+                        continue
+
+                    patch = file_info.get("patch", "")
+                    if not patch:
+                        continue
+
+                    # Step 3: Fetch the file's current state on main
+                    current_resp = client.get(
+                        f"{api_base}/contents/{filename}",
+                        params={"ref": "main"},
+                        headers={**headers, "Accept": "application/vnd.github.raw+json"},
+                    )
+                    if current_resp.status_code != 200:
+                        continue
+
+                    current_source = current_resp.text
+
+                    # Step 4: Compute AST fingerprint of the current file
+                    try:
+                        tree = ast.parse(current_source)
+                    except SyntaxError:
+                        continue
+
+                    fingerprint = _ast_structural_fingerprint(tree)
+
+                    # Fetch the file at the old commit to compare
+                    old_resp = client.get(
+                        f"{api_base}/contents/{filename}",
+                        params={"ref": sha},
+                        headers={**headers, "Accept": "application/vnd.github.raw+json"},
+                    )
+                    if old_resp.status_code != 200:
+                        continue
+
+                    try:
+                        old_tree = ast.parse(old_resp.text)
+                    except SyntaxError:
+                        continue
+
+                    old_fingerprint = _ast_structural_fingerprint(old_tree)
+
+                    # Step 5: If the structural change survived, push to queue
+                    if old_fingerprint != fingerprint:
+                        # Structure changed in the commit AND survived to main —
+                        # this is a pattern worth extracting.
+                        job = {
+                            "repository": f"{owner}/{repo}",
+                            "commit_sha": sha,
+                            "file_path": filename,
+                            "diff": patch,
+                            "current_fingerprint": fingerprint,
+                            "old_fingerprint": old_fingerprint,
+                            "committed_at": detail.get("commit", {})
+                            .get("committer", {})
+                            .get("date", ""),
+                        }
+                        r.lpush(
+                            settings.FEEDBACK_REDIS_QUEUE,
+                            json.dumps(job),
+                        )
+                        jobs_pushed += 1
+                        logger.info(
+                            "Queued extraction job: %s @ %s — %s",
+                            filename,
+                            sha[:8],
+                            settings.FEEDBACK_REDIS_QUEUE,
+                        )
+
+        logger.info("Heuristic sieve complete: %d jobs pushed", jobs_pushed)
+        return {"status": "ok", "jobs_pushed": jobs_pushed}
+
+    except Exception as exc:
+        logger.error("Heuristic sieve failed: %s", exc, exc_info=True)
+        raise self.retry(exc=exc, countdown=2**self.request.retries * 120)
+
+
+def _ast_structural_fingerprint(tree: "ast.AST") -> str:
+    """
+    Produce a deterministic hash of a module's structural skeleton.
+
+    Captures class/function names, decorator names, argument counts,
+    and nesting depth — but ignores literal values, comments, and
+    whitespace so that formatting-only changes are invisible.
+    """
+    import ast
+    import hashlib
+
+    parts: list[str] = []
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.FunctionDef) or isinstance(node, ast.AsyncFunctionDef):
+            decorators = [
+                _decorator_name(d) for d in node.decorator_list
+            ]
+            parts.append(
+                f"{'async ' if isinstance(node, ast.AsyncFunctionDef) else ''}"
+                f"def {node.name}({len(node.args.args)} args) "
+                f"decorators={sorted(decorators)}"
+            )
+        elif isinstance(node, ast.ClassDef):
+            bases = [_node_name(b) for b in node.bases]
+            parts.append(f"class {node.name}({','.join(sorted(bases))})")
+        elif isinstance(node, ast.Import):
+            names = sorted(alias.name for alias in node.names)
+            parts.append(f"import {','.join(names)}")
+        elif isinstance(node, ast.ImportFrom):
+            names = sorted(alias.name for alias in node.names)
+            parts.append(f"from {node.module} import {','.join(names)}")
+
+    signature = "\n".join(sorted(parts))
+    return hashlib.sha256(signature.encode()).hexdigest()
+
+
+def _decorator_name(node) -> str:
+    """Extract a human-readable name from a decorator AST node."""
+    import ast
+
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return f"{_node_name(node.value)}.{node.attr}"
+    if isinstance(node, ast.Call):
+        return _decorator_name(node.func)
+    return "?"
+
+
+def _node_name(node) -> str:
+    """Extract a name from an AST node (Name or Attribute)."""
+    import ast
+
+    if isinstance(node, ast.Name):
+        return node.id
+    if isinstance(node, ast.Attribute):
+        return f"{_node_name(node.value)}.{node.attr}"
+    return "?"

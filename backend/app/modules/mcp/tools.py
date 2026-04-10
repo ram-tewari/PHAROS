@@ -20,8 +20,16 @@ TOOL_SCHEMAS = {
             "type": "object",
             "properties": {
                 "query": {"type": "string", "description": "Search query"},
-                "limit": {"type": "integer", "default": 10, "description": "Maximum results"},
-                "offset": {"type": "integer", "default": 0, "description": "Result offset"},
+                "limit": {
+                    "type": "integer",
+                    "default": 10,
+                    "description": "Maximum results",
+                },
+                "offset": {
+                    "type": "integer",
+                    "default": 0,
+                    "description": "Result offset",
+                },
             },
             "required": ["query"],
         },
@@ -140,7 +148,10 @@ TOOL_SCHEMAS = {
         "input_schema": {
             "type": "object",
             "properties": {
-                "resource_id": {"type": "integer", "description": "Architecture document resource ID"},
+                "resource_id": {
+                    "type": "integer",
+                    "description": "Architecture document resource ID",
+                },
             },
             "required": ["resource_id"],
         },
@@ -161,7 +172,10 @@ TOOL_SCHEMAS = {
         "input_schema": {
             "type": "object",
             "properties": {
-                "pdf_resource_id": {"type": "integer", "description": "PDF resource ID"},
+                "pdf_resource_id": {
+                    "type": "integer",
+                    "description": "PDF resource ID",
+                },
                 "similarity_threshold": {
                     "type": "number",
                     "default": 0.7,
@@ -184,7 +198,9 @@ TOOL_SCHEMAS = {
 
 
 # Tool handlers
-async def search_resources_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def search_resources_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for search_resources tool"""
     from ..search.service import SearchService
     from ...shared.database import get_sync_db
@@ -202,7 +218,9 @@ async def search_resources_handler(arguments: Dict[str, Any], context: Dict[str,
         db.close()
 
 
-async def get_hover_info_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def get_hover_info_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for get_hover_info tool"""
     from ..graph.router import get_hover_information
     from ...shared.database import get_sync_db
@@ -221,7 +239,9 @@ async def get_hover_info_handler(arguments: Dict[str, Any], context: Dict[str, A
         db.close()
 
 
-async def compute_graph_metrics_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def compute_graph_metrics_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for compute_graph_metrics tool"""
     from ..graph.service import GraphService
     from ...shared.database import get_sync_db
@@ -235,7 +255,9 @@ async def compute_graph_metrics_handler(arguments: Dict[str, Any], context: Dict
         db.close()
 
 
-async def detect_communities_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def detect_communities_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for detect_communities tool"""
     from ..graph.service import CommunityDetectionService
     from ...shared.database import get_sync_db
@@ -252,7 +274,9 @@ async def detect_communities_handler(arguments: Dict[str, Any], context: Dict[st
         db.close()
 
 
-async def generate_plan_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def generate_plan_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for generate_plan tool"""
     from ..planning.service import MultiHopAgent
     from ...shared.database import get_sync_db
@@ -270,7 +294,9 @@ async def generate_plan_handler(arguments: Dict[str, Any], context: Dict[str, An
         db.close()
 
 
-async def parse_architecture_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def parse_architecture_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for parse_architecture tool"""
     from ..planning.service import ArchitectureParser
     from ...shared.database import get_sync_db
@@ -279,13 +305,17 @@ async def parse_architecture_handler(arguments: Dict[str, Any], context: Dict[st
     try:
         # Note: LLM client would need to be initialized
         parser = ArchitectureParser(db, llm_client=None)
-        result = await parser.parse_architecture_doc(resource_id=arguments["resource_id"])
+        result = await parser.parse_architecture_doc(
+            resource_id=arguments["resource_id"]
+        )
         return result.dict()
     finally:
         db.close()
 
 
-async def link_pdf_to_code_handler(arguments: Dict[str, Any], context: Dict[str, Any]) -> Any:
+async def link_pdf_to_code_handler(
+    arguments: Dict[str, Any], context: Dict[str, Any]
+) -> Any:
     """Handler for link_pdf_to_code tool"""
     from ..resources.service import AutoLinkingService
     from ...shared.database import get_sync_db

@@ -105,7 +105,9 @@ async def health_check(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
     try:
         # Check database connectivity
         try:
-            db.execute("SELECT 1")
+            from sqlalchemy import text
+
+            db.execute(text("SELECT 1"))
             db_healthy = True
             db_message = "Database connection healthy"
         except Exception as e:
@@ -151,7 +153,7 @@ async def create_resource_endpoint(
     logger.info(f"=== CREATE RESOURCE ENDPOINT CALLED ===")
     logger.info(f"Payload URL: {payload.url}")
     logger.info(f"Payload title: {payload.title}")
-    
+
     try:
         # Convert payload to dict with string values for SQLite compatibility
         payload_dict = payload.model_dump(exclude_none=True)
@@ -162,7 +164,9 @@ async def create_resource_endpoint(
         logger.info(f"Creating pending resource...")
         # create_pending_resource handles duplicate detection
         resource = create_pending_resource(db, payload_dict)
-        logger.info(f"Resource created/found: {resource.id}, status: {resource.ingestion_status}")
+        logger.info(
+            f"Resource created/found: {resource.id}, status: {resource.ingestion_status}"
+        )
 
         # Check if this is an existing resource (reused)
         # If the resource was just created, it will have ingestion_status="pending"
@@ -187,10 +191,10 @@ async def create_resource_endpoint(
                 engine_url = str(bind.url)
         except Exception:
             engine_url = get_settings().DATABASE_URL
-        
+
         logger.info(f"Adding background task for resource {resource.id}")
         logger.info(f"Engine URL: {engine_url}")
-        
+
         # Kick off background ingestion
         background.add_task(
             process_ingestion,
@@ -199,9 +203,9 @@ async def create_resource_endpoint(
             ai=None,
             engine_url=engine_url,
         )
-        
+
         logger.info(f"Background task added successfully for resource {resource.id}")
-        
+
         return ResourceAccepted(
             id=str(resource.id),
             status="pending",
@@ -231,74 +235,77 @@ async def upload_resource_file(
 ):
     """
     Upload a file directly (multipart/form-data).
-    
+
     Accepts PDF, HTML, and TXT files up to 50MB.
     File is saved to storage and processed asynchronously.
-    
+
     Returns 202 Accepted with resource ID and status.
     """
     import os
     import tempfile
     from pathlib import Path
     import chardet
-    
+
     logger.info(f"=== UPLOAD RESOURCE FILE ENDPOINT CALLED ===")
     logger.info(f"Filename: {file.filename}")
     logger.info(f"Content type: {file.content_type}")
-    
+
     try:
         # Validate file type
         allowed_types = ["application/pdf", "text/html", "text/plain"]
         allowed_extensions = [".pdf", ".html", ".htm", ".txt"]
-        
+
         file_ext = Path(file.filename).suffix.lower() if file.filename else ""
-        
-        if file.content_type not in allowed_types and file_ext not in allowed_extensions:
+
+        if (
+            file.content_type not in allowed_types
+            and file_ext not in allowed_extensions
+        ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid file type. Allowed: PDF, HTML, TXT. Got: {file.content_type}"
+                detail=f"Invalid file type. Allowed: PDF, HTML, TXT. Got: {file.content_type}",
             )
-        
+
         # Read file content first
         file_content = await file.read()
-        
+
         # Validate file size (50MB max)
         max_size = 50 * 1024 * 1024  # 50MB
         if len(file_content) > max_size:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"File too large. Maximum size: 50MB. Got: {len(file_content) / 1024 / 1024:.2f}MB"
+                detail=f"File too large. Maximum size: 50MB. Got: {len(file_content) / 1024 / 1024:.2f}MB",
             )
-        
+
         # Validate text files only (PDFs are binary and expected to have non-UTF-8 bytes)
-        if file_ext in ['.txt', '.html', '.htm']:
+        if file_ext in [".txt", ".html", ".htm"]:
             try:
                 detected = chardet.detect(file_content[:1024])
-                if detected['confidence'] < 0.5:
+                if detected["confidence"] < 0.5:
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="File encoding could not be reliably detected. Please ensure file is valid text."
+                        detail="File encoding could not be reliably detected. Please ensure file is valid text.",
                     )
             except Exception:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid text file format."
+                    detail="Invalid text file format.",
                 )
-        
+
         # Save file to temporary location
         storage_dir = Path("storage/uploads")
         storage_dir.mkdir(parents=True, exist_ok=True)
-        
+
         # Generate unique filename
         file_id = str(uuid.uuid4())
         safe_filename = f"{file_id}{file_ext}"
         file_path = storage_dir / safe_filename
-        
+
         with open(file_path, "wb") as f:
             f.write(file_content)
-        
+
         logger.info(f"File saved to: {file_path}")
-        
+
         # Create resource record with file path as identifier
         resource_data = {
             "url": f"file://{file_path.absolute()}",
@@ -308,60 +315,66 @@ async def upload_resource_file(
             "language": language,
             "type": type or file_ext.lstrip("."),
             "source": str(file_path.absolute()),
-            "identifier": str(file_path.absolute()),  # Store file path for direct access
+            "identifier": str(
+                file_path.absolute()
+            ),  # Store file path for direct access
         }
-        
+
         resource = create_pending_resource(db, resource_data)
         logger.info(f"Resource created: {resource.id}, file stored at: {file_path}")
-        
+
         # Set response status
         response.status_code = status.HTTP_202_ACCEPTED
-        
+
         # Process file directly instead of using URL fetching
         # This avoids the need for ce.fetch_url() to handle file:// URLs
         try:
             from ...utils.content_extractor import ContentExtractor
             from ...shared.ai_core import AICore
-            
+
             ce_instance = ContentExtractor()
             ai_instance = AICore()
-            
+
             # Read file content
-            with open(file_path, 'rb') as f:
+            with open(file_path, "rb") as f:
                 file_bytes = f.read()
-            
+
             # Process based on file type
-            if file_ext == '.pdf':
+            if file_ext == ".pdf":
                 # Extract from PDF
                 extracted = ce_instance.extract_from_pdf(file_bytes)
-            elif file_ext in ['.html', '.htm']:
+            elif file_ext in [".html", ".htm"]:
                 # Extract from HTML
-                html_content = file_bytes.decode('utf-8', errors='ignore')
+                html_content = file_bytes.decode("utf-8", errors="ignore")
                 extracted = ce_instance.extract_from_html(html_content)
             else:
                 # Plain text
-                text_content = file_bytes.decode('utf-8', errors='ignore')
+                text_content = file_bytes.decode("utf-8", errors="ignore")
                 extracted = {"text": text_content, "title": title or file.filename}
-            
+
             # Update resource with extracted content
             resource.title = extracted.get("title") or resource.title
             resource.format = file_ext.lstrip(".")
-            
+
             # Generate summary and tags
             text_clean = extracted.get("text", "")
             if text_clean and len(text_clean) > 50:
-                summary = ai_instance.summarize(text_clean[:5000])  # Limit for performance
+                summary = ai_instance.summarize(
+                    text_clean[:5000]
+                )  # Limit for performance
                 tags = ai_instance.generate_tags(text_clean[:5000])
-                
+
                 resource.description = summary
                 resource.subject = tags
-            
+
             resource.ingestion_status = "completed"
             resource.ingestion_completed_at = datetime.utcnow()
             db.commit()
-            
-            logger.info(f"File upload processed successfully for resource {resource.id}")
-            
+
+            logger.info(
+                f"File upload processed successfully for resource {resource.id}"
+            )
+
         except Exception as process_error:
             logger.error(f"File processing failed: {process_error}", exc_info=True)
             # Fall back to background processing
@@ -372,7 +385,7 @@ async def upload_resource_file(
                     engine_url = str(bind.url)
             except Exception:
                 engine_url = get_settings().DATABASE_URL
-            
+
             background.add_task(
                 process_ingestion,
                 str(resource.id),
@@ -380,23 +393,23 @@ async def upload_resource_file(
                 ai=None,
                 engine_url=engine_url,
             )
-        
+
         logger.info(f"Background processing queued for resource {resource.id}")
-        
+
         return ResourceAccepted(
             id=str(resource.id),
             status="pending",
             title=resource.title,
             ingestion_status=resource.ingestion_status,
         )
-        
+
     except HTTPException:
         raise
     except Exception as exc:
         logger.error(f"File upload failed: {exc}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"File upload failed: {str(exc)}"
+            detail=f"File upload failed: {str(exc)}",
         )
 
 
@@ -940,9 +953,7 @@ async def ingest_repository(
         )
 
 
-@router.get(
-    "/ingest-repo/{task_id}/status", response_model=IngestionStatusResponse
-)
+@router.get("/ingest-repo/{task_id}/status", response_model=IngestionStatusResponse)
 async def get_ingestion_status(
     task_id: str,
     req: Request,
@@ -1007,7 +1018,6 @@ async def get_ingestion_status(
         )
 
 
-
 # ============================================================================
 # Auto-Linking Endpoints
 # ============================================================================
@@ -1015,7 +1025,7 @@ async def get_ingestion_status(
 
 class AutoLinkResponse(BaseModel):
     """Response schema for auto-linking endpoint."""
-    
+
     resource_id: str
     link_count: int
     threshold: float
@@ -1026,93 +1036,277 @@ class AutoLinkResponse(BaseModel):
 async def auto_link_resource(
     resource_id: uuid.UUID,
     similarity_threshold: Optional[float] = 0.7,
-    db: Session = Depends(get_sync_db)
+    db: Session = Depends(get_sync_db),
 ) -> AutoLinkResponse:
     """
     Automatically link resource chunks to related chunks based on semantic similarity.
-    
+
     This endpoint computes vector similarity between chunks of the specified resource
     and chunks from other resources, creating bidirectional links when similarity
     exceeds the threshold (default 0.7).
-    
+
     **Use Cases**:
     - Link PDF documentation to code implementations
     - Link code files to related documentation
     - Discover semantic relationships between resources
-    
+
     **Performance**: <5s for 100 chunks (Requirement 3.5)
-    
+
     Args:
         resource_id: Resource ID to link
         similarity_threshold: Minimum similarity score for creating links (0.0-1.0)
         db: Database session
-        
+
     Returns:
         AutoLinkResponse with link count and status
-        
+
     Raises:
         404: Resource not found
         400: Invalid similarity threshold
         500: Auto-linking failed
     """
     from .service import AutoLinkingService
-    
+
     try:
         # Validate similarity threshold
         if not 0.0 <= similarity_threshold <= 1.0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Similarity threshold must be between 0.0 and 1.0"
+                detail="Similarity threshold must be between 0.0 and 1.0",
             )
-        
+
         # Check if resource exists
         from .service import get_resource
+
         resource = get_resource(db, str(resource_id))
         if not resource:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Resource not found: {resource_id}"
+                detail=f"Resource not found: {resource_id}",
             )
-        
+
         # Initialize auto-linking service
         auto_linking_service = AutoLinkingService(
-            db=db,
-            similarity_threshold=similarity_threshold
+            db=db, similarity_threshold=similarity_threshold
         )
-        
+
         # Determine resource type and call appropriate linking method
         # For now, we'll try both directions (PDF to code and code to PDF)
         # In production, this would check resource format/type
-        
+
         # Try linking as PDF to code
         links = await auto_linking_service.link_pdf_to_code(
-            str(resource_id),
-            similarity_threshold=similarity_threshold
+            str(resource_id), similarity_threshold=similarity_threshold
         )
-        
+
         # If no links created, try linking as code to PDF
         if not links:
             links = await auto_linking_service.link_code_to_pdfs(
-                str(resource_id),
-                similarity_threshold=similarity_threshold
+                str(resource_id), similarity_threshold=similarity_threshold
             )
-        
+
         logger.info(
             f"Auto-linking completed for resource {resource_id}: {len(links)} links created"
         )
-        
+
         return AutoLinkResponse(
             resource_id=str(resource_id),
             link_count=len(links),
             threshold=similarity_threshold,
-            message=f"Successfully created {len(links)} links"
+            message=f"Successfully created {len(links)} links",
         )
-        
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Auto-linking failed for resource {resource_id}: {e}", exc_info=True)
+        logger.error(
+            f"Auto-linking failed for resource {resource_id}: {e}", exc_info=True
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Auto-linking failed: {str(e)}"
+            detail=f"Auto-linking failed: {str(e)}",
         )
+
+
+# ============================================================================
+# Chunking Router (Phase 17.5 - Advanced RAG)
+# ============================================================================
+# Separate router for chunking endpoints with prefix /api/v1/chunks
+# This router is registered in app/__init__.py to fix 404 errors
+
+from ...database.models import DocumentChunk
+from .schema import DocumentChunkResponse, DocumentChunkCreate
+
+chunking_router = APIRouter(prefix="/chunks", tags=["chunks"])
+
+
+@chunking_router.get("", response_model=dict)
+async def list_chunks(
+    resource_id: Optional[str] = None,
+    limit: int = 25,
+    offset: int = 0,
+    db: Session = Depends(get_sync_db),
+):
+    """
+    List document chunks with optional filtering by resource.
+
+    Args:
+        resource_id: Optional filter by resource ID
+        limit: Maximum number of chunks to return
+        offset: Number of chunks to skip
+        db: Database session
+
+    Returns:
+        List of chunks with pagination info
+    """
+    query = db.query(DocumentChunk)
+
+    if resource_id:
+        try:
+            resource_uuid = uuid.UUID(resource_id)
+            query = query.filter(DocumentChunk.resource_id == resource_uuid)
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid resource_id format",
+            )
+
+    total = query.count()
+    chunks = (
+        query.order_by(DocumentChunk.created_at.desc())
+        .offset(offset)
+        .limit(limit)
+        .all()
+    )
+
+    return {
+        "items": [
+            {
+                "id": str(chunk.id),
+                "resource_id": str(chunk.resource_id),
+                "content": chunk.content[:200] + "..."
+                if len(chunk.content) > 200
+                else chunk.content,
+                "chunk_index": chunk.chunk_index,
+                "chunk_metadata": chunk.chunk_metadata,
+                "created_at": chunk.created_at.isoformat()
+                if chunk.created_at
+                else None,
+            }
+            for chunk in chunks
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+    }
+
+
+@chunking_router.get("/{chunk_id}", response_model=DocumentChunkResponse)
+async def get_chunk(
+    chunk_id: str,
+    db: Session = Depends(get_sync_db),
+):
+    """
+    Get a specific document chunk by ID.
+
+    Args:
+        chunk_id: UUID of the chunk to retrieve
+        db: Database session
+
+    Returns:
+        Document chunk details
+
+    Raises:
+        404: Chunk not found
+    """
+    try:
+        chunk_uuid = uuid.UUID(chunk_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid chunk_id format"
+        )
+
+    chunk = db.query(DocumentChunk).filter(DocumentChunk.id == chunk_uuid).first()
+
+    if not chunk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail=f"Chunk not found: {chunk_id}"
+        )
+
+    return {
+        "id": str(chunk.id),
+        "resource_id": str(chunk.resource_id),
+        "content": chunk.content,
+        "chunk_index": chunk.chunk_index,
+        "chunk_metadata": chunk.chunk_metadata,
+        "created_at": chunk.created_at.isoformat() if chunk.created_at else None,
+    }
+
+
+@chunking_router.post("", response_model=dict, status_code=status.HTTP_201_CREATED)
+async def create_chunk(
+    payload: DocumentChunkCreate,
+    db: Session = Depends(get_sync_db),
+):
+    """
+    Create a new document chunk.
+
+    Args:
+        payload: Chunk data including resource_id, content, and metadata
+        db: Database session
+
+    Returns:
+        Created chunk details
+
+    Raises:
+        404: Resource not found
+    """
+    try:
+        resource_uuid = uuid.UUID(payload.resource_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid resource_id format"
+        )
+
+    # Verify resource exists
+    from .service import get_resource
+
+    resource = get_resource(db, str(resource_uuid))
+    if not resource:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Resource not found: {payload.resource_id}",
+        )
+
+    # Get next chunk index
+    last_chunk = (
+        db.query(DocumentChunk)
+        .filter(DocumentChunk.resource_id == resource_uuid)
+        .order_by(DocumentChunk.chunk_index.desc())
+        .first()
+    )
+    next_index = (last_chunk.chunk_index + 1) if last_chunk else 0
+
+    # Create chunk
+    chunk = DocumentChunk(
+        id=uuid.uuid4(),
+        resource_id=resource_uuid,
+        content=payload.content,
+        chunk_index=next_index,
+        chunk_metadata=payload.chunk_metadata,
+    )
+
+    db.add(chunk)
+    db.commit()
+    db.refresh(chunk)
+
+    return {
+        "id": str(chunk.id),
+        "resource_id": str(chunk.resource_id),
+        "content": chunk.content[:200] + "..."
+        if len(chunk.content) > 200
+        else chunk.content,
+        "chunk_index": chunk.chunk_index,
+        "chunk_metadata": chunk.chunk_metadata,
+        "created_at": chunk.created_at.isoformat() if chunk.created_at else None,
+    }

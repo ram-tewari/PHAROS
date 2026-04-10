@@ -23,6 +23,7 @@ from typing import Any, Optional
 try:
     import os
     import redis
+
     REDIS_AVAILABLE = True
 except ImportError:
     REDIS_AVAILABLE = False
@@ -103,7 +104,7 @@ class CacheService:
             self.redis = None
             self.stats = CacheStats()
             return
-            
+
         if redis_client:
             self.redis = redis_client
         else:
@@ -111,7 +112,7 @@ class CacheService:
                 # Check for Upstash Redis first
                 upstash_url = os.getenv("UPSTASH_REDIS_REST_URL")
                 upstash_token = os.getenv("UPSTASH_REDIS_REST_TOKEN")
-                
+
                 if upstash_url and upstash_token:
                     self.redis = redis.Redis.from_url(
                         upstash_url,
@@ -131,7 +132,9 @@ class CacheService:
                         socket_timeout=5,
                     )
             except Exception as e:
-                logger.error(f"Redis cache initialization failed: {e} - caching will be disabled")
+                logger.error(
+                    f"Redis cache initialization failed: {e} - caching will be disabled"
+                )
                 self.redis = None
         self.stats = CacheStats()
 
@@ -147,7 +150,7 @@ class CacheService:
         if not self.redis:
             self.stats.record_miss()
             return None
-            
+
         try:
             value = self.redis.get(key)
             if value:
@@ -170,7 +173,7 @@ class CacheService:
         """
         if not self.redis:
             return
-            
+
         try:
             ttl_seconds = ttl if ttl is not None else self.get_default_ttl(key)
             serialized_value = json.dumps(value)
@@ -186,7 +189,7 @@ class CacheService:
         """
         if not self.redis:
             return
-            
+
         try:
             deleted = self.redis.delete(key)
             if deleted > 0:
@@ -212,7 +215,7 @@ class CacheService:
         """
         if not self.redis:
             return
-            
+
         try:
             keys = self.redis.keys(pattern)
             if keys:
@@ -257,7 +260,7 @@ class CacheService:
         """
         if not self.redis:
             return False
-            
+
         try:
             return self.redis.ping()
         except Exception:

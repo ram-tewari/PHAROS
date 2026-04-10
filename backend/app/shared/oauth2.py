@@ -10,21 +10,32 @@ Related files:
 """
 
 import logging
+from urllib.parse import urlencode
+
 import httpx
 from fastapi import HTTPException, status
 
 logger = logging.getLogger(__name__)
 
-# Circuit breaker for OAuth resilience
+# Circuit breaker for OAuth resilience using circuitbreaker library
 try:
-    import pybreaker
-    from .circuit_breaker import oauth_google_breaker, oauth_github_breaker
+    from circuitbreaker import circuit, CircuitBreakerError
+
     CIRCUIT_BREAKER_AVAILABLE = True
 except (ImportError, ModuleNotFoundError):
     CIRCUIT_BREAKER_AVAILABLE = False
-    oauth_google_breaker = None
-    oauth_github_breaker = None
-    logger.warning("Circuit breaker not available (pybreaker not installed) - OAuth will work without resilience patterns")
+    CircuitBreakerError = Exception
+
+    # Provide a no-op decorator so @circuit(...) doesn't raise NameError
+    def circuit(**kwargs):
+        def decorator(func):
+            return func
+
+        return decorator
+
+    logger.warning(
+        "Circuit breaker not available (circuitbreaker not installed) - OAuth will work without resilience patterns"
+    )
 
 
 class OAuth2Provider:
@@ -120,12 +131,12 @@ class GoogleOAuth2Provider(OAuth2Provider):
             "access_type": "offline",
             "prompt": "consent",
         }
-        query_string = "&".join(f"{k}={v}" for k, v in params.items())
-        auth_url = f"{self.AUTH_URL}?{query_string}"
+        auth_url = f"{self.AUTH_URL}?{urlencode(params)}"
 
         logger.info(f"Generated Google authorization URL for state: {state}")
         return auth_url
 
+    @circuit(failure_threshold=3, recovery_timeout=120)
     async def exchange_code_for_token(self, code: str) -> dict:
         """Exchange authorization code for Google access token.
 
@@ -138,22 +149,13 @@ class GoogleOAuth2Provider(OAuth2Provider):
         Raises:
             HTTPException: If token exchange fails or circuit breaker is open
         """
-        # Check circuit breaker state
-        if CIRCUIT_BREAKER_AVAILABLE and oauth_google_breaker:
-            if oauth_google_breaker.state.name == "open":
-                logger.error("Google OAuth circuit breaker is open, failing fast")
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="Google OAuth service temporarily unavailable",
-                )
-        
         try:
             # Log the redirect URI being used (for debugging)
             logger.info(f"Google token exchange - redirect_uri: {self.redirect_uri}")
             logger.info(f"Google token exchange - client_id: {self.client_id[:20]}...")
             logger.info(f"Google token exchange - code: {code[:20]}...")
-            
-            async with httpx.AsyncClient() as client:
+
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 request_data = {
                     "client_id": self.client_id,
                     "client_secret": self.client_secret,
@@ -161,7 +163,7 @@ class GoogleOAuth2Provider(OAuth2Provider):
                     "grant_type": "authorization_code",
                     "redirect_uri": self.redirect_uri,
                 }
-                
+
                 response = await client.post(
                     self.TOKEN_URL,
                     data=request_data,
@@ -173,9 +175,6 @@ class GoogleOAuth2Provider(OAuth2Provider):
                         f"Google token exchange failed: {response.status_code} - {response.text}"
                     )
                     logger.error(f"Request redirect_uri was: {self.redirect_uri}")
-                    # Record failure for circuit breaker
-                    if CIRCUIT_BREAKER_AVAILABLE and oauth_google_breaker:
-                        oauth_google_breaker.fail_counter += 1
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Failed to exchange code for token",
@@ -185,19 +184,10 @@ class GoogleOAuth2Provider(OAuth2Provider):
                 logger.info(
                     "Successfully exchanged Google authorization code for token"
                 )
-                # Record success for circuit breaker recovery
-                if CIRCUIT_BREAKER_AVAILABLE and oauth_google_breaker:
-                    oauth_google_breaker.success()
                 return token_data
 
         except httpx.HTTPError as e:
             logger.error(f"HTTP error during Google token exchange: {e}")
-            # Record failure for circuit breaker
-            if CIRCUIT_BREAKER_AVAILABLE and oauth_google_breaker:
-                try:
-                    oauth_google_breaker.failure(e)
-                except Exception:
-                    pass
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Failed to communicate with Google OAuth2 service",
@@ -216,7 +206,7 @@ class GoogleOAuth2Provider(OAuth2Provider):
             HTTPException: If user info retrieval fails
         """
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.get(
                     self.USER_INFO_URL,
                     headers={"Authorization": f"Bearer {access_token}"},
@@ -272,12 +262,12 @@ class GitHubOAuth2Provider(OAuth2Provider):
             "scope": "user:email",
             "state": state,
         }
-        query_string = "&".join(f"{k}={v}" for k, v in params.items())
-        auth_url = f"{self.AUTH_URL}?{query_string}"
+        auth_url = f"{self.AUTH_URL}?{urlencode(params)}"
 
         logger.info(f"Generated GitHub authorization URL for state: {state}")
         return auth_url
 
+    @circuit(failure_threshold=3, recovery_timeout=120)
     async def exchange_code_for_token(self, code: str) -> dict:
         """Exchange authorization code for GitHub access token.
 
@@ -290,17 +280,8 @@ class GitHubOAuth2Provider(OAuth2Provider):
         Raises:
             HTTPException: If token exchange fails or circuit breaker is open
         """
-        # Check circuit breaker state
-        if CIRCUIT_BREAKER_AVAILABLE and oauth_github_breaker:
-            if oauth_github_breaker.state.name == "open":
-                logger.error("GitHub OAuth circuit breaker is open, failing fast")
-                raise HTTPException(
-                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                    detail="GitHub OAuth service temporarily unavailable",
-                )
-        
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 response = await client.post(
                     self.TOKEN_URL,
                     data={
@@ -316,9 +297,6 @@ class GitHubOAuth2Provider(OAuth2Provider):
                     logger.error(
                         f"GitHub token exchange failed: {response.status_code} - {response.text}"
                     )
-                    # Record failure for circuit breaker
-                    if CIRCUIT_BREAKER_AVAILABLE and oauth_github_breaker:
-                        oauth_github_breaker.fail_counter += 1
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Failed to exchange code for token",
@@ -331,9 +309,6 @@ class GitHubOAuth2Provider(OAuth2Provider):
                     logger.error(
                         f"GitHub token exchange error: {token_data.get('error_description', token_data['error'])}"
                     )
-                    # Record failure for circuit breaker
-                    if CIRCUIT_BREAKER_AVAILABLE and oauth_github_breaker:
-                        oauth_github_breaker.fail_counter += 1
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail=f"GitHub OAuth2 error: {token_data.get('error_description', token_data['error'])}",
@@ -342,19 +317,10 @@ class GitHubOAuth2Provider(OAuth2Provider):
                 logger.info(
                     "Successfully exchanged GitHub authorization code for token"
                 )
-                # Record success for circuit breaker recovery
-                if CIRCUIT_BREAKER_AVAILABLE and oauth_github_breaker:
-                    oauth_github_breaker.success()
                 return token_data
 
         except httpx.HTTPError as e:
             logger.error(f"HTTP error during GitHub token exchange: {e}")
-            # Record failure for circuit breaker
-            if CIRCUIT_BREAKER_AVAILABLE and oauth_github_breaker:
-                try:
-                    oauth_github_breaker.failure(e)
-                except Exception:
-                    pass
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Failed to communicate with GitHub OAuth2 service",
@@ -373,7 +339,7 @@ class GitHubOAuth2Provider(OAuth2Provider):
             HTTPException: If user info retrieval fails
         """
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx.AsyncClient(timeout=15.0) as client:
                 # Get user profile
                 profile_response = await client.get(
                     self.USER_INFO_URL,

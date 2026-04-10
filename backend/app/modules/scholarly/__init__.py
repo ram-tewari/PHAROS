@@ -19,6 +19,7 @@ Events Subscribed:
 """
 
 from .router import router as scholarly_router
+from .router import document_intelligence_router
 from .extractor import MetadataExtractor
 from .schema import (
     Author,
@@ -37,6 +38,7 @@ __domain__ = "scholarly"
 
 __all__ = [
     "scholarly_router",
+    "document_intelligence_router",
     "MetadataExtractor",
     "Author",
     "Equation",

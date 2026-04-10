@@ -28,6 +28,12 @@ code_app = typer.Typer(
 )
 
 
+@code_app.callback()
+def code_callback():
+    """Code analysis and intelligence commands."""
+    pass
+
+
 def get_code_client() -> CodeClient:
     """Get a code client instance.
 

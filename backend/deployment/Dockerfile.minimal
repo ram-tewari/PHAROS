@@ -1,4 +1,4 @@
-# Minimal Docker build for Neo Alexandria 2.0 Backend
+# Minimal Docker build for Pharos 2.0 Backend
 # Fast startup without heavy ML libraries
 
 FROM python:3.11-slim as base

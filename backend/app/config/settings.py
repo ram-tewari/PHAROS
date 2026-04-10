@@ -20,7 +20,7 @@ Configuration includes:
 from functools import lru_cache
 from typing import Literal
 
-from pydantic import SecretStr, Field
+from pydantic import SecretStr, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
@@ -35,19 +35,38 @@ class Settings(BaseSettings):
     DATABASE_URL: str = "sqlite:///./backend.db"
     TEST_DATABASE_URL: str | None = None  # Optional test database URL
     ENV: Literal["dev", "staging", "prod"] = "dev"
-    
+
     # Frontend URL for OAuth redirects
     FRONTEND_URL: str = "http://localhost:5173"
+
+    # Allowed redirect URLs for OAuth callbacks (prevent open redirect vulnerability)
+    # In production, all URLs must use HTTPS
+    ALLOWED_REDIRECT_URLS: list[str] = [
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000",  # Common dev server
+        "https://pharos.onrender.com",  # Production cloud
+    ]
+
+    # CSRF Protection: Allowed origins for cross-origin requests
+    # Used by CSRFMiddleware to validate Origin/Referer headers
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:3000",  # Common dev server
+        "https://pharos.onrender.com",  # Production cloud
+    ]
 
     # PostgreSQL configuration
     POSTGRES_SERVER: str = "localhost"
     POSTGRES_USER: str = "postgres"
-    POSTGRES_PASSWORD: str = "devpassword"
+    POSTGRES_PASSWORD: str | None = None  # Optional for SQLite, required for PostgreSQL
     POSTGRES_DB: str = "neo_alexandria_dev"
     POSTGRES_PORT: int = 5432
 
     # JWT Authentication
-    JWT_SECRET_KEY: SecretStr = SecretStr("change-this-secret-key-in-production")
+    # Default value provided for development convenience, but MUST be changed in production
+    JWT_SECRET_KEY: SecretStr = SecretStr(
+        "change-this-secret-key-in-production-min-32-chars-long"
+    )
     JWT_ALGORITHM: str = "HS256"
     JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
@@ -62,13 +81,231 @@ class Settings(BaseSettings):
     GITHUB_CLIENT_SECRET: SecretStr | None = None
     GITHUB_REDIRECT_URI: str = "http://localhost:8000/auth/github/callback"
 
+    # GitHub API token for code-intelligence reads (separate from OAuth).
+    # Personal Access Token (classic) with repo:read scope.
+    # Raises unauthenticated rate limit from 60 → 5,000 req/hr.
+    GITHUB_API_TOKEN: SecretStr | None = None
+
+    # GitHub fetcher concurrency cap (simultaneous raw-content requests)
+    GITHUB_FETCH_CONCURRENCY: int = 10
+
+    # Redis URL shorthand (overrides REDIS_HOST/PORT when set)
+    REDIS_URL: str | None = None  # e.g. "redis://localhost:6379/2"
+
     # Rate Limiting
     RATE_LIMIT_FREE_TIER: int = 100  # requests per minute
     RATE_LIMIT_PREMIUM_TIER: int = 1000  # requests per minute
-    RATE_LIMIT_ADMIN_TIER: int = 0  # 0 = unlimited
+    RATE_LIMIT_ADMIN_TIER: int = 10000  # 0 = unlimited
+
+    # File Upload Validation
+    ALLOWED_FILE_EXTENSIONS: set[str] = {
+        # Documents
+        ".pdf",
+        ".doc",
+        ".docx",
+        ".txt",
+        ".rtf",
+        ".odt",
+        # Code
+        ".py",
+        ".js",
+        ".ts",
+        ".jsx",
+        ".tsx",
+        ".java",
+        ".c",
+        ".cpp",
+        ".h",
+        ".cs",
+        ".go",
+        ".rs",
+        ".rb",
+        ".php",
+        ".swift",
+        ".kt",
+        ".scala",
+        # Markup
+        ".html",
+        ".css",
+        ".scss",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".xml",
+        ".md",
+        # Data
+        ".csv",
+        ".tsv",
+        ".jsonl",
+        ".parquet",
+        # Images (for metadata extraction)
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".bmp",
+        ".tiff",
+        ".webp",
+    }
+    BLOCKED_FILE_EXTENSIONS: set[str] = {
+        ".exe",
+        ".bat",
+        ".cmd",
+        ".sh",
+        ".bash",
+        ".ps1",
+        ".dll",
+        ".so",
+        ".jar",
+        ".class",
+        ".pyc",
+        ".pyo",
+        ".pyd",
+        ".env",
+        ".key",
+        ".pem",
+    }
+    MAX_FILE_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50 MB default
+
+    # Repository URL Validation
+    ALLOWED_REPOSITORY_DOMAINS: list[str] = [
+        "github.com",
+        "gitlab.com",
+        "bitbucket.org",
+        "sourceforge.net",
+        "codeberg.org",
+        "sr.ht",
+    ]
+    BLOCKED_IP_RANGES: list[str] = [
+        # Loopback
+        "127.0.0.0/8",
+        "::1/128",
+        # Private networks (RFC 1918)
+        "10.0.0.0/8",
+        "172.16.0.0/12",
+        "192.168.0.0/16",
+        # Link-local
+        "169.254.0.0/16",
+        "fe80::/10",
+        # Docker/Kubernetes
+        "172.17.0.0/16",
+        "10.244.0.0/16",
+        "10.96.0.0/12",
+        # Cloud metadata endpoints
+        "169.254.169.254/32",
+        "metadata.google.internal",
+        # Multicast
+        "224.0.0.0/4",
+        "ff00::/8",
+    ]
 
     # Testing
     TEST_MODE: bool = Field(default=False)
+
+    @field_validator("JWT_SECRET_KEY")
+    @classmethod
+    def validate_jwt_secret(cls, v: SecretStr, info) -> SecretStr:
+        """Validate JWT secret key meets security requirements."""
+        secret = v.get_secret_value()
+        if len(secret) < 32:
+            raise ValueError(
+                f"JWT_SECRET_KEY must be at least 32 characters, got {len(secret)}"
+            )
+        # Only reject default value in production
+        if secret == "change-this-secret-key-in-production-min-32-chars-long":
+            # Check if we're in production mode (will be validated in model_validator)
+            # For now, just validate length - production check happens in model_validator
+            pass
+        return v
+
+    @field_validator("MODE")
+    @classmethod
+    def validate_mode(cls, v: str) -> str:
+        """Validate MODE is either CLOUD or EDGE."""
+        if v not in ["CLOUD", "EDGE"]:
+            raise ValueError(f"MODE must be 'CLOUD' or 'EDGE', got: {v}")
+        return v
+
+    @field_validator("QUEUE_SIZE")
+    @classmethod
+    def validate_queue_size(cls, v: int) -> int:
+        """Validate QUEUE_SIZE is positive."""
+        if v <= 0:
+            raise ValueError(f"QUEUE_SIZE must be positive, got: {v}")
+        return v
+
+    @field_validator("ALLOWED_REDIRECT_URLS")
+    @classmethod
+    def validate_redirect_urls(cls, v: list[str], info) -> list[str]:
+        """Validate redirect URLs meet security requirements.
+
+        In production, all redirect URLs must use HTTPS to prevent open redirect attacks.
+        HTTP URLs are only allowed for localhost in development mode.
+
+        This validator performs basic format validation. Full HTTPS enforcement
+        for production is done in model_validator.
+        """
+        import warnings
+
+        non_https_urls = []
+        for url in v:
+            if not url.startswith(("http://", "https://")):
+                raise ValueError(
+                    f"Redirect URL must start with http:// or https://: {url}"
+                )
+            if url.startswith("http://"):
+                non_https_urls.append(url)
+
+        # Warn about non-HTTPS URLs (will be enforced in model_validator for production)
+        if non_https_urls:
+            warnings.warn(
+                f"Non-HTTPS redirect URLs detected: {non_https_urls}. "
+                f"These will be rejected in production mode (ENV=prod). "
+                f"Use HTTPS URLs for production deployments.",
+                UserWarning,
+            )
+
+        return v
+
+    @model_validator(mode="after")
+    def validate_production_requirements(self):
+        """Validate production environment requirements."""
+        import os
+
+        secret = self.JWT_SECRET_KEY.get_secret_value()
+
+        # In production, reject default value and require minimum length
+        if self.ENV == "prod":
+            if len(secret) < 32:
+                raise ValueError(
+                    "JWT_SECRET_KEY must be at least 32 characters in production"
+                )
+            if secret == "change-this-secret-key-in-production-min-32-chars-long":
+                raise ValueError(
+                    "JWT_SECRET_KEY must be changed from default in production. "
+                    'Generate a secure secret: python -c "import secrets; print(secrets.token_hex(32))"'
+                )
+            # TEST_MODE must not be enabled in production (both setting and env var)
+            if self.TEST_MODE:
+                raise ValueError(
+                    "TEST_MODE must be False in production. "
+                    "This is a security requirement to prevent authentication bypass."
+                )
+            # Also check TESTING environment variable (used by is_test_mode)
+            if os.getenv("TESTING", "").lower() in ("true", "1", "yes"):
+                raise ValueError(
+                    "TESTING environment variable must not be set to 'true' in production. "
+                    "This is a security requirement to prevent authentication bypass."
+                )
+
+            # Validate redirect URLs use HTTPS in production (prevent open redirect)
+            for url in self.ALLOWED_REDIRECT_URLS:
+                if not url.startswith("https://"):
+                    raise ValueError(
+                        f"Production redirect URLs must use HTTPS: {url}. "
+                        f"HTTP URLs are only allowed for localhost in development mode."
+                    )
+        return self
 
     @property
     def is_test_mode(self) -> bool:
@@ -110,7 +347,7 @@ class Settings(BaseSettings):
 
     # Advanced RAG Architecture
     # Chunking Configuration
-    CHUNK_ON_RESOURCE_CREATE: bool = True  # Enable automatic chunking during ingestion
+    CHUNK_ON_RESOURCE_CREATE: bool = False  # Enable automatic chunking during ingestion
     CHUNKING_STRATEGY: str = "semantic"  # "semantic" or "fixed"
     CHUNK_SIZE: int = 500  # Words for semantic, characters for fixed
     CHUNK_OVERLAP: int = 50  # Words or characters overlap between chunks
@@ -137,28 +374,39 @@ class Settings(BaseSettings):
     GRAPHRAG_MAX_HOPS: int = 2  # Maximum graph traversal depth
 
     MODE: Literal["CLOUD", "EDGE"] = "CLOUD"  # Deployment mode
-    
+
     # Upstash Redis (for task queue and status tracking)
     UPSTASH_REDIS_REST_URL: str | None = None
     UPSTASH_REDIS_REST_TOKEN: SecretStr | None = None
-    
+
     # Neon Database (serverless PostgreSQL)
     NEON_DATABASE_URL: str | None = None
-    
+
     # Qdrant Cloud (vector database)
     QDRANT_URL: str | None = None
     QDRANT_API_KEY: SecretStr | None = None
-    
+
     # API Authentication
     PHAROS_ADMIN_TOKEN: SecretStr | None = None  # Bearer token for /ingest endpoint
-    
+
     # Task Queue Configuration
-    MAX_QUEUE_SIZE: int = 10  # Maximum pending tasks to prevent zombie queue
-    TASK_TTL_SECONDS: int = 86400  # 24 hours - tasks older than this are skipped
-    
+    QUEUE_SIZE: int = Field(default=10, alias="MAX_QUEUE_SIZE")  # Maximum pending tasks
+    TASK_TTL: int = Field(
+        default=86400, alias="TASK_TTL_SECONDS"
+    )  # 24 hours - tasks older than this are skipped
+
     # Edge Worker Configuration
     WORKER_POLL_INTERVAL: int = 2  # Seconds between queue polls
     DEVICE: str | None = None  # Set automatically based on CUDA availability
+
+    # Feedback Loop (Phase 6) — Heuristic Sieve & Local Extraction
+    FEEDBACK_LOOP_ENABLED: bool = False  # Master switch for the nightly sieve
+    FEEDBACK_SURVIVAL_DAYS: int = 14  # Days a structural change must survive
+    FEEDBACK_GITHUB_OWNER: str = ""  # GitHub repo owner (e.g. "ram-tewari")
+    FEEDBACK_GITHUB_REPO: str = ""  # GitHub repo name (e.g. "pharos")
+    FEEDBACK_REDIS_QUEUE: str = "pharos_extraction_jobs"  # Redis queue name for jobs
+    FEEDBACK_LOCAL_LLM_URL: str = "http://localhost:11434"  # Ollama/vLLM endpoint
+    FEEDBACK_LOCAL_LLM_MODEL: str = "codellama:13b"  # Model name for extraction
 
     class Config:
         env_file = "config/.env"
@@ -168,12 +416,12 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         """
         Initialize settings with MODE-aware configuration.
-        
+
         CLOUD mode: Lightweight, no torch imports
         EDGE mode: Full ML stack with CUDA detection
         """
         super().__init__(**kwargs)
-        
+
         # MODE-aware initialization
         if self.MODE == "CLOUD":
             # Cloud mode: Skip heavy imports
@@ -182,8 +430,9 @@ class Settings(BaseSettings):
             # Edge mode: Verify CUDA and set device
             try:
                 import torch
+
                 self.DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-                
+
                 # Log GPU information
                 if self.DEVICE == "cuda":
                     gpu_name = torch.cuda.get_device_name(0)
@@ -206,6 +455,7 @@ class Settings(BaseSettings):
 
         Returns SQLite URL if DATABASE_URL is set to SQLite,
         otherwise constructs PostgreSQL async URL using asyncpg driver.
+        Handles special characters in passwords via URL encoding.
 
         Returns:
             str: Database connection URL (SQLite or PostgreSQL)
@@ -214,12 +464,17 @@ class Settings(BaseSettings):
             SQLite: sqlite:///./backend.db
             PostgreSQL: postgresql+asyncpg://user:pass@host:5432/db
         """
+        from urllib.parse import quote
+
         if "sqlite" in self.DATABASE_URL.lower():
             return self.DATABASE_URL
 
+        # URL-encode special characters in password
+        encoded_password = quote(self.POSTGRES_PASSWORD or "", safe="")
+
         return (
             f"postgresql+asyncpg://{self.POSTGRES_USER}:"
-            f"{self.POSTGRES_PASSWORD}@{self.POSTGRES_SERVER}:"
+            f"{encoded_password}@{self.POSTGRES_SERVER}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
 
@@ -240,7 +495,7 @@ def get_settings() -> Settings:
         ValueError: If configuration validation fails
     """
     import os
-    
+
     settings = Settings()
 
     # Validate graph weights sum to 1.0
@@ -418,7 +673,7 @@ def get_settings() -> Settings:
     # Only validate edge-cloud requirements if explicitly enabled
     # This allows existing tests to run without edge-cloud configuration
     phase19_enabled = os.getenv("PHASE19_ENABLED", "").lower() in ("true", "1", "yes")
-    
+
     if phase19_enabled:
         # Validate Upstash Redis configuration (required for both modes)
         if not settings.UPSTASH_REDIS_REST_URL:
@@ -448,16 +703,16 @@ def get_settings() -> Settings:
             )
 
         # Validate queue configuration
-        if settings.MAX_QUEUE_SIZE <= 0:
+        if settings.QUEUE_SIZE <= 0:
             raise ValueError(
-                f"Configuration validation failed: MAX_QUEUE_SIZE must be positive, "
-                f"got {settings.MAX_QUEUE_SIZE}. Expected type: int (> 0)"
+                f"Configuration validation failed: QUEUE_SIZE must be positive, "
+                f"got {settings.QUEUE_SIZE}. Expected type: int (> 0)"
             )
 
-        if settings.TASK_TTL_SECONDS <= 0:
+        if settings.TASK_TTL <= 0:
             raise ValueError(
-                f"Configuration validation failed: TASK_TTL_SECONDS must be positive, "
-                f"got {settings.TASK_TTL_SECONDS}. Expected type: int (> 0)"
+                f"Configuration validation failed: TASK_TTL must be positive, "
+                f"got {settings.TASK_TTL}. Expected type: int (> 0)"
             )
 
         if settings.WORKER_POLL_INTERVAL <= 0:
@@ -508,3 +763,69 @@ def get_settings() -> Settings:
                 )
 
     return settings
+
+
+def validate_redirect_url(
+    redirect_url: str, settings: Settings | None = None
+) -> tuple[bool, str]:
+    """
+    Validate a redirect URL against the allowed list.
+
+    This function prevents open redirect vulnerabilities by ensuring:
+    1. The URL is in the allowed list
+    2. In production mode, the URL uses HTTPS
+
+    Args:
+        redirect_url: The redirect URL to validate
+        settings: Optional Settings instance (will use get_settings() if not provided)
+
+    Returns:
+        tuple: (is_valid: bool, error_message: str)
+
+    Examples:
+        >>> validate_redirect_url("https://example.com/callback")
+        (True, "")
+
+        >>> validate_redirect_url("http://evil.com", settings)
+        (False, "Redirect URL not in allowed list")
+
+        >>> validate_redirect_url("http://example.com", settings)  # In production
+        (False, "Redirect URL must use HTTPS in production")
+    """
+    from urllib.parse import urlparse
+
+    if settings is None:
+        settings = get_settings()
+
+    if not redirect_url:
+        return False, "Redirect URL cannot be empty"
+
+    # Parse the URL
+    try:
+        parsed = urlparse(redirect_url)
+    except Exception:
+        return False, "Invalid URL format"
+
+    # Build the base URL (scheme + netloc) for comparison
+    base_url = f"{parsed.scheme}://{parsed.netloc}"
+
+    # Check if the base URL is in the allowed list
+    is_allowed = False
+    for allowed_url in settings.ALLOWED_REDIRECT_URLS:
+        allowed_parsed = urlparse(allowed_url)
+        allowed_base = f"{allowed_parsed.scheme}://{allowed_parsed.netloc}"
+
+        # Exact match or prefix match (for paths)
+        if base_url == allowed_base or redirect_url.startswith(allowed_url):
+            is_allowed = True
+            break
+
+    if not is_allowed:
+        return False, f"Redirect URL not in allowed list: {base_url}"
+
+    # In production, enforce HTTPS
+    if settings.ENV == "prod":
+        if parsed.scheme != "https":
+            return False, f"Redirect URL must use HTTPS in production: {redirect_url}"
+
+    return True, ""

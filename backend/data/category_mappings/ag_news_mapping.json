@@ -1,7 +1,7 @@
 {
-  "name": "AG News to Neo Alexandria Taxonomy Mapping",
+  "name": "AG News to Pharos Taxonomy Mapping",
   "version": "1.0",
-  "description": "Maps AG News categories to Neo Alexandria taxonomy node IDs",
+  "description": "Maps AG News categories to Pharos taxonomy node IDs",
   "created": "2025-11-16",
   "mappings": {
     "world": ["web-node-1"],

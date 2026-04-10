@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="neo-alexandria",
+    name="pharos",
     version="0.1.0",
     description="A modern digital library system for knowledge curation and discovery",
     author="Your Name",

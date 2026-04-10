@@ -80,12 +80,23 @@ Pharos is a production-ready knowledge management API designed specifically for 
 - **Contradiction Detection**: Identify conflicting information across documentation
 - **Graph Visualization**: Interactive mind-map and network views
 
-### Research Paper Integration
+### Research Paper Integration (Phase 4 ✅)
+- **PDF Ingestion**: Upload and extract academic PDFs with PyMuPDF
+- **Academic Fidelity**: Preserves equations, tables, figures with page coordinates
+- **Semantic Chunking**: Intelligent chunking respecting document structure (max 512 tokens)
+- **Conceptual Annotation**: Tag PDF chunks with concepts (OAuth, Security, ML, etc.)
+- **GraphRAG Linking**: Automatic bidirectional links between PDF concepts and code implementations
+- **Unified Search**: Single query returns both PDF sections and related code chunks
 - **Multi-Format Ingestion**: HTML, PDF, Markdown, and plain text
 - **Scholarly Metadata**: Automatic extraction of equations, tables, citations, and references
 - **Quality Assessment**: Multi-dimensional scoring (completeness, accuracy, relevance, clarity)
 - **Citation Resolution**: Link papers to existing resources in your library
 - **Academic Classification**: Automatic categorization using ML models
+
+**Phase 4 API Endpoints:**
+- `POST /api/resources/pdf/ingest` - Upload and extract PDF with academic fidelity
+- `POST /api/resources/pdf/annotate` - Annotate chunks with conceptual tags
+- `POST /api/resources/pdf/search/graph` - GraphRAG traversal search across PDFs and code
 
 ### Active Reading & Annotation
 - **Precise Highlighting**: Character-offset-based text selection in code and documents

@@ -398,3 +398,78 @@ async def health_check(db: Session = Depends(get_db)):
         "database": db_healthy,
         "timestamp": datetime.utcnow().isoformat(),
     }
+
+
+# ============================================================================
+# Document Intelligence Router (Phase 17.5 - Advanced RAG)
+# ============================================================================
+# Separate router for document intelligence endpoints with prefix /api/v1/document-intelligence
+# This router is registered in app/__init__.py to fix 404 errors
+
+document_intelligence_router = APIRouter(
+    prefix="/api/v1/document-intelligence", tags=["document-intelligence"]
+)
+
+
+@document_intelligence_router.get(
+    "/resources/{resource_id}/equations", response_model=List[Equation]
+)
+async def get_resource_equations_di(
+    resource_id: str,
+    format: str = Query("latex", regex="^(latex|mathml)$"),
+    db: Session = Depends(get_db),
+):
+    """
+    Get equations for a resource.
+
+    Returns extracted equations in the specified format (LaTeX or MathML).
+    """
+    return await get_equations(resource_id, format, db)
+
+
+@document_intelligence_router.get(
+    "/resources/{resource_id}/tables", response_model=List[TableData]
+)
+async def get_resource_tables_di(
+    resource_id: str,
+    db: Session = Depends(get_db),
+):
+    """
+    Get tables for a resource.
+
+    Returns extracted table data including captions and cell content.
+    """
+    return await get_tables(resource_id, db)
+
+
+@document_intelligence_router.get(
+    "/resources/{resource_id}/metadata", response_model=ScholarlyMetadataResponse
+)
+async def get_scholarly_metadata_di(resource_id: str, db: Session = Depends(get_db)):
+    """
+    Get complete scholarly metadata for a resource.
+
+    Returns all extracted scholarly fields including authors, DOI,
+    publication details, and structural content counts.
+    """
+    return await get_scholarly_metadata(resource_id, db)
+
+
+@document_intelligence_router.post(
+    "/resources/{resource_id}/metadata/extract",
+    response_model=MetadataExtractionResponse,
+)
+async def trigger_metadata_extraction_di(
+    resource_id: str,
+    request: MetadataExtractionRequest,
+    db: Session = Depends(get_db),
+):
+    """
+    Manually trigger scholarly metadata extraction.
+
+    Query params:
+    - force: Re-extract even if already processed
+
+    Returns: 202 Accepted with task status
+    """
+    return await trigger_metadata_extraction(resource_id, request, db)

@@ -10,6 +10,7 @@ NO inline expected values - all assertions use Golden Data.
 """
 
 import json
+import pytest
 from unittest.mock import patch, Mock
 from tests.protocol import load_golden_data
 
@@ -104,6 +105,10 @@ class TestMLClassificationService:
 
         **Validates: Requirements 9.5, 9.6, 9.7**
         """
+        pytest.importorskip(
+            "sklearn",
+            reason="scikit-learn not installed; ML retrain tests require sklearn",
+        )
         from app.modules.taxonomy.ml_service import MLClassificationService
 
         # Create test data

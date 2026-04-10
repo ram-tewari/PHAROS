@@ -113,7 +113,11 @@ def create_database_engine(
             )
     else:
         # Sync: use default sqlite driver, psycopg2 for PostgreSQL
-        if database_url.startswith("postgresql://") and "+psycopg2" not in database_url and "+asyncpg" not in database_url:
+        if (
+            database_url.startswith("postgresql://")
+            and "+psycopg2" not in database_url
+            and "+asyncpg" not in database_url
+        ):
             database_url = database_url.replace(
                 "postgresql://", "postgresql+psycopg2://"
             )
@@ -137,7 +141,7 @@ def create_database_engine(
             "pool_timeout": 30,  # Wait up to 30 seconds for connection from pool
             "isolation_level": "READ COMMITTED",  # Transaction isolation level
         }
-        
+
         # Add connect_args based on driver type
         if is_async:
             # asyncpg uses server_settings instead of options
@@ -182,7 +186,7 @@ def _is_connection_refused_error(error: Exception) -> bool:
         bool: True if error is a connection refused error, False otherwise
     """
     error_msg = str(error).lower()
-    
+
     connection_refused_indicators = [
         "connection refused",
         "could not connect",
@@ -191,7 +195,7 @@ def _is_connection_refused_error(error: Exception) -> bool:
         "server closed the connection",
         "connection reset",
     ]
-    
+
     return any(indicator in error_msg for indicator in connection_refused_indicators)
 
 
@@ -223,10 +227,10 @@ def init_database(database_url: str | None = None, env: str = "prod") -> None:
     max_retries = 5
     initial_backoff = 2.0  # Start with 2 seconds
     backoff_multiplier = 2.0
-    
+
     last_error = None
     backoff = initial_backoff
-    
+
     for attempt in range(max_retries):
         try:
             # Create async engine
@@ -241,23 +245,27 @@ def init_database(database_url: str | None = None, env: str = "prod") -> None:
             sync_engine = create_database_engine(database_url, is_async=False, env=env)
 
             # Create sync sessionmaker
-            SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=sync_engine)
+            SessionLocal = sessionmaker(
+                autocommit=False, autoflush=False, bind=sync_engine
+            )
 
             # Setup event listeners
             _setup_event_listeners()
 
             db_type = get_database_type(database_url)
-            
+
             if attempt > 0:
-                logger.info(f"Database connection successful after {attempt + 1} attempts: {db_type}")
+                logger.info(
+                    f"Database connection successful after {attempt + 1} attempts: {db_type}"
+                )
             else:
                 logger.info(f"Database initialized successfully: {db_type}")
-            
+
             return  # Success!
 
         except Exception as e:
             last_error = e
-            
+
             # Check if this is a connection refused error (NeonDB auto-suspend)
             if _is_connection_refused_error(e) and attempt < max_retries - 1:
                 logger.warning(
@@ -268,7 +276,7 @@ def init_database(database_url: str | None = None, env: str = "prod") -> None:
                 time.sleep(backoff)
                 backoff *= backoff_multiplier
                 continue
-            
+
             # Not a connection refused error, or out of retries
             if attempt < max_retries - 1:
                 logger.warning(
@@ -323,14 +331,21 @@ def _setup_event_listeners():
                 },
             )
 
-    # Ensure tables exist for any Session bind (helps in-memory SQLite tests)
+    # Ensure tables exist for in-memory SQLite tests only (runs once per engine)
+    _tables_created_for = set()
+
     @event.listens_for(OrmSession, "before_flush")
     def _ensure_tables_before_flush(session: OrmSession, flush_context, instances):
-        """Ensure tables exist before flush (useful for in-memory SQLite)."""
+        """Ensure tables exist before flush (useful for in-memory SQLite tests only)."""
         try:
             bind = session.get_bind()
             if bind is not None:
-                Base.metadata.create_all(bind=bind)
+                engine_id = id(bind)
+                if engine_id not in _tables_created_for:
+                    url_str = str(bind.url)
+                    if ":memory:" in url_str or "mode=memory" in url_str:
+                        Base.metadata.create_all(bind=bind)
+                    _tables_created_for.add(engine_id)
         except Exception:
             pass
 
@@ -352,25 +367,19 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
     max_retries = 3
     initial_backoff = 1.0
     backoff_multiplier = 2.0
-    
+
     last_error = None
     backoff = initial_backoff
-    
+
     for attempt in range(max_retries):
         try:
             async with AsyncSessionLocal() as session:
-                # Ensure metadata exists for this connection (esp. sqlite in-memory)
-                try:
-                    async with session.bind.begin() as conn:
-                        await conn.run_sync(Base.metadata.create_all)
-                except Exception:
-                    pass
                 yield session
                 return  # Success!
-                
+
         except (OperationalError, DBAPIError) as e:
             last_error = e
-            
+
             # Check if this is a connection refused error (NeonDB auto-suspend)
             if _is_connection_refused_error(e) and attempt < max_retries - 1:
                 logger.warning(
@@ -380,10 +389,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
                 await asyncio.sleep(backoff)
                 backoff *= backoff_multiplier
                 continue
-            
+
             # Not a connection refused error, or out of retries
             raise
-    
+
     # If we get here, all retries failed
     if last_error:
         raise last_error
@@ -404,11 +413,6 @@ def get_sync_db() -> Generator[OrmSession, None, None]:
 
     db = SessionLocal()
     try:
-        # Ensure metadata exists for this connection (esp. sqlite in-memory)
-        try:
-            Base.metadata.create_all(bind=db.get_bind())
-        except Exception:
-            pass
         yield db
     finally:
         db.close()
@@ -627,7 +631,7 @@ def get_pool_status() -> dict:
     if db_type == "postgresql":
         base_stats.update(
             {
-                "pool_recycle": 3600,
+                "pool_recycle": 300,
                 "pool_pre_ping": True,
                 "statement_timeout_ms": 30000,
                 "isolation_level": "READ COMMITTED",

@@ -55,7 +55,8 @@ async def get_performance_metrics() -> Dict[str, Any]:
 
 @router.get("/recommendation-quality", response_model=RecommendationQualityMetrics)
 async def get_recommendation_quality_metrics(
-    time_window_days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_sync_db)
+    time_window_days: int = Query(default=7, ge=1, le=90),
+    db: Session = Depends(get_sync_db),
 ) -> Dict[str, Any]:
     """
     Get recommendation quality metrics.
@@ -77,7 +78,8 @@ async def get_recommendation_quality_metrics(
 
 @router.get("/user-engagement", response_model=UserEngagementMetrics)
 async def get_user_engagement_metrics(
-    time_window_days: int = Query(default=7, ge=1, le=90), db: Session = Depends(get_sync_db)
+    time_window_days: int = Query(default=7, ge=1, le=90),
+    db: Session = Depends(get_sync_db),
 ) -> Dict[str, Any]:
     """
     Get user engagement metrics.

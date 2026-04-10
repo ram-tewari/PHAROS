@@ -216,12 +216,12 @@ class EventBus:
                 if len(sig.parameters) > 0:
                     first_param = list(sig.parameters.values())[0]
                     annotation = first_param.annotation
-                    
+
                     # Check if handler explicitly requests Event object via type hint
                     if annotation is not inspect.Parameter.empty and (
-                        annotation is Event or 
-                        str(annotation) == "Event" or 
-                        str(annotation).endswith(".Event")
+                        annotation is Event
+                        or str(annotation) == "Event"
+                        or str(annotation).endswith(".Event")
                     ):
                         pass_event_object = True
 

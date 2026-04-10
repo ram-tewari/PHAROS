@@ -77,7 +77,9 @@ class TestCodeIntelligenceWorkflow:
         print(f"✓ Step 2: Created {len(chunks)} document chunks")
 
         # Step 3: Request hover information (mock static analysis)
-        with patch("app.modules.graph.logic.static_analysis.StaticAnalysisService") as mock_analyzer:
+        with patch(
+            "app.modules.graph.logic.static_analysis.StaticAnalysisService"
+        ) as mock_analyzer:
             mock_instance = MagicMock()
             mock_instance.get_symbol_at_position.return_value = {
                 "name": "calculate_sum",
@@ -102,13 +104,19 @@ class TestCodeIntelligenceWorkflow:
             assert response.status_code == 200
             hover_data = response.json()
             # The response should have context_lines and related_chunks
-            assert "context_lines" in hover_data or "symbol" in hover_data or "symbol_info" in hover_data
+            assert (
+                "context_lines" in hover_data
+                or "symbol" in hover_data
+                or "symbol_info" in hover_data
+            )
             print(f"✓ Step 3: Retrieved hover information in {elapsed_time:.3f}s")
 
         # Step 4: Verify chunks are linked (related chunks returned)
         assert "related_chunks" in hover_data
         # Should have at least some related chunks
-        print(f"✓ Step 4: Found {len(hover_data.get('related_chunks', []))} related chunks")
+        print(
+            f"✓ Step 4: Found {len(hover_data.get('related_chunks', []))} related chunks"
+        )
 
         # Step 5: Verify performance (response time < 200ms for cached)
         # Second request should be cached
@@ -213,7 +221,9 @@ class TestDocumentIntelligenceWorkflow:
         response = client.post(f"/api/resources/{str(pdf_resource_id)}/auto-link")
         assert response.status_code in [200, 201]
         link_result = response.json()
-        print(f"✓ Step 4: Auto-linked resources, created {link_result.get('links_created', 0)} links")
+        print(
+            f"✓ Step 4: Auto-linked resources, created {link_result.get('links_created', 0)} links"
+        )
 
         # Step 5: Verify bidirectional links
         from app.database.models import ChunkLink
@@ -224,14 +234,14 @@ class TestDocumentIntelligenceWorkflow:
             .filter(ChunkLink.source_chunk_id == pdf_chunk.id)
             .all()
         )
-        
+
         # Check links from code to PDF
         code_links = (
             db_session.query(ChunkLink)
             .filter(ChunkLink.source_chunk_id == code_chunk.id)
             .all()
         )
-        
+
         total_links = len(pdf_links) + len(code_links)
         print(f"✓ Step 5: Verified {total_links} bidirectional links")
 
@@ -336,7 +346,11 @@ class TestGraphIntelligenceWorkflow:
         assert response.status_code in [200, 201]
         community_data = response.json()
         # Response has result.communities structure
-        assert "result" in community_data or "communities" in community_data or "assignments" in community_data
+        assert (
+            "result" in community_data
+            or "communities" in community_data
+            or "assignments" in community_data
+        )
         print(f"✓ Step 4: Detected communities")
 
         # Step 5: Generate visualization layout
@@ -356,9 +370,11 @@ class TestGraphIntelligenceWorkflow:
             assert "nodes" in layout_data
             nodes = layout_data["nodes"]
             assert len(nodes) == len(resources)
-        
+
         # Verify coordinates are normalized
-        for node_id, node_data in (nodes.items() if isinstance(nodes, dict) else [(n["id"], n) for n in nodes]):
+        for node_id, node_data in (
+            nodes.items() if isinstance(nodes, dict) else [(n["id"], n) for n in nodes]
+        ):
             assert "x" in node_data and "y" in node_data
             assert 0 <= node_data["x"] <= 1000
             assert 0 <= node_data["y"] <= 1000
@@ -367,15 +383,17 @@ class TestGraphIntelligenceWorkflow:
         # Step 6: Verify consistency (same resource IDs across all operations)
         # Extract IDs from responses (handle different response structures)
         if isinstance(centrality_data, list):
-            centrality_ids = {m.get("resource_id") or m.get("id") for m in centrality_data}
+            centrality_ids = {
+                m.get("resource_id") or m.get("id") for m in centrality_data
+            }
         else:
             centrality_ids = set(centrality_data.get("metrics", {}).keys())
-        
+
         if "layout" in layout_data:
             layout_ids = set(layout_data["layout"]["nodes"].keys())
         else:
             layout_ids = {n["id"] for n in layout_data["nodes"]}
-        
+
         # At least some IDs should match
         assert len(centrality_ids) > 0
         assert len(layout_ids) > 0
@@ -487,7 +505,9 @@ class TestAIPlanningWorkflow:
             }
             mock_agent.return_value = mock_instance
 
-            response = client.put(f"/planning/{plan_id}/refine", json=refinement_request)
+            response = client.put(
+                f"/planning/{plan_id}/refine", json=refinement_request
+            )
             assert response.status_code == 200
             refined_plan = response.json()
             assert len(refined_plan["steps"]) == 4
@@ -515,9 +535,7 @@ class TestAIPlanningWorkflow:
 class TestMCPWorkflow:
     """Test complete MCP workflow."""
 
-    def test_mcp_complete_workflow(
-        self, client: TestClient, db_session: Session
-    ):
+    def test_mcp_complete_workflow(self, client: TestClient, db_session: Session):
         """
         Test: Start MCP session → Invoke multiple tools → Verify context preservation → Close session
 
@@ -599,13 +617,17 @@ class TestMCPWorkflow:
         # Retrieve session and check that context is maintained
         from app.database.models import MCPSession
 
-        session = db_session.query(MCPSession).filter(MCPSession.id == session_id).first()
+        session = (
+            db_session.query(MCPSession).filter(MCPSession.id == session_id).first()
+        )
         assert session is not None
         assert session.context is not None
         assert "user_goal" in session.context
         # Check that tool invocations are recorded
         assert len(session.tool_invocations) >= 2
-        print(f"✓ Step 5: Verified context preservation ({len(session.tool_invocations)} invocations)")
+        print(
+            f"✓ Step 5: Verified context preservation ({len(session.tool_invocations)} invocations)"
+        )
 
         # Step 6: Close session
         response = client.delete(f"/mcp/sessions/{session_id}")
@@ -613,7 +635,9 @@ class TestMCPWorkflow:
         print(f"✓ Step 6: Closed MCP session {session_id}")
 
         # Verify session is closed
-        session = db_session.query(MCPSession).filter(MCPSession.id == session_id).first()
+        session = (
+            db_session.query(MCPSession).filter(MCPSession.id == session_id).first()
+        )
         assert session.status == "closed"
 
         print("\n✅ Complete MCP workflow test passed!")

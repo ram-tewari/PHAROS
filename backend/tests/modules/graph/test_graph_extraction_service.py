@@ -9,11 +9,6 @@ which can cause import hangs due to database connection attempts.
 """
 
 from unittest.mock import MagicMock
-import sys
-
-# Mock the problematic imports before importing the service
-sys.modules["app.config.settings"] = MagicMock()
-sys.modules["app.events.event_system"] = MagicMock()
 
 
 class MockSession:

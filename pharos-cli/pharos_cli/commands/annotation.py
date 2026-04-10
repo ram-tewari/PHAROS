@@ -27,6 +27,12 @@ annotation_app = typer.Typer(
 )
 
 
+@annotation_app.callback()
+def annotation_callback():
+    """Annotation management commands for Pharos CLI."""
+    pass
+
+
 def get_annotation_client() -> AnnotationClient:
     """Get an AnnotationClient instance."""
     config = load_config()

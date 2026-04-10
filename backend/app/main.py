@@ -22,7 +22,28 @@ The application provides a comprehensive knowledge management system with:
 
 from __future__ import annotations
 
+import logging
+import os
+
 from . import create_app
+
+# Configure structured JSON logging for production
+if os.getenv("ENV", "dev") == "prod" or os.getenv("JSON_LOGGING", "").lower() in (
+    "true",
+    "1",
+):
+    from .ml_monitoring.json_logging import JSONFormatter
+
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+    handler = logging.StreamHandler()
+    handler.setFormatter(JSONFormatter(include_extra=True))
+    root_logger.handlers = [handler]
+else:
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    )
 
 # Create app instance using factory pattern
 # This ensures proper initialization order and avoids circular imports

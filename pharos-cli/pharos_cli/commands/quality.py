@@ -25,6 +25,12 @@ quality_app = typer.Typer(
 )
 
 
+@quality_app.callback()
+def quality_callback():
+    """Quality assessment commands."""
+    pass
+
+
 def get_quality_client() -> QualityClient:
     """Get a quality client instance.
 

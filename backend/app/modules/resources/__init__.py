@@ -32,6 +32,10 @@ def __getattr__(name):
         from .router import router as resources_router
 
         return resources_router
+    elif name == "chunking_router":
+        from .router import chunking_router
+
+        return chunking_router
     elif name == "register_handlers":
         from .handlers import register_handlers
 
@@ -66,6 +70,7 @@ from .schema import (
 __all__ = [
     # Router
     "resources_router",
+    "chunking_router",
     # Service functions
     "create_pending_resource",
     "get_resource",

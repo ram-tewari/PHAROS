@@ -296,6 +296,9 @@ class TestBERTScore:
 
     def test_bertscore_calculation(self, db_session: Session):
         """Test BERTScore calculation with mocked library."""
+        pytest.importorskip(
+            "bert_score", reason="bert_score library not installed"
+        )
         evaluator = SummarizationEvaluator(db=db_session)
 
         with patch("bert_score.score") as mock_bert_score:
@@ -334,6 +337,9 @@ class TestBERTScore:
 
     def test_bertscore_error_handling(self, db_session: Session):
         """Test BERTScore error handling."""
+        pytest.importorskip(
+            "bert_score", reason="bert_score library not installed"
+        )
         evaluator = SummarizationEvaluator(db=db_session)
 
         with patch("bert_score.score", side_effect=Exception("BERTScore error")):

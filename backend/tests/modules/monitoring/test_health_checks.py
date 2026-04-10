@@ -11,6 +11,7 @@ Also tests the enhanced health check endpoint that verifies:
 - Celery worker status
 """
 
+import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -269,6 +270,9 @@ def test_health_check_with_celery_unavailable(client: TestClient, db_session: Se
     - Database and API still report healthy
     - System continues to operate in degraded mode
     """
+    pytest.importorskip(
+        "celery", reason="celery not installed; health-check celery tests require celery"
+    )
     # Mock Celery inspect to return empty stats (no workers)
     with patch("app.tasks.celery_app.celery_app.control.inspect") as mock_inspect_func:
         mock_inspect = MagicMock()

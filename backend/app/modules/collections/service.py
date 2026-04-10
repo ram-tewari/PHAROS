@@ -572,6 +572,7 @@ class CollectionService:
 
         # Extract embeddings - handle both JSON strings (SQLite/Text) and lists (PostgreSQL/JSON)
         import json
+
         embeddings = []
         for resource in resources:
             embedding = resource.embedding
@@ -669,19 +670,20 @@ class CollectionService:
 
         # Compute similarities - handle embeddings as either JSON strings or lists
         import json
+
         similarities = []
         for resource in resources:
             embedding = resource.embedding
             if not embedding:
                 continue
-            
+
             # Parse JSON string if needed
             if isinstance(embedding, str):
                 try:
                     embedding = json.loads(embedding)
                 except (json.JSONDecodeError, TypeError):
                     continue
-            
+
             if not isinstance(embedding, list):
                 continue
 

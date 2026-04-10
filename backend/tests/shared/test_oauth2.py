@@ -76,14 +76,19 @@ class TestGoogleOAuth2Provider:
         auth_url = await provider.get_authorization_url(state)
 
         # Verify URL structure
+        from urllib.parse import parse_qs, urlsplit
+
         assert auth_url.startswith(provider.AUTH_URL)
-        assert "client_id=google_client_id" in auth_url
-        assert "redirect_uri=http://localhost:8000/auth/google/callback" in auth_url
-        assert "response_type=code" in auth_url
-        assert "scope=openid email profile" in auth_url
-        assert f"state={state}" in auth_url
-        assert "access_type=offline" in auth_url
-        assert "prompt=consent" in auth_url
+        params = parse_qs(urlsplit(auth_url).query)
+        assert params["client_id"] == ["google_client_id"]
+        assert params["redirect_uri"] == [
+            "http://localhost:8000/auth/google/callback"
+        ]
+        assert params["response_type"] == ["code"]
+        assert params["scope"] == ["openid email profile"]
+        assert params["state"] == [state]
+        assert params["access_type"] == ["offline"]
+        assert params["prompt"] == ["consent"]
 
     @pytest.mark.asyncio
     async def test_exchange_code_for_token_success(self):
@@ -229,11 +234,16 @@ class TestGitHubOAuth2Provider:
         auth_url = await provider.get_authorization_url(state)
 
         # Verify URL structure
+        from urllib.parse import parse_qs, urlsplit
+
         assert auth_url.startswith(provider.AUTH_URL)
-        assert "client_id=github_client_id" in auth_url
-        assert "redirect_uri=http://localhost:8000/auth/github/callback" in auth_url
-        assert "scope=user:email" in auth_url
-        assert f"state={state}" in auth_url
+        params = parse_qs(urlsplit(auth_url).query)
+        assert params["client_id"] == ["github_client_id"]
+        assert params["redirect_uri"] == [
+            "http://localhost:8000/auth/github/callback"
+        ]
+        assert params["scope"] == ["user:email"]
+        assert params["state"] == [state]
 
     @pytest.mark.asyncio
     async def test_exchange_code_for_token_success(self):

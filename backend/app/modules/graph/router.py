@@ -1409,12 +1409,13 @@ def post_hover_information(
         HTTPException: If resource is not found or hover extraction fails
     """
     from uuid import UUID as UUIDType
+
     return _get_hover_information_impl(
         resource_id=UUIDType(resource_id),
         file_path=file_path,
         line=line,
         column=column,
-        db=db
+        db=db,
     )
 
 
@@ -1441,11 +1442,7 @@ def get_hover_information(
     This is a backward compatibility alias. New implementations should use POST /hover.
     """
     return _get_hover_information_impl(
-        resource_id=resource_id,
-        file_path=file_path,
-        line=line,
-        column=column,
-        db=db
+        resource_id=resource_id, file_path=file_path, line=line, column=column, db=db
     )
 
 
@@ -1484,7 +1481,11 @@ def _get_hover_information_impl(
         HTTPException: If resource is not found or hover extraction fails
     """
     import time
-    from app.modules.graph.schema import HoverInformationResponse, LocationInfo, ChunkReference
+    from app.modules.graph.schema import (
+        HoverInformationResponse,
+        LocationInfo,
+        ChunkReference,
+    )
     from app.modules.graph.logic.static_analysis import StaticAnalysisService
     from app.database.models import Resource, DocumentChunk
     from app.shared.cache import CacheService
@@ -1495,7 +1496,7 @@ def _get_hover_information_impl(
         # Check cache first (5-minute TTL)
         cache_service = CacheService()
         cache_key = f"hover:{resource_id}:{file_path}:{line}:{column}"
-        
+
         cached_result = cache_service.get(cache_key)
         if cached_result:
             logger.debug(f"Cache hit for hover info: {cache_key}")
@@ -1511,7 +1512,7 @@ def _get_hover_information_impl(
 
         # Get resource metadata to determine language
         language = resource.language
-        
+
         # Try to infer language from file extension if not in metadata
         if not language:
             ext_map = {
@@ -1533,7 +1534,15 @@ def _get_hover_information_impl(
                     break
 
         # Validate language support
-        supported_languages = ["python", "javascript", "typescript", "java", "cpp", "go", "rust"]
+        supported_languages = [
+            "python",
+            "javascript",
+            "typescript",
+            "java",
+            "cpp",
+            "go",
+            "rust",
+        ]
         if language and language not in supported_languages:
             # Return empty context for unsupported languages
             response = HoverInformationResponse(
@@ -1558,7 +1567,7 @@ def _get_hover_information_impl(
             chunk_metadata = chunk.chunk_metadata or {}
             start_line = chunk_metadata.get("start_line", 0)
             end_line = chunk_metadata.get("end_line", 0)
-            
+
             if start_line <= line <= end_line:
                 target_chunk = chunk
                 break
@@ -1579,10 +1588,10 @@ def _get_hover_information_impl(
         chunk_lines = target_chunk.content.split("\n")
         chunk_metadata = target_chunk.chunk_metadata or {}
         chunk_start_line = chunk_metadata.get("start_line", 1)
-        
+
         # Calculate relative line number within chunk
         relative_line = line - chunk_start_line
-        
+
         # Get context lines (3 before and 3 after)
         context_start = max(0, relative_line - 3)
         context_end = min(len(chunk_lines), relative_line + 4)
@@ -1598,21 +1607,21 @@ def _get_hover_information_impl(
             try:
                 # Use StaticAnalyzer for proper AST-based symbol extraction
                 static_analyzer = StaticAnalysisService(db)
-                
+
                 # Calculate column position within chunk content
                 # For now, use column parameter directly
                 symbol_info = static_analyzer.get_symbol_at_position(
                     code=target_chunk.content,
                     language=language,
                     line=relative_line + 1,  # Convert to 1-indexed within chunk
-                    column=column
+                    column=column,
                 )
-                
+
                 if symbol_info:
                     symbol_name = symbol_info.get("symbol_name")
                     symbol_type = symbol_info.get("symbol_type")
                     documentation = symbol_info.get("documentation")
-                    
+
                     # Build definition location
                     def_loc = symbol_info.get("definition_location")
                     if def_loc:
@@ -1623,12 +1632,12 @@ def _get_hover_information_impl(
                             line=absolute_line,
                             column=def_loc.get("column", 0),
                         )
-                
+
                 logger.debug(
                     f"StaticAnalyzer extracted: symbol={symbol_name}, "
                     f"type={symbol_type}, has_doc={documentation is not None}"
                 )
-                
+
             except Exception as e:
                 logger.warning(f"StaticAnalyzer failed, using fallback: {e}")
                 # Fall back to simple heuristics if static analysis fails
@@ -1639,7 +1648,7 @@ def _get_hover_information_impl(
         # For now, return empty related_chunks list
         # TODO: Implement proper embedding lookup via embedding_id if needed
         related_chunks = []
-        
+
         # Future enhancement: Query embeddings table using embedding_id
         # if target_chunk and target_chunk.embedding_id:
         #     # Query embedding service or embeddings table
@@ -1664,12 +1673,12 @@ def _get_hover_information_impl(
         elapsed_time = time.time() - start_time
         if elapsed_time > 0.1:
             logger.warning(
-                f"Hover info exceeded 100ms target: {elapsed_time*1000:.1f}ms "
+                f"Hover info exceeded 100ms target: {elapsed_time * 1000:.1f}ms "
                 f"(resource={resource_id}, file={file_path}, line={line})"
             )
         else:
             logger.debug(
-                f"Hover info completed in {elapsed_time*1000:.1f}ms "
+                f"Hover info completed in {elapsed_time * 1000:.1f}ms "
                 f"(resource={resource_id}, file={file_path}, line={line})"
             )
 
@@ -1681,13 +1690,12 @@ def _get_hover_information_impl(
         logger.error(
             f"Error getting hover info for {file_path}:{line}:{column} "
             f"in resource {resource_id}: {e}",
-            exc_info=True
+            exc_info=True,
         )
         raise HTTPException(
             status_code=500,
             detail="Internal server error while retrieving hover information",
         )
-
 
 
 @router.get(
@@ -1763,7 +1771,7 @@ async def get_centrality_metrics(
         # Check cache first (10-minute TTL)
         cache_service = CacheService()
         cache_key = f"centrality:{','.join(str(rid) for rid in resource_id_list)}:{damping_factor}"
-        
+
         cached_result = cache_service.get(cache_key)
         if cached_result:
             logger.debug(f"Cache hit for centrality metrics: {cache_key}")
@@ -1784,14 +1792,10 @@ async def get_centrality_metrics(
         )
 
         # Build map of cached metrics
-        cached_by_id = {
-            cache.resource_id: cache for cache in db_cached_metrics
-        }
+        cached_by_id = {cache.resource_id: cache for cache in db_cached_metrics}
 
         # Identify resources that need computation
-        needs_computation = [
-            rid for rid in resource_id_list if rid not in cached_by_id
-        ]
+        needs_computation = [rid for rid in resource_id_list if rid not in cached_by_id]
 
         # Compute metrics for uncached resources
         computed_metrics = {}
@@ -1898,15 +1902,11 @@ async def get_centrality_metrics(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"Error computing centrality metrics: {e}",
-            exc_info=True
-        )
+        logger.error(f"Error computing centrality metrics: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error while computing centrality metrics",
         )
-
 
 
 @router.post(
@@ -1959,7 +1959,10 @@ async def detect_communities(
     """
     import time
     from datetime import datetime, timedelta, timezone
-    from app.modules.graph.schema import CommunityDetectionResult, CommunityDetectionResponse
+    from app.modules.graph.schema import (
+        CommunityDetectionResult,
+        CommunityDetectionResponse,
+    )
     from app.modules.graph.service import CommunityDetectionService
     from app.database.models import CommunityAssignment
     from app.shared.cache import CacheService
@@ -1991,7 +1994,7 @@ async def detect_communities(
         # Check cache first (15-minute TTL)
         cache_service = CacheService()
         cache_key = f"communities:{','.join(str(rid) for rid in sorted(resource_id_list))}:{resolution}"
-        
+
         cached_result = cache_service.get(cache_key)
         if cached_result:
             logger.debug(f"Cache hit for community detection: {cache_key}")
@@ -2015,28 +2018,30 @@ async def detect_communities(
         # If we have cached assignments for all resources, use them
         if len(db_cached_assignments) == len(resource_id_list):
             logger.debug(f"Database cache hit for community detection")
-            
+
             # Build result from cached assignments
             communities = {
                 int(assignment.resource_id): assignment.community_id
                 for assignment in db_cached_assignments
             }
-            
+
             # Get modularity from first assignment (same for all in same detection run)
-            modularity = db_cached_assignments[0].modularity if db_cached_assignments else 0.0
-            
+            modularity = (
+                db_cached_assignments[0].modularity if db_cached_assignments else 0.0
+            )
+
             # Compute community sizes
             community_sizes = {}
             for comm_id in communities.values():
                 community_sizes[comm_id] = community_sizes.get(comm_id, 0) + 1
-            
+
             result = CommunityDetectionResult(
                 communities=communities,
                 modularity=modularity,
                 num_communities=len(community_sizes),
                 community_sizes=community_sizes,
             )
-            
+
             elapsed_time = time.time() - start_time
             response = CommunityDetectionResponse(
                 result=result,
@@ -2044,12 +2049,12 @@ async def detect_communities(
                 cached=True,
                 resolution=resolution,
             )
-            
+
             return response.model_dump()
 
         # Compute communities
         community_service = CommunityDetectionService(db)
-        
+
         result_dict = await community_service.detect_communities(
             resource_ids=[int(rid) for rid in resource_id_list],
             resolution=resolution,
@@ -2059,7 +2064,7 @@ async def detect_communities(
         for resource_id in resource_id_list:
             resource_id_int = int(resource_id)
             community_id = result_dict["communities"].get(resource_id_int, 0)
-            
+
             # Create cache entry
             cache_entry = CommunityAssignment(
                 resource_id=resource_id,
@@ -2109,15 +2114,11 @@ async def detect_communities(
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"Error detecting communities: {e}",
-            exc_info=True
-        )
+        logger.error(f"Error detecting communities: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error while detecting communities",
         )
-
 
 
 @router.post(
@@ -2144,28 +2145,28 @@ async def compute_graph_layout(
 ) -> dict:
     """
     Compute graph layout for visualization.
-    
+
     This endpoint computes node positions and edge routing for graph visualization
     using one of three layout algorithms:
-    
+
     - **force**: Force-directed layout using Fruchterman-Reingold algorithm
     - **hierarchical**: Hierarchical layout using Kamada-Kawai algorithm
     - **circular**: Circular layout with nodes arranged in a circle
-    
+
     All coordinates are normalized to [0, 1000] range for consistent rendering
     across different screen sizes.
-    
+
     Results are cached for 10 minutes to improve performance. The cache is
     invalidated when the graph structure changes.
-    
+
     Args:
         resource_ids: Comma-separated list of resource UUIDs
         layout_type: Layout algorithm (force, hierarchical, circular)
         db: Database session dependency
-    
+
     Returns:
         GraphLayoutResponse: Node positions, edge routing, and bounding box
-    
+
     Raises:
         HTTPException: If resource IDs are invalid or layout computation fails
     """
@@ -2173,9 +2174,9 @@ async def compute_graph_layout(
     from app.modules.graph.schema import GraphLayoutResponse
     from app.modules.graph.service import GraphVisualizationService
     from app.shared.cache import CacheService
-    
+
     start_time = time.time()
-    
+
     try:
         # Parse resource IDs
         try:
@@ -2185,17 +2186,17 @@ async def compute_graph_layout(
                 status_code=400,
                 detail=f"Invalid resource UUID format: {e}",
             )
-        
+
         if len(resource_id_list) < 1:
             raise HTTPException(
                 status_code=400,
                 detail="At least one resource is required for layout computation",
             )
-        
+
         # Check cache
         cache_service = CacheService()
         cache_key = f"graph_layout:{','.join(str(rid) for rid in resource_id_list)}:{layout_type}"
-        
+
         cached_result = cache_service.get(cache_key)
         if cached_result:
             logger.debug(f"Cache hit for graph layout: {cache_key}")
@@ -2203,14 +2204,14 @@ async def compute_graph_layout(
             cached_result["computation_time_ms"] = elapsed_time * 1000
             cached_result["cached"] = True
             return cached_result
-        
+
         # Compute layout
         viz_service = GraphVisualizationService(db)
         result_dict = await viz_service.compute_layout(
             resource_ids=resource_id_list,
             layout_type=layout_type,
         )
-        
+
         # Build response
         response = GraphLayoutResponse(
             layout=result_dict["layout"],
@@ -2219,13 +2220,13 @@ async def compute_graph_layout(
             node_count=result_dict["node_count"],
             edge_count=result_dict["edge_count"],
         )
-        
+
         # Cache result for 10 minutes
         result_dict_response = response.model_dump(mode="json")
         cache_service.set(cache_key, result_dict_response, ttl=600)
-        
+
         elapsed_time = time.time() - start_time
-        
+
         # Log performance
         if elapsed_time > 2.0:
             logger.warning(
@@ -2237,16 +2238,13 @@ async def compute_graph_layout(
                 f"Graph layout completed in {elapsed_time:.2f}s "
                 f"({len(resource_id_list)} nodes, {layout_type} layout)"
             )
-        
+
         return result_dict_response
-    
+
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(
-            f"Error computing graph layout: {e}",
-            exc_info=True
-        )
+        logger.error(f"Error computing graph layout: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail="Internal server error while computing graph layout",

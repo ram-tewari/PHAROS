@@ -1,0 +1,11 @@
+{
+  "total_repos": 50,
+  "succeeded": 0,
+  "failed": 50,
+  "total_resources": 0,
+  "total_chunks": 0,
+  "db_size_bytes": 10294063,
+  "p95_ingestion_seconds": 0.0,
+  "wall_clock_seconds": 2.0674238999999943,
+  "violations": []
+}

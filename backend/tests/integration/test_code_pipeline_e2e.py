@@ -14,6 +14,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
+from fastapi.testclient import TestClient
 from httpx import AsyncClient
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -230,7 +231,7 @@ node_modules/
 
 @pytest.mark.asyncio
 async def test_code_pipeline_end_to_end(
-    async_client: AsyncClient, db_session: AsyncSession
+    bypass_auth: TestClient, db_session: AsyncSession
 ):
     """
     Test the complete code intelligence pipeline end-to-end.
@@ -462,7 +463,9 @@ async def test_code_pipeline_with_errors(
     print("✓ Correctly rejected non-existent path")
 
     # Test with invalid task ID
-    response = await async_client.get("/api/resources/ingest-repo/invalid-task-id/status")
+    response = await async_client.get(
+        "/api/resources/ingest-repo/invalid-task-id/status"
+    )
     assert response.status_code == 404
     print("✓ Correctly handled invalid task ID")
 

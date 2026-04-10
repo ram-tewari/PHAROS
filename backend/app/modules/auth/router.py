@@ -12,8 +12,9 @@ import logging
 import time
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
+from starlette.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ...shared.database import get_db
@@ -24,8 +25,10 @@ from ...shared.security import (
     revoke_token,
     decode_token,
     validate_token_type,
+    validate_redirect_url,
 )
 from ...shared.cache import cache
+from ...shared.rate_limiter import rate_limiter
 from ...config.settings import get_settings
 from .schema import (
     TokenResponse,
@@ -49,20 +52,144 @@ router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 
 # ============================================================================
+# Auth Rate Limiting
+# ============================================================================
+
+# Auth-specific rate limits
+AUTH_LOGIN_RATE_LIMIT = 5  # 5 attempts per 15 minutes
+AUTH_LOGIN_WINDOW = 15 * 60  # 15 minutes in seconds
+AUTH_REFRESH_RATE_LIMIT = 10  # 10 attempts per hour
+AUTH_REFRESH_WINDOW = 60 * 60  # 1 hour in seconds
+
+
+async def check_auth_login_rate_limit(request: Request) -> None:
+    """Check rate limit for /auth/login endpoint.
+
+    Rate limit: 5 attempts per 15 minutes per IP address.
+
+    Raises:
+        HTTPException: 429 if rate limit exceeded
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    window_key = f"auth_login_rate_limit:{client_ip}"
+
+    try:
+        from ...shared.cache import RedisCache
+
+        cache = RedisCache()
+
+        # Get current count
+        current = cache.redis.get(window_key)
+        count = int(current) if current else 0
+
+        if count >= AUTH_LOGIN_RATE_LIMIT:
+            # Rate limit exceeded
+            ttl = cache.redis.ttl(window_key)
+            reset_time = int(time.time()) + ttl
+
+            logger.warning(
+                f"Auth login rate limit exceeded for IP {client_ip}: "
+                f"{count}/{AUTH_LOGIN_RATE_LIMIT} attempts"
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many login attempts. Please try again in 15 minutes.",
+                headers={
+                    "Retry-After": str(ttl),
+                    "X-RateLimit-Limit": str(AUTH_LOGIN_RATE_LIMIT),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(reset_time),
+                },
+            )
+
+        # Increment counter
+        pipe = cache.redis.pipeline()
+        pipe.incr(window_key)
+        pipe.expire(window_key, AUTH_LOGIN_WINDOW)
+        pipe.execute()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Fail open - allow request if Redis is unavailable
+        logger.warning(f"Auth rate limit check failed: {e}")
+        return
+
+
+async def check_auth_refresh_rate_limit(request: Request) -> None:
+    """Check rate limit for /auth/refresh endpoint.
+
+    Rate limit: 10 attempts per hour per IP address.
+
+    Raises:
+        HTTPException: 429 if rate limit exceeded
+    """
+    client_ip = request.client.host if request.client else "unknown"
+    window_key = f"auth_refresh_rate_limit:{client_ip}"
+
+    try:
+        from ...shared.cache import RedisCache
+
+        cache = RedisCache()
+
+        # Get current count
+        current = cache.redis.get(window_key)
+        count = int(current) if current else 0
+
+        if count >= AUTH_REFRESH_RATE_LIMIT:
+            # Rate limit exceeded
+            ttl = cache.redis.ttl(window_key)
+            reset_time = int(time.time()) + ttl
+
+            logger.warning(
+                f"Auth refresh rate limit exceeded for IP {client_ip}: "
+                f"{count}/{AUTH_REFRESH_RATE_LIMIT} attempts"
+            )
+
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many token refresh attempts. Please try again in 1 hour.",
+                headers={
+                    "Retry-After": str(ttl),
+                    "X-RateLimit-Limit": str(AUTH_REFRESH_RATE_LIMIT),
+                    "X-RateLimit-Remaining": "0",
+                    "X-RateLimit-Reset": str(reset_time),
+                },
+            )
+
+        # Increment counter
+        pipe = cache.redis.pipeline()
+        pipe.incr(window_key)
+        pipe.expire(window_key, AUTH_REFRESH_WINDOW)
+        pipe.execute()
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        # Fail open - allow request if Redis is unavailable
+        logger.warning(f"Auth refresh rate limit check failed: {e}")
+        return
+
+
+# ============================================================================
 # OAuth2 Password Flow Endpoints
 # ============================================================================
 
 
 @router.post("/login", response_model=TokenResponse)
 async def login(
+    request: Request,
     form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
     db: AsyncSession = Depends(get_db),
 ):
     """OAuth2 password flow login.
 
     Authenticates user with username/email and password, returns JWT tokens.
+    Rate limited to 5 attempts per 15 minutes per IP address.
 
     Args:
+        request: FastAPI request object (for rate limiting)
         form_data: OAuth2 password request form (username, password, scopes)
         db: Database session
 
@@ -71,7 +198,10 @@ async def login(
 
     Raises:
         HTTPException: 401 if authentication fails
+        HTTPException: 429 if rate limit exceeded
     """
+    # Check rate limit
+    await check_auth_login_rate_limit(request)
     # Authenticate user
     user = await authenticate_user(db, form_data.username, form_data.password)
 
@@ -109,10 +239,15 @@ async def login(
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token_endpoint(refresh_request: RefreshTokenRequest):
+async def refresh_token_endpoint(
+    request: Request,
+    refresh_request: RefreshTokenRequest,
+):
     """Refresh access token using refresh token.
+    Rate limited to 10 attempts per hour per IP address.
 
     Args:
+        request: FastAPI request object (for rate limiting)
         refresh_request: Request containing refresh token
 
     Returns:
@@ -120,7 +255,10 @@ async def refresh_token_endpoint(refresh_request: RefreshTokenRequest):
 
     Raises:
         HTTPException: 401 if refresh token is invalid or expired
+        HTTPException: 429 if rate limit exceeded
     """
+    # Check rate limit
+    await check_auth_refresh_rate_limit(request)
     try:
         # Decode and validate refresh token
         payload = decode_token(refresh_request.refresh_token)
@@ -274,12 +412,37 @@ async def google_callback(
 
     logger.info(f"Google OAuth2 login successful for user: {user.username}")
 
-    # Redirect to frontend callback with tokens
+    # Validate redirect URL before redirecting
     settings = get_settings()
-    frontend_callback_url = f"{settings.FRONTEND_URL}/auth/callback?access_token={access_token}&refresh_token={refresh_token}"
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=frontend_callback_url)
+    frontend_callback_url = f"{settings.FRONTEND_URL}/auth/callback"
+    try:
+        validate_redirect_url(frontend_callback_url)
+    except ValueError as e:
+        logger.error(f"Redirect URL validation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid redirect URL: {str(e)}",
+        )
+
+    # Redirect to frontend callback with tokens in HTTP-only cookie
+    response = RedirectResponse(url=frontend_callback_url)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings.ENV == "prod",
+        samesite="lax",
+        max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.ENV == "prod",
+        samesite="lax",
+        max_age=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+    )
+    return response
 
 
 # ============================================================================
@@ -376,14 +539,37 @@ async def github_callback(
 
     logger.info(f"GitHub OAuth2 login successful for user: {user.username}")
 
-    # Redirect to frontend callback with tokens
+    # Validate redirect URL before redirecting
     settings = get_settings()
-    frontend_callback_url = f"{settings.FRONTEND_URL}/auth/callback?access_token={access_token}&refresh_token={refresh_token}"
-    
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=frontend_callback_url)
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url=frontend_callback_url)
+    frontend_callback_url = f"{settings.FRONTEND_URL}/auth/callback"
+    try:
+        validate_redirect_url(frontend_callback_url)
+    except ValueError as e:
+        logger.error(f"Redirect URL validation failed: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid redirect URL: {str(e)}",
+        )
+
+    # Redirect to frontend callback with tokens in HTTP-only cookie
+    response = RedirectResponse(url=frontend_callback_url)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=settings.ENV == "prod",
+        samesite="lax",
+        max_age=settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    response.set_cookie(
+        key="refresh_token",
+        value=refresh_token,
+        httponly=True,
+        secure=settings.ENV == "prod",
+        samesite="lax",
+        max_age=settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS * 86400,
+    )
+    return response
 
 
 # ============================================================================
@@ -470,12 +656,8 @@ async def get_rate_limit_status(current_user: TokenData = Depends(get_current_us
 @router.get("/health")
 async def health_check():
     """Health check endpoint for auth module.
-    
+
     Returns:
         Health status of auth module
     """
-    return {
-        "status": "healthy",
-        "module": "authentication",
-        "timestamp": time.time()
-    }
+    return {"status": "healthy", "module": "authentication", "timestamp": time.time()}

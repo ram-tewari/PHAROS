@@ -42,6 +42,7 @@ from .schema import (
     GraphPathNode,
 )
 from ..resources.schema import ResourceRead
+
 # Lazy import to avoid circular dependency
 # from ...services.search_service import AdvancedSearchService
 from .sparse_embeddings import SparseEmbeddingService
@@ -53,13 +54,16 @@ from ...database.models import Resource
 def _get_advanced_search_service():
     """Lazy import to avoid circular dependency."""
     from ...services.search_service import AdvancedSearchService
+
     return AdvancedSearchService
 
 
 def _get_search_service(db: Session):
     """Lazy import to avoid circular dependency."""
     from .service import SearchService
+
     return SearchService(db)
+
 
 router = APIRouter(prefix="/api/search", tags=["search"])
 
@@ -798,3 +802,174 @@ async def health_check(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
             "error": str(e),
             "timestamp": datetime.utcnow().isoformat(),
         }
+
+
+# ============================================================================
+# Advanced Search Router (Phase 17.5 - Advanced RAG)
+# ============================================================================
+# Separate router for advanced search endpoints with prefix /api/v1/search/advanced
+# This router is registered in app/__init__.py to fix 404 errors
+
+from .schema import (
+    AdvancedSearchRequest,
+    AdvancedSearchResponse,
+    AdvancedSearchResult,
+    DocumentChunkResult,
+    GraphPathNode,
+)
+
+advanced_search_router = APIRouter(
+    prefix="/api/search/advanced", tags=["advanced-search"]
+)
+
+
+@advanced_search_router.post(
+    "",
+    response_model=AdvancedSearchResponse,
+    status_code=status.HTTP_200_OK,
+)
+def advanced_search_endpoint(
+    payload: AdvancedSearchRequest, db: Session = Depends(get_sync_db)
+):
+    """
+    Execute advanced search with multiple retrieval strategies.
+
+    This endpoint implements advanced RAG patterns:
+
+    **Parent-Child Strategy**:
+    - Retrieves small, precise chunks by embedding similarity
+    - Expands to parent resources for full context
+    - Includes surrounding chunks based on context_window parameter
+    - Deduplicates results when multiple chunks from same resource
+
+    **GraphRAG Strategy**:
+    - Extracts entities from user query
+    - Finds matching entities in knowledge graph
+    - Traverses relationships to find related entities
+    - Retrieves chunks associated with entities via provenance
+    - Ranks by combining embedding similarity and graph weights
+    - Optionally filters by relation_type (CONTRADICTS, SUPPORTS, etc.)
+
+    **Hybrid Strategy**:
+    - Combines parent-child and GraphRAG approaches
+    - Merges results using weighted scoring
+    - Provides both context expansion and graph relationships
+
+    Returns enhanced results with:
+    - Retrieved chunks with embeddings
+    - Parent resource context
+    - Surrounding chunks (parent-child)
+    - Graph paths explaining retrieval (GraphRAG)
+    - Relevance scores
+    """
+    try:
+        start_time = time.time()
+        search_service = _get_search_service(db)
+
+        if payload.strategy == "parent-child":
+            # Parent-child retrieval
+            results = search_service.parent_child_search(
+                query=payload.query,
+                top_k=payload.top_k,
+                context_window=payload.context_window,
+            )
+
+        elif payload.strategy == "graphrag":
+            # GraphRAG retrieval
+            results = search_service.graphrag_search(
+                query=payload.query,
+                top_k=payload.top_k,
+                relation_types=payload.relation_types,
+            )
+
+        elif payload.strategy == "hybrid":
+            # Hybrid retrieval (combine both strategies)
+            parent_child_results = search_service.parent_child_search(
+                query=payload.query,
+                top_k=payload.top_k,
+                context_window=payload.context_window,
+            )
+
+            graphrag_results = search_service.graphrag_search(
+                query=payload.query,
+                top_k=payload.top_k,
+                relation_types=payload.relation_types,
+            )
+
+            # Merge results by combining scores
+            merged_results = _merge_search_results(
+                parent_child_results, graphrag_results, top_k=payload.top_k
+            )
+            results = merged_results
+        else:
+            raise ValueError(f"Unknown strategy: {payload.strategy}")
+
+        latency_ms = (time.time() - start_time) * 1000
+
+        # Convert results to response format
+        response_results = []
+        for result in results:
+            # Extract chunk data
+            chunk_data = DocumentChunkResult(
+                id=result["chunk"]["id"],
+                resource_id=result["chunk"]["resource_id"],
+                content=result["chunk"]["content"],
+                chunk_index=result["chunk"]["chunk_index"],
+                chunk_metadata=result["chunk"].get("chunk_metadata"),
+            )
+
+            # Extract parent resource
+            parent_resource = ResourceRead.model_validate(result["parent_resource"])
+
+            # Extract surrounding chunks
+            surrounding_chunks = [
+                DocumentChunkResult(
+                    id=chunk["id"],
+                    resource_id=chunk["resource_id"],
+                    content=chunk["content"],
+                    chunk_index=chunk["chunk_index"],
+                    chunk_metadata=chunk.get("chunk_metadata"),
+                )
+                for chunk in result.get("surrounding_chunks", [])
+            ]
+
+            # Extract graph path
+            graph_path = [
+                GraphPathNode(
+                    entity_id=node["entity_id"],
+                    entity_name=node["entity_name"],
+                    entity_type=node["entity_type"],
+                    relation_type=node.get("relation_type"),
+                    weight=node.get("weight"),
+                )
+                for node in result.get("graph_path", [])
+            ]
+
+            response_results.append(
+                AdvancedSearchResult(
+                    chunk=chunk_data,
+                    parent_resource=parent_resource,
+                    surrounding_chunks=surrounding_chunks,
+                    graph_path=graph_path,
+                    score=result["score"],
+                )
+            )
+
+        return AdvancedSearchResponse(
+            query=payload.query,
+            strategy=payload.strategy,
+            results=response_results,
+            total=len(response_results),
+            latency_ms=latency_ms,
+        )
+
+    except ValueError as ve:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(ve)
+        )
+    except Exception as exc:
+        logger.error(f"Advanced search failed: {exc}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Advanced search failed",
+        ) from exc

@@ -8,6 +8,7 @@ Tests:
 - Strategy factory
 """
 
+import json
 import pytest
 from unittest.mock import MagicMock
 from uuid import uuid4
@@ -75,7 +76,7 @@ def test_content_based_strategy_generates_recommendations(db_session):
             id=res_id,
             title=f"Resource {i}",
             source="https://example.com",
-            embedding=[float(i % 3) / 3.0] * 768,
+            embedding=json.dumps([float(i % 3) / 3.0] * 768),
         )
         db_session.add(resource)
 
@@ -139,7 +140,7 @@ def test_content_based_user_profile_building(db_session):
             id=res_id,
             title=f"Resource {i}",
             source="https://example.com",
-            embedding=emb,
+            embedding=json.dumps(emb),
         )
         db_session.add(resource)
 
@@ -317,11 +318,14 @@ def test_graph_based_multihop_traversal(db_session):
     neighbors = strategy._find_graph_neighbors(seed_ids, max_hops=2)
 
     # Verify 1-hop and 2-hop neighbors found
-    assert resource_ids["res_1"] in neighbors  # 1-hop
-    assert resource_ids["res_2"] in neighbors  # 2-hop
+    # _find_graph_neighbors returns dict keyed by string UUID
+    assert str(resource_ids["res_1"]) in neighbors  # 1-hop
+    assert str(resource_ids["res_2"]) in neighbors  # 2-hop
 
     # 1-hop should have higher score than 2-hop
-    assert neighbors[resource_ids["res_1"]] > neighbors[resource_ids["res_2"]]
+    assert (
+        neighbors[str(resource_ids["res_1"])] > neighbors[str(resource_ids["res_2"])]
+    )
 
 
 def test_graph_based_cold_start_user(db_session):
@@ -368,7 +372,7 @@ def test_hybrid_strategy_combines_multiple_strategies(db_session):
             id=res_id,
             title=f"Resource {i}",
             source="https://example.com",
-            embedding=[float(i) / 5.0] * 768,
+            embedding=json.dumps([float(i) / 5.0] * 768),
         )
         db_session.add(resource)
 

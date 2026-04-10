@@ -15,9 +15,17 @@ from backend.app.modules.mcp.service import MCPServer, ToolRegistry
 
 
 @given(
-    tool_name=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))),
+    tool_name=st.text(
+        min_size=1,
+        max_size=20,
+        alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+    ),
     invalid_args=st.dictionaries(
-        keys=st.text(min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))),
+        keys=st.text(
+            min_size=1,
+            max_size=10,
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+        ),
         values=st.one_of(st.integers(), st.text(max_size=20), st.booleans()),
         min_size=1,
         max_size=3,
@@ -64,15 +72,26 @@ def test_schema_validation_rejects_invalid_arguments(tool_name, invalid_args):
 
 @pytest.mark.asyncio
 @given(
-    tool_name=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))),
+    tool_name=st.text(
+        min_size=1,
+        max_size=20,
+        alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+    ),
     arguments=st.dictionaries(
-        keys=st.text(min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))),
+        keys=st.text(
+            min_size=1,
+            max_size=10,
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+        ),
         values=st.text(min_size=1, max_size=20),
         min_size=0,
         max_size=3,
     ),
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+)
 async def test_authentication_enforcement_for_protected_tools(
     tool_name, arguments, db_session
 ):
@@ -111,7 +130,11 @@ async def test_authentication_enforcement_for_protected_tools(
 
 
 @given(
-    tool_name=st.text(min_size=1, max_size=20, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))),
+    tool_name=st.text(
+        min_size=1,
+        max_size=20,
+        alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+    ),
     rate_limit=st.integers(min_value=1, max_value=1000),
 )
 @settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow])
@@ -153,13 +176,22 @@ def test_rate_limiting_configuration(tool_name, rate_limit):
 @pytest.mark.asyncio
 @given(
     context_data=st.dictionaries(
-        keys=st.text(min_size=1, max_size=10, alphabet=st.characters(whitelist_categories=("Lu", "Ll"))),
-        values=st.one_of(st.integers(), st.text(min_size=1, max_size=20), st.booleans()),
+        keys=st.text(
+            min_size=1,
+            max_size=10,
+            alphabet=st.characters(whitelist_categories=("Lu", "Ll")),
+        ),
+        values=st.one_of(
+            st.integers(), st.text(min_size=1, max_size=20), st.booleans()
+        ),
         min_size=1,
         max_size=5,
     ),
 )
-@settings(max_examples=50, suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture])
+@settings(
+    max_examples=50,
+    suppress_health_check=[HealthCheck.too_slow, HealthCheck.function_scoped_fixture],
+)
 async def test_session_context_preservation(context_data, db_session):
     """
     Feature: phase20-frontend-backend-infrastructure
@@ -172,10 +204,10 @@ async def test_session_context_preservation(context_data, db_session):
     """
     from backend.app.modules.mcp.model import MCPSession
     from backend.app.shared.base_model import Base
-    
+
     # Create table if it doesn't exist
     Base.metadata.create_all(bind=db_session.get_bind(), tables=[MCPSession.__table__])
-    
+
     server = MCPServer(db_session)
 
     # Create session with context

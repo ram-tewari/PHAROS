@@ -26,6 +26,7 @@ try:
     import torch
     import torch.nn as nn
     import torch.optim as optim
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False

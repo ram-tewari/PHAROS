@@ -133,7 +133,11 @@ class MCPServer:
             # Get session context if session_id provided
             context = {}
             if session_id:
-                session = self.db.query(MCPSession).filter(MCPSession.id == session_id).first()
+                session = (
+                    self.db.query(MCPSession)
+                    .filter(MCPSession.id == session_id)
+                    .first()
+                )
                 if session:
                     context = session.context
                 else:
@@ -164,7 +168,9 @@ class MCPServer:
             )
 
         except Exception as e:
-            logger.error(f"Tool invocation failed: {tool_name}, error: {str(e)}", exc_info=True)
+            logger.error(
+                f"Tool invocation failed: {tool_name}, error: {str(e)}", exc_info=True
+            )
             return ToolInvocationResult(
                 success=False,
                 result=None,

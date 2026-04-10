@@ -28,14 +28,14 @@ def upgrade() -> None:
     if bind.dialect.name == "postgresql":
         # Step 1: Remove server_default first
         op.execute("ALTER TABLE resources ALTER COLUMN embedding DROP DEFAULT")
-        
+
         # Step 2: Change from ARRAY to JSON for better NULL handling
         # PostgreSQL requires explicit USING clause for type conversion
         op.execute(
             "ALTER TABLE resources ALTER COLUMN embedding TYPE JSON USING "
             "CASE WHEN embedding IS NULL THEN NULL ELSE to_json(embedding) END"
         )
-        
+
         # Step 3: Update existing empty arrays to NULL
         # Use jsonb cast for comparison
         op.execute("UPDATE resources SET embedding = NULL WHERE embedding::text = '[]'")
@@ -48,7 +48,7 @@ def upgrade() -> None:
             server_default=None,
             nullable=True,
         )
-        
+
         # Update existing empty arrays to NULL
         op.execute("UPDATE resources SET embedding = NULL WHERE embedding = '[]'")
 
