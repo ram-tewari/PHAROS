@@ -1,756 +1,302 @@
-# Pharos - Backend API
+# Pharos — The Memory & Knowledge Layer for Ronin
 
 ![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.104%2B-009688)
 ![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)
 ![Endpoints](https://img.shields.io/badge/endpoints-97%2B-blue)
 
-Your second brain for code. AI-powered knowledge management API that understands code repositories, research papers, and technical documentation through intelligent analysis and semantic search.
+Pharos is the **memory and knowledge backend** that powers Ronin, your LLM coding brain. It ingests codebases, research papers, and technical documentation, then serves structured context — code chunks, dependency graphs, learned patterns, and research insights — so Ronin can understand legacy code and generate new code informed by your entire engineering history.
+
+**One-line summary**: Pharos remembers everything you've ever built so Ronin never starts from zero.
+
+---
 
 ## Quick Navigation
 
-- [Product Vision & Goals](../.kiro/steering/product.md) - What we're building and why
-- [Tech Stack & Architecture](../.kiro/steering/tech.md) - How we're building it
-- [Repository Structure](../.kiro/steering/structure.md) - Where things are located
-- [API Documentation](docs/index.md) - Complete API reference
-- [Architecture Guide](docs/architecture/overview.md) - System architecture details
-- [Developer Setup](docs/guides/setup.md) - Getting started guide
-- [Deployment Guide](docs/guides/deployment.md) - Cloud & edge deployment
+| Resource | Description |
+|----------|-------------|
+| [Product Vision](../.kiro/steering/product.md) | What we're building and why |
+| [Tech Stack](../.kiro/steering/tech.md) | How we're building it |
+| [Repository Structure](../.kiro/steering/structure.md) | Where things are located |
+| [API Reference](docs/index.md) | Complete API documentation |
+| [Architecture Overview](docs/architecture/overview.md) | System architecture deep-dive |
+| [ADRs](docs/architecture/decisions.md) | Architectural Decision Records |
+| [Developer Setup](docs/guides/setup.md) | Getting started |
+| [Deployment Guide](docs/guides/deployment.md) | Cloud + Edge deployment |
+| [Ronin Integration Guide](docs/RONIN_INTEGRATION_GUIDE.md) | How Ronin queries Pharos |
 
-## Table of Contents
+---
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [API Usage](#api-usage)
-- [Development](#development)
-- [Testing](#testing)
-- [Deployment](#deployment)
-- [Documentation](#documentation)
+## The Two Core Use Cases
 
-## Overview
+### Use Case 1: Understanding & Debugging Old Codebases
 
-Pharos is a production-ready knowledge management API designed specifically for developers and researchers. Built on a vertical slice architecture with event-driven communication, it delivers code intelligence, semantic search, and knowledge graph capabilities with enterprise-grade features and self-hosting flexibility.
+You point Pharos at a legacy repository. You ask Ronin: *"How does the authentication system work?"*
 
-**Core Focus:**
-- **Code Understanding**: AST-based analysis of entire repositories with dependency extraction
-- **Research Management**: Papers, documentation, and technical articles with citation networks
-- **Semantic Search**: Find code and concepts by meaning, not just keywords
-- **Knowledge Graphs**: Connect code, papers, and ideas through intelligent relationships
+Pharos executes a **Context Retrieval Pipeline** in ~800ms:
 
-**Performance Targets:**
-- API response time: P95 < 200ms
-- Search latency: < 500ms for hybrid search
-- Event emission: < 1ms (P95)
-- Database queries: < 100ms for most operations
+1. **Semantic Search** — HNSW vector search across all indexed code chunks, ranked by embedding similarity
+2. **GraphRAG Traversal** — Traces dependency edges (auth -> database -> session -> cookies) through the knowledge graph
+3. **Pattern Matching** — Finds structurally similar implementations from your other indexed codebases
+4. **Research Paper Retrieval** — Surfaces relevant papers you've annotated (e.g., OAuth 2.0 Security Best Practices)
+5. **Code Fetching** — Pulls actual source from GitHub on-demand via Redis-cached API calls
 
-**Scalability:**
-- 100K+ resources supported
-- 10K+ concurrent embeddings
-- 1K+ collections per user
-- 100+ requests/second
+Ronin receives the assembled context package and generates explanations, identifies bugs, and suggests refactorings grounded in your real code and history.
 
-## Key Features
+**Endpoint**: `POST /api/context/retrieve`
 
-### Code Intelligence & Repository Analysis
-- **AST-Based Parsing**: Understand code structure through Tree-Sitter parsing (Python, JavaScript, TypeScript, Rust, Go, Java)
-- **Dependency Extraction**: Automatically build IMPORTS, DEFINES, and CALLS relationship graphs
-- **Repository Ingestion**: Analyze entire codebases from local directories or Git URLs (HTTPS/SSH)
-- **Smart Filtering**: Respects .gitignore, excludes binaries, focuses on source code
-- **Performance**: Sub-2s per file parsing (P95), handles repositories with 10K+ files
-- **Static Analysis**: Safe code understanding without execution
+### Use Case 2: Creating New Code (The Self-Improving Loop)
 
-### Semantic Search & Discovery
-- **Hybrid Search**: Configurable weighting between keyword, semantic, and code-specific search
-- **Vector Embeddings**: Semantic similarity using nomic-embed-text-v1 for code and documentation
-- **Full-Text Search**: SQLite FTS5 with PostgreSQL fallback for fast keyword matching
-- **Code Search**: Find functions, classes, and patterns across repositories
-- **Faceted Filtering**: Filter by language, quality, classification, and file type
-- **GraphRAG Retrieval**: Entity-based graph traversal for context-aware search
+When Ronin writes new code, Pharos feeds it your **learned pattern profile**:
 
-### Knowledge Graph & Relationships
-- **Code Dependency Graphs**: Visualize how functions, classes, and modules connect
-- **Citation Networks**: Automatic extraction and resolution from papers and documentation
-- **PageRank Scoring**: Compute importance of code modules and research papers
-- **Entity Relationships**: Semantic triple storage linking concepts, code, and papers
-- **Contradiction Detection**: Identify conflicting information across documentation
-- **Graph Visualization**: Interactive mind-map and network views
+- **Successful Patterns** — Architectural decisions that worked across your past projects (e.g., Repository + Service + DI)
+- **Failed Patterns** — Mistakes you've fixed before (e.g., missing rate limiting, MD5 password hashing, synchronous DB calls)
+- **Coding Style** — Preferences extracted from your history (async/await, snake_case, try-except with logging, FastAPI + SQLAlchemy stack)
+- **Research Insights** — Techniques from papers you've annotated, linked to concrete implementations
 
-### Research Paper Integration (Phase 4 ✅)
-- **PDF Ingestion**: Upload and extract academic PDFs with PyMuPDF
-- **Academic Fidelity**: Preserves equations, tables, figures with page coordinates
-- **Semantic Chunking**: Intelligent chunking respecting document structure (max 512 tokens)
-- **Conceptual Annotation**: Tag PDF chunks with concepts (OAuth, Security, ML, etc.)
-- **GraphRAG Linking**: Automatic bidirectional links between PDF concepts and code implementations
-- **Unified Search**: Single query returns both PDF sections and related code chunks
-- **Multi-Format Ingestion**: HTML, PDF, Markdown, and plain text
-- **Scholarly Metadata**: Automatic extraction of equations, tables, citations, and references
-- **Quality Assessment**: Multi-dimensional scoring (completeness, accuracy, relevance, clarity)
-- **Citation Resolution**: Link papers to existing resources in your library
-- **Academic Classification**: Automatic categorization using ML models
+The result: Ronin generates production-ready code that avoids your past mistakes, matches your style, and incorporates techniques from your research — on the first pass.
 
-**Phase 4 API Endpoints:**
-- `POST /api/resources/pdf/ingest` - Upload and extract PDF with academic fidelity
-- `POST /api/resources/pdf/annotate` - Annotate chunks with conceptual tags
-- `POST /api/resources/pdf/search/graph` - GraphRAG traversal search across PDFs and code
+**Endpoint**: `POST /api/patterns/learn`
 
-### Active Reading & Annotation
-- **Precise Highlighting**: Character-offset-based text selection in code and documents
-- **Rich Notes**: Personal annotations with semantic embeddings for intelligent search
-- **Tag Organization**: Custom tags with color-coding for categorization
-- **Semantic Search**: Find conceptually related annotations across your entire knowledge base
-- **Code Context**: Annotations preserve surrounding code context
-- **Export**: Markdown and JSON formats for integration with other tools
+---
 
-### Authentication & Security
-- **JWT Authentication**: Secure token-based authentication with access and refresh tokens
-- **OAuth2 Integration**: Social login via Google and GitHub
-- **Tiered Rate Limiting**: Free (100/hr), Premium (1,000/hr), and Admin (10,000/hr) tiers
-- **Token Revocation**: Redis-backed token blacklist for secure logout
-- **Password Security**: Bcrypt password hashing with automatic salt generation
+## Deployment Architecture: Local-Heavy, Cloud-Light
 
-### ML-Powered Features
-- **Transformer-Based Classification**: Fine-tuned BERT/DistilBERT models for categorization
-- **Hierarchical Taxonomy**: Multi-level category trees with parent-child relationships
-- **Active Learning**: System identifies uncertain predictions for targeted review
-- **Model Versioning**: Track and manage multiple model versions with rollback capability
-- **GPU Acceleration**: Automatic GPU utilization with graceful CPU fallback
-
-## Architecture
-
-Pharos uses a **Vertical Slice Architecture** with **Event-Driven Communication**:
+Pharos is engineered for **maximum accuracy at minimum recurring cloud cost** through a split deployment:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    FastAPI Application                  │
-├─────────────────────────────────────────────────────────┤
-│  13 Domain Modules (Self-Contained Vertical Slices)     │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐   │
-│  │  Resources   │  │    Search    │  │    Graph     │   │
-│  │  Collections │  │ Recommend... │  │   Quality    │   │
-│  │  Annotations │  │   Taxonomy   │  │  Scholarly   │   │
-│  │  Authority   │  │   Curation   │  │  Monitoring  │   │ 
-│  │     Auth     │  │              │  │              │   │
-│  └──────────────┘  └──────────────┘  └──────────────┘   │
-│                                                         │
-│  Each module contains:                                  │
-│  • router.py - API endpoints                            │
-│  • service.py - Business logic                          │
-│  • schema.py - Pydantic models                          │
-│  • model.py - Database models                           │
-│  • handlers.py - Event handlers                         │
-├─────────────────────────────────────────────────────────┤
-│              Shared Kernel (Cross-Cutting)              │
-│  ┌──────────────────────────────────────────────────┐   │
-│  │ Database • Event Bus • Embeddings • AI • Cache   │   │
-│  └──────────────────────────────────────────────────┘   │
-├─────────────────────────────────────────────────────────┤
-│              Data Layer (SQLite / PostgreSQL)           │
-└─────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    CLOUD (Render Free/Starter)                  │
+│                                                                 │
+│  FastAPI API Server ──── PostgreSQL + pgvector ──── Redis       │
+│  Control plane, routing,   Metadata, embeddings,    Query cache,│
+│  auth, rate limiting       graph, AST summaries     rate limits │
+│                                                                 │
+│  Cost: ~$7-20/mo          No source code stored.                │
+│  Memory: <512MB           Code stays on GitHub.                 │
+└──────────────────────────────┬──────────────────────────────────┘
+                               │ HTTPS polling
+┌──────────────────────────────┴──────────────────────────────────┐
+│                    EDGE WORKER (Local RTX 4070)                 │
+│                                                                 │
+│  Tree-sitter AST parsing ── Dense/Sparse Embeddings ── GNN     │
+│  Repository cloning,        nomic-embed-text-v1,      Node2Vec │
+│  dependency extraction      SPLADE sparse vectors     training  │
+│                                                                 │
+│  Cost: $0/mo (your GPU)   GPU utilization: 70-90%              │
+│  Handles all heavy inference locally.                           │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-**Key Architectural Principles:**
+**Why this split?** Dense embedding generation and GNN training are compute-intensive operations that would cost $50-200/mo on cloud GPU instances. By offloading them to your local RTX 4070, you get the same (or better) inference quality at zero marginal cost. The cloud tier handles only lightweight API routing, authentication, and database queries — operations that fit comfortably within a $7/mo Render Starter plan.
 
-1. **Vertical Slice Architecture**: Each module is self-contained with its own models, schemas, services, and routes
-2. **Event-Driven Communication**: Modules communicate via event bus (no direct imports)
-3. **Shared Kernel**: Cross-cutting concerns (database, cache, embeddings, AI) in shared layer
-4. **Zero Circular Dependencies**: Enforced by module isolation rules
-5. **API-First Design**: All functionality exposed via REST API
+### Hybrid GitHub Storage
 
-**Event Bus Performance:**
-- In-memory, async event system
-- <1ms latency (P95) for event emission and delivery
-- 20+ event types across resource lifecycle, quality, classification, graph, and recommendations
+Pharos stores **only metadata** (AST nodes, embeddings, dependency edges, quality scores) in PostgreSQL. Actual source code remains on GitHub and is fetched on-demand through Redis-cached API calls (1-hour TTL). This achieves a **17x storage reduction**, keeping the database small enough for cheap cloud tiers while still providing full code context when Ronin needs it.
 
-## API-First Architecture
+---
 
-Pharos is built with an API-first approach, enabling seamless integration with IDEs, editors, and development workflows. The RESTful API provides comprehensive endpoints for code analysis, semantic search, and knowledge management, making it suitable for both personal second-brain systems and team knowledge bases.
+## The 14 Domain Modules
+
+Pharos is built as a **modular monolith** using vertical slice architecture. Each module is fully self-contained (router, service, schema, model, event handlers) and communicates with other modules exclusively through the async Event Bus. No module imports from another module.
+
+| Module | Purpose | Role in the Ronin Ecosystem |
+|--------|---------|----------------------------|
+| **Resources** | CRUD operations for code files, documents, URLs | Primary ingestion entry point; emits lifecycle events consumed by 8+ modules |
+| **Search** | Hybrid search (BM25 keyword + dense semantic + SPLADE sparse) | Powers Ronin's context retrieval — the core query pathway |
+| **Graph** | Knowledge graph, dependency edges, citation networks, PageRank | Enables GraphRAG multi-hop traversal for architectural understanding |
+| **Quality** | Multi-dimensional scoring (accuracy, completeness, consistency, timeliness, relevance) | Filters low-quality chunks before they reach Ronin; surfaces outliers for curation |
+| **Annotations** | Character-offset highlights and rich notes with semantic embeddings | Your personal marginalia — searchable context that enriches Ronin's responses |
+| **Scholarly** | Academic metadata extraction (equations, tables, citations, references) | Connects research papers to code implementations via structured metadata |
+| **Monitoring** | System health, metrics aggregation, event bus diagnostics | Observability for the single-tenant deployment; consumes all event types |
+| **MCP** | Model Context Protocol sessions and tool management | Enables Ronin to interact with Pharos as an MCP tool server |
+| **Auth** | JWT authentication, OAuth2 (Google, GitHub), token revocation | Secures the API; tiered rate limiting (Free/Premium/Admin) via Redis |
+| **Authority** | Subject authority trees and classification hierarchies | Domain-specific taxonomies that ground Ronin's understanding |
+| **Collections** | Grouping resources with aggregate embeddings | Organizes codebases and paper sets; enables collection-level similarity |
+| **Curation** | Content review, batch operations, outlier resolution | Human-in-the-loop quality gate; consumes quality.outlier_detected events |
+| **Recommendations** | Hybrid engine (NCF, content-based, graph-based) | Suggests related code and papers; runs on Edge Worker (requires PyTorch) |
+| **Taxonomy** | ML-based hierarchical classification with active learning | Auto-categorizes ingested resources; feeds classification into Graph and Search |
+
+**Why 14 modules for a single-tenant system?** Strict domain isolation prevents monolith degradation over time. When you need to swap pgvector for Qdrant, or replace nomic-embed-text with a fine-tuned model, you change one module's service layer without touching the API contract or breaking downstream consumers. The Event Bus ensures modules remain independently deployable — a prerequisite for the eventual microservices extraction path if the system scales beyond single-tenant use.
+
+---
 
 ## Quick Start
 
 ### Prerequisites
 
-- Python 3.8 or higher
-- SQLite (default) or PostgreSQL database
-- Docker Desktop (for PostgreSQL and Redis)
-- 4GB RAM minimum (8GB recommended for AI features)
+- Python 3.10+
+- PostgreSQL (production) or SQLite (development)
+- Docker Desktop (for PostgreSQL + Redis backing services)
+- 8GB RAM recommended (4GB minimum)
+- NVIDIA GPU with CUDA (optional, for Edge Worker)
 
-### Option 1: Docker Development Setup (Recommended)
+### Docker Development Setup (Recommended)
 
-Use Docker for backing services (PostgreSQL and Redis) while running the application locally:
-
-1. **Start backing services**
 ```bash
+# Start backing services
 cd backend/deployment
 docker-compose -f docker-compose.dev.yml up -d
-```
 
-2. **Create virtual environment and install dependencies**
-```bash
+# Create virtual environment
 cd ..
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+source .venv/bin/activate  # Windows: .venv\Scripts\activate
 pip install -r config/requirements.txt
-```
 
-3. **Configure environment**
-```bash
-# Copy template and edit
+# Configure environment
 cp config/.env.example .env
 # Edit .env with your settings
-```
 
-4. **Run database migrations**
-```bash
+# Run migrations and start
 alembic upgrade head -c config/alembic.ini
-```
-
-5. **Start the API server**
-```bash
 uvicorn app.main:app --reload
 ```
 
-📖 **See [docs/guides/DOCKER_SETUP_GUIDE.md](docs/guides/DOCKER_SETUP_GUIDE.md) for detailed instructions**
+### SQLite Setup (Zero-Config)
 
-### Option 2: SQLite Setup (Simple)
-
-Use SQLite for a zero-configuration setup:
-
-1. **Create a virtual environment**
 ```bash
 cd backend
 python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-```
-
-2. **Install dependencies**
-```bash
+source .venv/bin/activate
 pip install -r config/requirements.txt
-```
-
-3. **Configure environment**
-```bash
 cp config/.env.example .env
-```
-
-4. **Run database migrations**
-```bash
 alembic upgrade head -c config/alembic.ini
-```
-
-5. **Start the API server**
-```bash
 uvicorn app.main:app --reload
 ```
 
-The API will be available at `http://127.0.0.1:8000`
+The API is available at `http://127.0.0.1:8000`. Interactive docs at `/docs` (Swagger) and `/redoc`.
 
-**Interactive API Documentation:**
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- ReDoc: `http://127.0.0.1:8000/redoc`
-
-### First API Call
-
-Test the API by ingesting your first resource:
-
-```bash
-curl -X POST http://127.0.0.1:8000/resources \
-  -H "Content-Type: application/json" \
-  -d '{"url": "https://example.com/article"}'
-```
-
-**Expected Response:**
-```json
-{
-  "id": 1,
-  "url": "https://example.com/article",
-  "title": "Example Article",
-  "status": "pending",
-  "created_at": "2024-01-01T00:00:00Z"
-}
-```
-
-## Configuration
-
-### Environment Variables
-
-```bash
-# Database Configuration
-DATABASE_URL=sqlite:///backend.db
-TEST_DATABASE_URL=sqlite:///:memory:
-
-# Authentication and Security
-JWT_SECRET_KEY=your-secret-key-change-in-production
-JWT_ALGORITHM=HS256
-JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30
-JWT_REFRESH_TOKEN_EXPIRE_DAYS=7
-
-# OAuth2 Providers (Optional)
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_REDIRECT_URI=http://localhost:8000/auth/google/callback
-
-GITHUB_CLIENT_ID=your-github-client-id
-GITHUB_CLIENT_SECRET=your-github-client-secret
-GITHUB_REDIRECT_URI=http://localhost:8000/auth/github/callback
-
-# Rate Limiting
-REDIS_HOST=localhost
-REDIS_PORT=6379
-RATE_LIMIT_FREE_TIER=100
-RATE_LIMIT_PREMIUM_TIER=1000
-RATE_LIMIT_ADMIN_TIER=10000
-
-# AI Model Configuration
-EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
-SUMMARIZER_MODEL=facebook/bart-large-cnn
-
-# Search Configuration
-DEFAULT_HYBRID_SEARCH_WEIGHT=0.5
-EMBEDDING_CACHE_SIZE=1000
-
-# Graph Configuration
-GRAPH_WEIGHT_VECTOR=0.6
-GRAPH_WEIGHT_TAGS=0.3
-GRAPH_WEIGHT_CLASSIFICATION=0.1
-```
-
-**Generate Secure JWT Secret:**
-```bash
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-```
+---
 
 ## API Usage
 
 ### Authentication
 
 ```bash
-# Register a new user
+# Register
 curl -X POST http://127.0.0.1:8000/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "SecurePassword123!",
-    "full_name": "John Doe"
-  }'
+  -d '{"email": "user@example.com", "password": "SecurePassword123!", "full_name": "Your Name"}'
 
-# Login
+# Login (returns access + refresh tokens)
 curl -X POST http://127.0.0.1:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "SecurePassword123!"
-  }'
-
-# Use the access token in subsequent requests
-curl -X GET http://127.0.0.1:8000/resources \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
+  -d '{"email": "user@example.com", "password": "SecurePassword123!"}'
 ```
 
-### Resource Management
+### Ingest a Repository
 
 ```bash
-# Ingest a web resource
-curl -X POST http://127.0.0.1:8000/resources \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://arxiv.org/abs/2301.00001",
-    "title": "Attention Is All You Need"
-  }'
-
-# Get resource details
-curl -X GET http://127.0.0.1:8000/resources/1 \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# List all resources
-curl -X GET "http://127.0.0.1:8000/resources?limit=10&offset=0" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-### Search
-
-```bash
-# Hybrid search (keyword + semantic)
-curl -X GET "http://127.0.0.1:8000/search?query=machine+learning&mode=hybrid&limit=10" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Semantic search only
-curl -X GET "http://127.0.0.1:8000/search?query=neural+networks&mode=semantic" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Advanced search with filters
-curl -X POST http://127.0.0.1:8000/search/advanced \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "deep learning",
-    "filters": {
-      "classification": ["cs.AI", "cs.LG"],
-      "min_quality": 0.7,
-      "language": "en"
-    },
-    "limit": 20
-  }'
-```
-
-### Collections
-
-```bash
-# Create a collection
-curl -X POST http://127.0.0.1:8000/collections \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Machine Learning Papers",
-    "description": "Curated ML research papers",
-    "visibility": "private"
-  }'
-
-# Add resources to collection
-curl -X POST http://127.0.0.1:8000/collections/1/resources \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resource_ids": [1, 2, 3]
-  }'
-```
-
-### Annotations
-
-```bash
-# Create an annotation
-curl -X POST http://127.0.0.1:8000/annotations \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resource_id": 1,
-    "start_offset": 100,
-    "end_offset": 250,
-    "highlighted_text": "Key insight from the paper",
-    "note": "This explains the core concept",
-    "tags": ["important", "concept"]
-  }'
-
-# Search annotations
-curl -X GET "http://127.0.0.1:8000/annotations/search?query=concept&mode=semantic" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-### Code Repository Ingestion
-
-```bash
-# Ingest a local repository
 curl -X POST http://127.0.0.1:8000/resources/ingest-repository \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "repo_path": "/path/to/local/repo",
-    "title": "My Python Project",
-    "description": "A sample Python project"
-  }'
+  -d '{"repo_url": "https://github.com/user/repo.git", "title": "My Project"}'
+```
 
-# Ingest from Git URL
-curl -X POST http://127.0.0.1:8000/resources/ingest-repository \
+### Search Across All Indexed Code
+
+```bash
+curl -X GET "http://127.0.0.1:8000/search?query=authentication+system&mode=hybrid&limit=10" \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Context Retrieval (Ronin Integration)
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/context/retrieve \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
-    "repo_url": "https://github.com/user/repo.git",
-    "title": "Open Source Project"
+    "query": "How does the authentication system work?",
+    "codebase": "myapp-backend",
+    "context_types": ["code", "graph", "patterns", "research"],
+    "max_chunks": 10,
+    "include_content": true
   }'
 ```
 
-### Knowledge Graph
+### Pattern Learning (Ronin Integration)
 
 ```bash
-# Get citation network
-curl -X GET "http://127.0.0.1:8000/graph/citations/1?depth=2" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Get resource neighbors (mind-map view)
-curl -X GET "http://127.0.0.1:8000/graph/neighbors/1?limit=10" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-
-# Detect contradictions
-curl -X GET http://127.0.0.1:8000/graph/contradictions \
-  -H "Authorization: Bearer YOUR_TOKEN"
+curl -X POST http://127.0.0.1:8000/api/patterns/learn \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "task": "create auth microservice",
+    "language": "Python",
+    "framework": "FastAPI",
+    "include": ["successful_patterns", "failed_patterns", "research_insights", "coding_style"]
+  }'
 ```
+
+---
 
 ## Development
 
 ### Running Tests
 
 ```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage report
-pytest tests/ --cov=app --cov-report=html --cov-report=term
-
-# Run specific test module
-pytest tests/modules/test_resources_endpoints.py -v
-
-# Run integration tests
-pytest tests/integration/ -v
-
-# Run property-based tests
-pytest tests/properties/ -v
-
-# Run performance tests
-pytest tests/performance/ -v
+pytest tests/ -v                                    # All tests
+pytest tests/ --cov=app --cov-report=html           # Coverage report
+pytest tests/integration/ -v                        # Cross-module integration
+pytest tests/performance/ -v                        # Performance benchmarks
 ```
-
-**Test Organization:**
-- `tests/modules/` - Module-specific endpoint tests
-- `tests/integration/` - Cross-module integration tests
-- `tests/properties/` - Property-based tests (Hypothesis)
-- `tests/performance/` - Performance and load tests
-- `tests/golden_data/` - Golden data for protocol-based testing
 
 ### Code Quality
 
 ```bash
-# Lint code
-ruff check app/
-
-# Format code
-ruff format app/
-
-# Type checking (if using mypy)
-mypy app/
-
-# Check module isolation (no circular dependencies)
-python scripts/check_module_isolation.py
-
-# Verify all modules load correctly
-python test_app_startup.py
+ruff check app/                                     # Lint
+ruff format app/                                    # Format
+python scripts/check_module_isolation.py            # Verify no cross-module imports
 ```
 
 ### Database Migrations
 
 ```bash
-# Create a new migration
-alembic revision --autogenerate -m "Add new table" -c config/alembic.ini
-
-# Apply all pending migrations
+alembic revision --autogenerate -m "description" -c config/alembic.ini
 alembic upgrade head -c config/alembic.ini
-
-# Rollback one migration
 alembic downgrade -1 -c config/alembic.ini
-
-# View migration history
-alembic history -c config/alembic.ini
-
-# View current version
-alembic current -c config/alembic.ini
 ```
-
-### Module Development
-
-When creating a new module:
-
-```bash
-# Create module structure
-mkdir -p app/modules/mymodule
-touch app/modules/mymodule/{__init__.py,router.py,service.py,schema.py,model.py,handlers.py,README.md}
-
-# Register module in main.py
-# Add to register_all_modules() function
-
-# Create tests
-mkdir -p tests/modules/mymodule
-touch tests/modules/mymodule/test_endpoints.py
-
-# Verify module isolation
-python scripts/check_module_isolation.py
-```
-
-**Module Rules:**
-- Modules can import from `app.shared.*` (shared kernel)
-- Modules can import from `app.events.*` (event system)
-- Modules CANNOT import from other modules
-- Cross-module communication via event bus only
-
-## Testing
-
-### Test Strategy
-
-Pharos uses a multi-layered testing approach:
-
-1. **Unit Tests**: Test individual functions and classes in isolation
-2. **Integration Tests**: Test module interactions and database operations
-3. **Property-Based Tests**: Use Hypothesis for generative testing
-4. **Performance Tests**: Validate response times and throughput
-5. **Golden Data Tests**: Protocol-based testing with immutable expectations
-
-### Test Fixtures
-
-Common fixtures are defined in `tests/conftest.py`:
-
-```python
-# Database session
-def test_db():
-    # Provides clean test database
-
-# Authenticated client
-def authenticated_client():
-    # Provides client with valid JWT token
-
-# Sample resources
-def sample_resource():
-    # Provides test resource data
-```
-
-## Deployment
-
-### Production Checklist
-
-Before deploying to production:
-
-- [ ] Set strong `JWT_SECRET_KEY` (use `secrets.token_urlsafe(32)`)
-- [ ] Configure OAuth2 credentials (Google, GitHub)
-- [ ] Set up PostgreSQL database (not SQLite)
-- [ ] Configure Redis for caching and rate limiting
-- [ ] Set appropriate rate limits for tiers
-- [ ] Enable HTTPS/TLS
-- [ ] Configure CORS origins
-- [ ] Set up monitoring and logging
-- [ ] Configure backup strategy
-- [ ] Test disaster recovery procedures
-
-### Cloud Deployment (Render)
-
-```bash
-# Deploy via render.yaml
-git push origin main
-# Render auto-deploys from main branch
-```
-
-**Environment Variables on Render:**
-- Set all required environment variables in Render dashboard
-- Use Render's PostgreSQL add-on for database
-- Use Render's Redis add-on for caching
-
-### Edge Worker (Local GPU)
-
-For ML-intensive workloads:
-
-```bash
-cd deployment
-./setup_edge.sh  # Linux/macOS
-# or
-.\setup_edge.ps1  # Windows
-```
-
-See [Phase 19 Deployment Guide](docs/guides/phase19-deployment.md) for details.
-
-### Docker Production
-
-```bash
-cd deployment
-docker-compose -f docker-compose.yml up -d
-```
-
-**Docker Services:**
-- `api`: FastAPI application
-- `postgres`: PostgreSQL database
-- `redis`: Redis cache
-- `worker`: Celery worker (optional)
-
-### Health Checks
-
-```bash
-# Application health
-curl http://your-domain.com/health
-
-# Database health
-curl http://your-domain.com/health/db
-
-# Module health
-curl http://your-domain.com/monitoring/health
-```
-
-## Documentation
-
-### API Documentation
-
-- [API Index](docs/index.md) - Documentation hub and navigation
-- [API Overview](docs/api/overview.md) - Base URL, authentication, errors
-- [Resources API](docs/api/resources.md) - Resource CRUD endpoints
-- [Search API](docs/api/search.md) - Search and hybrid search
-- [Collections API](docs/api/collections.md) - Collection management
-- [Annotations API](docs/api/annotations.md) - Annotation endpoints
-- [Graph API](docs/api/graph.md) - Knowledge graph and citations
-- [Recommendations API](docs/api/recommendations.md) - Recommendation engine
-- [Quality API](docs/api/quality.md) - Quality assessment
-- [Monitoring API](docs/api/monitoring.md) - Health and metrics
-
-### Architecture Documentation
-
-- [Architecture Overview](docs/architecture/overview.md) - System design
-- [Database Schema](docs/architecture/database.md) - Models and migrations
-- [Event System](docs/architecture/event-system.md) - Event bus details
-- [Module Structure](docs/architecture/modules.md) - Vertical slices
-- [Decision Records](docs/architecture/decisions.md) - ADRs
-
-### Developer Guides
-
-- [Setup Guide](docs/guides/setup.md) - Installation and configuration
-- [Development Workflows](docs/guides/workflows.md) - Common tasks
-- [Testing Guide](docs/guides/testing.md) - Testing strategies
-- [Deployment Guide](docs/guides/deployment.md) - Production deployment
-- [Troubleshooting](docs/guides/troubleshooting.md) - Common issues
-
-## Contributing
-
-We welcome contributions! Here's how to get started:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes** and add tests
-4. **Run tests**: `pytest tests/ -v`
-5. **Check code quality**: `ruff check app/`
-6. **Verify module isolation**: `python scripts/check_module_isolation.py`
-7. **Commit**: `git commit -m "Add amazing feature"`
-8. **Push**: `git push origin feature/amazing-feature`
-9. **Open a Pull Request**
-
-### Contribution Guidelines
-
-- Follow the vertical slice architecture pattern
-- Use event bus for cross-module communication
-- Add tests for new features (aim for 85%+ coverage)
-- Update documentation for API changes
-- Follow code style (Ruff formatting)
-- No circular dependencies between modules
-- Update CHANGELOG.md with your changes
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](../LICENSE) file for details.
-
-## Acknowledgments
-
-Built with:
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
-- [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and ORM
-- [Transformers](https://huggingface.co/transformers/) - State-of-the-art NLP
-- [Alembic](https://alembic.sqlalchemy.org/) - Database migrations
-- [Pydantic](https://docs.pydantic.dev/) - Data validation
-
-## Support
-
-- **Documentation**: [docs/index.md](docs/index.md)
-- **Issues**: GitHub Issues
-- **Discussions**: GitHub Discussions
-- **API Status**: https://pharos.onrender.com/health
 
 ---
 
-**Status**: Production (Phase 19 Complete)  
-**API**: https://pharos.onrender.com  
-**Coverage**: 88.9% endpoint coverage, 85%+ code coverage
+## Configuration
+
+Key environment variables (see `config/.env.example` for the full list):
+
+| Variable | Purpose | Default |
+|----------|---------|---------|
+| `DATABASE_URL` | PostgreSQL or SQLite connection string | `sqlite:///backend.db` |
+| `JWT_SECRET_KEY` | Token signing key (generate with `secrets.token_urlsafe(32)`) | — |
+| `REDIS_HOST` / `REDIS_PORT` | Cache and rate limiting | `localhost:6379` |
+| `EMBEDDING_MODEL_NAME` | Dense embedding model | `nomic-ai/nomic-embed-text-v1` |
+| `DEFAULT_HYBRID_SEARCH_WEIGHT` | Keyword vs. semantic balance | `0.5` |
+| `GOOGLE_CLIENT_ID` / `GITHUB_CLIENT_ID` | OAuth2 providers | — |
+
+---
+
+## Documentation
+
+- [API Reference](docs/index.md) — Complete endpoint documentation
+- [Architecture Overview](docs/architecture/overview.md) — System design and data flow
+- [ADRs](docs/architecture/decisions.md) — Architectural Decision Records
+- [Event System](docs/architecture/event-system.md) — Event Bus internals
+- [Module Guide](docs/architecture/modules.md) — Vertical slice details
+- [Setup Guide](docs/guides/setup.md) — Installation and environment
+- [Deployment Guide](docs/guides/deployment.md) — Cloud + Edge deployment
+- [Ronin Integration](docs/RONIN_INTEGRATION_GUIDE.md) — How Ronin queries Pharos
+- [Docker Guide](docs/guides/DOCKER_SETUP_GUIDE.md) — Docker development setup
+
+---
+
+## License
+
+MIT License — see [LICENSE](../LICENSE).
+
+---
+
+**Status**: Production (Phase 19+)
+**API**: https://pharos.onrender.com
+**Health**: https://pharos.onrender.com/health

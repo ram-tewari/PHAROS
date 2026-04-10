@@ -230,6 +230,99 @@ Make ingestion asynchronous with status tracking.
 
 ---
 
+## ADR-011: Local-Heavy Edge Inference and Hybrid Code Storage for Single-Tenant Deployments
+
+**Status:** Accepted (Phase 19-20)
+
+**Context:**
+
+Pharos is a single-tenant code intelligence backend designed as the memory layer for the Ronin LLM. Its core workloads — dense embedding generation, sparse vector computation, GNN training, and AST parsing — are GPU-intensive operations that would incur substantial recurring costs on cloud infrastructure. Simultaneously, its database stores metadata for hundreds of codebases, and naively including source code alongside AST summaries and embeddings would push storage requirements beyond cheap cloud database tiers.
+
+The system needed a deployment architecture that achieves maximum retrieval accuracy while minimizing monthly cloud spend to the $7-30/mo range.
+
+**Decision:**
+
+Split the system into two deployment planes:
+
+### 1. Cloud API (Control Plane) — Render Starter Tier
+
+The FastAPI application server, PostgreSQL database (with pgvector), and Redis cache run on Render. This plane handles:
+
+- API routing, authentication, and rate limiting
+- Database queries (metadata, embeddings, graph edges)
+- Context retrieval assembly (semantic search, GraphRAG traversal)
+- Pattern learning endpoint serving
+- GitHub API code fetching with Redis caching
+
+**Critical constraint**: No ML libraries (PyTorch, Tree-sitter, Transformers) are loaded on the cloud instance. Memory footprint stays under 512MB.
+
+### 2. Edge Worker (Compute Plane) — Local RTX 4070
+
+A GPU-accelerated Python worker runs on the developer's local machine. This plane handles:
+
+- Repository cloning and Tree-sitter AST parsing
+- Dense embedding generation (nomic-embed-text-v1, 768 dimensions)
+- Sparse vector computation (SPLADE)
+- GNN training (PyTorch Geometric Node2Vec, 64-dim structural embeddings)
+- Batch upload of computed metadata and embeddings to the cloud database
+
+The Edge Worker polls the Cloud API for queued ingestion jobs and processes them locally at 70-90% GPU utilization.
+
+### 3. Hybrid GitHub Storage Model
+
+PostgreSQL stores only:
+- AST node summaries (function signatures, class hierarchies, dependency edges)
+- Vector embeddings (dense + sparse)
+- Quality scores, graph relationships, chunk boundaries (file path, line range)
+
+Actual source code is **not stored** in the database. When Ronin needs code content during context retrieval, Pharos fetches it from the GitHub API with parallel requests and caches results in Redis (1-hour TTL).
+
+**Financial Analysis:**
+
+| Component | With Cloud GPU + Full Storage | With Edge Worker + Hybrid Storage |
+|-----------|-------------------------------|-----------------------------------|
+| GPU compute (20 repos/mo) | $110+/mo (A10G spot) | $0 (local hardware) |
+| Database storage (100 repos) | $50-100/mo (170GB+ with code) | $7-20/mo (10GB metadata only) |
+| Redis | $10/mo | $0 (Upstash free tier) |
+| **Monthly total** | **$170-210+/mo** | **$7-20/mo** |
+
+**Performance Analysis:**
+
+| Metric | Cloud GPU | Local RTX 4070 |
+|--------|-----------|-----------------|
+| Embedding throughput | ~500 chunks/sec (A10G) | ~450 chunks/sec (RTX 4070) |
+| GNN training (1K nodes) | ~8 sec | ~10 sec |
+| Network latency to DB | 0ms (co-located) | ~50ms (upload after batch) |
+| Code fetch (cached) | N/A (stored locally) | <5ms (Redis hit) |
+| Code fetch (uncached) | N/A | ~100ms (GitHub API) |
+
+The RTX 4070 achieves ~90% of cloud A10G throughput at zero marginal cost. The 50ms network penalty for uploading results is amortized across batch uploads and is invisible to end-user query latency.
+
+**Consequences:**
+
+- ✅ **10x cost reduction**: $7-20/mo vs. $170-210+/mo for equivalent capability
+- ✅ **17x storage reduction**: Metadata-only PostgreSQL fits within cheap cloud tiers
+- ✅ **Zero marginal compute cost**: Local GPU handles all heavy inference
+- ✅ **Near-equivalent throughput**: RTX 4070 achieves ~90% of cloud GPU performance
+- ✅ **Clean separation of concerns**: Cloud handles routing and queries; Edge handles compute
+- ✅ **Resilient**: Cloud API functions without Edge Worker (serves cached data); Edge Worker functions without Cloud (can queue locally)
+- ⚠️ **Requires local GPU**: System depends on developer workstation for ingestion workloads
+- ⚠️ **First-access code latency**: Uncached GitHub API calls add ~100ms to context retrieval (negligible within 800ms budget)
+- ⚠️ **GitHub API rate limits**: 5,000 requests/hour (authenticated) — sufficient for single-tenant use, but would constrain multi-tenant deployments
+- ⚠️ **Operational complexity**: Two deployment targets instead of one (mitigated by MODE-aware configuration and shared requirements base)
+
+**Alternatives Considered:**
+
+1. **Full cloud deployment with GPU instances**: Rejected due to $170+/mo cost for a single-tenant system. The cost-accuracy ratio is indefensible when free local hardware is available.
+
+2. **Store all source code in PostgreSQL**: Rejected due to 17x storage inflation. A 100-repository deployment would require 170GB+ of database storage, pushing costs to $50-100/mo for PostgreSQL alone.
+
+3. **Use a separate object store (S3) for code**: Rejected due to added infrastructure complexity and cost ($5-10/mo for S3 + egress) when GitHub already stores the code for free with an API that supports parallel fetching.
+
+4. **ML-based pattern extraction instead of 14-Day Temporal Sieve**: Rejected due to zero available labeled training data, ongoing MLOps overhead, and the availability of a deterministic signal (git commit timestamps + diff sizes) that achieves 90%+ accuracy with zero maintenance cost.
+
+---
+
 ## Decision Template
 
 ```markdown
