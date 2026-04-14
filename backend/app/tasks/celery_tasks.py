@@ -257,53 +257,6 @@ def update_graph_edges_task(self, resource_id: str, citations: List[str], db=Non
         raise
 
 
-@celery_app.task(
-    bind=True,
-    base=DatabaseTask,
-    max_retries=2,
-    name="app.tasks.celery_tasks.classify_resource_task",
-)
-def classify_resource_task(self, resource_id: str, db=None):
-    """
-    Classify resource using ML model.
-
-    Triggered by: resource.created event
-    Priority: MEDIUM (5)
-    Retry: 2 attempts
-
-    Args:
-        resource_id: UUID of the resource to classify
-        db: Database session (automatically provided by DatabaseTask)
-    """
-    try:
-        logger.info(f"Classifying resource {resource_id}")
-
-        from ..services.ml_classification_service import MLClassificationService
-        from ..services.taxonomy_service import TaxonomyService
-
-        # Get predictions from ML model - returns ClassificationResult domain object
-        ml_service = MLClassificationService(db)
-        result = ml_service.predict(resource_id, top_k=5)
-
-        # Store predictions - iterate over ClassificationPrediction objects
-        taxonomy_service = TaxonomyService(db)
-        for prediction in result.predictions:
-            taxonomy_service.classify_resource(
-                resource_id=resource_id,
-                category_id=prediction.taxonomy_id,
-                confidence=prediction.confidence,
-                is_predicted=True,
-            )
-
-        logger.info(
-            f"Successfully classified resource {resource_id} with {len(result.predictions)} categories"
-        )
-
-    except Exception as e:
-        logger.error(f"Error classifying resource {resource_id}: {e}", exc_info=True)
-        raise
-
-
 @celery_app.task(name="app.tasks.celery_tasks.invalidate_cache_task")
 def invalidate_cache_task(cache_keys: List[str]):
     """
@@ -340,37 +293,6 @@ def invalidate_cache_task(cache_keys: List[str]):
         raise
 
 
-@celery_app.task(
-    bind=True,
-    base=DatabaseTask,
-    name="app.tasks.celery_tasks.refresh_recommendation_profile_task",
-)
-def refresh_recommendation_profile_task(self, user_id: str, db=None):
-    """
-    Refresh user recommendation profile.
-
-    Triggered by: user.interaction_tracked event (every 10 interactions)
-    Priority: LOW (3)
-
-    Args:
-        user_id: UUID of the user
-        db: Database session (automatically provided by DatabaseTask)
-    """
-    try:
-        logger.info(f"Refreshing recommendation profile for user {user_id}")
-
-        from ..services.recommendation_service import UserProfileService
-
-        profile_service = UserProfileService(db)
-        profile_service._update_learned_preferences(user_id)
-
-        logger.info(f"Successfully refreshed recommendation profile for user {user_id}")
-
-    except Exception as e:
-        logger.error(
-            f"Error refreshing recommendation profile for {user_id}: {e}", exc_info=True
-        )
-        raise
 
 
 @celery_app.task(

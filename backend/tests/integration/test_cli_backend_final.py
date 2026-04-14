@@ -165,7 +165,7 @@ print_header("TEST 5: All Command Groups Accessible")
 
 all_groups = [
     "auth", "config", "resource", "collection", "search", "graph",
-    "batch", "chat", "recommend", "annotate", "quality", "taxonomy",
+    "batch", "chat", "annotate", "quality",
     "code", "ask", "system", "backup"
 ]
 

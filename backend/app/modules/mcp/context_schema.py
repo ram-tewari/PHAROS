@@ -55,6 +55,12 @@ class ContextRetrievalRequest(BaseModel):
         default=True,
         description="Include developer pattern profile",
     )
+    profile_id: Optional[str] = Field(
+        None,
+        description="CodingProfile ID to swap in. If set, fetches rules linked to this "
+        "profile instead of the user's personal baseline. If omitted, uses "
+        "the personal baseline (profile_id IS NULL).",
+    )
     timeout_ms: int = Field(
         default=1000,
         description="Maximum time to wait for context assembly (milliseconds)",

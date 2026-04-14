@@ -87,6 +87,18 @@ def create_database_engine(
 ) -> Engine:
     """
     Factory function to create database engine with database-specific parameters.
+    
+    Production-hardened connection pooling for Render deployment:
+    - Strict pool limits to prevent connection exhaustion
+    - Statement timeouts to prevent runaway queries
+    - Pre-ping health checks for dropped connections (CRITICAL for NeonDB)
+    - Exponential backoff for connection retries
+    - Optimized for memory-constrained instances (512MB-2GB)
+    
+    SERVERLESS DATABASE GOTCHA (NeonDB):
+    NeonDB scales to zero and actively kills idle connections. Without pool_pre_ping=True,
+    your app will crash when trying to use a dead connection. This setting checks if the
+    connection is alive before using it, preventing "connection closed" errors.
 
     Args:
         database_url: Database connection URL
@@ -98,19 +110,28 @@ def create_database_engine(
     """
     db_type = get_database_type(database_url)
 
-    # Convert URL to use appropriate driver
+    # ========================================================================
+    # CRITICAL: Convert URL to use appropriate driver
+    # ========================================================================
+    # NeonDB and other serverless PostgreSQL providers use standard postgresql://
+    # URLs, but we need to convert them to use asyncpg (async) or psycopg2 (sync)
+    # drivers for proper connection handling.
+    
     if is_async:
         # Async: use aiosqlite for SQLite, asyncpg for PostgreSQL
         if database_url.startswith("sqlite:///"):
             database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
         elif database_url.startswith("postgresql://"):
+            # NeonDB provides postgresql:// URLs - convert to asyncpg
             database_url = database_url.replace(
                 "postgresql://", "postgresql+asyncpg://"
             )
+            logger.info("Converted PostgreSQL URL to use asyncpg driver (async)")
         elif database_url.startswith("postgresql+psycopg2://"):
             database_url = database_url.replace(
                 "postgresql+psycopg2://", "postgresql+asyncpg://"
             )
+            logger.info("Converted psycopg2 URL to use asyncpg driver (async)")
     else:
         # Sync: use default sqlite driver, psycopg2 for PostgreSQL
         if (
@@ -118,48 +139,135 @@ def create_database_engine(
             and "+psycopg2" not in database_url
             and "+asyncpg" not in database_url
         ):
+            # NeonDB provides postgresql:// URLs - convert to psycopg2
             database_url = database_url.replace(
                 "postgresql://", "postgresql+psycopg2://"
             )
+            logger.info("Converted PostgreSQL URL to use psycopg2 driver (sync)")
         elif database_url.startswith("postgresql+asyncpg://"):
             database_url = database_url.replace(
                 "postgresql+asyncpg://", "postgresql+psycopg2://"
             )
+            logger.info("Converted asyncpg URL to use psycopg2 driver (sync)")
 
     # Common parameters
-    common_params = {"echo": True if env == "dev" else False, "echo_pool": True}
+    common_params = {
+        "echo": True if env == "dev" else False,
+        "echo_pool": env == "dev",  # Only log pool events in dev
+    }
 
     # Database-specific parameters
     if db_type == "postgresql":
+        # ====================================================================
+        # PRODUCTION-HARDENED POSTGRESQL CONNECTION POOL
+        # ====================================================================
+        
+        # Get pool configuration from environment (allows per-deployment tuning)
+        pool_size = int(os.getenv("DB_POOL_SIZE", "3"))  # Reduced from 5 for Render
+        max_overflow = int(os.getenv("DB_MAX_OVERFLOW", "7"))  # Total: 10 connections per worker
+        pool_recycle = int(os.getenv("DB_POOL_RECYCLE", "300"))  # 5 minutes
+        pool_timeout = int(os.getenv("DB_POOL_TIMEOUT", "30"))  # 30 seconds
+        statement_timeout = int(os.getenv("DB_STATEMENT_TIMEOUT", "30000"))  # 30 seconds
+        
+        # Calculate total connections: (pool_size + max_overflow) × workers
+        # Example: (3 + 7) × 2 workers = 20 connections (safe for Render Starter: 22 max)
+        # Example: (3 + 7) × 4 workers = 40 connections (safe for Render Standard: 97 max)
+        
+        logger.info(
+            f"PostgreSQL connection pool: pool_size={pool_size}, max_overflow={max_overflow}, "
+            f"total_per_worker={pool_size + max_overflow}, pool_recycle={pool_recycle}s, "
+            f"pool_timeout={pool_timeout}s, statement_timeout={statement_timeout}ms"
+        )
+        
         # PostgreSQL-specific connection pool parameters
         engine_params = {
             **common_params,
-            "pool_size": 5,  # Reduced for serverless (NeonDB)
-            "max_overflow": 10,  # Reduced for serverless (total: 15)
-            "pool_recycle": 300,  # Recycle connections after 5 minutes (before NeonDB auto-suspend)
-            "pool_pre_ping": True,  # Health check before using connection (critical for NeonDB)
-            "pool_timeout": 30,  # Wait up to 30 seconds for connection from pool
-            "isolation_level": "READ COMMITTED",  # Transaction isolation level
+            # Connection Pool Configuration
+            "pool_size": pool_size,  # Base pool size (persistent connections)
+            "max_overflow": max_overflow,  # Additional connections on demand
+            "pool_recycle": pool_recycle,  # Recycle connections before they go stale
+            "pool_pre_ping": True,  # CRITICAL: Health check before using connection
+            "pool_timeout": pool_timeout,  # Wait time for connection from pool
+            
+            # Transaction Isolation
+            "isolation_level": "READ COMMITTED",  # Default PostgreSQL isolation level
+            
+            # Connection Pool Behavior
+            "pool_reset_on_return": "rollback",  # Reset connection state on return
+            "pool_use_lifo": True,  # Use LIFO to keep hot connections active
         }
 
         # Add connect_args based on driver type
         if is_async:
-            # asyncpg uses server_settings instead of options
-            engine_params["connect_args"] = {
+            # ================================================================
+            # ASYNCPG (Async Driver) - Production Configuration
+            # ================================================================
+            # Detect if using NeonDB (serverless PostgreSQL)
+            is_neondb = "neon.tech" in database_url or "neon.db" in database_url
+            
+            connect_args = {
+                # Statement Timeout: Prevent runaway queries
                 "server_settings": {
-                    "statement_timeout": "30000",  # 30 seconds timeout for queries
+                    "statement_timeout": str(statement_timeout),  # Milliseconds
+                    "idle_in_transaction_session_timeout": "60000",  # 60s idle timeout
                 },
-                "timeout": 60,  # Connection timeout (60s to allow NeonDB wake-up)
-                "command_timeout": 60,  # Command timeout
+                
+                # Connection Timeout: Allow time for serverless database wake-up
+                "timeout": 60,  # 60 seconds (handles Render/NeonDB cold start)
+                
+                # Command Timeout: Maximum time for any single command
+                "command_timeout": 60,  # 60 seconds
+                
+                # Connection Limits
+                "min_size": 0,  # No minimum pool size (let SQLAlchemy manage)
+                "max_size": 1,  # One connection per asyncpg pool (SQLAlchemy pools on top)
             }
+            
+            # SSL Configuration
+            if is_neondb:
+                # NeonDB requires SSL with SNI routing
+                connect_args["ssl"] = "require"  # Enforce SSL for NeonDB
+                logger.info("NeonDB detected: SSL required, SNI routing enabled")
+            else:
+                # Other PostgreSQL providers (Render, AWS RDS, etc.)
+                connect_args["ssl"] = "prefer"  # Use SSL if available
+            
+            engine_params["connect_args"] = connect_args
         else:
-            # psycopg2 uses options parameter
-            engine_params["connect_args"] = {
-                "options": "-c statement_timeout=30000",  # 30 seconds timeout for queries
-                "connect_timeout": 60,  # Connection timeout (60s to allow NeonDB wake-up)
+            # ================================================================
+            # PSYCOPG2 (Sync Driver) - Production Configuration
+            # ================================================================
+            # Detect if using NeonDB (serverless PostgreSQL)
+            is_neondb = "neon.tech" in database_url or "neon.db" in database_url
+            
+            connect_args = {
+                # Statement Timeout: Prevent runaway queries
+                "options": f"-c statement_timeout={statement_timeout}",  # Milliseconds
+                
+                # Connection Timeout: Allow time for serverless database wake-up
+                "connect_timeout": 60,  # 60 seconds (handles Render/NeonDB cold start)
+                
+                # Keepalive: Detect dropped connections
+                "keepalives": 1,  # Enable TCP keepalive
+                "keepalives_idle": 30,  # Start keepalive after 30s idle
+                "keepalives_interval": 10,  # Keepalive probe interval
+                "keepalives_count": 5,  # Number of keepalive probes
             }
+            
+            # SSL Configuration
+            if is_neondb:
+                # NeonDB requires SSL with SNI routing
+                connect_args["sslmode"] = "require"  # Enforce SSL for NeonDB
+                logger.info("NeonDB detected: SSL required, SNI routing enabled")
+            else:
+                # Other PostgreSQL providers (Render, AWS RDS, etc.)
+                connect_args["sslmode"] = "prefer"  # Use SSL if available
+            
+            engine_params["connect_args"] = connect_args
     else:  # sqlite
-        # SQLite-specific connection parameters
+        # ====================================================================
+        # SQLITE CONNECTION CONFIGURATION
+        # ====================================================================
         engine_params = {
             **common_params,
             "connect_args": {
@@ -168,11 +276,32 @@ def create_database_engine(
             },
         }
 
-    # Create engine
-    if is_async:
-        return create_async_engine(database_url, **engine_params)
-    else:
-        return create_engine(database_url, **engine_params)
+    # Create engine with error handling
+    try:
+        if is_async:
+            engine = create_async_engine(database_url, **engine_params)
+        else:
+            engine = create_engine(database_url, **engine_params)
+        
+        logger.info(
+            f"Database engine created: type={db_type}, async={is_async}, "
+            f"pool_size={engine_params.get('pool_size', 'N/A')}"
+        )
+        
+        return engine
+        
+    except Exception as e:
+        logger.error(
+            f"Failed to create database engine: {e}",
+            exc_info=True,
+            extra={
+                "database_type": db_type,
+                "is_async": is_async,
+                "pool_size": engine_params.get("pool_size"),
+                "max_overflow": engine_params.get("max_overflow"),
+            }
+        )
+        raise
 
 
 def _is_connection_refused_error(error: Exception) -> bool:

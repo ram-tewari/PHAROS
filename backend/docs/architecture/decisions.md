@@ -167,43 +167,45 @@ Implement 5-dimensional quality assessment:
 
 ## ADR-008: Strategy Pattern for Recommendations
 
-**Status:** Accepted (Phase 10-11)
+**Status:** Superseded / Physically Removed (Phase 21)
 
 **Context:**
 Different recommendation approaches work better for different scenarios.
 
-**Decision:**
+**Original Decision:**
 Use strategy pattern with multiple recommendation strategies:
-- Collaborative filtering
+- Collaborative filtering (NCF)
 - Content-based
 - Graph-based
 - Hybrid (combines all)
 
+**Supersession Rationale:**
+Neural Collaborative Filtering (NCF) is mathematically useless for N=1 users — it requires a matrix of multiple users to compute collaborative signals. For a single-tenant deployment, the entire recommendations module (NCF, strategy pattern, user profile service, interaction tracking) was burning GPU cycles and codebase complexity for zero value. The module was physically removed from the codebase.
+
 **Consequences:**
-- ✅ Flexible recommendation system
-- ✅ Easy to add new strategies
-- ✅ Can tune per user/context
-- ⚠️ More complex architecture
-- ⚠️ Need to balance strategies
+- ✅ Reduced codebase complexity (removed ~15 files, 2 celery tasks, 1 event hook)
+- ✅ Eliminated PyTorch dependency for EDGE mode recommendations
+- ✅ No functional loss — N=1 collaborative filtering produces identity results
 
 ---
 
 ## ADR-009: Materialized Paths for Taxonomy
 
-**Status:** Accepted (Phase 8.5)
+**Status:** Superseded / Physically Removed (Phase 21)
 
 **Context:**
 Hierarchical taxonomy queries (ancestors, descendants) were slow with recursive queries.
 
-**Decision:**
+**Original Decision:**
 Use materialized path pattern storing full path in each node (e.g., `/science/computer-science/ml`).
 
+**Supersession Rationale:**
+The Taxonomy module (ML-based classification with active learning, BERT/DistilBERT) was physically removed alongside Recommendations and Curation as part of the single-tenant optimization. For a personal second brain, the ML classification overhead is unjustified — the Authority module's subject trees provide sufficient categorization, and the CLI provides manual tagging.
+
 **Consequences:**
-- ✅ O(1) ancestor queries
-- ✅ O(1) descendant queries via LIKE
-- ✅ Simple breadcrumb generation
-- ⚠️ Must update paths on move
-- ⚠️ Path length limits
+- ✅ Removed ML classification pipeline (BERT model loading, training, inference)
+- ✅ Reduced startup time and memory footprint
+- ✅ Authority module provides adequate categorization for N=1
 
 ---
 
@@ -320,6 +322,32 @@ The RTX 4070 achieves ~90% of cloud A10G throughput at zero marginal cost. The 5
 3. **Use a separate object store (S3) for code**: Rejected due to added infrastructure complexity and cost ($5-10/mo for S3 + egress) when GitHub already stores the code for free with an API that supports parallel fetching.
 
 4. **ML-based pattern extraction instead of 14-Day Temporal Sieve**: Rejected due to zero available labeled training data, ongoing MLOps overhead, and the availability of a deterministic signal (git commit timestamps + diff sizes) that achieves 90%+ accuracy with zero maintenance cost.
+
+---
+
+## ADR-012: Perimeter Defense Auth for Single-Tenant React SPA
+
+**Status:** Accepted (Phase 21)
+
+**Context:**
+After removing Recommendations, Curation, and Taxonomy, the Auth module's original purpose — user management, tiered access, public signups — no longer applies. However, Pharos serves a React SPA frontend on the public internet via Render, exposing the FastAPI backend to bots, scrapers, and unauthorized API consumers that could drain database connections and rack up costs.
+
+**Decision:**
+Keep the Auth module but repurpose it strictly as **perimeter defense**:
+- Disable the `/auth/register` (signup) route — no public registration
+- Keep the `/auth/login` route for the single admin account
+- Keep JWT token validation middleware on all non-public endpoints
+- Keep rate limiting via Redis to prevent abuse
+- Keep OAuth2 (Google, GitHub) as optional admin login methods
+
+The Auth module no longer manages tiers, roles, or multiple user accounts. It exists solely to ensure that only authenticated requests from the admin account can reach the API.
+
+**Consequences:**
+- ✅ API is protected from public internet traffic (bots, scrapers, unauthorized access)
+- ✅ Database connections cannot be drained by unauthenticated requests
+- ✅ Zero additional infrastructure cost — reuses existing JWT + Redis stack
+- ✅ React SPA has a clean auth flow (login → token → authenticated API calls)
+- ⚠️ Single point of failure if the admin account is compromised (mitigated by bcrypt + OAuth2 + token rotation)
 
 ---
 

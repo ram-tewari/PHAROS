@@ -1,31 +1,55 @@
 services:
   - type: web
-    name: neo-alexandria-cloud-api
+    name: pharos-cloud-api
     runtime: docker
     region: oregon
     plan: free
     branch: main
     rootDir: backend
-    dockerfilePath: ./Dockerfile.cloud
+    dockerfilePath: ./deployment/Dockerfile.cloud
     dockerContext: ./
     envVars:
+      # Core Configuration
       - key: MODE
         value: CLOUD
+      - key: ENV
+        value: production
+      
+      # Database (NeonDB PostgreSQL - Free Tier)
       - key: DATABASE_URL
-        value: sqlite:///./backend.db
-      - key: QDRANT_URL
-        sync: false
-      - key: QDRANT_API_KEY
-        sync: false
+        value: postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+      
+      # Redis (Upstash - Free Tier)
       - key: UPSTASH_REDIS_REST_URL
-        sync: false
+        value: https://living-sculpin-96916.upstash.io
       - key: UPSTASH_REDIS_REST_TOKEN
-        sync: false
+        value: gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
+      
+      # Authentication (Generate secure token)
       - key: PHAROS_ADMIN_TOKEN
-        sync: false
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      
+      # Resource Limits (Free Tier Optimized)
       - key: MAX_QUEUE_SIZE
         value: 10
       - key: TASK_TTL_SECONDS
         value: 3600
+      - key: MAX_WORKERS
+        value: 2
+      
+      # RAG Configuration (Minimal for Free Tier)
+      - key: CHUNK_ON_RESOURCE_CREATE
+        value: false
+      - key: GRAPH_EXTRACTION_ENABLED
+        value: true
+      - key: SYNTHETIC_QUESTIONS_ENABLED
+        value: false
+      
+      # Embedding Model
+      - key: EMBEDDING_MODEL_NAME
+        value: nomic-ai/nomic-embed-text-v1
+    
     healthCheckPath: /health
     autoDeploy: true

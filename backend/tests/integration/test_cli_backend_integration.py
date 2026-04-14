@@ -202,8 +202,8 @@ def test_cli_help_commands():
     
     command_groups = [
         "auth", "config", "resource", "collection", "search",
-        "graph", "batch", "chat", "recommend", "annotate",
-        "quality", "taxonomy", "code", "ask", "system", "backup"
+        "graph", "batch", "chat", "annotate",
+        "quality", "code", "ask", "system", "backup"
     ]
     
     passed = 0

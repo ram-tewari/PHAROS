@@ -109,20 +109,111 @@ class CacheService:
             self.redis = redis_client
         else:
             try:
-                # Check for Upstash Redis first
+                # ============================================================
+                # UPSTASH REDIS (Serverless) - Priority Configuration
+                # ============================================================
+                # Upstash provides two connection methods:
+                # 1. REST API (HTTP-based, serverless-friendly)
+                # 2. Native Redis protocol (TCP-based, faster)
+                #
+                # We use native protocol for better performance, but with
+                # serverless-optimized settings (SSL, retries, timeouts)
+                #
+                # SERVERLESS REDIS GOTCHA (Upstash):
+                # Upstash routes traffic over the public internet and REQUIRES
+                # secure connections. Standard local Redis uses redis://.
+                # Upstash REQUIRES rediss:// (with two S's for SSL/TLS).
+                # If you miss the second 's', connections will fail with SSL errors.
+                
                 upstash_url = os.getenv("UPSTASH_REDIS_REST_URL")
                 upstash_token = os.getenv("UPSTASH_REDIS_REST_TOKEN")
+                redis_url = os.getenv("REDIS_URL")
 
-                if upstash_url and upstash_token:
+                # Detect if using Upstash (rediss:// protocol or upstash.io domain)
+                is_upstash = (
+                    (redis_url and ("upstash.io" in redis_url or redis_url.startswith("rediss://")))
+                    or (upstash_url and upstash_token)
+                )
+                
+                # Validate Redis URL format
+                if redis_url:
+                    if not redis_url.startswith("redis://") and not redis_url.startswith("rediss://"):
+                        logger.error(
+                            f"Invalid REDIS_URL format: {redis_url[:20]}... "
+                            f"(must start with redis:// or rediss://)"
+                        )
+                        self.redis = None
+                        self.stats = CacheStats()
+                        return
+                    
+                    # Warn if using non-SSL with Upstash
+                    if is_upstash and redis_url.startswith("redis://"):
+                        logger.error(
+                            f"CRITICAL: Upstash requires SSL/TLS. "
+                            f"Your REDIS_URL starts with 'redis://' but should start with 'rediss://' (two S's). "
+                            f"Connection will fail. Please update your REDIS_URL."
+                        )
+                        self.redis = None
+                        self.stats = CacheStats()
+                        return
+                    
+                    # Serverless-optimized connection settings
+                    connection_kwargs = {
+                        "decode_responses": True,  # Auto-decode bytes to strings
+                        "socket_connect_timeout": 10,  # 10s for serverless wake-up
+                        "socket_timeout": 10,  # 10s for command execution
+                        "socket_keepalive": True,  # Keep connections alive
+                        "socket_keepalive_options": {
+                            1: 30,  # TCP_KEEPIDLE: 30s
+                            2: 10,  # TCP_KEEPINTVL: 10s
+                            3: 5,   # TCP_KEEPCNT: 5 probes
+                        },
+                        "retry_on_timeout": True,  # Retry on timeout
+                        "retry_on_error": [ConnectionError, TimeoutError],  # Retry on connection errors
+                        "health_check_interval": 30,  # Health check every 30s
+                    }
+                    
+                    # SSL/TLS configuration for Upstash
+                    if is_upstash:
+                        # Upstash REQUIRES SSL/TLS with certificate verification
+                        # Use ssl_cert_reqs="required" for production security
+                        connection_kwargs["ssl"] = True
+                        connection_kwargs["ssl_cert_reqs"] = "required"  # Verify SSL certificate
+                        
+                        # Alternative: Use ssl_cert_reqs="none" if you encounter certificate issues
+                        # (not recommended for production, but useful for debugging)
+                        # connection_kwargs["ssl_cert_reqs"] = "none"
+                        
+                        logger.info(f"Connecting to Upstash Redis (native protocol): {redis_url[:30]}...")
+                    else:
+                        logger.info(f"Connecting to Redis: {redis_url[:30]}...")
+                    
+                    self.redis = redis.Redis.from_url(
+                        redis_url,
+                        **connection_kwargs
+                    )
+                    
+                    # Test connection
+                    try:
+                        self.redis.ping()
+                        logger.info("Redis connection successful")
+                    except Exception as e:
+                        logger.warning(f"Redis ping failed: {e} (will retry on first request)")
+                
+                elif upstash_url and upstash_token:
+                    # Upstash REST API (fallback, slower but more reliable)
+                    logger.info(f"Connecting to Upstash Redis (REST API): {upstash_url[:30]}...")
                     self.redis = redis.Redis.from_url(
                         upstash_url,
                         password=upstash_token,
                         decode_responses=True,
-                        socket_connect_timeout=5,
-                        socket_timeout=5,
+                        socket_connect_timeout=10,
+                        socket_timeout=10,
+                        retry_on_timeout=True,
                     )
-                    logger.info(f"Connected to Upstash Redis: {upstash_url}")
                 else:
+                    # Local Redis (development)
+                    logger.info("Connecting to local Redis (development)")
                     self.redis = redis.Redis(
                         host=getattr(settings, "REDIS_HOST", "localhost"),
                         port=getattr(settings, "REDIS_PORT", 6379),

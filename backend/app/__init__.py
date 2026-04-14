@@ -12,10 +12,10 @@ Related files:
 
 The application includes the following feature modules:
 - Resources: URL ingestion and CRUD operations
-- Curation: Review queue and batch operations
 - Search: Full-text search with FTS5 and faceting
 - Authority: Subject, creator, and publisher normalization
-- Classification: Personal classification system with UDC-inspired codes
+- Graph: Knowledge graph, citations, dependency traversal
+- Quality: Multi-dimensional scoring and outlier detection
 """
 
 import logging
@@ -76,9 +76,7 @@ def register_all_modules(app: FastAPI) -> None:
         ("annotations", "app.modules.annotations", ["annotations_router"]),
         ("scholarly", "app.modules.scholarly", ["scholarly_router"]),
         ("authority", "app.modules.authority", ["authority_router"]),
-        ("curation", "app.modules.curation", ["curation_router"]),
         ("quality", "app.modules.quality", ["quality_router"]),
-        ("taxonomy", "app.modules.taxonomy", ["taxonomy_router"]),
         (
             "graph",
             "app.modules.graph",
@@ -101,9 +99,7 @@ def register_all_modules(app: FastAPI) -> None:
     ]
 
     # Modules that require torch (only load in EDGE mode)
-    edge_only_modules: List[Tuple[str, str, List[str]]] = [
-        ("recommendations", "app.modules.recommendations", ["recommendations_router"]),
-    ]
+    edge_only_modules: List[Tuple[str, str, List[str]]] = []
 
     # Modules that require redis (only load in EDGE mode or when redis is available)
     redis_modules: List[Tuple[str, str, List[str]]] = [
@@ -128,7 +124,7 @@ def register_all_modules(app: FastAPI) -> None:
             logger.info("Edge mode: Loading all modules including ML-heavy modules")
     else:
         # Cloud mode: Skip torch-dependent modules, add ingestion router
-        logger.info("Cloud mode: Skipping torch-dependent modules (recommendations)")
+        logger.info("Cloud mode: Skipping torch-dependent modules")
         # Try to load redis modules but don't fail if redis unavailable
         modules.extend(redis_modules)
         # Also register additional routers in cloud mode

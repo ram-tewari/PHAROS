@@ -312,6 +312,29 @@ class LearnResponse(BaseModel):
 # ============================================================================
 
 
+class CodingProfileCreate(BaseModel):
+    """Request body for creating a new CodingProfile."""
+
+    id: str = Field(..., min_length=1, max_length=128, description="Unique profile slug, e.g. 'sys_hacker'")
+    name: str = Field(..., min_length=1, max_length=255, description="Human-readable name")
+    description: str = Field(..., min_length=1, description="2-4 sentence description of the coding philosophy")
+    best_suited_for: Dict[str, Any] = Field(
+        default_factory=dict,
+        description="JSON with 'languages' and 'tasks' arrays",
+    )
+
+
+class CodingProfileResponse(BaseModel):
+    """A coding profile as returned by the API."""
+
+    id: str
+    name: str
+    description: str
+    best_suited_for: Dict[str, Any]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+
 class ProposeRuleRequest(BaseModel):
     """Payload posted by the local extraction worker."""
 
@@ -326,6 +349,9 @@ class ProposeRuleRequest(BaseModel):
         ..., description="Structured JSON schema of the extracted rule"
     )
     confidence: float = Field(0.0, ge=0.0, le=1.0)
+    profile_id: Optional[str] = Field(
+        None, description="CodingProfile ID to link this rule to (NULL = personal baseline)"
+    )
 
 
 class ProposeRuleResponse(BaseModel):

@@ -1,1 +1,0 @@
-"""Recommendations module tests."""

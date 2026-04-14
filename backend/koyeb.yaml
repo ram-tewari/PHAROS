@@ -1,0 +1,243 @@
+# ============================================================================
+# Pharos Backend - Koyeb Service Configuration (IaC)
+# ============================================================================
+# Infrastructure as Code for deploying Pharos to Koyeb Free Tier
+#
+# Features:
+# - 24/7 "Always-On" serverless hosting (no cold starts)
+# - 512MB RAM "nano" instance (free tier)
+# - Docker-based deployment
+# - Automatic health checks
+# - Secrets management (no plaintext credentials)
+# - Auto-scaling (1 instance minimum, 1 maximum for free tier)
+#
+# Deployment:
+# 1. Install Koyeb CLI: https://www.koyeb.com/docs/cli/installation
+# 2. Login: koyeb login
+# 3. Create secrets (one-time):
+#    koyeb secrets create database-url --value "postgresql://..."
+#    koyeb secrets create redis-url --value "rediss://..."
+#    koyeb secrets create pharos-api-key --value "your-api-key"
+# 4. Deploy: koyeb service create --config koyeb.yaml
+# 5. Update: koyeb service update pharos-api --config koyeb.yaml
+#
+# Documentation: https://www.koyeb.com/docs/reference/api
+# ============================================================================
+
+# Service name (must be unique within your Koyeb account)
+name: pharos-api
+
+# Service type: web (HTTP/HTTPS service with public endpoint)
+type: web
+
+# ============================================================================
+# BUILD CONFIGURATION
+# ============================================================================
+
+# Build from Dockerfile (not buildpack)
+build:
+  # Build method: docker (use Dockerfile)
+  type: docker
+  
+  # Dockerfile path (relative to repository root)
+  dockerfile: backend/Dockerfile
+  
+  # Build context (directory containing Dockerfile and source code)
+  context: backend
+  
+  # Build arguments (optional, for multi-stage builds)
+  # args:
+  #   - PYTHON_VERSION=3.11
+
+# ============================================================================
+# DEPLOYMENT CONFIGURATION
+# ============================================================================
+
+# Deployment region: Choose closest to your users
+# Available regions: fra (Frankfurt), was (Washington DC), sin (Singapore)
+# Free tier: 1 region only
+regions:
+  - fra  # Frankfurt, Germany (EU)
+
+# Instance type: nano (512MB RAM, 0.1 vCPU) - Free tier
+# Other options: micro (1GB), small (2GB), medium (4GB), large (8GB)
+instance_type: nano
+
+# Scaling configuration
+scaling:
+  # Minimum instances: 1 (always-on, no cold starts)
+  min: 1
+  
+  # Maximum instances: 1 (free tier limit)
+  max: 1
+  
+  # Auto-scaling targets (not applicable for free tier with min=max=1)
+  # targets:
+  #   - type: cpu
+  #     value: 80  # Scale up when CPU > 80%
+  #   - type: memory
+  #     value: 80  # Scale up when memory > 80%
+
+# ============================================================================
+# NETWORKING & PORTS
+# ============================================================================
+
+# Ports configuration
+ports:
+  - port: 8000  # Internal container port
+    protocol: http  # HTTP protocol (Koyeb handles HTTPS termination)
+    public: true  # Expose to internet with public URL
+
+# Health check configuration
+# Koyeb uses this to determine if the service is healthy
+health_checks:
+  - path: /health  # Health check endpoint (must return 200 OK)
+    port: 8000  # Port to check
+    protocol: http  # HTTP protocol
+    interval: 30  # Check every 30 seconds
+    timeout: 10  # Timeout after 10 seconds
+    grace_period: 60  # Wait 60s after startup before checking
+    restart_limit: 3  # Restart after 3 consecutive failures
+
+# ============================================================================
+# ENVIRONMENT VARIABLES
+# ============================================================================
+
+# Environment variables (non-sensitive configuration)
+env:
+  # Application environment
+  - key: ENVIRONMENT
+    value: production
+  
+  # Port (Koyeb injects this automatically, but we set it explicitly)
+  - key: PORT
+    value: "8000"
+  
+  # Worker count (2 workers for 512MB RAM)
+  - key: WEB_CONCURRENCY
+    value: "2"
+  
+  # Log level
+  - key: LOG_LEVEL
+    value: info
+  
+  # JSON logging for production monitoring
+  - key: JSON_LOGGING
+    value: "true"
+  
+  # Timezone
+  - key: TZ
+    value: UTC
+
+# ============================================================================
+# SECRETS (Sensitive Configuration)
+# ============================================================================
+
+# Secrets are stored securely in Koyeb and injected as environment variables
+# Create secrets using Koyeb CLI or Dashboard:
+# - koyeb secrets create database-url --value "postgresql://..."
+# - koyeb secrets create redis-url --value "rediss://..."
+# - koyeb secrets create pharos-api-key --value "your-api-key"
+
+secrets:
+  # Database URL (NeonDB PostgreSQL)
+  # Format: postgresql://user:password@host:5432/database?sslmode=require
+  - key: DATABASE_URL
+    name: database-url  # Reference to Koyeb Secret
+  
+  # Redis URL (Upstash Redis)
+  # Format: rediss://default:password@host:6379
+  - key: REDIS_URL
+    name: redis-url  # Reference to Koyeb Secret
+  
+  # API Key for M2M authentication
+  # Used for context retrieval and pattern learning endpoints
+  - key: PHAROS_API_KEY
+    name: pharos-api-key  # Reference to Koyeb Secret
+
+# ============================================================================
+# DEPLOYMENT STRATEGY
+# ============================================================================
+
+# Deployment strategy: rolling (zero-downtime deployment)
+# Koyeb will start new instances before stopping old ones
+deployment:
+  strategy: rolling
+  
+  # Maximum unavailable instances during deployment
+  max_unavailable: 0  # Zero-downtime (always keep 1 instance running)
+  
+  # Maximum surge instances during deployment
+  max_surge: 1  # Start 1 new instance before stopping old one
+
+# ============================================================================
+# RESOURCE LIMITS
+# ============================================================================
+
+# Resource limits (enforced by Koyeb)
+resources:
+  # Memory limit: 512MB (nano instance)
+  memory: 512Mi
+  
+  # CPU limit: 0.1 vCPU (nano instance)
+  cpu: 100m  # 100 millicores = 0.1 vCPU
+
+# ============================================================================
+# MONITORING & LOGGING
+# ============================================================================
+
+# Logging configuration
+# Koyeb automatically collects stdout/stderr logs
+# Access logs via: koyeb logs pharos-api
+# Or in Koyeb Dashboard: https://app.koyeb.com/
+
+# Metrics configuration
+# Koyeb automatically collects metrics (CPU, memory, requests, latency)
+# Access metrics in Koyeb Dashboard
+
+# ============================================================================
+# CUSTOM DOMAIN (Optional)
+# ============================================================================
+
+# Custom domain configuration (optional)
+# Uncomment and configure if you have a custom domain
+# domains:
+#   - name: api.pharos.example.com
+#     type: cname  # CNAME record pointing to Koyeb
+#     # Koyeb will provide the CNAME target after deployment
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+# Free Tier Limits:
+# - 1 service (this deployment)
+# - 1 instance per service
+# - 512MB RAM per instance
+# - 1 region
+# - 100GB bandwidth/month
+# - No custom domains (use *.koyeb.app subdomain)
+
+# Paid Tier Benefits:
+# - Multiple services
+# - Auto-scaling (min/max instances)
+# - Larger instance types (up to 8GB RAM)
+# - Multiple regions
+# - Custom domains
+# - Priority support
+
+# External Dependencies:
+# - NeonDB (PostgreSQL): Free tier 0.5GB storage, 1 project
+# - Upstash (Redis): Free tier 10,000 requests/day, 256MB storage
+
+# Cost Estimate (Free Tier):
+# - Koyeb: $0/month (free tier)
+# - NeonDB: $0/month (free tier)
+# - Upstash: $0/month (free tier)
+# - Total: $0/month (perfect for solo dev, MVP, side projects)
+
+# Upgrade Path:
+# - Koyeb Starter: $5/month (1GB RAM, 2 instances)
+# - NeonDB Scale: $19/month (3GB storage, autoscaling)
+# - Upstash Pro: $10/month (100K requests/day, 1GB storage)
+# - Total: $34/month (production-ready for small teams)

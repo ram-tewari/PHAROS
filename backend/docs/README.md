@@ -17,11 +17,8 @@ Comprehensive documentation for the Pharos code intelligence backend — the mem
 | [Annotations](api/annotations.md) | Character-offset highlights, rich notes, semantic search |
 | [Scholarly](api/scholarly.md) | Academic metadata, equations, tables, citation extraction |
 | [Quality](api/quality.md) | Multi-dimensional quality assessment and outlier detection |
-| [Recommendations](api/recommendations.md) | Hybrid recommendation engine (NCF, content, graph) |
-| [Taxonomy](api/taxonomy.md) | ML-based classification and hierarchical category trees |
-| [Curation](api/curation.md) | Content review, batch operations, approval workflows |
 | [Authority](api/authority.md) | Subject authority trees and classification hierarchies |
-| [Auth](api/auth.md) | JWT authentication, OAuth2, token lifecycle |
+| [Auth](api/auth.md) | JWT authentication (perimeter defense), OAuth2, token lifecycle |
 | [Monitoring](api/monitoring.md) | Health checks, system metrics, event bus diagnostics |
 | [MCP](api/mcp.md) | Model Context Protocol sessions and tool management |
 | [Planning](api/planning.md) | AI-assisted planning sessions |
@@ -36,7 +33,7 @@ Comprehensive documentation for the Pharos code intelligence backend — the mem
 | [Modules](architecture/modules.md) | Vertical slice architecture — module boundaries and isolation rules |
 | [Decision Records](architecture/decisions.md) | ADRs including Local-Heavy Edge Inference and Hybrid Code Storage |
 | [Hybrid Deployment](architecture/phase19-hybrid.md) | Cloud API + Edge Worker split architecture |
-| [Phase 20 Features](architecture/phase20-features.md) | Pattern Learning Engine, Ronin integration endpoints |
+|
 
 ## Developer Guides (`docs/guides/`)
 

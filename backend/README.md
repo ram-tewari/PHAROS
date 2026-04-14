@@ -97,28 +97,27 @@ Pharos stores **only metadata** (AST nodes, embeddings, dependency edges, qualit
 
 ---
 
-## The 14 Domain Modules
+## The 11 Domain Modules
 
 Pharos is built as a **modular monolith** using vertical slice architecture. Each module is fully self-contained (router, service, schema, model, event handlers) and communicates with other modules exclusively through the async Event Bus. No module imports from another module.
 
 | Module | Purpose | Role in the Ronin Ecosystem |
 |--------|---------|----------------------------|
-| **Resources** | CRUD operations for code files, documents, URLs | Primary ingestion entry point; emits lifecycle events consumed by 8+ modules |
+| **Resources** | CRUD operations for code files, documents, URLs | Primary ingestion entry point; emits lifecycle events consumed by downstream modules |
 | **Search** | Hybrid search (BM25 keyword + dense semantic + SPLADE sparse) | Powers Ronin's context retrieval — the core query pathway |
 | **Graph** | Knowledge graph, dependency edges, citation networks, PageRank | Enables GraphRAG multi-hop traversal for architectural understanding |
-| **Quality** | Multi-dimensional scoring (accuracy, completeness, consistency, timeliness, relevance) | Filters low-quality chunks before they reach Ronin; surfaces outliers for curation |
+| **Quality** | Multi-dimensional scoring (accuracy, completeness, consistency, timeliness, relevance) | Filters low-quality chunks before they reach Ronin; surfaces outliers |
 | **Annotations** | Character-offset highlights and rich notes with semantic embeddings | Your personal marginalia — searchable context that enriches Ronin's responses |
 | **Scholarly** | Academic metadata extraction (equations, tables, citations, references) | Connects research papers to code implementations via structured metadata |
 | **Monitoring** | System health, metrics aggregation, event bus diagnostics | Observability for the single-tenant deployment; consumes all event types |
 | **MCP** | Model Context Protocol sessions and tool management | Enables Ronin to interact with Pharos as an MCP tool server |
-| **Auth** | JWT authentication, OAuth2 (Google, GitHub), token revocation | Secures the API; tiered rate limiting (Free/Premium/Admin) via Redis |
+| **Auth** | JWT authentication, OAuth2 (Google, GitHub), token revocation | Perimeter defense — secures the React SPA and API from public internet traffic. Public signup is disabled; only the admin account can authenticate. Rate limiting via Redis. |
 | **Authority** | Subject authority trees and classification hierarchies | Domain-specific taxonomies that ground Ronin's understanding |
 | **Collections** | Grouping resources with aggregate embeddings | Organizes codebases and paper sets; enables collection-level similarity |
-| **Curation** | Content review, batch operations, outlier resolution | Human-in-the-loop quality gate; consumes quality.outlier_detected events |
-| **Recommendations** | Hybrid engine (NCF, content-based, graph-based) | Suggests related code and papers; runs on Edge Worker (requires PyTorch) |
-| **Taxonomy** | ML-based hierarchical classification with active learning | Auto-categorizes ingested resources; feeds classification into Graph and Search |
 
-**Why 14 modules for a single-tenant system?** Strict domain isolation prevents monolith degradation over time. When you need to swap pgvector for Qdrant, or replace nomic-embed-text with a fine-tuned model, you change one module's service layer without touching the API contract or breaking downstream consumers. The Event Bus ensures modules remain independently deployable — a prerequisite for the eventual microservices extraction path if the system scales beyond single-tenant use.
+**Removed modules (single-tenant optimization):** Recommendations (NCF is mathematically useless for N=1), Curation (community moderation queues unnecessary for a personal system), and Taxonomy (ML classification overhead unjustified for a single user). See [ADR-008](docs/architecture/decisions.md) and [ADR-012](docs/architecture/decisions.md) for rationale.
+
+**Why 11 modules for a single-tenant system?** Strict domain isolation prevents monolith degradation over time. When you need to swap pgvector for Qdrant, or replace nomic-embed-text with a fine-tuned model, you change one module's service layer without touching the API contract or breaking downstream consumers. The Event Bus ensures modules remain independently deployable.
 
 ---
 
@@ -174,16 +173,13 @@ The API is available at `http://127.0.0.1:8000`. Interactive docs at `/docs` (Sw
 
 ### Authentication
 
-```bash
-# Register
-curl -X POST http://127.0.0.1:8000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "SecurePassword123!", "full_name": "Your Name"}'
+Auth serves as **perimeter defense** for the single-tenant deployment. Public signup is disabled — only the pre-configured admin account can authenticate.
 
+```bash
 # Login (returns access + refresh tokens)
 curl -X POST http://127.0.0.1:8000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"email": "user@example.com", "password": "SecurePassword123!"}'
+  -d '{"email": "admin@example.com", "password": "YourSecurePassword"}'
 ```
 
 ### Ingest a Repository

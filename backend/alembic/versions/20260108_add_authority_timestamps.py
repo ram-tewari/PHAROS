@@ -18,60 +18,57 @@ depends_on = None
 
 
 def upgrade():
-    # Add created_at and updated_at to authority_subjects if they don't exist
-    op.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name='authority_subjects' AND column_name='created_at') THEN
-                ALTER TABLE authority_subjects ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            END IF;
-            
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name='authority_subjects' AND column_name='updated_at') THEN
-                ALTER TABLE authority_subjects ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            END IF;
-        END $$;
-    """)
-
-    # Add created_at and updated_at to authority_creators if they don't exist
-    op.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name='authority_creators' AND column_name='created_at') THEN
-                ALTER TABLE authority_creators ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            END IF;
-            
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name='authority_creators' AND column_name='updated_at') THEN
-                ALTER TABLE authority_creators ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            END IF;
-        END $$;
-    """)
-
-    # Add created_at and updated_at to authority_publishers if they don't exist
-    op.execute("""
-        DO $$
-        BEGIN
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name='authority_publishers' AND column_name='created_at') THEN
-                ALTER TABLE authority_publishers ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            END IF;
-            
-            IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                          WHERE table_name='authority_publishers' AND column_name='updated_at') THEN
-                ALTER TABLE authority_publishers ADD COLUMN updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP;
-            END IF;
-        END $$;
-    """)
+    # SQLite-compatible approach: Try to add columns, ignore if they exist
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    
+    # Check and add columns for authority_subjects
+    if 'authority_subjects' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('authority_subjects')]
+        if 'created_at' not in columns:
+            op.add_column('authority_subjects', sa.Column('created_at', sa.DateTime(), nullable=True, server_default=sa.text('CURRENT_TIMESTAMP')))
+        if 'updated_at' not in columns:
+            op.add_column('authority_subjects', sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.text('CURRENT_TIMESTAMP')))
+    
+    # Check and add columns for authority_creators
+    if 'authority_creators' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('authority_creators')]
+        if 'created_at' not in columns:
+            op.add_column('authority_creators', sa.Column('created_at', sa.DateTime(), nullable=True, server_default=sa.text('CURRENT_TIMESTAMP')))
+        if 'updated_at' not in columns:
+            op.add_column('authority_creators', sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.text('CURRENT_TIMESTAMP')))
+    
+    # Check and add columns for authority_publishers
+    if 'authority_publishers' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('authority_publishers')]
+        if 'created_at' not in columns:
+            op.add_column('authority_publishers', sa.Column('created_at', sa.DateTime(), nullable=True, server_default=sa.text('CURRENT_TIMESTAMP')))
+        if 'updated_at' not in columns:
+            op.add_column('authority_publishers', sa.Column('updated_at', sa.DateTime(), nullable=True, server_default=sa.text('CURRENT_TIMESTAMP')))
 
 
 def downgrade():
-    # Remove the columns if needed
-    op.execute("ALTER TABLE authority_subjects DROP COLUMN IF EXISTS created_at")
-    op.execute("ALTER TABLE authority_subjects DROP COLUMN IF EXISTS updated_at")
-    op.execute("ALTER TABLE authority_creators DROP COLUMN IF EXISTS created_at")
-    op.execute("ALTER TABLE authority_creators DROP COLUMN IF EXISTS updated_at")
-    op.execute("ALTER TABLE authority_publishers DROP COLUMN IF EXISTS created_at")
-    op.execute("ALTER TABLE authority_publishers DROP COLUMN IF EXISTS updated_at")
+    # Remove the columns if they exist
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+    
+    if 'authority_subjects' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('authority_subjects')]
+        if 'created_at' in columns:
+            op.drop_column('authority_subjects', 'created_at')
+        if 'updated_at' in columns:
+            op.drop_column('authority_subjects', 'updated_at')
+    
+    if 'authority_creators' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('authority_creators')]
+        if 'created_at' in columns:
+            op.drop_column('authority_creators', 'created_at')
+        if 'updated_at' in columns:
+            op.drop_column('authority_creators', 'updated_at')
+    
+    if 'authority_publishers' in inspector.get_table_names():
+        columns = [col['name'] for col in inspector.get_columns('authority_publishers')]
+        if 'created_at' in columns:
+            op.drop_column('authority_publishers', 'created_at')
+        if 'updated_at' in columns:
+            op.drop_column('authority_publishers', 'updated_at')

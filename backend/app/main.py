@@ -17,7 +17,7 @@ The application provides a comprehensive knowledge management system with:
 - Personal classification system with UDC-inspired codes
 - Enhanced quality control with multi-factor scoring
 - Full-text search with SQLite FTS5 support
-- CRUD operations and curation workflows
+- CRUD operations and quality workflows
 """
 
 from __future__ import annotations

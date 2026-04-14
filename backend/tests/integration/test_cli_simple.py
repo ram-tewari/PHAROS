@@ -62,7 +62,7 @@ else:
 print("\n5. Testing all command groups...")
 groups = [
     "auth", "config", "resource", "collection", "search", "graph",
-    "batch", "chat", "recommend", "annotate", "quality", "taxonomy",
+    "batch", "chat", "annotate", "quality",
     "code", "ask", "system", "backup"
 ]
 

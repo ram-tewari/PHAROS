@@ -29,7 +29,7 @@ Pharos is a **single-tenant code intelligence backend** optimized for one metric
 1. **Understand and debug legacy codebases** by retrieving semantically relevant code, dependency graphs, and research paper insights
 2. **Generate new code** that incorporates your historical coding patterns, avoids your past mistakes, and matches your style
 
-Pharos is not a generic SaaS platform. Every architectural decision — the 14-module vertical slice structure, the local/cloud compute split, the hybrid GitHub storage model, the deterministic pattern extraction heuristic — exists to serve this single-tenant, accuracy-first, cost-minimal objective.
+Pharos is not a generic SaaS platform. Every architectural decision — the 11-module vertical slice structure, the local/cloud compute split, the hybrid GitHub storage model, the deterministic pattern extraction heuristic — exists to serve this single-tenant, accuracy-first, cost-minimal objective.
 
 ---
 
@@ -199,15 +199,15 @@ Ronin Code Generation Request
 │  ┌───────────────────────────────────────────────────────────────┐  │
 │  │                   FastAPI Application Layer                   │  │
 │  │           Global Auth Middleware • Rate Limiting              │  │
-│  │           14 Module Routers • OpenAPI Auto-Docs               │  │
+│  │           11 Module Routers • OpenAPI Auto-Docs               │  │
 │  └───────────────────────────────┬───────────────────────────────┘  │
 │                                  │                                  │
 │  ┌───────────────────────────────┴───────────────────────────────┐  │
-│  │              14 Vertical Slice Modules                        │  │
+│  │              11 Vertical Slice Modules                        │  │
 │  │                                                               │  │
 │  │  Resources │ Search │ Graph │ Quality │ Annotations           │  │
 │  │  Scholarly │ Monitoring │ MCP │ Auth │ Authority              │  │
-│  │  Collections │ Curation │ Recommendations │ Taxonomy          │  │
+│  │  Collections                                                  │  │
 │  │                                                               │  │
 │  │  Each: router.py • service.py • schema.py • model.py          │  │
 │  │        handlers.py (event subscriptions)                      │  │
@@ -240,7 +240,7 @@ Ronin Code Generation Request
 
 ## Module Architecture
 
-All 14 modules follow the identical vertical slice structure:
+All 11 modules follow the identical vertical slice structure:
 
 ```
 app/modules/<module_name>/
@@ -262,13 +262,9 @@ app/modules/<module_name>/
 ### Event Flow Map
 
 ```
-Resources ──[resource.created]──► Scholarly, Quality, Taxonomy, Graph
+Resources ──[resource.created]──► Scholarly, Quality, Graph
 Resources ──[resource.updated]──► Collections, Quality, Search
 Resources ──[resource.deleted]──► Collections, Annotations, Graph
-Quality   ──[quality.outlier_detected]──► Curation
-Annotations──[annotation.created]──► Recommendations
-Collections──[collection.resource_added]──► Recommendations
-Taxonomy  ──[resource.classified]──► Monitoring
 Graph     ──[citation.extracted]──► Monitoring
 All       ──[*.events]──► Monitoring (metrics aggregation)
 ```
@@ -321,15 +317,15 @@ When Ronin needs actual code content, Pharos fetches it from the GitHub API with
 
 ## Defense of Architectural Decisions
 
-### Decision 1: 14-Module Vertical Slice Architecture with Event Bus
+### Decision 1: 11-Module Vertical Slice Architecture with Event Bus
 
-**The question**: Why maintain an enterprise-grade modular architecture for a system that serves exactly one user?
+**The question**: Why maintain a modular architecture for a system that serves exactly one user?
 
 **The answer**: The modularity is not about scaling to more users. It is about **preventing monolith degradation** in a system that will evolve rapidly across its ML, storage, and retrieval layers.
 
-Pharos integrates multiple volatile technologies: vector databases (pgvector today, potentially Qdrant or Milvus tomorrow), embedding models (nomic-embed-text-v1 today, potentially a fine-tuned model next month), graph traversal algorithms, ML classifiers, and LLM integrations. In a monolithic codebase, changing the embedding model would require touching search logic, ingestion pipelines, quality scoring, and recommendation generation simultaneously. With vertical slices, the `Search` module owns its embedding queries, the `Resources` module owns its ingestion embeddings, and the `Recommendations` module owns its similarity computations — each behind a stable service interface.
+Pharos integrates multiple volatile technologies: vector databases (pgvector today, potentially Qdrant or Milvus tomorrow), embedding models (nomic-embed-text-v1 today, potentially a fine-tuned model next month), graph traversal algorithms, and LLM integrations. In a monolithic codebase, changing the embedding model would require touching search logic, ingestion pipelines, and quality scoring simultaneously. With vertical slices, the `Search` module owns its embedding queries and the `Resources` module owns its ingestion embeddings — each behind a stable service interface.
 
-The Event Bus is the mechanism that enforces this isolation. When a resource is created, it emits `resource.created`. The 8+ modules that react to that event do not know about each other. You can add a new module (e.g., `Patterns`) that subscribes to `resource.created` without modifying any existing module. You can remove a module without breaking the event emitter. This is not theoretical — the migration from the legacy layered architecture to vertical slices (Phase 13.5 → Phase 14) was executed module-by-module precisely because the Event Bus decoupled the migration units.
+The Event Bus is the mechanism that enforces this isolation. When a resource is created, it emits `resource.created`. The modules that react to that event do not know about each other. You can add a new module (e.g., `Patterns`) that subscribes to `resource.created` without modifying any existing module. You can remove a module without breaking the event emitter. This is not theoretical — the removal of Recommendations, Curation, and Taxonomy (modules that provided zero value for N=1) was executed cleanly because the Event Bus decoupled them from the rest of the system.
 
 **Cost of this decision**: Slightly more boilerplate per module (5-6 files instead of scattering across layers). This is a fixed, one-time cost that pays compound returns in change velocity.
 
@@ -404,7 +400,6 @@ An ML-based approach would need thousands of labeled examples of "successful" vs
 | Cache | Redis | Query caching, rate limiting, token blacklist, GitHub API cache |
 | Auth | JWT + OAuth2 | Bcrypt password hashing, Google/GitHub OAuth2 |
 | Task Queue | Upstash Redis | Edge Worker job queue with TTL and cap |
-| ML Classification | BERT/DistilBERT | Hierarchical taxonomy with active learning |
 
 ---
 
@@ -414,12 +409,10 @@ The Event Bus is an in-memory, async pub/sub system with <1ms P95 emission laten
 
 | Event Category | Events | Emitter | Consumers |
 |---------------|--------|---------|-----------|
-| Resource Lifecycle | `resource.created`, `resource.updated`, `resource.deleted`, `resource.chunked` | Resources | Scholarly, Quality, Taxonomy, Graph, Collections, Annotations, Search |
-| Quality | `quality.computed`, `quality.outlier_detected`, `quality.degradation_detected` | Quality | Curation, Monitoring |
-| Classification | `resource.classified`, `taxonomy.model_trained` | Taxonomy | Monitoring |
+| Resource Lifecycle | `resource.created`, `resource.updated`, `resource.deleted`, `resource.chunked` | Resources | Scholarly, Quality, Graph, Collections, Annotations, Search |
+| Quality | `quality.computed`, `quality.outlier_detected`, `quality.degradation_detected` | Quality | Monitoring |
 | Graph | `citation.extracted`, `graph.updated`, `hypothesis.discovered`, `graph.entity_extracted` | Graph | Monitoring |
-| User Activity | `annotation.created`, `collection.resource_added`, `interaction.recorded` | Annotations, Collections | Recommendations |
-| Recommendations | `recommendation.generated`, `user.profile_updated` | Recommendations | Monitoring |
+| User Activity | `annotation.created`, `collection.resource_added` | Annotations, Collections | Monitoring |
 
 ---
 

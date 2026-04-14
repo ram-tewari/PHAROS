@@ -598,29 +598,16 @@ def process_ingestion(
             f"[INGESTION] {resource_id} - Normalized to {len(normalized_tags)} tags"
         )
 
-        # Query: Classify resource
-        from ...modules.taxonomy.classification_service import ClassificationService
-
-        classifier = ClassificationService(session)
+        # Taxonomy/classification module has been removed (single-tenant optimization).
+        # classification_code is left as None; the field remains on the model for
+        # any future lightweight tagging.
         extracted_title = extracted.get("title") or ""
         if resource.title == "Untitled" and extracted_title:
             title_final = extracted_title
         else:
             title_final = resource.title or extracted_title or "Untitled"
         description_final = resource.description or summary or None
-
-        # Classify the resource
-        try:
-            classification_result = classifier.classify_resource(
-                resource_id=str(resource.id),
-                use_ml=True,
-                use_rules=True,
-                apply_to_resource=False,  # We'll apply it manually
-            )
-            classification_code = classification_result.get("primary")
-        except Exception as e:
-            logger.warning(f"Classification failed: {e}")
-            classification_code = None
+        classification_code = None
 
         # Modifier: Archive content
         meta = {

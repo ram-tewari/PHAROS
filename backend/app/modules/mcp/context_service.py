@@ -280,14 +280,30 @@ class ContextAssemblyService:
     async def _fetch_patterns(
         self, request: ContextRetrievalRequest
     ) -> Tuple[List[DeveloperPattern], int]:
-        """Fetch developer coding patterns and style preferences"""
+        """
+        Fetch coding patterns — either from a CodingProfile or from the
+        user's personal baseline.
+
+        Context Swapping Logic:
+        - If request.profile_id is set, query ProposedRule WHERE
+          profile_id = requested_id AND status = 'ACTIVE'.
+        - If profile_id is omitted, fall back to the user's
+          DeveloperProfileRecord (personal baseline).
+        """
         start = time.time()
 
         try:
-            if not request.include_patterns or not request.user_id:
+            if not request.include_patterns:
                 return [], 0
 
-            # Query developer profile from database
+            # ── Profile-based context swap ──────────────────────────
+            if request.profile_id:
+                return self._fetch_profile_rules(request.profile_id, start)
+
+            # ── Personal baseline (original behavior) ───────────────
+            if not request.user_id:
+                return [], 0
+
             user_uuid = UUID(request.user_id)
             profile_record = (
                 self.db.query(DeveloperProfileRecord)
@@ -302,104 +318,130 @@ class ContextAssemblyService:
                 logger.info(f"No developer profile found for user {request.user_id}")
                 return [], int((time.time() - start) * 1000)
 
-            # Parse profile data
             profile = DeveloperProfile(**profile_record.profile_data)
-
-            # Extract patterns from profile
-            patterns = []
-
-            # Style patterns
-            if profile.style:
-                # Async patterns
-                if profile.style.async_patterns.async_density > 0.1:
-                    patterns.append(
-                        DeveloperPattern(
-                            pattern_type="async_style",
-                            description=f"Prefers async/await style "
-                            f"({profile.style.async_patterns.async_density:.0%} of functions)",
-                            examples=[],
-                            frequency=profile.style.async_patterns.async_density,
-                        )
-                    )
-
-                # Naming conventions
-                if profile.style.naming.snake_case_ratio > 0.7:
-                    patterns.append(
-                        DeveloperPattern(
-                            pattern_type="naming_convention",
-                            description="Uses snake_case naming convention",
-                            examples=[],
-                            frequency=profile.style.naming.snake_case_ratio,
-                        )
-                    )
-
-                # Error handling
-                if profile.style.error_handling.exception_logging_style:
-                    patterns.append(
-                        DeveloperPattern(
-                            pattern_type="error_handling",
-                            description=f"Error logging style: "
-                            f"{profile.style.error_handling.exception_logging_style}",
-                            examples=[],
-                            frequency=1.0,
-                        )
-                    )
-
-            # Architecture patterns
-            if profile.architecture:
-                if profile.architecture.framework.framework:
-                    patterns.append(
-                        DeveloperPattern(
-                            pattern_type="framework",
-                            description=f"Uses {profile.architecture.framework.framework} framework",
-                            examples=[],
-                            frequency=1.0,
-                        )
-                    )
-
-                if profile.architecture.detected_patterns:
-                    for arch_pattern in profile.architecture.detected_patterns[:5]:
-                        patterns.append(
-                            DeveloperPattern(
-                                pattern_type="architectural_pattern",
-                                description=arch_pattern,
-                                examples=[],
-                                frequency=0.8,
-                            )
-                        )
-
-            # Git patterns (kept vs abandoned)
-            if profile.git_analysis:
-                for kept in profile.git_analysis.kept_patterns[:3]:
-                    patterns.append(
-                        DeveloperPattern(
-                            pattern_type="successful_pattern",
-                            description=kept.get("description", ""),
-                            examples=kept.get("examples", [])[:2],
-                            frequency=kept.get("frequency", 0.5),
-                            success_rate=1.0,  # Kept patterns are successful
-                        )
-                    )
-
-                for abandoned in profile.git_analysis.abandoned_patterns[:2]:
-                    patterns.append(
-                        DeveloperPattern(
-                            pattern_type="avoided_pattern",
-                            description=f"AVOID: {abandoned.get('description', '')}",
-                            examples=abandoned.get("examples", [])[:1],
-                            frequency=abandoned.get("frequency", 0.3),
-                            success_rate=0.0,  # Abandoned patterns failed
-                        )
-                    )
+            patterns = self._extract_patterns_from_profile(profile)
 
             elapsed_ms = int((time.time() - start) * 1000)
             logger.info(f"Pattern learning: {len(patterns)} patterns in {elapsed_ms}ms")
-
             return patterns, elapsed_ms
 
         except Exception as e:
             logger.error(f"Pattern learning failed: {e}", exc_info=True)
             raise
+
+    def _fetch_profile_rules(
+        self, profile_id: str, start: float
+    ) -> Tuple[List[DeveloperPattern], int]:
+        """
+        Query active ProposedRules linked to a specific CodingProfile and
+        convert them to DeveloperPattern objects for context injection.
+        """
+        from app.database.models import ProposedRule, RuleStatus
+
+        rules = (
+            self.db.query(ProposedRule)
+            .filter(
+                ProposedRule.profile_id == profile_id,
+                ProposedRule.status == RuleStatus.ACTIVE.value,
+            )
+            .order_by(ProposedRule.confidence.desc())
+            .limit(20)
+            .all()
+        )
+
+        patterns = []
+        for rule in rules:
+            example_code = rule.rule_schema.get("example_code", "") if rule.rule_schema else ""
+            patterns.append(
+                DeveloperPattern(
+                    pattern_type=rule.rule_schema.get("pattern_type", "architectural_pattern") if rule.rule_schema else "architectural_pattern",
+                    description=rule.rule_description,
+                    examples=[example_code] if example_code else [],
+                    frequency=rule.confidence,
+                    success_rate=1.0,
+                )
+            )
+
+        elapsed_ms = int((time.time() - start) * 1000)
+        logger.info(
+            f"Profile rules ({profile_id}): {len(patterns)} patterns in {elapsed_ms}ms"
+        )
+        return patterns, elapsed_ms
+
+    @staticmethod
+    def _extract_patterns_from_profile(profile: DeveloperProfile) -> List[DeveloperPattern]:
+        """Extract DeveloperPattern list from a personal DeveloperProfile."""
+        patterns: List[DeveloperPattern] = []
+
+        if profile.style:
+            if profile.style.async_patterns.async_density > 0.1:
+                patterns.append(
+                    DeveloperPattern(
+                        pattern_type="async_style",
+                        description=f"Prefers async/await style "
+                        f"({profile.style.async_patterns.async_density:.0%} of functions)",
+                        examples=[],
+                        frequency=profile.style.async_patterns.async_density,
+                    )
+                )
+
+            if profile.style.error_handling.exception_logging_style:
+                patterns.append(
+                    DeveloperPattern(
+                        pattern_type="error_handling",
+                        description=f"Error logging style: "
+                        f"{profile.style.error_handling.exception_logging_style}",
+                        examples=[],
+                        frequency=1.0,
+                    )
+                )
+
+        if profile.architecture:
+            if profile.architecture.framework.framework:
+                patterns.append(
+                    DeveloperPattern(
+                        pattern_type="framework",
+                        description=f"Uses {profile.architecture.framework.framework} framework",
+                        examples=[],
+                        frequency=1.0,
+                    )
+                )
+
+            if profile.architecture.detected_patterns:
+                for arch_pattern in profile.architecture.detected_patterns[:5]:
+                    patterns.append(
+                        DeveloperPattern(
+                            pattern_type="architectural_pattern",
+                            description=arch_pattern,
+                            examples=[],
+                            frequency=0.8,
+                        )
+                    )
+
+        if profile.git_analysis:
+            for kept in profile.git_analysis.kept_patterns[:3]:
+                patterns.append(
+                    DeveloperPattern(
+                        pattern_type="successful_pattern",
+                        description=kept.get("description", ""),
+                        examples=kept.get("examples", [])[:2],
+                        frequency=kept.get("frequency", 0.5),
+                        success_rate=1.0,
+                    )
+                )
+
+            for abandoned in profile.git_analysis.abandoned_patterns[:2]:
+                patterns.append(
+                    DeveloperPattern(
+                        pattern_type="avoided_pattern",
+                        description=f"AVOID: {abandoned.get('description', '')}",
+                        examples=abandoned.get("examples", [])[:1],
+                        frequency=abandoned.get("frequency", 0.3),
+                        success_rate=0.0,
+                    )
+                )
+
+        return patterns
 
     async def _fetch_pdf_annotations(
         self, request: ContextRetrievalRequest

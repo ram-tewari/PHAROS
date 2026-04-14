@@ -16,9 +16,8 @@ from sqlalchemy import func
 from ...shared.database import get_pool_status
 from ...shared.event_bus import event_bus
 from ...shared.cache import cache
-from ...database.models import UserInteraction, RecommendationFeedback, UserProfile
+from ...database.models import UserInteraction, UserProfile
 from ...utils.performance_monitoring import metrics as perf_metrics
-from ...ml_monitoring.health_check import check_classification_model_health
 
 logger = logging.getLogger(__name__)
 
@@ -70,113 +69,14 @@ class MonitoringService:
         self, db: Session, time_window_days: int
     ) -> Dict[str, Any]:
         """
-        Get recommendation quality metrics.
-
-        Args:
-            db: Database session
-            time_window_days: Time window for metrics calculation
-
-        Returns:
-            Dictionary with quality metrics
+        Recommendation quality metrics (module removed — single-tenant optimization).
         """
-        try:
-            cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
-
-            # Get feedback data
-            try:
-                feedback_query = db.query(RecommendationFeedback).filter(
-                    RecommendationFeedback.recommended_at >= cutoff_date
-                )
-                total_recommendations = feedback_query.count()
-            except Exception:
-                total_recommendations = 0
-
-            if total_recommendations == 0:
-                return {
-                    "status": "ok",
-                    "message": "No recommendation data available",
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "time_window_days": time_window_days,
-                    "metrics": {
-                        "total_recommendations": 0,
-                        "ctr_overall": 0.0,
-                        "ctr_by_strategy": {},
-                        "avg_diversity": 0.0,
-                        "novelty_percentage": 0.0,
-                        "user_satisfaction": 0.0,
-                    },
-                }
-
-            # Calculate CTR overall
-            clicked = feedback_query.filter(
-                RecommendationFeedback.was_clicked == 1
-            ).count()
-            ctr_overall = (
-                clicked / total_recommendations if total_recommendations > 0 else 0.0
-            )
-
-            # Calculate CTR by strategy
-            strategies = (
-                db.query(
-                    RecommendationFeedback.recommendation_strategy,
-                    func.count(RecommendationFeedback.id).label("total"),
-                    func.sum(RecommendationFeedback.was_clicked).label("clicked"),
-                )
-                .filter(RecommendationFeedback.recommended_at >= cutoff_date)
-                .group_by(RecommendationFeedback.recommendation_strategy)
-                .all()
-            )
-
-            ctr_by_strategy = {}
-            for strategy, total, clicked_count in strategies:
-                clicked_count = clicked_count or 0
-                ctr_by_strategy[strategy] = clicked_count / total if total > 0 else 0.0
-
-            # Calculate user satisfaction (from was_useful feedback)
-            useful_feedback = feedback_query.filter(
-                RecommendationFeedback.was_useful.isnot(None)
-            ).all()
-
-            if useful_feedback:
-                useful_count = sum(1 for f in useful_feedback if f.was_useful == 1)
-                user_satisfaction = useful_count / len(useful_feedback)
-            else:
-                user_satisfaction = 0.0
-
-            return {
-                "status": "ok",
-                "timestamp": datetime.utcnow().isoformat(),
-                "time_window_days": time_window_days,
-                "metrics": {
-                    "total_recommendations": total_recommendations,
-                    "total_clicked": clicked,
-                    "ctr_overall": round(ctr_overall, 4),
-                    "ctr_by_strategy": {
-                        k: round(v, 4) for k, v in ctr_by_strategy.items()
-                    },
-                    "user_satisfaction": round(user_satisfaction, 4),
-                    "feedback_count": len(useful_feedback),
-                },
-            }
-
-        except Exception as e:
-            logger.error(
-                f"Error getting recommendation quality metrics: {str(e)}", exc_info=True
-            )
-            return {
-                "status": "error",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
-                "time_window_days": time_window_days,
-                "metrics": {
-                    "total_recommendations": 0,
-                    "total_clicked": 0,
-                    "ctr_overall": 0.0,
-                    "ctr_by_strategy": {},
-                    "user_satisfaction": 0.0,
-                    "feedback_count": 0,
-                },
-            }
+        return {
+            "status": "not_applicable",
+            "message": "Recommendations module removed (single-tenant optimization)",
+            "timestamp": datetime.utcnow().isoformat(),
+            "time_window_days": time_window_days,
+        }
 
     async def get_user_engagement_metrics(
         self, db: Session, time_window_days: int
@@ -354,60 +254,15 @@ class MonitoringService:
         Health check for ML classification model.
 
         Returns:
-            Dictionary with ML model health status
+            Dictionary with ML model health status.
+            Note: Taxonomy/classification module removed (single-tenant optimization).
         """
-        try:
-            # Import classification service
-            from ...services.ml_classification_service import MLClassificationService
-
-            # Initialize service (will load model if available)
-            try:
-                service = MLClassificationService()
-
-                # Run health check
-                health_results = check_classification_model_health(service)
-
-                # Determine HTTP status code
-                if health_results["overall_healthy"]:
-                    status_code = 200
-                    status = "healthy"
-                else:
-                    status_code = 503
-                    status = "unhealthy"
-
-                return {
-                    "status": status,
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "checks": health_results,
-                    "http_status": status_code,
-                }
-
-            except Exception as e:
-                logger.error(
-                    f"Failed to initialize ML classification service: {str(e)}"
-                )
-                return {
-                    "status": "unhealthy",
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "error": f"Failed to initialize service: {str(e)}",
-                    "checks": {
-                        "model_loaded": False,
-                        "checkpoint_valid": False,
-                        "inference_working": False,
-                        "latency_acceptable": False,
-                        "overall_healthy": False,
-                    },
-                    "http_status": 503,
-                }
-
-        except Exception as e:
-            logger.error(f"ML health check failed: {str(e)}", exc_info=True)
-            return {
-                "status": "error",
-                "timestamp": datetime.utcnow().isoformat(),
-                "error": str(e),
-                "http_status": 503,
-            }
+        return {
+            "status": "not_applicable",
+            "timestamp": datetime.utcnow().isoformat(),
+            "message": "ML classification module removed (single-tenant optimization)",
+            "http_status": 200,
+        }
 
     async def get_database_metrics(self, db: Session) -> Dict[str, Any]:
         """

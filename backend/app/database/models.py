@@ -250,9 +250,6 @@ class Resource(Base):
     annotations: Mapped[List["Annotation"]] = relationship(
         "Annotation", back_populates="resource", cascade="all, delete-orphan"
     )
-    taxonomy_nodes: Mapped[List["TaxonomyNode"]] = relationship(
-        "TaxonomyNode", secondary="resource_taxonomy", back_populates="resources"
-    )
     centrality_cache: Mapped["GraphCentralityCache"] = relationship(
         "GraphCentralityCache", back_populates="resource", uselist=False
     )
@@ -1200,39 +1197,6 @@ class UserInteraction(Base):
         return f"<UserInteraction(user_id={self.user_id!r}, resource_id={self.resource_id!r}, type={self.interaction_type!r})>"
 
 
-class RecommendationFeedback(Base):
-    """User feedback on recommendations for model improvement."""
-
-    __tablename__ = "recommendation_feedback"
-
-    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
-    )
-    resource_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(),
-        ForeignKey("resources.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    feedback_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    feedback_value: Mapped[float] = mapped_column(Float, nullable=False)
-    context: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
-    )
-
-    # Relationships
-    user: Mapped["User"] = relationship("User", back_populates="feedback")
-
-    __table_args__ = (
-        Index("idx_recommendation_feedback_user", "user_id"),
-        Index("idx_recommendation_feedback_resource", "resource_id"),
-        Index("idx_recommendation_feedback_type", "feedback_type"),
-    )
-
-    def __repr__(self) -> str:
-        return f"<RecommendationFeedback(user_id={self.user_id!r}, resource_id={self.resource_id!r})>"
 
 
 # ============================================================================
@@ -1344,130 +1308,6 @@ class AuthorityPublisher(Base):
         return f"<AuthorityPublisher(canonical_form={self.canonical_form!r}, usage_count={self.usage_count})>"
 
 
-class TaxonomyNode(Base):
-    """Hierarchical taxonomy tree node for ML-based classification."""
-
-    __tablename__ = "taxonomy_nodes"
-
-    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    slug: Mapped[str] = mapped_column(
-        String(255), nullable=False, unique=True, index=True
-    )
-    parent_id: Mapped[uuid.UUID | None] = mapped_column(
-        GUID(),
-        ForeignKey("taxonomy_nodes.id", ondelete="CASCADE"),
-        nullable=True,
-        index=True,
-    )
-    level: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    path: Mapped[str] = mapped_column(String(1000), nullable=False)
-    description: Mapped[str | None] = mapped_column(Text, nullable=True)
-    keywords: Mapped[List[str] | None] = mapped_column(JSON, nullable=True)
-    resource_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    descendant_resource_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    is_leaf: Mapped[bool] = mapped_column(
-        Integer, nullable=False, default=1, server_default="1"
-    )
-    allow_resources: Mapped[bool] = mapped_column(
-        Integer, nullable=False, default=1, server_default="1"
-    )
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True),
-        nullable=False,
-        server_default=func.current_timestamp(),
-        onupdate=func.current_timestamp(),
-    )
-
-    parent: Mapped["TaxonomyNode"] = relationship(
-        "TaxonomyNode",
-        remote_side=[id],
-        back_populates="children",
-        foreign_keys=[parent_id],
-    )
-    children: Mapped[List["TaxonomyNode"]] = relationship(
-        "TaxonomyNode",
-        back_populates="parent",
-        cascade="all, delete-orphan",
-        foreign_keys=[parent_id],
-    )
-    resources: Mapped[List["Resource"]] = relationship(
-        "Resource", secondary="resource_taxonomy", back_populates="taxonomy_nodes"
-    )
-
-    __table_args__ = (
-        Index("idx_taxonomy_parent_id", "parent_id"),
-        Index("idx_taxonomy_path", "path"),
-        Index("idx_taxonomy_slug", "slug", unique=True),
-    )
-
-    def __repr__(self) -> str:
-        return f"<TaxonomyNode(slug={self.slug!r}, name={self.name!r})>"
-
-    def validate(self):
-        """Validate taxonomy node before insert/update."""
-        if not self.name or not self.name.strip():
-            raise ValueError("Category name cannot be empty or whitespace-only")
-
-
-# Add validation event listeners for TaxonomyNode
-from sqlalchemy import event
-
-
-@event.listens_for(TaxonomyNode, "before_insert")
-@event.listens_for(TaxonomyNode, "before_update")
-def validate_taxonomy_node(mapper, connection, target):
-    """Validate taxonomy node before database operations."""
-    target.validate()
-
-
-class ResourceTaxonomy(Base):
-    """Association table for many-to-many Resource-Taxonomy relationship."""
-
-    __tablename__ = "resource_taxonomy"
-
-    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    resource_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(), ForeignKey("resources.id", ondelete="CASCADE"), nullable=False
-    )
-    taxonomy_node_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(), ForeignKey("taxonomy_nodes.id", ondelete="CASCADE"), nullable=False
-    )
-    confidence: Mapped[float] = mapped_column(
-        Float, nullable=False, default=0.0, server_default="0.0"
-    )
-    is_predicted: Mapped[bool] = mapped_column(
-        Integer, nullable=False, default=1, server_default="1"
-    )
-    predicted_by: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    needs_review: Mapped[bool] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    review_priority: Mapped[float | None] = mapped_column(Float, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
-    )
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
-    )
-
-    __table_args__ = (
-        Index("idx_resource_taxonomy_resource", "resource_id"),
-        Index("idx_resource_taxonomy_taxonomy", "taxonomy_node_id"),
-        Index("idx_resource_taxonomy_needs_review", "needs_review"),
-    )
-
-    def __repr__(self) -> str:
-        return f"<ResourceTaxonomy(resource_id={self.resource_id!r}, taxonomy_node_id={self.taxonomy_node_id!r})>"
 
 
 # ============================================================================
@@ -1475,35 +1315,6 @@ class ResourceTaxonomy(Base):
 # ============================================================================
 
 
-class CurationReview(Base):
-    """Curation review record for tracking content review actions."""
-
-    __tablename__ = "curation_reviews"
-
-    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
-    resource_id: Mapped[uuid.UUID] = mapped_column(
-        GUID(),
-        ForeignKey("resources.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    curator_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
-    action: Mapped[str] = mapped_column(
-        String(50), nullable=False
-    )  # approve, reject, flag
-    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
-    timestamp: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
-    )
-
-    __table_args__ = (
-        Index("idx_curation_reviews_resource", "resource_id"),
-        Index("idx_curation_reviews_curator", "curator_id"),
-        Index("idx_curation_reviews_timestamp", "timestamp"),
-    )
-
-    def __repr__(self) -> str:
-        return f"<CurationReview(resource_id={self.resource_id!r}, action={self.action!r})>"
 
 
 class RAGEvaluation(Base):
@@ -1601,9 +1412,6 @@ class User(Base):
     )
     interactions: Mapped[List["UserInteraction"]] = relationship(
         "UserInteraction", back_populates="user", cascade="all, delete-orphan"
-    )
-    feedback: Mapped[List["RecommendationFeedback"]] = relationship(
-        "RecommendationFeedback", back_populates="user", cascade="all, delete-orphan"
     )
 
     def __repr__(self) -> str:
@@ -1829,6 +1637,56 @@ class DeveloperProfileRecord(Base):
 
 
 # ============================================================================
+# Coding Profiles (Master Programmer Personalities)
+# ============================================================================
+
+
+class CodingProfile(Base):
+    """
+    A reusable coding personality extracted from a legendary public repository.
+
+    Each profile encapsulates the architectural rules, conventions, and style
+    of a master codebase (e.g., "The Systems Hacker" from Redis, "The Pythonic
+    Architect" from CPython). Ronin can swap these into its context window to
+    adopt different coding philosophies per task.
+    """
+
+    __tablename__ = "coding_profiles"
+
+    id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # JSONB with languages and tasks arrays for Ronin's selection UI
+    best_suited_for: Mapped[dict] = mapped_column(
+        JSON, nullable=False, default=dict
+    )
+
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    # Relationships
+    rules: Mapped[list["ProposedRule"]] = relationship(
+        "ProposedRule", back_populates="profile", cascade="all, delete-orphan"
+    )
+
+    __table_args__ = (
+        Index("ix_coding_profiles_name", "name"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<CodingProfile(id={self.id!r}, name={self.name!r})>"
+
+
+# ============================================================================
 # Feedback Loop: Proposed Rules
 # ============================================================================
 
@@ -1847,6 +1705,9 @@ class ProposedRule(Base):
 
     Created by the local extraction worker and triaged via the CLI.
     Active rules feed into the context assembly pipeline.
+
+    When profile_id is NULL, the rule belongs to the user's personal baseline.
+    When profile_id is set, the rule belongs to a master coding profile.
     """
 
     __tablename__ = "proposed_rules"
@@ -1857,6 +1718,14 @@ class ProposedRule(Base):
     repository: Mapped[str] = mapped_column(String(1024), nullable=False)
     commit_sha: Mapped[str] = mapped_column(String(40), nullable=False)
     file_path: Mapped[str] = mapped_column(String(1024), nullable=False)
+
+    # Optional link to a CodingProfile (NULL = user's personal baseline)
+    profile_id: Mapped[str | None] = mapped_column(
+        String(128),
+        ForeignKey("coding_profiles.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     # The raw diff that triggered extraction
     diff_payload: Mapped[str] = mapped_column(Text, nullable=False)
@@ -1888,13 +1757,19 @@ class ProposedRule(Base):
         onupdate=func.current_timestamp(),
     )
 
+    # Relationships
+    profile: Mapped[CodingProfile | None] = relationship(
+        "CodingProfile", back_populates="rules"
+    )
+
     __table_args__ = (
         Index("ix_proposed_rules_status", "status"),
         Index("ix_proposed_rules_repo_sha", "repository", "commit_sha"),
+        Index("ix_proposed_rules_profile_status", "profile_id", "status"),
     )
 
     def __repr__(self) -> str:
-        return f"<ProposedRule(name={self.rule_name!r}, status={self.status!r})>"
+        return f"<ProposedRule(name={self.rule_name!r}, status={self.status!r}, profile={self.profile_id!r})>"
 
 
 # Export all models for easy importing
@@ -1914,8 +1789,6 @@ __all__ = [
     "CollectionResource",
     # Annotation models
     "Annotation",
-    # Curation models
-    "CurationReview",
     # Graph models
     "Citation",
     "GraphEdge",
@@ -1924,14 +1797,11 @@ __all__ = [
     # Recommendation models
     "UserProfile",
     "UserInteraction",
-    "RecommendationFeedback",
     # Taxonomy and authority models
     "ClassificationCode",
     "AuthoritySubject",
     "AuthorityCreator",
     "AuthorityPublisher",
-    "TaxonomyNode",
-    "ResourceTaxonomy",
     # User models
     "User",
     # ML infrastructure models
@@ -1941,6 +1811,8 @@ __all__ = [
     "RetrainingRun",
     # Pattern learning engine models
     "DeveloperProfileRecord",
+    # Coding profiles (Master Programmer Personalities)
+    "CodingProfile",
     # Feedback loop models
     "RuleStatus",
     "ProposedRule",

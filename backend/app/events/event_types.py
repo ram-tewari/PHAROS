@@ -36,12 +36,6 @@ class SystemEvent(str, Enum):
     QUALITY_DEGRADATION_DETECTED = "quality.degradation_detected"
     QUALITY_OUTLIER_DETECTED = "quality.outlier_detected"
 
-    # Classification events
-    CLASSIFICATION_STARTED = "classification.started"
-    CLASSIFICATION_COMPLETED = "classification.completed"
-    CLASSIFICATION_FAILED = "classification.failed"
-    CLASSIFICATION_MODEL_RETRAINED = "classification.model_retrained"
-
     # Search events
     SEARCH_EXECUTED = "search.executed"
     SEARCH_INDEX_UPDATED = "search.index_updated"
@@ -63,10 +57,6 @@ class SystemEvent(str, Enum):
     CACHE_CLEANUP_COMPLETED = "cache.cleanup_completed"
 
     # User events
-    USER_INTERACTION_TRACKED = "user.interaction_tracked"
-    USER_PROFILE_UPDATED = "user.profile_updated"
-    USER_PROFILE_REFRESH_STARTED = "user.profile_refresh_started"
-    USER_PROFILE_REFRESH_COMPLETED = "user.profile_refresh_completed"
     USER_CREATED = "user.created"
     USER_UPDATED = "user.updated"
 

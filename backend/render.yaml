@@ -1,0 +1,316 @@
+# Render Blueprint for Pharos API
+# Ultimate Cost-Optimized Deployment: $7/mo Total
+#
+# Architecture:
+# - API/Control Plane: Render Web Service ($7/mo)
+# - Vector Database: NeonDB PostgreSQL with pgvector (Free tier)
+# - Cache & Queue: Upstash Redis (Free tier)
+# - Compute Plane: Local RTX 4070 edge worker ($0/mo)
+#
+# Total Cost: $7/mo (vs $24/mo for native Render stack)
+#
+# Setup Instructions:
+# 1. Create NeonDB project: https://neon.tech
+#    - Enable pgvector extension: CREATE EXTENSION vector;
+#    - Copy "Pooled Connection String"
+# 2. Create Upstash Redis: https://upstash.com
+#    - Copy rediss:// URL
+# 3. Deploy to Render:
+#    - Connect GitHub repo
+#    - Paste DATABASE_URL and REDIS_URL in Environment Variables
+#    - Deploy!
+
+services:
+  # ============================================================================
+  # PHAROS API (FastAPI Backend)
+  # ============================================================================
+  - type: web
+    name: pharos-api
+    runtime: python
+    region: oregon  # Choose closest to your users
+    plan: starter  # $7/mo - 512MB RAM, 0.5 CPU
+    
+    # Build Configuration
+    buildCommand: pip install -r requirements-cloud.txt && alembic upgrade head
+    startCommand: gunicorn -c gunicorn_conf.py app.main:app
+    
+    # Auto-deploy on push to main branch
+    branch: main
+    
+    # Health Check
+    healthCheckPath: /health
+    
+    # Environment Variables
+    # IMPORTANT: Set these in Render Dashboard (not here for security)
+    # - DATABASE_URL: NeonDB pooled connection string
+    # - REDIS_URL: Upstash rediss:// URL
+    # - PHAROS_API_KEY: M2M authentication key for Ronin
+    envVars:
+      # Application
+      - key: ENVIRONMENT
+        value: production
+      
+      - key: LOG_LEVEL
+        value: info
+      
+      # Workers (2 for Starter, 3 for Standard, 4 for Pro)
+      - key: WEB_CONCURRENCY
+        value: 2
+      
+      # Database (NeonDB - set in dashboard)
+      - key: DATABASE_URL
+        sync: false  # Set manually in dashboard
+      
+      # Database Pool Configuration (optimized for Render Starter)
+      - key: DB_POOL_SIZE
+        value: 3  # Base pool size per worker
+      
+      - key: DB_MAX_OVERFLOW
+        value: 7  # Additional connections on demand
+      
+      - key: DB_POOL_RECYCLE
+        value: 300  # Recycle connections after 5 minutes
+      
+      - key: DB_POOL_TIMEOUT
+        value: 30  # Wait 30s for connection from pool
+      
+      - key: DB_STATEMENT_TIMEOUT
+        value: 30000  # 30s statement timeout (milliseconds)
+      
+      # Redis (Upstash - set in dashboard)
+      - key: REDIS_URL
+        sync: false  # Set manually in dashboard
+      
+      - key: UPSTASH_REDIS_REST_URL
+        sync: false  # Optional: Upstash REST API URL
+      
+      - key: UPSTASH_REDIS_REST_TOKEN
+        sync: false  # Optional: Upstash REST API token
+      
+      # Authentication (set in dashboard)
+      - key: PHAROS_API_KEY
+        sync: false  # M2M API key for Ronin integration
+      
+      - key: SECRET_KEY
+        generateValue: true  # Auto-generate secure secret
+      
+      # Embeddings (CPU-only for cloud)
+      - key: EMBEDDING_MODEL_NAME
+        value: nomic-ai/nomic-embed-text-v1
+      
+      - key: EMBEDDING_DEVICE
+        value: cpu  # No GPU on Render
+      
+      # GitHub Integration (Phase 5 - Hybrid Storage)
+      - key: GITHUB_TOKEN
+        sync: false  # Optional: GitHub PAT for hybrid storage
+      
+      - key: GITHUB_CACHE_TTL
+        value: 3600  # 1 hour cache for fetched code
+      
+      # Performance
+      - key: CONTEXT_RETRIEVAL_TIMEOUT
+        value: 1000  # 1 second for context retrieval
+      
+      - key: PATTERN_LEARNING_TIMEOUT
+        value: 2000  # 2 seconds for pattern learning
+      
+      # Limits
+      - key: MAX_CODEBASES
+        value: 1000  # Limit for hybrid storage
+
+# ============================================================================
+# EXTERNAL SERVICES (Managed Separately)
+# ============================================================================
+
+# NeonDB PostgreSQL (Free Tier):
+# - Storage: 500MB (enough for 100+ repos with hybrid storage)
+# - Compute: 0.25 vCPU (scales to zero when idle)
+# - Connections: 100 max (20 used by 2 workers)
+# - Cost: $0/mo
+# - Setup: https://neon.tech
+#   1. Create project
+#   2. Run: CREATE EXTENSION vector;
+#   3. Copy "Pooled Connection String"
+#   4. Paste into Render dashboard as DATABASE_URL
+
+# Upstash Redis (Free Tier):
+# - Requests: 10,000/day (sufficient for solo dev)
+# - Storage: 256MB
+# - Latency: <50ms globally
+# - Cost: $0/mo
+# - Setup: https://upstash.com
+#   1. Create Redis database
+#   2. Copy rediss:// URL
+#   3. Paste into Render dashboard as REDIS_URL
+
+# Local Edge Worker (RTX 4070):
+# - SPLADE embeddings (GPU-accelerated)
+# - LLM extraction (local inference)
+# - Connects to Upstash queue
+# - Cost: $0/mo (your hardware)
+
+# ============================================================================
+# COST BREAKDOWN
+# ============================================================================
+
+# Render Web Service (Starter): $7/mo
+# NeonDB PostgreSQL (Free): $0/mo
+# Upstash Redis (Free): $0/mo
+# Local Edge Worker: $0/mo
+# ----------------------------------------
+# TOTAL: $7/mo
+
+# Compare to Native Render Stack:
+# - Render Web Service: $7/mo
+# - Render PostgreSQL: $7/mo
+# - Render Redis: $10/mo
+# ----------------------------------------
+# TOTAL: $24/mo
+
+# SAVINGS: $17/mo (71% reduction)
+
+# ============================================================================
+# SCALING GUIDE
+# ============================================================================
+
+# Render Starter ($7/mo):
+# - 512MB RAM, 0.5 CPU
+# - 2 workers (WEB_CONCURRENCY=2)
+# - 20 database connections (10 per worker)
+# - Suitable for: Solo dev, <100 requests/min
+
+# Render Standard ($25/mo):
+# - 2GB RAM, 1 CPU
+# - 3 workers (WEB_CONCURRENCY=3)
+# - 30 database connections (10 per worker)
+# - Suitable for: Small team, <500 requests/min
+
+# Render Pro ($85/mo):
+# - 4GB RAM, 2 CPU
+# - 4 workers (WEB_CONCURRENCY=4)
+# - 40 database connections (10 per worker)
+# - Suitable for: Production, <2000 requests/min
+
+# NeonDB Scaling (when free tier exceeded):
+# - Pro: $19/mo (3GB storage, 0.25 vCPU)
+# - Scale: $69/mo (10GB storage, 1 vCPU)
+# - Business: $700/mo (50GB storage, 4 vCPU)
+
+# Upstash Scaling (when free tier exceeded):
+# - Pay-as-you-go: $0.20 per 100K requests
+# - Pro: $10/mo (1M requests, 1GB storage)
+
+# ============================================================================
+# DEPLOYMENT CHECKLIST
+# ============================================================================
+
+# Pre-Deployment:
+# [ ] Create NeonDB project and enable pgvector
+# [ ] Create Upstash Redis database
+# [ ] Generate PHAROS_API_KEY for Ronin integration
+# [ ] (Optional) Create GitHub PAT for hybrid storage
+
+# Render Setup:
+# [ ] Connect GitHub repository
+# [ ] Select render.yaml blueprint
+# [ ] Set DATABASE_URL in Environment Variables
+# [ ] Set REDIS_URL in Environment Variables
+# [ ] Set PHAROS_API_KEY in Environment Variables
+# [ ] (Optional) Set GITHUB_TOKEN in Environment Variables
+# [ ] Deploy!
+
+# Post-Deployment:
+# [ ] Test health endpoint: https://pharos-api.onrender.com/health
+# [ ] Test API docs: https://pharos-api.onrender.com/docs
+# [ ] Run database migrations: alembic upgrade head (auto-runs on deploy)
+# [ ] Test context retrieval: POST /api/context/retrieve
+# [ ] Monitor logs in Render dashboard
+# [ ] Set up local edge worker (connect to Upstash queue)
+
+# ============================================================================
+# MONITORING & DEBUGGING
+# ============================================================================
+
+# Render Dashboard:
+# - Logs: Real-time application logs
+# - Metrics: CPU, memory, request rate
+# - Events: Deployments, restarts, errors
+
+# Health Check:
+# - Endpoint: /health
+# - Returns: {"status": "healthy", "database": "connected", "cache": "connected"}
+
+# Database Monitoring:
+# - NeonDB Dashboard: Connection count, query performance
+# - Pool status: GET /api/monitoring/pool-status
+
+# Redis Monitoring:
+# - Upstash Dashboard: Request count, latency, memory usage
+# - Cache stats: GET /api/monitoring/cache-stats
+
+# Common Issues:
+# 1. OOM (Out of Memory):
+#    - Reduce WEB_CONCURRENCY to 1
+#    - Upgrade to Render Standard (2GB RAM)
+# 2. Database connection errors:
+#    - Check NeonDB is not suspended
+#    - Verify DATABASE_URL is correct
+#    - Check connection pool settings
+# 3. Redis connection errors:
+#    - Verify REDIS_URL uses rediss:// (SSL)
+#    - Check Upstash dashboard for errors
+# 4. Slow requests:
+#    - Check NeonDB query performance
+#    - Monitor pool status for exhaustion
+#    - Review application logs for bottlenecks
+
+# ============================================================================
+# SECURITY NOTES
+# ============================================================================
+
+# Environment Variables:
+# - Never commit DATABASE_URL, REDIS_URL, or API keys to Git
+# - Use Render dashboard to set sensitive values
+# - Use sync: false to prevent auto-sync from Git
+
+# Database:
+# - NeonDB enforces SSL by default
+# - Use pooled connection string (not direct)
+# - Enable statement_timeout to prevent runaway queries
+
+# Redis:
+# - Upstash requires SSL/TLS (rediss://)
+# - Use strong passwords (auto-generated by Upstash)
+# - Enable IP allowlist if needed
+
+# API:
+# - Use PHAROS_API_KEY for M2M authentication
+# - Enable rate limiting (see app/middleware/rate_limit.py)
+# - Use HTTPS only (enforced by Render)
+
+# ============================================================================
+# BACKUP & DISASTER RECOVERY
+# ============================================================================
+
+# NeonDB:
+# - Automatic daily backups (7-day retention on free tier)
+# - Point-in-time recovery (PITR) on paid plans
+# - Manual backups: pg_dump via connection string
+
+# Upstash:
+# - Automatic snapshots (daily on free tier)
+# - Manual export via Redis CLI
+# - Restore from snapshot in dashboard
+
+# Application:
+# - Code in Git (version controlled)
+# - Environment variables in Render dashboard
+# - Database schema in Alembic migrations
+
+# Recovery Steps:
+# 1. Restore database from NeonDB backup
+# 2. Restore Redis from Upstash snapshot
+# 3. Redeploy application from Git
+# 4. Verify health endpoint
+# 5. Test critical endpoints

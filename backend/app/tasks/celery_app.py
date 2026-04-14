@@ -63,11 +63,7 @@ celery_app.conf.update(
         "app.tasks.celery_tasks.recompute_quality_task": {"queue": "default"},
         "app.tasks.celery_tasks.update_search_index_task": {"queue": "urgent"},
         "app.tasks.celery_tasks.update_graph_edges_task": {"queue": "default"},
-        "app.tasks.celery_tasks.classify_resource_task": {"queue": "ml_tasks"},
         "app.tasks.celery_tasks.invalidate_cache_task": {"queue": "urgent"},
-        "app.tasks.celery_tasks.refresh_recommendation_profile_task": {
-            "queue": "default"
-        },
         "app.tasks.celery_tasks.batch_process_resources_task": {"queue": "batch"},
         "app.tasks.celery_tasks.normalize_author_names_task": {"queue": "default"},
         "app.tasks.celery_tasks.ingest_repo_task": {"queue": "repo_ingestion"},

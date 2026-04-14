@@ -1,29 +1,97 @@
 # Pharos Cloud Requirements
 # Cloud-specific dependencies (no GPU dependencies)
+# Optimized for Render + NeonDB + Upstash serverless stack
 
 -r requirements-base.txt
 
-# Cloud-specific packages
-# Note: No torch/transformers for GPU - use CPU-only embeddings
+# ============================================================================
+# SERVERLESS DATABASE DRIVERS
+# ============================================================================
 
-# Sentence Transformers (CPU-only)
+# PostgreSQL (NeonDB-compatible)
+psycopg2-binary>=2.9.9  # Sync driver for background tasks
+# asyncpg>=0.29.0  # Already in requirements-base.txt
+
+# ============================================================================
+# SERVERLESS REDIS
+# ============================================================================
+
+# Upstash Redis (serverless, pay-per-request)
+# Note: Standard redis package (already in requirements-base.txt) works with Upstash
+# upstash-redis>=0.15.0  # Optional: REST API client (slower but more reliable)
+
+# ============================================================================
+# EMBEDDINGS (CPU-ONLY)
+# ============================================================================
+
+# Sentence Transformers (CPU-only, no GPU dependencies)
 sentence-transformers>=2.2.0
 
-# OpenAI (for cloud-based embeddings if needed)
+# Note: No torch/transformers for GPU - use CPU-only embeddings
+# For production, consider using OpenAI embeddings API instead
+
+# ============================================================================
+# LLM APIS (OPTIONAL)
+# ============================================================================
+
+# OpenAI (for cloud-based embeddings/LLM if needed)
 openai>=1.0.0
 
 # Anthropic (for cloud-based LLM if needed)
 anthropic>=0.7.0
 
-# Upstash Redis (for cloud task queue)
-upstash-redis>=0.15.0
+# ============================================================================
+# VECTOR STORAGE (OPTIONAL)
+# ============================================================================
 
-# Qdrant Cloud (for vector storage)
-qdrant-client>=1.7.0
+# Qdrant Cloud (for vector storage, alternative to pgvector)
+# qdrant-client>=1.7.0  # Uncomment if using Qdrant instead of pgvector
 
-# Neon PostgreSQL (for serverless database)
-psycopg2-binary>=2.9.9
+# ============================================================================
+# CLOUD UTILITIES (OPTIONAL)
+# ============================================================================
 
-# Additional cloud utilities
-boto3>=1.33.0  # AWS SDK (optional)
-google-cloud-storage>=2.14.0  # Google Cloud Storage (optional)
+# AWS SDK (optional, for S3 storage)
+# boto3>=1.33.0
+
+# Google Cloud Storage (optional, for GCS storage)
+# google-cloud-storage>=2.14.0
+
+# ============================================================================
+# PRODUCTION MONITORING (OPTIONAL)
+# ============================================================================
+
+# Sentry (error tracking)
+# sentry-sdk>=1.40.0
+
+# Datadog (APM and monitoring)
+# ddtrace>=2.0.0
+
+# New Relic (APM and monitoring)
+# newrelic>=9.0.0
+
+# ============================================================================
+# NOTES
+# ============================================================================
+
+# Memory Usage (Render Starter: 512MB RAM):
+# - Base dependencies: ~100MB
+# - Sentence Transformers: ~200MB (model loaded)
+# - FastAPI + Gunicorn: ~100MB
+# - Headroom: ~100MB
+# - Total: ~500MB (safe)
+
+# If you see OOM errors:
+# 1. Reduce WEB_CONCURRENCY to 1
+# 2. Use OpenAI embeddings API instead of local models
+# 3. Upgrade to Render Standard (2GB RAM)
+
+# Connection Pool Sizing:
+# - Pool size: 3 base + 7 overflow = 10 per worker
+# - 2 workers × 10 connections = 20 total
+# - NeonDB free tier: 100 connections (safe)
+
+# Upstash Redis:
+# - Free tier: 10,000 requests/day
+# - Sufficient for solo dev (<100 requests/min)
+# - Upgrade to Pro ($10/mo) for 1M requests/mo

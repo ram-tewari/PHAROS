@@ -27,18 +27,23 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Add pgvector extension and performance indexes to the resources table."""
+    
+    # Check if we're using PostgreSQL
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
+    
+    if dialect_name == 'postgresql':
+        # Enable the pgvector extension (idempotent)
+        op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
 
-    # Enable the pgvector extension (idempotent)
-    op.execute("CREATE EXTENSION IF NOT EXISTS vector;")
-
-    # HNSW index for fast approximate nearest-neighbour search on embeddings.
-    # vector_cosine_ops matches the cosine similarity used in semantic search queries.
-    op.execute(
-        "CREATE INDEX IF NOT EXISTS idx_resources_embedding_hnsw "
-        "ON resources USING hnsw (embedding vector_cosine_ops);"
-    )
-
-    # B-tree indexes for equality / range filters used in semantic + keyword searches
+        # HNSW index for fast approximate nearest-neighbour search on embeddings.
+        # vector_cosine_ops matches the cosine similarity used in semantic search queries.
+        op.execute(
+            "CREATE INDEX IF NOT EXISTS idx_resources_embedding_hnsw "
+            "ON resources USING hnsw (embedding vector_cosine_ops);"
+        )
+    
+    # B-tree indexes for equality / range filters (work on both SQLite and PostgreSQL)
     op.execute(
         "CREATE INDEX IF NOT EXISTS idx_resources_title ON resources(title);"
     )
@@ -58,12 +63,17 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Remove all indexes added in this migration."""
+    
+    bind = op.get_bind()
+    dialect_name = bind.dialect.name
 
     op.execute("DROP INDEX IF EXISTS idx_resources_created_at;")
     op.execute("DROP INDEX IF EXISTS idx_resources_quality_score;")
     op.execute("DROP INDEX IF EXISTS idx_resources_language;")
     op.execute("DROP INDEX IF EXISTS idx_resources_type;")
     op.execute("DROP INDEX IF EXISTS idx_resources_title;")
-    op.execute("DROP INDEX IF EXISTS idx_resources_embedding_hnsw;")
-    # Note: we intentionally leave the vector extension in place on downgrade
-    # to avoid breaking other indexes that may depend on it.
+    
+    if dialect_name == 'postgresql':
+        op.execute("DROP INDEX IF EXISTS idx_resources_embedding_hnsw;")
+        # Note: we intentionally leave the vector extension in place on downgrade
+        # to avoid breaking other indexes that may depend on it.

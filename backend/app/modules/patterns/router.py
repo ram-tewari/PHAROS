@@ -21,6 +21,8 @@ from sqlalchemy.orm import Session
 
 from app.shared.database import get_sync_db
 from .schema import (
+    CodingProfileCreate,
+    CodingProfileResponse,
     LearnRequest,
     LearnResponse,
     ProposeRuleRequest,
@@ -104,6 +106,96 @@ async def list_profiles(
     ]
 
 
+# ============================================================================
+# Coding Profiles (Master Programmer Personalities)
+# NOTE: These must be registered BEFORE /profiles/{profile_id} to avoid
+#       the path parameter catching "coding" as an ID.
+# ============================================================================
+
+
+@patterns_router.get(
+    "/profiles/coding",
+    response_model=list[CodingProfileResponse],
+    summary="List all coding profiles for Ronin's personality selector",
+)
+async def list_coding_profiles(
+    db: Session = Depends(get_sync_db),
+) -> list[CodingProfileResponse]:
+    """
+    Return all available CodingProfile records so Ronin can render a
+    personality selection UI.  No authentication required — profiles are
+    public, curated knowledge.
+    """
+    from app.database.models import CodingProfile
+
+    records = (
+        db.query(CodingProfile)
+        .order_by(CodingProfile.name)
+        .all()
+    )
+
+    return [
+        CodingProfileResponse(
+            id=r.id,
+            name=r.name,
+            description=r.description,
+            best_suited_for=r.best_suited_for or {},
+            created_at=r.created_at,
+            updated_at=r.updated_at,
+        )
+        for r in records
+    ]
+
+
+@patterns_router.post(
+    "/profiles/coding",
+    response_model=CodingProfileResponse,
+    status_code=201,
+    summary="Create or update a coding profile",
+)
+async def create_coding_profile(
+    body: CodingProfileCreate,
+    db: Session = Depends(get_sync_db),
+) -> CodingProfileResponse:
+    """
+    Create a new CodingProfile or update an existing one (upsert by id).
+
+    Called by the local extraction worker after analyzing a master repository.
+    """
+    from app.database.models import CodingProfile
+
+    existing = db.query(CodingProfile).filter(CodingProfile.id == body.id).first()
+
+    if existing:
+        existing.name = body.name
+        existing.description = body.description
+        existing.best_suited_for = body.best_suited_for
+        db.commit()
+        db.refresh(existing)
+        record = existing
+    else:
+        record = CodingProfile(
+            id=body.id,
+            name=body.name,
+            description=body.description,
+            best_suited_for=body.best_suited_for,
+        )
+        db.add(record)
+        db.commit()
+        db.refresh(record)
+
+    logger.info("CodingProfile upserted: %s (%s)", record.name, record.id)
+
+    return CodingProfileResponse(
+        id=record.id,
+        name=record.name,
+        description=record.description,
+        best_suited_for=record.best_suited_for or {},
+        created_at=record.created_at,
+        updated_at=record.updated_at,
+    )
+
+
 @patterns_router.get("/profiles/{profile_id}")
 async def get_profile(
     profile_id: str,
@@ -160,6 +252,7 @@ async def propose_rule(
         rule_description=body.rule_description,
         rule_schema=body.rule_schema,
         confidence=body.confidence,
+        profile_id=body.profile_id,
     )
     db.add(rule)
     db.commit()

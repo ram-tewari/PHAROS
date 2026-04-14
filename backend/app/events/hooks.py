@@ -310,111 +310,7 @@ def on_resource_updated_invalidate_caches(event: Event) -> None:
 
 
 # ============================================================================
-# Hook 5.6: Recommendation Profile Refresh
-# ============================================================================
-
-
-def on_user_interaction_refresh_profile(event: Event) -> None:
-    """
-    Hook: Refresh user recommendation profile after interactions.
-
-    Triggered by: user.interaction_tracked event
-    Priority: LOW (3)
-    Delay: 300 seconds (5 minutes)
-
-    This hook updates user recommendation profiles based on interaction
-    history. It only triggers every 10 interactions to avoid excessive
-    recomputation. The 5-minute delay allows multiple interactions to
-    accumulate before profile refresh.
-
-    Args:
-        event: Event object containing user_id and total_interactions in data
-    """
-    user_id = event.data.get("user_id")
-    total_interactions = event.data.get("total_interactions", 0)
-
-    if not user_id:
-        logger.warning("user_interaction_tracked event missing user_id")
-        return
-
-    # Only refresh every 10 interactions
-    if total_interactions % 10 != 0:
-        logger.debug(
-            f"Skipping profile refresh for user {user_id} "
-            f"(total_interactions={total_interactions}, waiting for multiple of 10)"
-        )
-        return
-
-    try:
-        from ..tasks.celery_tasks import refresh_recommendation_profile_task
-
-        # Queue profile refresh with LOW priority and 5-minute delay
-        refresh_recommendation_profile_task.apply_async(
-            args=[user_id],
-            priority=3,  # LOW priority
-            countdown=300,  # 5-minute delay
-        )
-
-        logger.info(
-            f"Queued recommendation profile refresh for user {user_id} "
-            f"(total_interactions={total_interactions}, priority=3, countdown=300s)"
-        )
-
-    except Exception as e:
-        logger.error(
-            f"Error queuing profile refresh for user {user_id}: {e}", exc_info=True
-        )
-
-
-# ============================================================================
-# Hook 5.7: Classification Suggestion
-# ============================================================================
-
-
-def on_resource_created_suggest_classification(event: Event) -> None:
-    """
-    Hook: Suggest classification when resource is created.
-
-    Triggered by: resource.created event
-    Priority: MEDIUM (5)
-    Delay: 20 seconds (allow time for content processing)
-
-    This hook automatically suggests taxonomy categories for newly created
-    resources using the ML classification model. The 20-second delay allows
-    time for content extraction and embedding generation to complete first.
-
-    Args:
-        event: Event object containing resource_id in data
-    """
-    resource_id = event.data.get("resource_id")
-
-    if not resource_id:
-        logger.warning("resource_created event missing resource_id")
-        return
-
-    try:
-        from ..tasks.celery_tasks import classify_resource_task
-
-        # Queue classification with MEDIUM priority and 20s delay
-        classify_resource_task.apply_async(
-            args=[resource_id],
-            priority=5,  # MEDIUM priority
-            countdown=20,  # 20-second delay for content processing
-        )
-
-        logger.info(
-            f"Queued classification for new resource {resource_id} "
-            f"(priority=5, countdown=20s)"
-        )
-
-    except Exception as e:
-        logger.error(
-            f"Error queuing classification for {resource_id}: {e}", exc_info=True
-        )
-
-
-# ============================================================================
-# Hook 5.8: Author Normalization
+# Hook 5.6: Author Normalization
 # ============================================================================
 
 
@@ -462,7 +358,7 @@ def on_author_extracted_normalize_names(event: Event) -> None:
 
 
 # ============================================================================
-# Hook 5.9: Collection Embedding Update on Resource Deletion
+# Hook 5.7: Collection Embedding Update on Resource Deletion
 # ============================================================================
 
 
@@ -528,10 +424,8 @@ def register_all_hooks() -> None:
     3. Search index sync (resource updates)
     4. Graph edge update (citation extraction)
     5. Cache invalidation (resource updates)
-    6. Recommendation profile refresh (user interactions)
-    7. Classification suggestion (resource creation)
-    8. Author normalization (author extraction)
-    9. Collection embedding update (resource deletion)
+    6. Author normalization (author extraction)
+    7. Collection embedding update (resource deletion)
     """
     hooks = [
         (SystemEvent.RESOURCE_CONTENT_CHANGED, on_content_changed_regenerate_embedding),
@@ -539,8 +433,6 @@ def register_all_hooks() -> None:
         (SystemEvent.RESOURCE_UPDATED, on_resource_updated_sync_search_index),
         (SystemEvent.CITATIONS_EXTRACTED, on_citation_extracted_update_graph),
         (SystemEvent.RESOURCE_UPDATED, on_resource_updated_invalidate_caches),
-        (SystemEvent.USER_INTERACTION_TRACKED, on_user_interaction_refresh_profile),
-        (SystemEvent.RESOURCE_CREATED, on_resource_created_suggest_classification),
         (SystemEvent.AUTHORS_EXTRACTED, on_author_extracted_normalize_names),
         (SystemEvent.RESOURCE_DELETED, on_resource_deleted_update_collections),
     ]

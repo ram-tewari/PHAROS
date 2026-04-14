@@ -6,12 +6,12 @@ Module architecture, service layer, and class hierarchies for Pharos.
 
 ## Modular Architecture Overview (Phase 17 - Complete)
 
-Phase 17 adds authentication and rate limiting, completing the production-ready architecture with 14 self-contained modules.
+Production-ready architecture with 11 self-contained vertical slice modules. (Recommendations, Curation, and Taxonomy were removed in Phase 21 — see ADR-008, ADR-009, ADR-012.)
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────────────────┐
 │                    Pharos - COMPLETE MODULAR ARCHITECTURE                   │
-│                              (14 Vertical Slice Modules)                                │
+│                              (11 Vertical Slice Modules)                                │
 ├─────────────────────────────────────────────────────────────────────────────────────────┤
 │                                                                                         │
 │  ┌──────────────────────────────────────────────────────────────────────────────────┐   │
@@ -31,12 +31,12 @@ Phase 17 adds authentication and rate limiting, completing the production-ready 
 │  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
 │       │             │             │             │             │             │          │
 │       │             │             │             │             │             │          │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │ Authority│  │ Curation │  │  Quality │  │ Taxonomy │  │  Graph   │  │Recommend-│   │
-│  │  Module  │  │  Module  │  │  Module  │  │  Module  │  │  Module  │  │ ations   │   │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘   │
-│       │             │             │             │             │             │          │
-│       │             │             │             │             │             │          │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐               │
+│  │ Authority│  │  Quality │  │  Graph   │  │Monitoring│  │   MCP    │               │
+│  │  Module  │  │  Module  │  │  Module  │  │  Module  │  │  Module  │               │
+│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘  └────┬─────┘               │
+│       │             │             │             │             │                      │
+│       │             │             │             │             │                      │
 │       │    ┌────────┴─────────────┴─────────────┴─────────────┴────────────┘          │
 │       │    │                                                                           │
 │       │    ▼                                                                           │
@@ -59,24 +59,21 @@ Phase 17 adds authentication and rate limiting, completing the production-ready 
 └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### All 14 Modules
+### All 11 Modules
 
 | # | Module | Domain | Events Emitted | Events Consumed |
 |---|--------|--------|----------------|-----------------|
-| 1 | **Auth** | Authentication | - | - |
+| 1 | **Auth** | Perimeter defense | - | - |
 | 2 | **Resources** | Content management | resource.created, resource.updated, resource.deleted | - |
 | 3 | **Collections** | Organization | collection.created, collection.updated, collection.resource_added | resource.deleted |
 | 4 | **Search** | Discovery | search.executed | resource.created, resource.updated, resource.deleted |
 | 5 | **Annotations** | Highlights & notes | annotation.created, annotation.updated, annotation.deleted | resource.deleted |
 | 6 | **Scholarly** | Academic metadata | metadata.extracted, equations.parsed, tables.extracted | resource.created |
 | 7 | **Authority** | Subject authority | - | - |
-| 8 | **Curation** | Content review | curation.reviewed, curation.approved, curation.rejected | quality.outlier_detected |
-| 9 | **Quality** | Quality assessment | quality.computed, quality.outlier_detected, quality.degradation_detected | resource.created, resource.updated |
-| 10 | **Taxonomy** | ML classification | resource.classified, taxonomy.node_created, taxonomy.model_trained | resource.created |
-| 11 | **Graph** | Knowledge graph | citation.extracted, graph.updated, hypothesis.discovered | resource.created, resource.deleted |
-| 12 | **Recommendations** | Personalization | recommendation.generated, user.profile_updated, interaction.recorded | annotation.created, collection.resource_added |
-| 13 | **Monitoring** | System health | - | All events (metrics) |
-| 14 | **Total** | **14 Modules** | **25+ event types** | **Event-driven architecture** |
+| 8 | **Quality** | Quality assessment | quality.computed, quality.outlier_detected, quality.degradation_detected | resource.created, resource.updated |
+| 9 | **Graph** | Knowledge graph | citation.extracted, graph.updated, hypothesis.discovered | resource.created, resource.deleted |
+| 10 | **Monitoring** | System health | - | All events (metrics) |
+| 11 | **MCP** | Model Context Protocol | - | - |
 
 ---
 
@@ -468,32 +465,6 @@ Phase 17 adds authentication and rate limiting, completing the production-ready 
 
 **Location:** `app/modules/authority/`
 
-### Curation Module
-
-**Domain:** Content review and quality control
-
-**Responsibilities:**
-- Review queue management for flagged resources
-- Batch operations on resources (approve, reject, flag)
-- Curator workflow support
-- Review history and audit trail
-- Priority-based review scheduling
-
-**Services:**
-- `CurationService` - Review workflow management
-- Batch operation processing
-- Review status tracking
-
-**Events Published:**
-- `curation.reviewed` - Resource reviewed by curator
-- `curation.approved` - Resource approved for publication
-- `curation.rejected` - Resource rejected
-
-**Events Subscribed:**
-- `quality.outlier_detected` → Add to review queue with high priority
-
-**Location:** `app/modules/curation/`
-
 ### Quality Module
 
 **Domain:** Multi-dimensional quality assessment
@@ -520,34 +491,6 @@ Phase 17 adds authentication and rate limiting, completing the production-ready 
 - `resource.updated` → Recompute quality scores
 
 **Location:** `app/modules/quality/`
-
-### Taxonomy Module
-
-**Domain:** ML-based classification and taxonomy management
-
-**Responsibilities:**
-- Automatic resource classification using ML models
-- Hierarchical taxonomy tree management
-- Rule-based and ML-based classification strategies
-- Active learning for model improvement
-- Classification confidence scoring
-- Multi-label classification support
-
-**Services:**
-- `ClassificationService` - Unified classification interface
-- `MLClassificationService` - Deep learning classification (DistilBERT)
-- `RuleBasedClassifier` - Pattern-based classification
-- `TaxonomyService` - Taxonomy tree operations
-
-**Events Published:**
-- `resource.classified` - Resource auto-classified
-- `taxonomy.node_created` - New taxonomy node added
-- `taxonomy.model_trained` - ML model retrained
-
-**Events Subscribed:**
-- `resource.created` → Auto-classify resource
-
-**Location:** `app/modules/taxonomy/`
 
 ### Graph Module
 
@@ -609,38 +552,6 @@ Phase 17 adds authentication and rate limiting, completing the production-ready 
 - **[Phase 17.5]** `resource.chunked` → Extract entities and relationships from chunks
 
 **Location:** `app/modules/graph/`
-
-### Recommendations Module
-
-**Domain:** Hybrid recommendation engine
-
-**Responsibilities:**
-- Generate personalized recommendations using multiple strategies
-- Collaborative filtering (user-item matrix)
-- Content-based recommendations (embedding similarity)
-- Graph-based recommendations (citation network)
-- Hybrid fusion with configurable weights
-- User profile generation and updates
-- Interaction tracking and learning
-
-**Services:**
-- `RecommendationService` - Main recommendation interface
-- `CollaborativeFilteringStrategy` - User similarity-based
-- `ContentBasedStrategy` - Embedding similarity-based
-- `GraphBasedStrategy` - Citation network-based
-- `HybridStrategy` - Weighted fusion of all strategies
-- `UserProfileService` - User preference modeling
-
-**Events Published:**
-- `recommendation.generated` - Recommendations produced for user
-- `user.profile_updated` - User preferences changed
-- `interaction.recorded` - User interaction logged
-
-**Events Subscribed:**
-- `annotation.created` → Update user profile with annotation topics
-- `collection.resource_added` → Update user profile with collection preferences
-
-**Location:** `app/modules/recommendations/`
 
 ### Monitoring Module
 
@@ -873,51 +784,6 @@ The service layer implements business logic and orchestrates domain objects, dat
 └────────────────────────────────────────────────────────────────┘
 ```
 
-### Recommendation Service (Strategy Pattern)
-
-```
-                    ┌──────────────────────────────┐
-                    │  RecommendationStrategy      │
-                    │  (Abstract Base Class)       │
-                    ├──────────────────────────────┤
-                    │ + generate(user_id, limit)   │
-                    │   → List[Recommendation]     │
-                    └──────────────┬───────────────┘
-                                   │
-                                   │ implements
-              ┌────────────────────┼────────────────────┬────────────────┐
-              │                    │                    │                │
-    ┌─────────▼──────────┐  ┌──────▼────────┐    ┌──────▼────────┐   ┌───▼──────┐
-    │ Collaborative      │  │  Content      │    │   Graph       │   │  Hybrid  │
-    │ FilteringStrategy  │  │  BasedStrategy│    │BasedStrategy  │   │ Strategy │
-    ├────────────────────┤  ├───────────────┤    ├───────────────┤   ├──────────┤
-    │• db: Session       │  │• db: Session  │    │• db: Session  │   │• strats  │
-    ├────────────────────┤  ├───────────────┤    ├───────────────┤   │• weights │
-    │+ generate()        │  │+ generate()   │    │+ generate()   │   ├──────────┤
-    │- _build_matrix()   │  │- _build_prof()│    │- _traverse()  │   │+ generate│
-    │- _find_similar()   │  │- _compute_sim │    │- _score_path()│   │- _merge()│
-    └────────────────────┘  └───────────────┘    └───────────────┘   └──────────┘
-```
-
-```
-RecommendationService
-├── Public Functions:
-│   ├── get_graph_based_recommendations(db, resource_id, limit=10)
-│   ├── generate_recommendations_with_graph_fusion(db, resource_id, ...)
-│   ├── generate_recommendations(db, resource_id, limit, strategy, user_id)
-│   ├── generate_user_profile_vector(db, user_id) → List[float]
-│   ├── recommend_based_on_annotations(db, user_id, limit) → List[Dict]
-│   └── get_top_subjects(db, limit=10) → List[str]
-├── Private Functions:
-│   ├── _cosine_similarity(vec1, vec2) → float
-│   ├── _convert_subjects_to_vector(subjects) → List[float]
-│   └── _to_numpy_vector(data) → List[float]
-
-RecommendationStrategyFactory
-├── Methods:
-│   └── create(strategy_type: str, db: Session) → RecommendationStrategy
-```
-
 ### Search Service
 
 ```
@@ -1126,52 +992,6 @@ RecommendationStrategyFactory
 │  • count_dimensions_below_threshold(t) → int                 │
 │  • to_dict() → Dict[str, Any]                                │
 │  • from_dict(data) → QualityScore                            │
-└──────────────────────────────────────────────────────────────┘
-```
-
-#### Recommendation Domain
-
-```
-┌──────────────────────────────────────────────────────────────┐
-│         RecommendationScore (ValueObject)                    │
-├──────────────────────────────────────────────────────────────┤
-│ Attributes:                                                  │
-│  • score: float (0.0-1.0)                                    │
-│  • confidence: float (0.0-1.0)                               │
-│  • rank: int (1-based)                                       │
-├──────────────────────────────────────────────────────────────┤
-│ Methods:                                                     │
-│  • validate()                                                │
-│  • is_high_confidence(threshold=0.8) → bool                  │
-│  • is_high_score(threshold=0.7) → bool                       │
-│  • is_top_ranked(top_k=5) → bool                             │
-│  • combined_quality() → float                                │
-└──────────────────────────────────────────────────────────────┘
-                             │
-                             │ embedded in
-                             ▼
-┌──────────────────────────────────────────────────────────────┐
-│              Recommendation (ValueObject)                    │
-├──────────────────────────────────────────────────────────────┤
-│ Attributes:                                                  │
-│  • resource_id: str                                          │
-│  • user_id: str                                              │
-│  • recommendation_score: RecommendationScore                 │
-│  • strategy: str = "unknown"                                 │
-│  • reason: Optional[str]                                     │
-│  • metadata: Optional[Dict[str, Any]]                        │
-├──────────────────────────────────────────────────────────────┤
-│ Methods:                                                     │
-│  • validate()                                                │
-│  • get_score() → float                                       │
-│  • get_confidence() → float                                  │
-│  • get_rank() → int                                          │
-│  • is_high_quality(score_t, conf_t) → bool                   │
-│  • is_top_recommendation(top_k=5) → bool                     │
-│  • get_metadata_value(key, default) → Any                    │
-│  • __lt__, __le__, __gt__, __ge__ (for sorting)              │
-│  • to_dict() → Dict[str, Any]                                │
-│  • from_dict(data) → Recommendation                          │
 └──────────────────────────────────────────────────────────────┘
 ```
 
@@ -1779,53 +1599,9 @@ Convert to JSON response
 User receives quality assessment
 ```
 
-### Recommendation Flow (Strategy Pattern)
+### Recommendation Flow
 
-```
-User Request
-    ↓
-FastAPI Router (GET /api/recommendations/user/{user_id})
-    ↓
-generate_recommendations(db, resource_id, limit, strategy, user_id)
-    ↓
-RecommendationStrategyFactory.create(strategy_type, db)
-    ↓
-    ├─→ strategy="collaborative" → CollaborativeFilteringStrategy
-    ├─→ strategy="content" → ContentBasedStrategy
-    ├─→ strategy="graph" → GraphBasedStrategy
-    └─→ strategy="hybrid" → HybridStrategy
-    ↓
-Strategy.generate(user_id, limit)
-    ↓
-    [CollaborativeFilteringStrategy]
-    ├─→ _build_user_item_matrix()
-    ├─→ Compute user similarities
-    ├─→ Generate predictions
-    └─→ Create Recommendation objects
-    
-    [ContentBasedStrategy]
-    ├─→ Query UserInteraction
-    ├─→ _build_user_profile(interactions)
-    ├─→ Query Resources with embeddings
-    ├─→ _compute_similarity(profile, embedding)
-    └─→ Create Recommendation objects
-    
-    [GraphBasedStrategy]
-    ├─→ _traverse_citation_network(resource_id, depth)
-    ├─→ Score by citation distance
-    └─→ Create Recommendation objects
-    
-    [HybridStrategy]
-    ├─→ Execute all sub-strategies
-    ├─→ _merge_recommendations(results, weights)
-    └─→ Create Recommendation objects
-    ↓
-Return List[Recommendation]
-    ↓
-Convert to List[Dict] for API compatibility
-    ↓
-User receives recommendations
-```
+> **Removed in Phase 21.** The Recommendations module (NCF, strategy pattern, collaborative filtering) was physically removed because NCF is mathematically useless for N=1 users. See ADR-008.
 
 ### Search Flow (Three-Way Hybrid)
 

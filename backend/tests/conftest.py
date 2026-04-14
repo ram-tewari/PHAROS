@@ -49,9 +49,6 @@ from app.database.models import (  # noqa: F401
     DiscoveryHypothesis,
     UserProfile,
     UserInteraction,
-    RecommendationFeedback,
-    TaxonomyNode,
-    ResourceTaxonomy,
     AuthoritySubject,
     AuthorityCreator,
     AuthorityPublisher,
@@ -60,8 +57,14 @@ from app.database.models import (  # noqa: F401
     ModelVersion,
     ABTestExperiment,
     PlanningSession,
+    CodingProfile,
+    ProposedRule,
+    RuleStatus,
 )
-from app.modules.auth.model import OAuthAccount  # noqa: F401
+try:
+    from app.modules.auth.model import OAuthAccount  # noqa: F401
+except ImportError:
+    pass  # auth module may have stale imports during refactoring
 
 
 # ============================================================================
