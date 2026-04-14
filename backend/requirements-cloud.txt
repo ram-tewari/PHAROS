@@ -63,6 +63,7 @@ anthropic>=0.7.0
 
 # Prometheus metrics
 prometheus-client>=0.20.0
+prometheus-fastapi-instrumentator>=7.0.0
 
 # Sentry (error tracking)
 # sentry-sdk>=1.40.0
