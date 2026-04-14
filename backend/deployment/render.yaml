@@ -13,7 +13,7 @@ services:
       - key: MODE
         value: CLOUD
       - key: ENV
-        value: production
+        value: prod
       
       # Database (NeonDB PostgreSQL - Free Tier)
       - key: DATABASE_URL
