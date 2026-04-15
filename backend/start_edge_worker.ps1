@@ -15,16 +15,16 @@ if (-not $isAdmin) {
 Write-Host "Pharos Edge Worker - Startup" -ForegroundColor Cyan
 Write-Host ""
 
-# Check if .env.edge exists
-if (-not (Test-Path ".env.edge")) {
-    Write-Host "ERROR: .env.edge file not found!" -ForegroundColor Red
+# Check if .env exists
+if (-not (Test-Path ".env")) {
+    Write-Host "ERROR: .env file not found!" -ForegroundColor Red
     Read-Host "Press Enter to exit"
     exit 1
 }
 
 # Load environment
 Write-Host "Loading environment..." -ForegroundColor Yellow
-Get-Content .env.edge | ForEach-Object {
+Get-Content .env | ForEach-Object {
     if ($_ -match '^([^#][^=]+)=(.*)$') {
         $name = $matches[1].Trim()
         $value = $matches[2].Trim()
