@@ -56,8 +56,9 @@ services:
         value: info
       
       # Workers (2 for Starter, 3 for Standard, 4 for Pro)
+      # CRITICAL: Set to 1 for Starter plan to avoid OOM
       - key: WEB_CONCURRENCY
-        value: 2
+        value: 1
       
       # Database (NeonDB - set in dashboard)
       - key: DATABASE_URL

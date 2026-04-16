@@ -12,6 +12,9 @@
 beautifulsoup4>=4.12.0
 lxml>=4.9.0
 
+# URL slugification (required by resources module)
+python-slugify>=8.0.0
+
 # JSON schema validation (required by mcp module)
 jsonschema>=4.20.0
 
