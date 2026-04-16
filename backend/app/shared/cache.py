@@ -160,8 +160,8 @@ class CacheService:
                     # Serverless-optimized connection settings
                     connection_kwargs = {
                         "decode_responses": True,  # Auto-decode bytes to strings
-                        "socket_connect_timeout": 10,  # 10s for serverless wake-up
-                        "socket_timeout": 10,  # 10s for command execution
+                        "socket_connect_timeout": 30,  # 30s for serverless cold start
+                        "socket_timeout": 30,  # 30s for command execution
                         "socket_keepalive": True,  # Keep connections alive
                         "socket_keepalive_options": {
                             1: 30,  # TCP_KEEPIDLE: 30s
@@ -191,15 +191,9 @@ class CacheService:
                         **connection_kwargs
                     )
                     
-                    # Test connection
-                    try:
-                        self.redis.ping()
-                        logger.info("✓ Redis connection successful")
-                    except Exception as e:
-                        logger.error(f"✗ Redis ping failed: {type(e).__name__}: {e}")
-                        logger.error(f"Redis URL (first 50 chars): {redis_url[:50]}")
-                        # Don't set redis to None - let it retry on first request
-                        # self.redis = None
+                    # Connection will be tested on first use (lazy connection)
+                    # This avoids blocking initialization on Redis cold starts
+                    logger.info("✓ Redis client initialized (will connect on first use)")
                 
                 elif upstash_url and upstash_token:
                     # Upstash REST API (fallback, slower but more reliable)

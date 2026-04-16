@@ -287,7 +287,7 @@ async def lifespan(app: FastAPI):
                     f"Embedding model warmup failed: {e} - first encoding may be slow"
                 )
 
-        # Initialize Redis cache connection
+        # Initialize Redis cache connection (lazy - will connect on first use)
         try:
             from .shared.cache import cache
 
@@ -295,12 +295,10 @@ async def lifespan(app: FastAPI):
                 logger.warning(
                     "Redis client not initialized - check REDIS_URL environment variable"
                 )
-            elif cache.ping():
-                logger.info("✓ Redis cache connection established successfully")
             else:
-                logger.warning(
-                    "Redis cache ping failed - caching will be disabled"
-                )
+                # Don't ping on startup - let it connect on first use
+                # This avoids blocking startup on Redis cold starts (5-15s on Upstash free tier)
+                logger.info("✓ Redis cache initialized (will connect on first use)")
         except Exception as e:
             logger.warning(
                 f"Redis cache initialization failed: {e} - caching will be disabled"
