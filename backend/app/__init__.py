@@ -394,6 +394,7 @@ def create_app() -> FastAPI:
 
         # Define excluded paths
         excluded_paths = [
+            "/health",  # Root health check for Render
             "/docs",
             "/openapi.json",
             "/redoc",
@@ -506,6 +507,7 @@ def create_app() -> FastAPI:
 
         # Define excluded paths
         excluded_paths = [
+            "/health",  # Root health check for Render
             "/api/monitoring/health",  # Health check endpoint (with /api prefix)
             "/api/v1/ingestion/health",  # Ingestion health check
             "/api/v1/ingestion/worker/status",  # Worker status
@@ -622,6 +624,18 @@ def create_app() -> FastAPI:
         Base.metadata.create_all(bind=sync_engine)
     except Exception:
         pass
+
+    # Add root-level health check endpoint for Render
+    @app.get("/health")
+    async def root_health_check():
+        """
+        Root-level health check endpoint for Render deployment.
+        
+        This endpoint is required by Render's health check system.
+        Returns a simple status response without database checks to ensure
+        fast response times during deployment.
+        """
+        return {"status": "healthy", "service": "pharos-api"}
 
     # Register modular vertical slices (Collections, Resources, Search, and all modules)
     # This must happen before processing requests to ensure event handlers are registered
