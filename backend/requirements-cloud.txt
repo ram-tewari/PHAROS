@@ -5,6 +5,20 @@
 -r requirements-base.txt
 
 # ============================================================================
+# MISSING DEPENDENCIES (CRITICAL)
+# ============================================================================
+
+# Web scraping (required by resources module)
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# JSON schema validation (required by mcp module)
+jsonschema>=4.20.0
+
+# Upstash Redis REST API (required for edge worker task queue)
+upstash-redis>=0.15.0
+
+# ============================================================================
 # SERVERLESS DATABASE DRIVERS
 # ============================================================================
 
@@ -18,7 +32,6 @@ psycopg2-binary>=2.9.9  # Sync driver for background tasks
 
 # Upstash Redis (serverless, pay-per-request)
 # Note: Standard redis package (already in requirements-base.txt) works with Upstash
-# upstash-redis>=0.15.0  # Optional: REST API client (slower but more reliable)
 
 # ============================================================================
 # EMBEDDINGS (CPU-ONLY)

@@ -44,6 +44,8 @@ services:
     # IMPORTANT: Set these in Render Dashboard (not here for security)
     # - DATABASE_URL: NeonDB pooled connection string
     # - REDIS_URL: Upstash rediss:// URL
+    # - UPSTASH_REDIS_REST_URL: Upstash REST API URL (REQUIRED for task queue)
+    # - UPSTASH_REDIS_REST_TOKEN: Upstash REST API token (REQUIRED for task queue)
     # - PHAROS_API_KEY: M2M authentication key for Ronin
     envVars:
       # Application
@@ -82,10 +84,10 @@ services:
         sync: false  # Set manually in dashboard
       
       - key: UPSTASH_REDIS_REST_URL
-        sync: false  # Optional: Upstash REST API URL
+        sync: false  # REQUIRED: Upstash REST API URL for task queue
       
       - key: UPSTASH_REDIS_REST_TOKEN
-        sync: false  # Optional: Upstash REST API token
+        sync: false  # REQUIRED: Upstash REST API token for task queue
       
       # Authentication (set in dashboard)
       - key: PHAROS_API_KEY
@@ -94,12 +96,16 @@ services:
       - key: SECRET_KEY
         generateValue: true  # Auto-generate secure secret
       
-      # Embeddings (CPU-only for cloud)
+      # Deployment Mode (CLOUD = queue tasks to edge worker)
+      # CRITICAL: Set to CLOUD to avoid loading ML models on Render
+      # - CLOUD: Queue embedding tasks to Upstash Redis for edge worker
+      # - EDGE: Load ML models locally (only for edge worker, not Render)
+      - key: MODE
+        value: CLOUD  # Queue tasks to edge worker, don't run models locally
+      
+      # Embeddings (handled by edge worker, not loaded in cloud)
       - key: EMBEDDING_MODEL_NAME
         value: nomic-ai/nomic-embed-text-v1
-      
-      - key: EMBEDDING_DEVICE
-        value: cpu  # No GPU on Render
       
       # GitHub Integration (Phase 5 - Hybrid Storage)
       - key: GITHUB_TOKEN

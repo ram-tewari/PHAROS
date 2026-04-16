@@ -47,7 +47,22 @@ git push origin main
    - Plan: `Free`
 7. Click **"Create Web Service"**
 
-### Step 3: Wait for Build (10-15 minutes)
+### Step 3: Fix Environment Variables (CRITICAL - 2 minutes)
+
+**⚠️ IMPORTANT**: After Render creates the service, you MUST fix two environment variables:
+
+1. Go to **Environment** tab in Render dashboard
+2. Find **ENV** variable
+3. Change value from `production` to `prod` (Render may auto-set it wrong)
+4. Verify **JWT_SECRET_KEY** is set (should be auto-generated)
+5. Verify **PHAROS_ADMIN_TOKEN** is set (should be auto-generated)
+6. Click **Save Changes**
+
+**Why?** Pharos expects `ENV=prod` (not `production`), and JWT_SECRET_KEY must be secure.
+
+**Detailed fix guide**: `backend/docs/deployment/FIX_RENDER_ENV.md`
+
+### Step 4: Wait for Build (10-15 minutes)
 
 Render will:
 - Clone repository
@@ -199,6 +214,26 @@ Ronin will:
 ---
 
 ## 🆘 Troubleshooting
+
+### Issue: ENV Validation Error (CRITICAL)
+**Error**: `Input should be 'dev', 'staging' or 'prod' [input_value='production']`  
+**Cause**: ENV set to `production` instead of `prod`  
+**Solution**: 
+1. Go to Render dashboard → Environment tab
+2. Change ENV from `production` to `prod`
+3. Save changes (auto-redeploys)
+4. **Detailed fix**: `backend/docs/deployment/FIX_RENDER_ENV.md`
+
+### Issue: JWT_SECRET_KEY Validation Error (CRITICAL)
+**Error**: `JWT_SECRET_KEY must be changed from default in production`  
+**Cause**: JWT_SECRET_KEY not set or using default value  
+**Solution**:
+1. Go to Render dashboard → Environment tab
+2. Verify JWT_SECRET_KEY exists and has a long random value
+3. If missing, generate: `python -c "import secrets; print(secrets.token_hex(32))"`
+4. Add as environment variable
+5. Save changes (auto-redeploys)
+6. **Detailed fix**: `backend/docs/deployment/FIX_RENDER_ENV.md`
 
 ### Issue: 502 Bad Gateway
 **Cause**: Cold start (service spinning up)  

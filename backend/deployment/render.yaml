@@ -19,6 +19,18 @@ services:
       - key: DATABASE_URL
         value: postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
       
+      # PostgreSQL Components (extracted from DATABASE_URL for validation)
+      - key: POSTGRES_SERVER
+        value: ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech
+      - key: POSTGRES_USER
+        value: neondb_owner
+      - key: POSTGRES_PASSWORD
+        value: npg_2Lv8pxVJzgyd
+      - key: POSTGRES_DB
+        value: neondb
+      - key: POSTGRES_PORT
+        value: 5432
+      
       # Redis (Upstash - Free Tier)
       - key: UPSTASH_REDIS_REST_URL
         value: https://living-sculpin-96916.upstash.io
@@ -30,6 +42,10 @@ services:
         generateValue: true
       - key: JWT_SECRET_KEY
         generateValue: true
+      
+      # OAuth Redirect URLs (Production - HTTPS only)
+      - key: ALLOWED_REDIRECT_URLS
+        value: '["https://pharos-cloud-api.onrender.com"]'
       
       # Resource Limits (Free Tier Optimized)
       - key: MAX_QUEUE_SIZE
@@ -47,9 +63,11 @@ services:
       - key: SYNTHETIC_QUESTIONS_ENABLED
         value: false
       
-      # Embedding Model
+      # Embedding Model (Lazy load in CLOUD mode to save memory)
       - key: EMBEDDING_MODEL_NAME
         value: nomic-ai/nomic-embed-text-v1
+      - key: PRELOAD_EMBEDDING_MODEL
+        value: false
     
     healthCheckPath: /health
     autoDeploy: true
