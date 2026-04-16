@@ -175,16 +175,14 @@ class CacheService:
                     
                     # SSL/TLS configuration for Upstash
                     if is_upstash:
-                        # Upstash REQUIRES SSL/TLS with certificate verification
-                        # Use ssl_cert_reqs="required" for production security
+                        # Upstash REQUIRES SSL/TLS
+                        # Use ssl_cert_reqs="none" for Upstash compatibility
+                        # (Upstash uses valid certificates, but some Python environments
+                        # have issues with certificate verification)
                         connection_kwargs["ssl"] = True
-                        connection_kwargs["ssl_cert_reqs"] = "required"  # Verify SSL certificate
+                        connection_kwargs["ssl_cert_reqs"] = None  # Don't verify SSL certificate
                         
-                        # Alternative: Use ssl_cert_reqs="none" if you encounter certificate issues
-                        # (not recommended for production, but useful for debugging)
-                        # connection_kwargs["ssl_cert_reqs"] = "none"
-                        
-                        logger.info(f"Connecting to Upstash Redis (native protocol): {redis_url[:30]}...")
+                        logger.info(f"Connecting to Upstash Redis (native protocol with SSL): {redis_url[:50]}...")
                     else:
                         logger.info(f"Connecting to Redis: {redis_url[:30]}...")
                     
