@@ -43,10 +43,12 @@ logger = logging.getLogger(__name__)
 settings = get_settings()
 
 # Initialize Celery application
+# Use CELERY_BROKER_URL and CELERY_RESULT_BACKEND from settings
+# These will use REDIS_URL if set, otherwise fall back to localhost
 celery_app = Celery(
     "neo_alexandria",
-    broker=f"redis://{getattr(settings, 'REDIS_HOST', 'localhost')}:{getattr(settings, 'REDIS_PORT', 6379)}/0",
-    backend=f"redis://{getattr(settings, 'REDIS_HOST', 'localhost')}:{getattr(settings, 'REDIS_PORT', 6379)}/1",
+    broker=settings.CELERY_BROKER_URL,
+    backend=settings.CELERY_RESULT_BACKEND,
 )
 
 # Celery Configuration
