@@ -322,25 +322,16 @@ class Settings(BaseSettings):
     REDIS_HOST: str = "localhost"
     REDIS_PORT: int = 6379
     REDIS_CACHE_DB: int = 2
+    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
+    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
     
-    # Celery broker - use REDIS_URL if available, otherwise fall back to localhost
-    # In production (Render), REDIS_URL will be set to Upstash
-    # In development, it will use localhost
-    @property
-    def CELERY_BROKER_URL(self) -> str:
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Override Celery URLs if REDIS_URL is set
         if self.REDIS_URL:
-            # Use the same Redis URL but with /0 database
             base_url = self.REDIS_URL.rsplit('/', 1)[0] if '/' in self.REDIS_URL else self.REDIS_URL
-            return f"{base_url}/0"
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/0"
-    
-    @property
-    def CELERY_RESULT_BACKEND(self) -> str:
-        if self.REDIS_URL:
-            # Use the same Redis URL but with /1 database
-            base_url = self.REDIS_URL.rsplit('/', 1)[0] if '/' in self.REDIS_URL else self.REDIS_URL
-            return f"{base_url}/1"
-        return f"redis://{self.REDIS_HOST}:{self.REDIS_PORT}/1"
+            self.CELERY_BROKER_URL = f"{base_url}/0"
+            self.CELERY_RESULT_BACKEND = f"{base_url}/1"
 
     # Vector embedding configuration
     EMBEDDING_MODEL_NAME: str = "nomic-ai/nomic-embed-text-v1"
