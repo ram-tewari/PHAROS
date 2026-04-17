@@ -131,14 +131,6 @@ class Resource(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # Curation workflow fields
-    curation_status: Mapped[str] = mapped_column(
-        String, nullable=False, default="pending", server_default="pending"
-    )
-    assigned_curator: Mapped[str | None] = mapped_column(
-        String(255), nullable=True, index=True
-    )
-
     # Vector embedding for hybrid search
     # Use Text to avoid JSON casting issues with NULL in PostgreSQL
     embedding: Mapped[List[float] | None] = mapped_column(
