@@ -325,13 +325,14 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/0"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/1"
     
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        # Override Celery URLs if REDIS_URL is set
+    @model_validator(mode='after')
+    def set_celery_urls(self):
+        """Override Celery URLs if REDIS_URL is set."""
         if self.REDIS_URL:
             base_url = self.REDIS_URL.rsplit('/', 1)[0] if '/' in self.REDIS_URL else self.REDIS_URL
             self.CELERY_BROKER_URL = f"{base_url}/0"
             self.CELERY_RESULT_BACKEND = f"{base_url}/1"
+        return self
 
     # Vector embedding configuration
     EMBEDDING_MODEL_NAME: str = "nomic-ai/nomic-embed-text-v1"
