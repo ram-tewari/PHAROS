@@ -162,11 +162,19 @@ async def create_resource_endpoint(
             payload_dict["url"] = str(payload_dict["url"])
 
         logger.info(f"Creating pending resource...")
-        # create_pending_resource handles duplicate detection
-        resource = create_pending_resource(db, payload_dict)
-        logger.info(
-            f"Resource created/found: {resource.id}, status: {resource.ingestion_status}"
-        )
+        
+        try:
+            # create_pending_resource handles duplicate detection
+            resource = create_pending_resource(db, payload_dict)
+            logger.info(
+                f"Resource created/found: {resource.id}, status: {resource.ingestion_status}"
+            )
+        except Exception as create_error:
+            logger.error(f"Failed to create pending resource: {create_error}", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Failed to create resource: {str(create_error)}"
+            )
 
         # Check if this is an existing resource (reused)
         # If the resource was just created, it will have ingestion_status="pending"
