@@ -131,14 +131,6 @@ class Resource(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # Legacy curation fields (kept for database compatibility, not used in single-tenant mode)
-    curation_status: Mapped[str | None] = mapped_column(
-        String, nullable=True, default=None
-    )
-    assigned_curator: Mapped[str | None] = mapped_column(
-        String(255), nullable=True
-    )
-
     # Vector embedding for hybrid search
     # Use Text to avoid JSON casting issues with NULL in PostgreSQL
     embedding: Mapped[List[float] | None] = mapped_column(
