@@ -40,23 +40,22 @@ class QueueService:
         return self._redis
 
     def _get_upstash_redis(self) -> Redis:
-        """Create Upstash Redis connection for CLOUD mode."""
-        upstash_url = self.settings.UPSTASH_REDIS_REST_URL
-        upstash_token = self.settings.UPSTASH_REDIS_REST_TOKEN
-
-        if not upstash_url:
+        """Create Upstash Redis connection for CLOUD mode.
+        
+        Uses standard Redis protocol URL (rediss://) instead of REST API.
+        This allows us to use the standard redis-py client.
+        """
+        # Use REDIS_URL which has the rediss:// protocol
+        redis_url = self.settings.REDIS_URL
+        
+        if not redis_url:
             raise ValueError(
-                "Queue service not configured: UPSTASH_REDIS_REST_URL must be set in CLOUD mode"
+                "Queue service not configured: REDIS_URL must be set in CLOUD mode"
             )
-        if not upstash_token:
-            raise ValueError(
-                "Queue service not configured: UPSTASH_REDIS_REST_TOKEN must be set in CLOUD mode"
-            )
-
-        # Upstash uses HTTP/REST API, Redis.from_url works with the REST URL
+        
+        # Use standard Redis client with rediss:// URL
         return Redis.from_url(
-            upstash_url,
-            password=upstash_token.get_secret_value() if upstash_token else None,
+            redis_url,
             decode_responses=True,
         )
 
