@@ -50,7 +50,11 @@ class Summarizer:
             if pipeline is None:  # pragma: no cover
                 # Leave pipe as None; caller will use fallback
                 return
-            self._pipe = pipeline("summarization", model=self.model_name)
+            try:
+                self._pipe = pipeline("summarization", model=self.model_name)
+            except Exception:
+                # Task may not be available in this transformers version
+                self._pipe = None
 
     def summarize(self, text: str) -> str:
         text = (text or "").strip()
@@ -122,7 +126,10 @@ class ZeroShotTagger:
             if pipeline is None:  # pragma: no cover
                 # Leave pipe as None; caller will use heuristics
                 return
-            self._pipe = pipeline("zero-shot-classification", model=self.model_name)
+            try:
+                self._pipe = pipeline("zero-shot-classification", model=self.model_name)
+            except Exception:
+                self._pipe = None
 
     def generate_tags(self, text: str) -> List[str]:
         text = (text or "").strip()
