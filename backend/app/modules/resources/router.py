@@ -201,10 +201,13 @@ async def create_resource_endpoint(
         if mode == "CLOUD":
             # CLOUD mode: Queue to Redis for edge worker processing
             try:
+                logger.info(f"Importing QueueService...")
                 from ...services.queue_service import QueueService
                 
+                logger.info(f"Creating QueueService instance...")
                 queue_service = QueueService()
                 
+                logger.info(f"Preparing task data...")
                 task_data = {
                     "resource_id": str(resource.id),
                     "url": str(payload.url),
@@ -213,10 +216,17 @@ async def create_resource_endpoint(
                     "ttl": 86400,  # 24 hours
                 }
                 
+                logger.info(f"Submitting job to queue...")
                 # Queue to Redis (async operation)
                 job_id = await queue_service.submit_job(task_data)
                 logger.info(f"✓ Queued resource {resource.id} to Redis (job_id={job_id})")
                 
+            except ImportError as import_error:
+                logger.error(f"Failed to import QueueService: {import_error}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail=f"Queue service not available: {str(import_error)}"
+                )
             except Exception as queue_error:
                 logger.error(f"Failed to queue resource {resource.id} to Redis: {queue_error}", exc_info=True)
                 raise HTTPException(
