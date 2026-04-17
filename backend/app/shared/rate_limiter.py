@@ -184,5 +184,5 @@ rate_limiter = RateLimiter()
 #         api_key=api_key, tier=tier, endpoint=request.url.path
 #     )
 
-    # Store headers in request state for response middleware
-    request.state.rate_limit_headers = headers
+#     # Store headers in request state for response middleware
+#     request.state.rate_limit_headers = headers

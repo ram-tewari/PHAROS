@@ -76,6 +76,7 @@ class MonitoringService:
             "message": "Recommendations module removed (single-tenant optimization)",
             "timestamp": datetime.utcnow().isoformat(),
             "time_window_days": time_window_days,
+            "metrics": {},
         }
 
     async def get_user_engagement_metrics(

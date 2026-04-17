@@ -450,7 +450,7 @@ class QualityService:
         Raises:
             ValueError: If resource not found or weights are invalid
         """
-        from ..database.models import Resource
+        from app.database.models import Resource
 
         # Default weights
         if weights is None:
@@ -691,7 +691,7 @@ class QualityService:
         Returns:
             List of dictionaries with degradation information for each degraded resource
         """
-        from ..database.models import Resource
+        from app.database.models import Resource
 
         cutoff_date = datetime.now(timezone.utc) - timedelta(days=time_window_days)
 
@@ -750,7 +750,7 @@ class QualityService:
         Raises:
             ValueError: If fewer than 10 resources with quality scores exist
         """
-        from ..database.models import Resource
+        from app.database.models import Resource
         from sklearn.ensemble import IsolationForest
         import numpy as np
 

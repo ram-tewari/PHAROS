@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from ...shared.database import get_db
+from ...shared.database import get_db, get_sync_db
 from ...database import models as db_models
 from .schema import (
     ScholarlyMetadataResponse,
@@ -28,10 +28,82 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/scholarly", tags=["scholarly"])
 
 
+@router.get("/metadata/completeness-stats", response_model=MetadataCompletenessStats)
+async def get_metadata_completeness_stats(db: Session = Depends(get_sync_db)):
+    """
+    Get aggregate statistics on metadata completeness.
+
+    Returns:
+    - Total resources
+    - Count with DOI, authors, etc.
+    - Average completeness score
+    - Resources requiring review
+    - Breakdown by content type
+    """
+    total_resources = db.query(func.count(db_models.Resource.id)).scalar() or 0
+
+    with_doi = (
+        db.query(func.count(db_models.Resource.id))
+        .filter(db_models.Resource.doi.isnot(None))
+        .scalar()
+        or 0
+    )
+
+    with_authors = (
+        db.query(func.count(db_models.Resource.id))
+        .filter(db_models.Resource.authors.isnot(None))
+        .scalar()
+        or 0
+    )
+
+    with_publication_year = (
+        db.query(func.count(db_models.Resource.id))
+        .filter(db_models.Resource.publication_year.isnot(None))
+        .scalar()
+        or 0
+    )
+
+    avg_completeness = (
+        db.query(func.avg(db_models.Resource.metadata_completeness_score))
+        .filter(db_models.Resource.metadata_completeness_score.isnot(None))
+        .scalar()
+        or 0.0
+    )
+
+    requires_review = (
+        db.query(func.count(db_models.Resource.id))
+        .filter(db_models.Resource.requires_manual_review)
+        .scalar()
+        or 0
+    )
+
+    # Breakdown by content type
+    by_content_type = {}
+    content_types = (
+        db.query(db_models.Resource.format, func.count(db_models.Resource.id))
+        .filter(db_models.Resource.format.isnot(None))
+        .group_by(db_models.Resource.format)
+        .all()
+    )
+
+    for content_type, count in content_types:
+        by_content_type[content_type] = count
+
+    return MetadataCompletenessStats(
+        total_resources=total_resources,
+        with_doi=with_doi,
+        with_authors=with_authors,
+        with_publication_year=with_publication_year,
+        avg_completeness_score=float(avg_completeness),
+        requires_review_count=requires_review,
+        by_content_type=by_content_type,
+    )
+
+
 @router.get(
     "/resources/{resource_id}/metadata", response_model=ScholarlyMetadataResponse
 )
-async def get_scholarly_metadata(resource_id: str, db: Session = Depends(get_db)):
+async def get_scholarly_metadata(resource_id: str, db: Session = Depends(get_sync_db)):
     """
     Get complete scholarly metadata for a resource.
 
@@ -110,7 +182,7 @@ async def get_scholarly_metadata(resource_id: str, db: Session = Depends(get_db)
 async def get_equations(
     resource_id: str,
     format: str = Query("latex", regex="^(latex|mathml)$"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db),
 ):
     """
     Get all equations from a resource.
@@ -161,7 +233,7 @@ async def get_equations(
 
 @router.get("/resources/{resource_id}/tables", response_model=List[TableData])
 async def get_tables(
-    resource_id: str, include_data: bool = True, db: Session = Depends(get_db)
+    resource_id: str, include_data: bool = True, db: Session = Depends(get_sync_db)
 ):
     """
     Get all tables from a resource.
@@ -210,7 +282,7 @@ async def get_tables(
     response_model=MetadataExtractionResponse,
 )
 async def trigger_metadata_extraction(
-    resource_id: str, request: MetadataExtractionRequest, db: Session = Depends(get_db)
+    resource_id: str, request: MetadataExtractionRequest, db: Session = Depends(get_sync_db)
 ):
     """
     Manually trigger scholarly metadata extraction.
@@ -275,7 +347,7 @@ async def trigger_metadata_extraction(
 
 
 @router.get("/metadata/{resource_id}", response_model=ScholarlyMetadataResponse)
-async def get_metadata(resource_id: str, db: Session = Depends(get_db)):
+async def get_metadata(resource_id: str, db: Session = Depends(get_sync_db)):
     """
     Get scholarly metadata for a resource.
     Alias for /resources/{resource_id}/metadata for convenience.
@@ -287,7 +359,7 @@ async def get_metadata(resource_id: str, db: Session = Depends(get_db)):
 async def get_resource_equations(
     resource_id: str,
     format: str = Query("latex", regex="^(latex|mathml)$"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db),
 ):
     """
     Get equations for a resource.
@@ -298,7 +370,7 @@ async def get_resource_equations(
 
 @router.get("/tables/{resource_id}", response_model=List[TableData])
 async def get_resource_tables(
-    resource_id: str, include_data: bool = True, db: Session = Depends(get_db)
+    resource_id: str, include_data: bool = True, db: Session = Depends(get_sync_db)
 ):
     """
     Get tables for a resource.
@@ -307,80 +379,8 @@ async def get_resource_tables(
     return await get_tables(resource_id, include_data, db)
 
 
-@router.get("/metadata/completeness-stats", response_model=MetadataCompletenessStats)
-async def get_metadata_completeness_stats(db: Session = Depends(get_db)):
-    """
-    Get aggregate statistics on metadata completeness.
-
-    Returns:
-    - Total resources
-    - Count with DOI, authors, etc.
-    - Average completeness score
-    - Resources requiring review
-    - Breakdown by content type
-    """
-    total_resources = db.query(func.count(db_models.Resource.id)).scalar() or 0
-
-    with_doi = (
-        db.query(func.count(db_models.Resource.id))
-        .filter(db_models.Resource.doi.isnot(None))
-        .scalar()
-        or 0
-    )
-
-    with_authors = (
-        db.query(func.count(db_models.Resource.id))
-        .filter(db_models.Resource.authors.isnot(None))
-        .scalar()
-        or 0
-    )
-
-    with_publication_year = (
-        db.query(func.count(db_models.Resource.id))
-        .filter(db_models.Resource.publication_year.isnot(None))
-        .scalar()
-        or 0
-    )
-
-    avg_completeness = (
-        db.query(func.avg(db_models.Resource.metadata_completeness_score))
-        .filter(db_models.Resource.metadata_completeness_score.isnot(None))
-        .scalar()
-        or 0.0
-    )
-
-    requires_review = (
-        db.query(func.count(db_models.Resource.id))
-        .filter(db_models.Resource.requires_manual_review)
-        .scalar()
-        or 0
-    )
-
-    # Breakdown by content type
-    by_content_type = {}
-    content_types = (
-        db.query(db_models.Resource.format, func.count(db_models.Resource.id))
-        .filter(db_models.Resource.format.isnot(None))
-        .group_by(db_models.Resource.format)
-        .all()
-    )
-
-    for content_type, count in content_types:
-        by_content_type[content_type] = count
-
-    return MetadataCompletenessStats(
-        total_resources=total_resources,
-        with_doi=with_doi,
-        with_authors=with_authors,
-        with_publication_year=with_publication_year,
-        avg_completeness_score=float(avg_completeness),
-        requires_review_count=requires_review,
-        by_content_type=by_content_type,
-    )
-
-
 @router.get("/health")
-async def health_check(db: Session = Depends(get_db)):
+async def health_check(db: Session = Depends(get_sync_db)):
     """Health check endpoint for Scholarly module."""
     from sqlalchemy import text
     from datetime import datetime
@@ -417,7 +417,7 @@ document_intelligence_router = APIRouter(
 async def get_resource_equations_di(
     resource_id: str,
     format: str = Query("latex", regex="^(latex|mathml)$"),
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db),
 ):
     """
     Get equations for a resource.
@@ -432,7 +432,7 @@ async def get_resource_equations_di(
 )
 async def get_resource_tables_di(
     resource_id: str,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db),
 ):
     """
     Get tables for a resource.
@@ -445,7 +445,7 @@ async def get_resource_tables_di(
 @document_intelligence_router.get(
     "/resources/{resource_id}/metadata", response_model=ScholarlyMetadataResponse
 )
-async def get_scholarly_metadata_di(resource_id: str, db: Session = Depends(get_db)):
+async def get_scholarly_metadata_di(resource_id: str, db: Session = Depends(get_sync_db)):
     """
     Get complete scholarly metadata for a resource.
 
@@ -462,7 +462,7 @@ async def get_scholarly_metadata_di(resource_id: str, db: Session = Depends(get_
 async def trigger_metadata_extraction_di(
     resource_id: str,
     request: MetadataExtractionRequest,
-    db: Session = Depends(get_db),
+    db: Session = Depends(get_sync_db),
 ):
     """
     Manually trigger scholarly metadata extraction.

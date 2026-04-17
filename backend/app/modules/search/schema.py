@@ -87,7 +87,7 @@ class SearchQuery(BaseModel):
 class SearchResults(BaseModel):
     total: int
     items: List[ResourceRead]
-    facets: Facets
+    facets: Facets = Field(default_factory=Facets)
     snippets: dict[str, str] = Field(default_factory=dict)
 
 
@@ -104,7 +104,7 @@ class ThreeWayHybridResults(BaseModel):
 
     total: int
     items: List[ResourceRead]
-    facets: Facets
+    facets: Facets = Field(default_factory=Facets)
     snippets: dict[str, str] = Field(default_factory=dict)
     latency_ms: float
     method_contributions: MethodContributions
