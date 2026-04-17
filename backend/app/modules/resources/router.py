@@ -192,19 +192,51 @@ async def create_resource_endpoint(
         except Exception:
             engine_url = get_settings().DATABASE_URL
 
-        logger.info(f"Adding background task for resource {resource.id}")
-        logger.info(f"Engine URL: {engine_url}")
-
-        # Kick off background ingestion
-        background.add_task(
-            process_ingestion,
-            str(resource.id),
-            archive_root=None,
-            ai=None,
-            engine_url=engine_url,
-        )
-
-        logger.info(f"Background task added successfully for resource {resource.id}")
+        # Check MODE to determine how to process ingestion
+        settings = get_settings()
+        mode = getattr(settings, "MODE", "EDGE")
+        
+        logger.info(f"Processing resource {resource.id} in {mode} mode")
+        
+        if mode == "CLOUD":
+            # CLOUD mode: Queue to Redis for edge worker processing
+            try:
+                from ...services.queue_service import QueueService
+                
+                queue_service = QueueService()
+                
+                task_data = {
+                    "resource_id": str(resource.id),
+                    "url": str(payload.url),
+                    "title": payload.title or "Untitled",
+                    "submitted_at": datetime.utcnow().isoformat(),
+                    "ttl": 86400,  # 24 hours
+                }
+                
+                # Queue to Redis (async operation)
+                job_id = await queue_service.submit_job(task_data)
+                logger.info(f"✓ Queued resource {resource.id} to Redis (job_id={job_id})")
+                
+            except Exception as queue_error:
+                logger.error(f"Failed to queue resource {resource.id} to Redis: {queue_error}", exc_info=True)
+                raise HTTPException(
+                    status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                    detail=f"Failed to queue ingestion task: {str(queue_error)}"
+                )
+        else:
+            # EDGE mode: Process locally with background task
+            logger.info(f"Adding background task for resource {resource.id}")
+            logger.info(f"Engine URL: {engine_url}")
+            
+            background.add_task(
+                process_ingestion,
+                str(resource.id),
+                archive_root=None,
+                ai=None,
+                engine_url=engine_url,
+            )
+            
+            logger.info(f"Background task added successfully for resource {resource.id}")
 
         return ResourceAccepted(
             id=str(resource.id),
