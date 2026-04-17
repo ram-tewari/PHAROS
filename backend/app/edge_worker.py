@@ -157,72 +157,42 @@ async def connect_to_database():
 
 
 async def process_task(task: dict, embedding_service, db_session_factory):
-    """Process a single embedding task."""
+    """Process a single ingestion task using the full pipeline.
+
+    Calls process_ingestion which handles: fetch, extract, AI summarize/tag,
+    normalize, archive, embed, chunk, and graph extraction.
+    """
     import asyncio
-    from sqlalchemy import select
-    
+
     task_id = task.get("task_id")
     resource_id = task.get("resource_id")
 
     logger.info(f"Processing task {task_id} for resource {resource_id}")
 
     try:
-        # Use sync database operations in thread pool to avoid asyncpg issues
         loop = asyncio.get_event_loop()
-        
+
         def _process_sync():
-            from app.shared.database import SessionLocal
-            from app.database import models as db_models
-            
-            session = SessionLocal()
+            from app.modules.resources.service import process_ingestion
+
             try:
-                # Get resource
-                resource = session.get(db_models.Resource, resource_id)
-                if not resource:
-                    logger.error(f"Resource {resource_id} not found")
-                    return False
-
-                # Extract text from resource (title + description)
-                text_parts = []
-                if resource.title:
-                    text_parts.append(resource.title)
-                if resource.description:
-                    text_parts.append(resource.description)
-                
-                text = " ".join(text_parts) if text_parts else resource.title or "Untitled"
-                
-                logger.info(f"Extracted text ({len(text)} chars) from resource {resource_id}")
-
-                # Generate embedding
+                logger.info(f"Starting full ingestion pipeline for resource {resource_id}")
                 start_time = time.time()
-                embedding = embedding_service.generate_embedding(text)
+
+                process_ingestion(resource_id=resource_id)
+
                 elapsed = time.time() - start_time
-
-                if not embedding:
-                    logger.error(f"Failed to generate embedding for task {task_id}")
-                    return False
-
                 logger.info(
-                    f"Generated embedding ({len(embedding)} dims) in {elapsed*1000:.0f}ms"
+                    f"Full ingestion completed for resource {resource_id} in {elapsed:.1f}s"
                 )
-
-                # Update resource with embedding and status
-                resource.embedding = str(embedding)  # Convert to string for storage
-                resource.ingestion_status = "completed"
-                resource.ingestion_completed_at = datetime.utcnow()
-                
-                session.commit()
-                logger.info(f"Stored embedding for resource {resource_id}")
                 return True
-
             except Exception as e:
-                logger.error(f"Database error: {e}", exc_info=True)
-                session.rollback()
+                logger.error(
+                    f"Ingestion failed for resource {resource_id}: {e}", exc_info=True
+                )
                 return False
-            finally:
-                session.close()
-        
-        # Run sync database operations in thread pool
+
+        # Run sync ingestion in thread pool
         return await loop.run_in_executor(None, _process_sync)
 
     except Exception as e:
@@ -277,7 +247,7 @@ async def poll_and_process(redis_client, embedding_service, db_session_factory):
                 await asyncio.sleep(poll_interval)
 
         except KeyboardInterrupt:
-            logger.info("\n🛑 Shutting down edge worker...")
+            logger.info("\nShutting down edge worker...")
             logger.info(
                 f"   Total tasks processed: {tasks_processed} (success), {tasks_failed} (failed)"
             )
@@ -320,7 +290,7 @@ if __name__ == "__main__":
     try:
         asyncio.run(main())
     except KeyboardInterrupt:
-        logger.info("\n👋 Edge worker stopped")
+        logger.info("\nEdge worker stopped")
         sys.exit(0)
     except Exception as e:
         logger.error(f"Fatal error: {e}", exc_info=True)
