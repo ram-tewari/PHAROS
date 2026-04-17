@@ -356,7 +356,7 @@ class Settings(BaseSettings):
 
     # Advanced RAG Architecture
     # Chunking Configuration
-    CHUNK_ON_RESOURCE_CREATE: bool = False  # Enable automatic chunking during ingestion
+    CHUNK_ON_RESOURCE_CREATE: bool = True  # Enable automatic chunking during ingestion
     CHUNKING_STRATEGY: str = "semantic"  # "semantic" or "fixed"
     CHUNK_SIZE: int = 500  # Words for semantic, characters for fixed
     CHUNK_OVERLAP: int = 50  # Words or characters overlap between chunks
@@ -365,7 +365,7 @@ class Settings(BaseSettings):
     GRAPH_EXTRACTION_ENABLED: bool = True  # Enable graph extraction
     GRAPH_EXTRACTION_METHOD: str = "llm"  # "llm", "spacy", or "hybrid"
     GRAPH_EXTRACT_ON_CHUNK: bool = (
-        False  # Enable automatic graph extraction after chunking
+        True  # Enable automatic graph extraction after chunking
     )
 
     # Synthetic Questions Configuration
