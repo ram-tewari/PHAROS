@@ -169,9 +169,10 @@ def three_way_hybrid_search_endpoint(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(ve)
         )
     except Exception as exc:
+        logger.error(f"Three-way hybrid search failed: {type(exc).__name__}: {exc}", exc_info=True)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Three-way hybrid search failed",
+            detail=f"Three-way hybrid search failed: {type(exc).__name__}: {str(exc)[:300]}",
         ) from exc
 
 

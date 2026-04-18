@@ -343,8 +343,12 @@ class AdvancedSearchService:
             List of (resource_id, score) tuples
         """
         try:
-            # Check database type
-            dialect_name = db.bind.dialect.name
+            # Detect database type without Session.bind (removed in SQLAlchemy 2.x)
+            try:
+                from ..shared.database import get_database_type
+                dialect_name = get_database_type()
+            except Exception:
+                dialect_name = "postgresql"  # default for production
 
             if dialect_name == "sqlite":
                 # SQLite FTS5 search
