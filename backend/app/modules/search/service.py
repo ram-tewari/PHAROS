@@ -209,13 +209,17 @@ class SearchService:
 
         all_chunks = chunks_query.all()
 
-        # Compute similarity scores (simplified - would use vector DB in production)
+        # Compute similarity scores using actual embeddings
         chunk_scores = []
         for chunk in all_chunks:
-            # In production, chunk embeddings would be stored and indexed
-            # For now, we'll use a placeholder score based on text similarity
-            score = self._compute_similarity_score(query, chunk.content)
-            chunk_scores.append((chunk, score))
+            if chunk.embedding:
+                # Use cosine similarity between query embedding and chunk embedding
+                score = self._cosine_similarity(query_embedding, chunk.embedding)
+                chunk_scores.append((chunk, score))
+            else:
+                # Fallback to keyword similarity if no embedding
+                score = self._compute_similarity_score(query, chunk.content)
+                chunk_scores.append((chunk, score))
 
         # Sort by score and take top-k
         chunk_scores.sort(key=lambda x: x[1], reverse=True)
@@ -332,6 +336,36 @@ class SearchService:
         score = overlap / len(query_words)
 
         return min(score, 1.0)
+
+    def _cosine_similarity(self, vec1: List[float], vec2: List[float]) -> float:
+        """
+        Compute cosine similarity between two vectors.
+
+        Args:
+            vec1: First vector
+            vec2: Second vector
+
+        Returns:
+            Cosine similarity score (-1.0 to 1.0, typically 0.0 to 1.0 for embeddings)
+        """
+        import numpy as np
+
+        # Convert to numpy arrays
+        v1 = np.array(vec1)
+        v2 = np.array(vec2)
+
+        # Compute cosine similarity
+        dot_product = np.dot(v1, v2)
+        norm1 = np.linalg.norm(v1)
+        norm2 = np.linalg.norm(v2)
+
+        if norm1 == 0 or norm2 == 0:
+            return 0.0
+
+        similarity = dot_product / (norm1 * norm2)
+
+        # Clamp to [0, 1] range (embeddings are typically in this range)
+        return max(0.0, min(1.0, float(similarity)))
 
     # ========================================================================
     # GraphRAG Retrieval
