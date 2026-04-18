@@ -248,6 +248,11 @@ class AdvancedSearchRequest(BaseModel):
         default=None,
         description="Filter by relationship types (GraphRAG only): CONTRADICTS, SUPPORTS, EXTENDS, CITES",
     )
+    include_code: bool = Field(
+        default=False,
+        description="Fetch and attach source code to each result chunk. "
+                    "Local chunks use stored content; remote chunks are fetched from GitHub.",
+    )
 
     @field_validator("query")
     @classmethod
@@ -263,11 +268,15 @@ class DocumentChunkResult(BaseModel):
 
     id: str = Field(..., description="Chunk UUID")
     resource_id: str = Field(..., description="Parent resource UUID")
-    content: str = Field(..., description="Chunk content")
+    content: str = Field(..., description="Chunk content (empty string for remote-only chunks)")
     chunk_index: int = Field(..., description="Position within parent resource")
     chunk_metadata: Optional[dict] = Field(
         None, description="Chunk metadata (page, line numbers, etc.)"
     )
+    # Code retrieval fields — populated when include_code=True in the request
+    code: Optional[str] = Field(None, description="Resolved source code (local content or GitHub fetch)")
+    source: Optional[Literal["local", "github"]] = Field(None, description="Where the code was retrieved from")
+    cache_hit: Optional[bool] = Field(None, description="True if the code was served from Redis cache")
 
 
 class GraphPathNode(BaseModel):
@@ -298,6 +307,18 @@ class AdvancedSearchResult(BaseModel):
     score: float = Field(..., description="Relevance score")
 
 
+class CodeFetchMetrics(BaseModel):
+    """Aggregate metrics from a code-resolution pass."""
+
+    total_chunks: int = Field(..., description="Total chunks processed")
+    local_chunks: int = Field(..., description="Chunks resolved from local content")
+    remote_chunks: int = Field(..., description="Chunks fetched from GitHub")
+    fetched_ok: int = Field(..., description="Successful GitHub fetches")
+    fetch_errors: int = Field(..., description="Failed GitHub fetches")
+    cache_hits: int = Field(..., description="GitHub fetches served from Redis cache")
+    total_latency_ms: float = Field(..., description="Total code-resolution latency in milliseconds")
+
+
 class AdvancedSearchResponse(BaseModel):
     """Response schema for advanced search."""
 
@@ -306,3 +327,7 @@ class AdvancedSearchResponse(BaseModel):
     results: List[AdvancedSearchResult] = Field(..., description="Search results")
     total: int = Field(..., description="Total number of results")
     latency_ms: float = Field(..., description="Search latency in milliseconds")
+    code_metrics: Optional[CodeFetchMetrics] = Field(
+        None,
+        description="Code resolution metrics — present only when include_code=True",
+    )

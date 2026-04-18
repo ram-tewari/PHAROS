@@ -63,11 +63,18 @@ class Summarizer:
         self._ensure_loaded()
         if self._pipe is not None:
             try:
+                # CRITICAL: Truncate input to prevent CUDA context overflow
+                # Most summarization models have 1024 token limit
+                # Truncate to ~3000 chars (~750 tokens) to be safe
+                if len(text) > 3000:
+                    text = text[:3000]
+                
                 result = self._pipe(
                     text,
                     max_length=self.max_length,
                     min_length=self.min_length,
                     do_sample=False,
+                    truncation=True,  # Force truncation at tokenizer level
                 )
                 if isinstance(result, list) and result:
                     summary_text = result[0].get("summary_text") or ""
@@ -138,10 +145,17 @@ class ZeroShotTagger:
         self._ensure_loaded()
         if self._pipe is not None:
             try:
+                # CRITICAL: Truncate input to prevent CUDA context overflow
+                # Zero-shot models typically have 1024 token limit
+                # Truncate to ~3000 chars (~750 tokens) to be safe
+                if len(text) > 3000:
+                    text = text[:3000]
+                
                 res = self._pipe(
                     text,
                     candidate_labels=self.candidate_labels,
                     multi_label=self.multi_label,
+                    truncation=True,  # Force truncation at tokenizer level
                 )
                 labels = res.get("labels") or []
                 scores = res.get("scores") or []

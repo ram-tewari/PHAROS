@@ -814,6 +814,7 @@ from .schema import (
     AdvancedSearchRequest,
     AdvancedSearchResponse,
     AdvancedSearchResult,
+    CodeFetchMetrics,
     DocumentChunkResult,
     GraphPathNode,
 )
@@ -828,7 +829,7 @@ advanced_search_router = APIRouter(
     response_model=AdvancedSearchResponse,
     status_code=status.HTTP_200_OK,
 )
-def advanced_search_endpoint(
+async def advanced_search_endpoint(
     payload: AdvancedSearchRequest, db: Session = Depends(get_sync_db)
 ):
     """
@@ -855,19 +856,14 @@ def advanced_search_endpoint(
     - Merges results using weighted scoring
     - Provides both context expansion and graph relationships
 
-    Returns enhanced results with:
-    - Retrieved chunks with embeddings
-    - Parent resource context
-    - Surrounding chunks (parent-child)
-    - Graph paths explaining retrieval (GraphRAG)
-    - Relevance scores
+    Set `include_code=true` to fetch and attach source code to each result chunk.
+    Local chunks use stored content; remote chunks are fetched from GitHub on demand.
     """
     try:
         start_time = time.time()
         search_service = _get_search_service(db)
 
         if payload.strategy == "parent-child":
-            # Parent-child retrieval
             results = search_service.parent_child_search(
                 query=payload.query,
                 top_k=payload.top_k,
@@ -875,7 +871,6 @@ def advanced_search_endpoint(
             )
 
         elif payload.strategy == "graphrag":
-            # GraphRAG retrieval
             results = search_service.graphrag_search(
                 query=payload.query,
                 top_k=payload.top_k,
@@ -883,57 +878,70 @@ def advanced_search_endpoint(
             )
 
         elif payload.strategy == "hybrid":
-            # Hybrid retrieval (combine both strategies)
             parent_child_results = search_service.parent_child_search(
                 query=payload.query,
                 top_k=payload.top_k,
                 context_window=payload.context_window,
             )
-
             graphrag_results = search_service.graphrag_search(
                 query=payload.query,
                 top_k=payload.top_k,
                 relation_types=payload.relation_types,
             )
-
-            # Merge results by combining scores
-            merged_results = _merge_search_results(
+            results = _merge_search_results(
                 parent_child_results, graphrag_results, top_k=payload.top_k
             )
-            results = merged_results
         else:
             raise ValueError(f"Unknown strategy: {payload.strategy}")
 
+        # Resolve source code when requested
+        code_map: dict[str, dict] = {}
+        code_metrics = None
+        if payload.include_code and results:
+            from ...database.models import DocumentChunk
+            from ...modules.github.code_resolver import resolve_code_for_chunks
+
+            chunk_ids = [r["chunk"]["id"] for r in results]
+            orm_chunks = (
+                db.query(DocumentChunk)
+                .filter(DocumentChunk.id.in_(chunk_ids))
+                .all()
+            )
+            code_map, metrics_dict = await resolve_code_for_chunks(orm_chunks)
+            code_metrics = CodeFetchMetrics(**metrics_dict)
+
         latency_ms = (time.time() - start_time) * 1000
 
-        # Convert results to response format
+        # Build response
         response_results = []
         for result in results:
-            # Extract chunk data
+            chunk_id = result["chunk"]["id"]
+            code_data = code_map.get(chunk_id, {})
+
             chunk_data = DocumentChunkResult(
-                id=result["chunk"]["id"],
+                id=chunk_id,
                 resource_id=result["chunk"]["resource_id"],
-                content=result["chunk"]["content"],
+                content=result["chunk"]["content"] or "",
                 chunk_index=result["chunk"]["chunk_index"],
                 chunk_metadata=result["chunk"].get("chunk_metadata"),
+                code=code_data.get("code"),
+                source=code_data.get("source"),
+                cache_hit=code_data.get("cache_hit"),
             )
 
-            # Extract parent resource
             parent_resource = ResourceRead.model_validate(result["parent_resource"])
 
-            # Extract surrounding chunks
             surrounding_chunks = [
                 DocumentChunkResult(
                     id=chunk["id"],
                     resource_id=chunk["resource_id"],
-                    content=chunk["content"],
+                    content=chunk["content"] or "",
                     chunk_index=chunk["chunk_index"],
                     chunk_metadata=chunk.get("chunk_metadata"),
                 )
                 for chunk in result.get("surrounding_chunks", [])
             ]
 
-            # Extract graph path
             graph_path = [
                 GraphPathNode(
                     entity_id=node["entity_id"],
@@ -961,6 +969,7 @@ def advanced_search_endpoint(
             results=response_results,
             total=len(response_results),
             latency_ms=latency_ms,
+            code_metrics=code_metrics,
         )
 
     except ValueError as ve:

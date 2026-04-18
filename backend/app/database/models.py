@@ -623,6 +623,7 @@ class GraphEntity(Base):
         String(50), nullable=False
     )  # Concept, Person, Organization, Method
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    entity_metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(

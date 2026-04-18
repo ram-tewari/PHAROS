@@ -218,9 +218,9 @@ def create_database_engine(
                 # Command Timeout: Maximum time for any single command
                 "command_timeout": 60,  # 60 seconds
                 
-                # Connection Limits
-                "min_size": 0,  # No minimum pool size (let SQLAlchemy manage)
-                "max_size": 1,  # One connection per asyncpg pool (SQLAlchemy pools on top)
+                # NOTE: min_size and max_size are NOT valid for asyncpg.connect()
+                # They are only for asyncpg.create_pool(), which SQLAlchemy doesn't use
+                # SQLAlchemy manages its own connection pool via pool_size/max_overflow
             }
             
             # SSL Configuration

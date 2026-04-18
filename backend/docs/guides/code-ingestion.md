@@ -497,3 +497,92 @@ For issues or questions:
 - Check the [Troubleshooting](#troubleshooting) section
 - Review backend logs for detailed error messages
 - Open an issue on GitHub with reproduction steps
+
+---
+
+## Hybrid Retrieval Workflow
+
+When code chunks are ingested from a GitHub repository, Pharos stores only the **metadata** for remote chunks (URI, commit SHA, line range) rather than duplicating the raw source in the database. Source code is fetched on demand via the GitHub module.
+
+### How it works
+
+```
+Search query
+    │
+    ▼
+POST /api/search/advanced  { "include_code": true }
+    │
+    ├── Search Service (semantic + keyword retrieval)
+    │       returns result dicts with chunk IDs
+    │
+    ├── DB re-query: fetch ORM DocumentChunk objects by ID
+    │
+    └── resolve_code_for_chunks(orm_chunks)
+            │
+            ├── is_remote=False → read chunk.content  (source: "local")
+            │
+            └── is_remote=True  → GitHubFetcher.fetch_chunk()
+                    │
+                    ├── Redis HIT  → return cached code   (cache_hit: true)
+                    └── Redis MISS → GET raw GitHub URL
+                                     slice lines
+                                     store in Redis (TTL 1h)
+                                     return code            (cache_hit: false)
+```
+
+### Attach code inline (search response)
+
+```bash
+curl -X POST http://127.0.0.1:8000/api/search/advanced \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "bubble sort implementation",
+    "strategy": "parent-child",
+    "top_k": 5,
+    "include_code": true
+  }'
+```
+
+Each `chunk` in the response gains three extra fields:
+- `code` — the resolved source code string (or `null` on fetch error)
+- `source` — `"local"` or `"github"`
+- `cache_hit` — `true` / `false` / `null` (null for local chunks)
+
+The response also includes a top-level `code_metrics` object with aggregate stats.
+
+### Fetch code directly (GitHub API)
+
+For ad-hoc lookups without a search query:
+
+```bash
+# Single chunk
+curl -X POST http://127.0.0.1:8000/api/github/fetch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "github_uri": "https://raw.githubusercontent.com/owner/repo/abc123/src/sort.py",
+    "start_line": 10,
+    "end_line": 40
+  }'
+
+# Batch (up to 50)
+curl -X POST http://127.0.0.1:8000/api/github/fetch-batch \
+  -H "Content-Type: application/json" \
+  -d '{
+    "chunks": [
+      { "github_uri": "https://raw.githubusercontent.com/owner/repo/main/a.py", "start_line": 1, "end_line": 30 },
+      { "github_uri": "https://raw.githubusercontent.com/owner/repo/main/b.py", "start_line": 50, "end_line": 80 }
+    ]
+  }'
+```
+
+### Performance considerations
+
+| Scenario | Typical latency |
+|----------|----------------|
+| Local chunk (no fetch) | < 1 ms |
+| Remote chunk, cache HIT | < 10 ms |
+| Remote chunk, cache MISS | 100–300 ms |
+| 10 remote chunks (parallel) | ~300 ms |
+| 50 remote chunks (parallel) | ~500 ms |
+
+Set `GITHUB_API_TOKEN` in your environment to raise the GitHub rate limit from 60 to 5,000 requests/hour.

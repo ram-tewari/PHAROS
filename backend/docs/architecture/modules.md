@@ -74,6 +74,23 @@ Production-ready architecture with 11 self-contained vertical slice modules. (Re
 | 9 | **Graph** | Knowledge graph | citation.extracted, graph.updated, hypothesis.discovered | resource.created, resource.deleted |
 | 10 | **Monitoring** | System health | - | All events (metrics) |
 | 11 | **MCP** | Model Context Protocol | - | - |
+| 12 | **GitHub** | On-demand code fetch | - | - |
+
+### GitHub Module (`app.modules.github`)
+
+The GitHub module provides on-demand retrieval of raw source code from GitHub, with Redis caching and SSRF protection.
+
+**Components:**
+- `fetcher.py` — `GitHubFetcher` async context manager; `FetchRequest`/`FetchResult` dataclasses; `fetch_chunks_for_results()` convenience helper
+- `code_resolver.py` — `resolve_code_for_chunks(chunks)` partitions chunks by `is_remote`, reads local content directly and fetches remote chunks via `GitHubFetcher` with `asyncio.gather` + per-chunk timeout; returns `{chunk_id: {code, source, cache_hit}}` and aggregate metrics
+- `router.py` — `POST /api/github/fetch`, `POST /api/github/fetch-batch`, `GET /api/github/health` (thin wrappers; no new service class)
+- `schema.py` — `GitHubFetchRequest/Response`, `GitHubBatchFetchRequest/Response`, `GitHubHealthResponse`
+
+**Safeguards:**
+- SSRF allowlist: only `raw.githubusercontent.com` and `api.github.com`
+- Hard cap: 50 remote chunks per `resolve_code_for_chunks` call
+- Per-chunk timeout: 5 s
+- Cache TTL: 1 hour (keyed on commit SHA + path + line range)
 
 ---
 

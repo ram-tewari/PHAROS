@@ -96,6 +96,7 @@ def register_all_modules(app: FastAPI) -> None:
         ("mcp", "app.modules.mcp", ["mcp_router"]),
         ("patterns", "app.modules.patterns", ["patterns_router"]),
         ("pdf_ingestion", "app.modules.pdf_ingestion", ["router"]),  # Phase 4: PDF ingestion
+        ("github", "app.modules.github", ["github_router"]),  # GitHub on-demand code fetch
     ]
 
     # Modules that require torch (only load in EDGE mode)

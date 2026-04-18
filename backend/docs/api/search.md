@@ -284,6 +284,17 @@ This endpoint provides access to advanced RAG retrieval strategies:
 - `top_k` (optional): Number of results to return (default: 5)
 - `context_window` (optional): Number of surrounding chunks for parent-child (default: 2)
 - `relation_types` (optional): Relationship types for GraphRAG (default: all)
+- `include_code` (optional, default `false`): Fetch and attach source code to each result chunk. Local chunks use stored content; remote (GitHub) chunks are fetched on demand and cached in Redis for 1 hour. Adds `code`, `source`, and `cache_hit` fields to each chunk plus a top-level `code_metrics` object.
+
+**Request Body (with code attachment):**
+```json
+{
+  "query": "hash map implementation",
+  "strategy": "parent-child",
+  "top_k": 5,
+  "include_code": true
+}
+```
 
 **Response (Parent-Child Strategy):**
 ```json
@@ -317,6 +328,40 @@ This endpoint provides access to advanced RAG retrieval strategies:
   ],
   "total": 5,
   "latency_ms": 185.3
+}
+```
+
+**Response (with `include_code=true`):**
+```json
+{
+  "query": "hash map implementation",
+  "strategy": "parent-child",
+  "results": [
+    {
+      "chunk": {
+        "id": "chunk-uuid-1",
+        "resource_id": "550e8400-e29b-41d4-a716-446655440000",
+        "content": "",
+        "chunk_index": 12,
+        "code": "def __init__(self):\n    self.table = [None] * 256\n",
+        "source": "github",
+        "cache_hit": false
+      },
+      "parent_resource": { "id": "550e8400-e29b-41d4-a716-446655440000", "title": "HashMap" },
+      "score": 0.94
+    }
+  ],
+  "total": 5,
+  "latency_ms": 342.1,
+  "code_metrics": {
+    "total_chunks": 5,
+    "local_chunks": 2,
+    "remote_chunks": 3,
+    "fetched_ok": 3,
+    "fetch_errors": 0,
+    "cache_hits": 1,
+    "total_latency_ms": 154.7
+  }
 }
 ```
 
