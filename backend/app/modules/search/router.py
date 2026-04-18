@@ -477,9 +477,7 @@ def batch_generate_sparse_embeddings_endpoint(
             resources_to_process = resources_query.count()
         else:
             resources_query = db.query(Resource).filter(
-                or_(
-                    Resource.sparse_embedding.is_(None), Resource.sparse_embedding == ""
-                )
+                Resource.sparse_embedding.is_(None)
             )
             resources_to_process = resources_query.count()
 

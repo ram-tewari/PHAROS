@@ -170,10 +170,7 @@ class SparseEmbeddingService:
                 query = self.db.query(Resource).filter(Resource.id.in_(resource_ids))
             else:
                 query = self.db.query(Resource).filter(
-                    or_(
-                        Resource.sparse_embedding.is_(None),
-                        Resource.sparse_embedding == "",
-                    )
+                    Resource.sparse_embedding.is_(None)
                 )
 
             resources = query.all()

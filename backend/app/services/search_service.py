@@ -138,6 +138,12 @@ class AdvancedSearchService:
         else:
             rerank_time = 0.0
 
+        # Recover from any aborted transaction before issuing ORM queries
+        try:
+            db.rollback()
+        except Exception:
+            pass
+
         # Step 7: Fetch resources and apply pagination
         resource_ids = [rid for rid, _ in merged_results[offset : offset + limit]]
 
@@ -500,12 +506,10 @@ class AdvancedSearchService:
                 return []
 
             # Fetch all resources with sparse embeddings
+            # Note: sparse_embedding may be JSONB (not TEXT), so avoid != "" comparison
             resources = (
                 db.query(Resource)
-                .filter(
-                    Resource.sparse_embedding.isnot(None),
-                    Resource.sparse_embedding != "",
-                )
+                .filter(Resource.sparse_embedding.isnot(None))
                 .all()
             )
 
