@@ -72,6 +72,58 @@ class ResourceStatus(str, enum.Enum):
 
 
 # ============================================================================
+# Repository Models (GitHub Hybrid Storage)
+# ============================================================================
+
+
+class Repository(Base):
+    """
+    Repository model for GitHub hybrid storage.
+    
+    Stores metadata about ingested code repositories while actual code
+    stays on GitHub. Supports AST analysis, embeddings, and dependency graphs.
+    """
+
+    __tablename__ = "repositories"
+
+    # Primary key
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+
+    # Repository identification
+    url: Mapped[str] = mapped_column(String(2048), nullable=False, unique=True, index=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    
+    # Repository metadata (JSON with files, imports, functions, classes, embeddings_count)
+    # Use 'repo_metadata' instead of 'metadata' (reserved by SQLAlchemy)
+    repo_metadata: Mapped[dict] = mapped_column("metadata", JSON, nullable=False)
+    
+    # Statistics
+    total_files: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    total_lines: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    
+    # Audit fields
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        nullable=False,
+        server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    # Indexes
+    __table_args__ = (
+        Index("idx_repository_url", "url"),
+        Index("idx_repository_name", "name"),
+        Index("idx_repository_created", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Repository(id={self.id!r}, name={self.name!r}, files={self.total_files})>"
+
+
+# ============================================================================
 # Resource Models
 # ============================================================================
 
@@ -1769,6 +1821,8 @@ class ProposedRule(Base):
 __all__ = [
     # Enums
     "ResourceStatus",
+    # Repository models (GitHub hybrid storage)
+    "Repository",
     # Resource models
     "Resource",
     # Advanced RAG models

@@ -75,6 +75,7 @@ class RepositoryConverter:
         if not repo:
             raise ValueError(f"Repository {repo_id} not found")
 
+        # Parse metadata (column name is 'metadata' in database)
         metadata = json.loads(repo.metadata) if isinstance(repo.metadata, str) else repo.metadata
         files = metadata.get("files", [])
 
@@ -188,11 +189,11 @@ class RepositoryConverter:
             text("""
                 INSERT INTO resources (
                     id, title, type, format, source, identifier,
-                    description, subject, read_status,
+                    description, subject, read_status, quality_score,
                     created_at, updated_at
                 ) VALUES (
                     gen_random_uuid(), :title, :type, :format, :source, :identifier,
-                    :description, CAST(:subject AS jsonb), :read_status,
+                    :description, CAST(:subject AS jsonb), :read_status, :quality_score,
                     NOW(), NOW()
                 )
                 RETURNING id
@@ -205,7 +206,8 @@ class RepositoryConverter:
                 "identifier": identifier,
                 "description": json.dumps(file_metadata),
                 "subject": json.dumps(file_data.get("imports", [])[:10]),  # First 10 imports as subjects
-                "read_status": "unread"  # Explicitly set read_status
+                "read_status": "unread",  # Explicitly set read_status
+                "quality_score": 0.0,  # Default quality score for code
             }
         )
 

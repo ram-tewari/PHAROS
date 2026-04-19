@@ -69,7 +69,7 @@ class RepositoryWorker:
 
         self.redis_url = redis_url
         self.redis_token = redis_token
-        self.queue_key = "ingest_queue"  # Phase 19 queue
+        self.queue_key = "pharos:tasks"  # Must match QueueService.QUEUE_KEY
 
         # Test Redis connection
         print("[INIT] Testing Redis connection...")
@@ -141,6 +141,14 @@ class RepositoryWorker:
     def clone_repository(self, repo_url: str, target_dir: Path) -> bool:
         """Clone a GitHub repository."""
         try:
+            # Normalize URL format
+            if not repo_url.startswith(("http://", "https://", "git@")):
+                # Add https:// prefix and .git suffix
+                repo_url = f"https://{repo_url}.git"
+            elif not repo_url.endswith(".git"):
+                # Add .git suffix if missing
+                repo_url = f"{repo_url}.git"
+            
             print(f"[CLONE] Cloning {repo_url}...")
             sys.stdout.flush()
 
@@ -268,49 +276,222 @@ class RepositoryWorker:
         return metadata
 
     async def store_repository(self, repo_url: str, metadata: Dict, embeddings: Dict) -> str:
-        """Store repository metadata in database."""
+        """Store repository metadata AND create searchable resources/chunks directly."""
         print("[STORE] Saving to database...")
         sys.stdout.flush()
 
         async for session in get_db():
             try:
                 # Store embeddings separately (not in metadata JSON to keep it small)
-                # We'll pass embeddings to the converter via the event
                 metadata_without_embeddings = {k: v for k, v in metadata.items() if k != "embeddings"}
 
-                # Create repository record
+                # Check if repository already exists
                 result = await session.execute(
-                    text("""
-                        INSERT INTO repositories (
-                            id, url, name, metadata,
-                            total_files, total_lines,
-                            created_at, updated_at
-                        ) VALUES (
-                            gen_random_uuid(), :url, :name, CAST(:metadata AS jsonb),
-                            :total_files, :total_lines,
-                            NOW(), NOW()
-                        )
-                        RETURNING id
-                    """),
-                    {
-                        "url": repo_url,
-                        "name": repo_url.split("/")[-1],
-                        "metadata": json.dumps(metadata_without_embeddings),
-                        "total_files": metadata["total_files"],
-                        "total_lines": metadata["total_lines"],
-                    }
+                    text("SELECT id FROM repositories WHERE url = :url"),
+                    {"url": repo_url}
                 )
+                existing_repo = result.scalar_one_or_none()
+                
+                if existing_repo:
+                    print(f"[INFO] Repository already exists: {existing_repo}")
+                    print(f"[INFO] Updating metadata and creating resources...")
+                    repo_id = str(existing_repo)
+                    
+                    # Update existing repository
+                    await session.execute(
+                        text("""
+                            UPDATE repositories
+                            SET metadata = CAST(:metadata AS jsonb),
+                                total_files = :total_files,
+                                total_lines = :total_lines,
+                                updated_at = NOW()
+                            WHERE id = :repo_id
+                        """),
+                        {
+                            "repo_id": repo_id,
+                            "metadata": json.dumps(metadata_without_embeddings),
+                            "total_files": metadata["total_files"],
+                            "total_lines": metadata["total_lines"],
+                        }
+                    )
+                else:
+                    # Create new repository record
+                    result = await session.execute(
+                        text("""
+                            INSERT INTO repositories (
+                                id, url, name, metadata,
+                                total_files, total_lines,
+                                created_at, updated_at
+                            ) VALUES (
+                                gen_random_uuid(), :url, :name, CAST(:metadata AS jsonb),
+                                :total_files, :total_lines,
+                                NOW(), NOW()
+                            )
+                            RETURNING id
+                        """),
+                        {
+                            "url": repo_url,
+                            "name": repo_url.split("/")[-1],
+                            "metadata": json.dumps(metadata_without_embeddings),
+                            "total_files": metadata["total_files"],
+                            "total_lines": metadata["total_lines"],
+                        }
+                    )
+                    repo_id = str(result.scalar_one())
 
-                repo_id = result.scalar_one()
                 await session.commit()
-
                 print(f"[OK] Repository stored: {repo_id}")
                 sys.stdout.flush()
 
-                return str(repo_id)
+                # Now create resources and chunks directly
+                print(f"[CONVERT] Creating {len(metadata['files'])} resources and chunks...")
+                sys.stdout.flush()
+                
+                resources_created = 0
+                chunks_created = 0
+                embeddings_linked = 0
+                
+                for idx, file_data in enumerate(metadata["files"], 1):
+                    try:
+                        # Create resource
+                        github_url = f"{repo_url}/blob/main/{file_data['path']}"
+                        identifier = f"repo:{repo_id}:{file_data['path']}"
+                        
+                        file_metadata = {
+                            "repo_id": repo_id,
+                            "repo_url": repo_url,
+                            "repo_name": repo_url.split("/")[-1],
+                            "file_path": file_data["path"],
+                            "file_size": file_data.get("size", 0),
+                            "lines": file_data.get("lines", 0),
+                            "imports": file_data.get("imports", []),
+                            "functions": file_data.get("functions", []),
+                            "classes": file_data.get("classes", [])
+                        }
+                        
+                        result = await session.execute(
+                            text("""
+                                INSERT INTO resources (
+                                    id, title, type, format, source, identifier,
+                                    description, subject, read_status, quality_score,
+                                    created_at, updated_at
+                                ) VALUES (
+                                    gen_random_uuid(), :title, :type, :format, :source, :identifier,
+                                    :description, CAST(:subject AS jsonb), :read_status, :quality_score,
+                                    NOW(), NOW()
+                                )
+                                RETURNING id
+                            """),
+                            {
+                                "title": file_data["path"],
+                                "type": "code",
+                                "format": "text/x-python",
+                                "source": github_url,
+                                "identifier": identifier,
+                                "description": json.dumps(file_metadata),
+                                "subject": json.dumps(file_data.get("imports", [])[:10]),
+                                "read_status": "unread",
+                                "quality_score": 0.0,
+                            }
+                        )
+                        resource_id = str(result.scalar_one())
+                        resources_created += 1
+                        
+                        # Create chunk
+                        summary_parts = [
+                            f"File: {file_data['path']}",
+                            f"Functions: {', '.join(file_data.get('functions', [])[:10])}",
+                            f"Classes: {', '.join(file_data.get('classes', [])[:10])}",
+                            f"Imports: {', '.join(file_data.get('imports', [])[:10])}"
+                        ]
+                        semantic_summary = " | ".join(summary_parts)
+                        
+                        github_uri = f"https://raw.githubusercontent.com/{repo_url.replace('github.com/', '')}/main/{file_data['path']}"
+                        
+                        result = await session.execute(
+                            text("""
+                                INSERT INTO document_chunks (
+                                    id, resource_id, chunk_index,
+                                    content, semantic_summary,
+                                    is_remote, github_uri, branch_reference,
+                                    start_line, end_line,
+                                    ast_node_type, symbol_name,
+                                    chunk_metadata,
+                                    created_at
+                                ) VALUES (
+                                    gen_random_uuid(), :resource_id, :chunk_index,
+                                    NULL, :semantic_summary,
+                                    TRUE, :github_uri, :branch_reference,
+                                    :start_line, :end_line,
+                                    :ast_node_type, :symbol_name,
+                                    CAST(:chunk_metadata AS jsonb),
+                                    NOW()
+                                )
+                                RETURNING id
+                            """),
+                            {
+                                "resource_id": resource_id,
+                                "chunk_index": 0,
+                                "semantic_summary": semantic_summary,
+                                "github_uri": github_uri,
+                                "branch_reference": "main",
+                                "start_line": 1,
+                                "end_line": file_data.get("lines", 0),
+                                "ast_node_type": "module",
+                                "symbol_name": file_data["path"].replace("/", ".").replace(".py", ""),
+                                "chunk_metadata": json.dumps({
+                                    "file_path": file_data["path"],
+                                    "language": "python",
+                                    "lines": file_data.get("lines", 0),
+                                    "functions": file_data.get("functions", []),
+                                    "classes": file_data.get("classes", []),
+                                    "imports": file_data.get("imports", [])
+                                })
+                            }
+                        )
+                        chunk_id = str(result.scalar_one())
+                        chunks_created += 1
+                        
+                        # Link embedding if available
+                        if file_data["path"] in embeddings:
+                            await session.execute(
+                                text("""
+                                    UPDATE resources
+                                    SET embedding = :embedding
+                                    WHERE id = :resource_id
+                                """),
+                                {
+                                    "resource_id": resource_id,
+                                    "embedding": json.dumps(embeddings[file_data["path"]])
+                                }
+                            )
+                            embeddings_linked += 1
+                        
+                        # Commit every 100 files to avoid huge transactions
+                        if idx % 100 == 0:
+                            await session.commit()
+                            print(f"[CONVERT] Progress: {idx}/{len(metadata['files'])} files...")
+                            sys.stdout.flush()
+                        
+                    except Exception as e:
+                        print(f"[WARN] Failed to convert {file_data['path']}: {e}")
+                        continue
+                
+                # Final commit
+                await session.commit()
+                
+                print(f"[OK] Conversion complete!")
+                print(f"  Resources: {resources_created}")
+                print(f"  Chunks: {chunks_created}")
+                print(f"  Embeddings: {embeddings_linked}")
+                sys.stdout.flush()
+
+                return repo_id
 
             except Exception as e:
                 print(f"[ERROR] Database error: {e}")
+                import traceback
+                traceback.print_exc()
                 await session.rollback()
                 raise
             finally:
@@ -393,24 +574,8 @@ class RepositoryWorker:
                 # Store embeddings in metadata for converter to use
                 metadata["embeddings"] = embeddings
 
-            # Step 5: Store in database
+            # Step 5: Store in database and create resources/chunks
             repo_id = await self.store_repository(repo_url, metadata, embeddings)
-
-            # Step 6: Emit event for automatic conversion
-            print("[EVENT] Emitting repository.ingested event...")
-            sys.stdout.flush()
-
-            from app.shared.event_bus import event_bus
-            event_bus.emit("repository.ingested", {
-                "repo_id": repo_id,
-                "repo_url": repo_url,
-                "total_files": metadata["total_files"],
-                "total_lines": metadata["total_lines"],
-                "embeddings": embeddings  # Pass embeddings to converter
-            })
-
-            print("[OK] Event emitted, converter will run automatically")
-            sys.stdout.flush()
 
             job_end = datetime.now()
             duration = (job_end - job_start).total_seconds()
@@ -431,8 +596,6 @@ class RepositoryWorker:
             print(f"Duration: {duration:.2f}s")
             print("=" * 60)
             print()
-            print("Note: Automatic conversion to resources/chunks will happen in background")
-            print()
             sys.stdout.flush()
 
         except Exception as e:
@@ -452,7 +615,7 @@ class RepositoryWorker:
     async def run_async(self) -> None:
         """Async worker loop that polls queue every 2 seconds."""
         print("[WORKER] Polling Redis queue every 2 seconds...")
-        print("[WORKER] Queue: ingest_queue")
+        print(f"[WORKER] Queue: {self.queue_key}")
         print("[WORKER] Press Ctrl+C to stop")
         print()
         sys.stdout.flush()
