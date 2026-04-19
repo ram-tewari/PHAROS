@@ -210,16 +210,21 @@ class SearchService:
 
         all_chunks = chunks_query.all()
 
-        # Compute similarity scores using actual embeddings
+        # Compute similarity scores using actual embeddings from resources table
         chunk_scores = []
         for chunk in all_chunks:
-            # Check if embedding is in chunk_metadata (current storage location)
+            # Get embedding from parent resource (stored in resources.embedding column)
             embedding = None
-            if chunk.chunk_metadata and "embedding_vector" in chunk.chunk_metadata:
-                embedding_str = chunk.chunk_metadata["embedding_vector"]
-                # Parse string to list of floats (stored as space-separated string)
+            if chunk.resource and chunk.resource.embedding:
+                embedding_str = chunk.resource.embedding
+                # Parse JSON string to list of floats
                 if isinstance(embedding_str, str):
-                    embedding = [float(x) for x in embedding_str.split()]
+                    import json
+                    try:
+                        embedding = json.loads(embedding_str)
+                    except json.JSONDecodeError:
+                        # Try space-separated format as fallback
+                        embedding = [float(x) for x in embedding_str.split()]
                 else:
                     embedding = embedding_str  # Already a list
             
@@ -228,9 +233,8 @@ class SearchService:
                 score = self._cosine_similarity(query_embedding, embedding)
                 chunk_scores.append((chunk, score))
             else:
-                # Fallback to keyword similarity if no embedding
-                score = self._compute_similarity_score(query, chunk.content or "")
-                chunk_scores.append((chunk, score))
+                # Skip chunks without embeddings (don't use keyword fallback for semantic search)
+                continue
 
         # Sort by score and take top-k
         chunk_scores.sort(key=lambda x: x[1], reverse=True)
