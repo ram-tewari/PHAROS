@@ -31,7 +31,7 @@ services:
     plan: starter  # $7/mo - 512MB RAM, 0.5 CPU
     
     # Build Configuration
-    buildCommand: pip install -r requirements-cloud.txt && alembic upgrade head
+    buildCommand: pip install -r requirements-cloud.txt && alembic upgrade heads
     startCommand: gunicorn -c gunicorn_conf.py app.main:app
     
     # Auto-deploy on push to main branch
