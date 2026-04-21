@@ -9,7 +9,6 @@ from __future__ import annotations
 
 import ast
 import logging
-import re
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -633,7 +632,7 @@ class ASTAnalyzer:
 
         # Detect singleton (@lru_cache on callables)
         # (rough heuristic via function names)
-        singleton_funcs = sum(
+        sum(
             1 for v in self._visitors
             for name in v.function_names
             if name.startswith("get_") and name.endswith("s") is False

@@ -24,6 +24,7 @@ Design Patterns:
 
 import logging
 from typing import List, Optional, Dict, Any
+import ast
 from celery import Task
 
 from .celery_app import celery_app
@@ -1264,7 +1265,6 @@ def heuristic_sieve_task(self, db=None):
     happens on the local extraction worker that consumes the queue.
     """
     import ast
-    import hashlib
     import json
     from datetime import datetime, timedelta, timezone
 

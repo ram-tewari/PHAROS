@@ -9,8 +9,12 @@ import uuid as uuid_module
 
 try:
     from tree_sitter import Language, Parser
-    import tree_sitter_python, tree_sitter_javascript, tree_sitter_typescript
-    import tree_sitter_rust, tree_sitter_go, tree_sitter_java
+    import tree_sitter_python
+    import tree_sitter_javascript
+    import tree_sitter_typescript
+    import tree_sitter_rust
+    import tree_sitter_go
+    import tree_sitter_java
 
     TREE_SITTER_AVAILABLE = True
     LANGUAGE_MODULES = {

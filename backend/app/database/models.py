@@ -40,11 +40,9 @@ from sqlalchemy import (
     Integer,
     ForeignKey,
     Index,
-    ARRAY,
     Boolean,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
-from sqlalchemy.dialects import postgresql
 
 from ..shared.base_model import Base, GUID
 

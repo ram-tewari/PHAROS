@@ -363,7 +363,6 @@ def init_database(database_url: str | None = None, env: str = "prod") -> None:
     initial_backoff = 2.0  # Start with 2 seconds
     backoff_multiplier = 2.0
 
-    last_error = None
     backoff = initial_backoff
 
     for attempt in range(max_retries):
@@ -399,7 +398,6 @@ def init_database(database_url: str | None = None, env: str = "prod") -> None:
             return  # Success!
 
         except Exception as e:
-            last_error = e
 
             # Check if this is a connection refused error (NeonDB auto-suspend)
             if _is_connection_refused_error(e) and attempt < max_retries - 1:

@@ -17,9 +17,7 @@ Architecture:
 
 import logging
 import json
-from typing import Dict, List, Optional
-from uuid import UUID
-from datetime import datetime
+from typing import Dict, List
 
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -420,7 +418,7 @@ def handle_repository_ingested(payload: Dict) -> None:
                 stats = await converter.convert_repository(repo_id)
 
                 logger.info(f"[CONVERTER] Auto-conversion complete: {stats}")
-                print(f"[CONVERTER] Conversion complete!")
+                print("[CONVERTER] Conversion complete!")
                 print(f"  Resources: {stats['resources_created']}")
                 print(f"  Chunks: {stats['chunks_created']}")
                 print(f"  Embeddings: {stats['embeddings_linked']}")

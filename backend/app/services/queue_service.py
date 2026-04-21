@@ -24,6 +24,10 @@ class QueueService:
     QUEUE_KEY = "pharos:tasks"  # Must match edge worker queue key
     STATUS_KEY_PREFIX = "pharos:status:"
     HISTORY_KEY = "pharos:history"
+    # Secondary hash index for O(1) job lookup by job_id. The queue list above
+    # preserves FIFO order for the edge worker; this hash lets status / update
+    # operations skip the O(n) LRANGE scan. See ADR-015.
+    JOBS_HASH_KEY = "pharos:jobs"
 
     def __init__(self):
         self.settings = get_settings()
@@ -103,11 +107,16 @@ class QueueService:
                     detail=f"Queue is full ({queue_size}/{self.settings.QUEUE_SIZE})",
                 )
 
-            # Add to queue
-            self.redis.rpush(self.QUEUE_KEY, json.dumps(job_data))
+            job_json = json.dumps(job_data)
+
+            # Add to queue (FIFO order for edge worker)
+            self.redis.rpush(self.QUEUE_KEY, job_json)
+
+            # Secondary hash index: O(1) lookup by job_id
+            self.redis.hset(self.JOBS_HASH_KEY, job_id, job_json)
 
             # Add to history
-            self.redis.lpush(self.HISTORY_KEY, json.dumps(job_data))
+            self.redis.lpush(self.HISTORY_KEY, job_json)
             # Trim history to last 1000 entries
             self.redis.ltrim(self.HISTORY_KEY, 0, 999)
 
@@ -130,30 +139,37 @@ class QueueService:
         loop = asyncio.get_event_loop()
 
         def _get_status():
-            # Check current queue for pending jobs
-            queue_jobs = self.redis.lrange(self.QUEUE_KEY, 0, -1)
-            for job_json in queue_jobs:
+            # O(1) lookup via secondary hash index (ADR-015).
+            job_json = self.redis.hget(self.JOBS_HASH_KEY, job_id)
+            if job_json:
+                if isinstance(job_json, bytes):
+                    job_json = job_json.decode("utf-8")
                 try:
-                    if isinstance(job_json, bytes):
-                        job_json = job_json.decode("utf-8")
                     job = json.loads(job_json)
-                    if job.get("job_id") == job_id:
+                    status = job.get("status", "pending")
+                    if status in ("pending", "processing"):
                         return {
                             "job_id": job_id,
-                            "status": job.get("status", "pending"),
-                            "position": queue_jobs.index(job_json) + 1,
+                            "status": status,
                             "created_at": job.get("created_at"),
                         }
+                    return {
+                        "job_id": job_id,
+                        "status": status,
+                        "result": job.get("result"),
+                        "error": job.get("error"),
+                        "completed_at": job.get("completed_at"),
+                    }
                 except (json.JSONDecodeError, ValueError):
-                    continue
+                    pass
 
-            # Check history for completed/failed jobs
+            # Fall back to history scan for jobs evicted from the hash.
             history_jobs = self.redis.lrange(self.HISTORY_KEY, 0, -1)
-            for job_json in history_jobs:
+            for entry in history_jobs:
                 try:
-                    if isinstance(job_json, bytes):
-                        job_json = job_json.decode("utf-8")
-                    job = json.loads(job_json)
+                    if isinstance(entry, bytes):
+                        entry = entry.decode("utf-8")
+                    job = json.loads(entry)
                     if job.get("job_id") == job_id:
                         return {
                             "job_id": job_id,
@@ -228,33 +244,43 @@ class QueueService:
         loop = asyncio.get_event_loop()
 
         def _update():
-            # Find and update in queue
-            queue_jobs = self.redis.lrange(self.QUEUE_KEY, 0, -1)
-            for i, job_json in enumerate(queue_jobs):
-                try:
-                    if isinstance(job_json, bytes):
-                        job_json = job_json.decode("utf-8")
-                    job = json.loads(job_json)
-                    if job.get("job_id") == job_id:
-                        job["status"] = status
-                        if result:
-                            job["result"] = result
-                        if error:
-                            job["error"] = error
-                        job["completed_at"] = datetime.utcnow().isoformat()
+            # O(1) fetch via secondary hash index (ADR-015).
+            job_json = self.redis.hget(self.JOBS_HASH_KEY, job_id)
+            if not job_json:
+                return False
+            if isinstance(job_json, bytes):
+                job_json = job_json.decode("utf-8")
 
-                        # Remove from queue
-                        self.redis.lrem(self.QUEUE_KEY, 0, job_json)
+            try:
+                job = json.loads(job_json)
+            except (json.JSONDecodeError, ValueError):
+                return False
 
-                        # Add to history
-                        self.redis.lpush(self.HISTORY_KEY, json.dumps(job))
-                        self.redis.ltrim(self.HISTORY_KEY, 0, 999)
+            original_json = job_json
+            job["status"] = status
+            if result:
+                job["result"] = result
+            if error:
+                job["error"] = error
+            job["completed_at"] = datetime.utcnow().isoformat()
+            updated_json = json.dumps(job)
 
-                        return True
-                except (json.JSONDecodeError, ValueError):
-                    continue
+            # Remove the original entry from the FIFO queue (O(n) in Redis,
+            # but only the n comparisons inside Redis, not per-item JSON
+            # decoding in Python).
+            self.redis.lrem(self.QUEUE_KEY, 0, original_json)
 
-            return False
+            # Drop from hash on terminal status; keep updated entry otherwise.
+            if status in ("completed", "failed"):
+                self.redis.hdel(self.JOBS_HASH_KEY, job_id)
+            else:
+                self.redis.hset(self.JOBS_HASH_KEY, job_id, updated_json)
+
+            # Add to history
+            self.redis.lpush(self.HISTORY_KEY, updated_json)
+            self.redis.ltrim(self.HISTORY_KEY, 0, 999)
+
+            return True
 
         return await loop.run_in_executor(None, _update)
 
@@ -273,12 +299,18 @@ class QueueService:
         loop = asyncio.get_event_loop()
 
         def _get_position():
+            # Short-circuit via hash: if the job isn't pending/processing,
+            # it's not in the queue anymore — skip the O(n) scan entirely.
+            job_json = self.redis.hget(self.JOBS_HASH_KEY, job_id)
+            if not job_json:
+                return None
+
             queue_jobs = self.redis.lrange(self.QUEUE_KEY, 0, -1)
-            for i, job_json in enumerate(queue_jobs):
+            for i, entry in enumerate(queue_jobs):
                 try:
-                    if isinstance(job_json, bytes):
-                        job_json = job_json.decode("utf-8")
-                    job = json.loads(job_json)
+                    if isinstance(entry, bytes):
+                        entry = entry.decode("utf-8")
+                    job = json.loads(entry)
                     if job.get("job_id") == job_id:
                         return i + 1
                 except (json.JSONDecodeError, ValueError):
@@ -313,6 +345,8 @@ class QueueService:
         def _clear():
             size = self.redis.llen(self.QUEUE_KEY)
             self.redis.delete(self.QUEUE_KEY)
+            # Drop the secondary hash index alongside the queue.
+            self.redis.delete(self.JOBS_HASH_KEY)
             return size
 
         return await loop.run_in_executor(None, _clear)

@@ -707,10 +707,10 @@ def get_pool_status() -> dict:
     pool = engine.pool
     db_type = get_database_type()
 
-    checked_out = pool.checkedout()
-    checked_in = pool.checkedin()
-    overflow = pool.overflow()
-    size = pool.size()
+    checked_out = pool.checkedout()  # type: ignore[attr-defined]
+    checked_in = pool.checkedin()  # type: ignore[attr-defined]
+    overflow = pool.overflow()  # type: ignore[attr-defined]
+    size = pool.size()  # type: ignore[attr-defined]
 
     # Get max_overflow from pool configuration
     max_overflow = getattr(pool, "_max_overflow", 0)

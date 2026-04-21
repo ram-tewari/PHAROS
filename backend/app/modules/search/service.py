@@ -19,6 +19,7 @@ Architecture:
 
 from __future__ import annotations
 
+import heapq
 import logging
 from typing import Any, Dict, List, Tuple
 
@@ -235,9 +236,8 @@ class SearchService:
                 # Skip chunks without embeddings (don't use keyword fallback for semantic search)
                 continue
 
-        # Sort by score and take top-k
-        chunk_scores.sort(key=lambda x: x[1], reverse=True)
-        top_chunks = chunk_scores[:top_k]
+        # Top-K via size-K min-heap: O(N log K) instead of O(N log N).
+        top_chunks = heapq.nlargest(top_k, chunk_scores, key=lambda x: x[1])
 
         # Expand to parent resources and surrounding chunks
         results = []
@@ -479,11 +479,11 @@ class SearchService:
                         chunk_paths[chunk_id] = path
                         chunk_entities[chunk_id] = entity
 
-        # Retrieve chunks and sort by score
+        # Retrieve chunks; top-K via heap (O(N log K)).
         results = []
-        for chunk_id, score in sorted(
-            chunk_scores.items(), key=lambda x: x[1], reverse=True
-        )[:top_k]:
+        for chunk_id, score in heapq.nlargest(
+            top_k, chunk_scores.items(), key=lambda x: x[1]
+        ):
             chunk = (
                 self.db.query(DocumentChunk)
                 .filter(DocumentChunk.id == chunk_id)
@@ -793,9 +793,8 @@ class SearchService:
             score = self._compute_similarity_score(query, question.question_text)
             question_scores.append((question, score))
 
-        # Sort by score and take top-k
-        question_scores.sort(key=lambda x: x[1], reverse=True)
-        top_questions = question_scores[:top_k]
+        # Top-K via size-K min-heap: O(N log K) instead of O(N log N).
+        top_questions = heapq.nlargest(top_k, question_scores, key=lambda x: x[1])
 
         # Retrieve chunks associated with matching questions
         results = []

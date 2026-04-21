@@ -11,7 +11,6 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy.orm import Session
-from sqlalchemy import func
 
 from ...shared.database import get_pool_status
 from ...shared.event_bus import event_bus

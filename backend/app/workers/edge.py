@@ -23,8 +23,6 @@ import logging
 import os
 import sys
 import time
-from datetime import datetime
-from typing import Optional
 
 # Configure logging
 logging.basicConfig(
@@ -74,7 +72,7 @@ def check_gpu():
         if torch.cuda.is_available():
             device_name = torch.cuda.get_device_name(0)
             device_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
-            cuda_version = torch.version.cuda
+            cuda_version = torch.version  # type: ignore[attr-defined].cuda
 
             logger.info("GPU Detected:")
             logger.info(f"   Device: {device_name}")
@@ -166,6 +164,10 @@ async def process_task(task: dict, embedding_service, db_session_factory):
 
     task_id = task.get("task_id")
     resource_id = task.get("resource_id")
+
+    if resource_id is None:
+        logger.error(f"Task {task_id} missing resource_id")
+        return
 
     logger.info(f"Processing task {task_id} for resource {resource_id}")
 
@@ -315,7 +317,7 @@ async def main():
     check_environment()
 
     # 2. Check GPU
-    device = check_gpu()
+    check_gpu()
 
     # 3. Load embedding model
     embedding_service = load_embedding_model()

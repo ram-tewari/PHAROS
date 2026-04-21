@@ -28,7 +28,6 @@ from ...shared.security import (
     validate_redirect_url,
 )
 from ...shared.cache import cache
-from ...shared.rate_limiter import rate_limiter
 from ...config.settings import get_settings
 from .schema import (
     TokenResponse,

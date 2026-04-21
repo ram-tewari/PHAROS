@@ -118,7 +118,7 @@ class RedisCache:
             value = self.redis.get(key)
             if value:
                 self.stats.record_hit()
-                return json.loads(value)
+                return json.loads(value)  # type: ignore[arg-type]
             self.stats.record_miss()
             return None
         except redis.RedisError as e:

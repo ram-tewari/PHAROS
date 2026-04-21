@@ -18,7 +18,7 @@ CSRF Protection Strategy:
 import logging
 from typing import Callable
 
-from fastapi import Request, HTTPException
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
@@ -210,8 +210,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             allowed.append(settings.FRONTEND_URL)
 
         # Add API URL if set
-        if hasattr(settings, "API_URL") and settings.API_URL:
-            allowed.append(settings.API_URL)
+        if hasattr(settings, "API_URL") and settings.API_URL  # type: ignore[attr-defined]:
+            allowed.append(settings.API_URL  # type: ignore[attr-defined])
 
         # Add localhost origins for development
         allowed.extend(

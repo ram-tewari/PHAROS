@@ -446,10 +446,10 @@ class Settings(BaseSettings):
                 if self.DEVICE == "cuda":
                     gpu_name = torch.cuda.get_device_name(0)
                     gpu_memory = torch.cuda.get_device_properties(0).total_memory / 1e9
-                    print(f"Edge Worker GPU Detected:")
+                    print("Edge Worker GPU Detected:")
                     print(f"   Device: {gpu_name}")
                     print(f"   Memory: {gpu_memory:.1f} GB")
-                    print(f"   CUDA Version: {torch.version.cuda}")
+                    print(f"   CUDA Version: {torch.version.cuda}")  # type: ignore[attr-defined]
                 else:
                     print("CUDA not available, falling back to CPU")
             except ImportError:

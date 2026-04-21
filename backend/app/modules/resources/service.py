@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import logging
+import uuid
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 from datetime import datetime, timezone
@@ -12,7 +13,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy import func, or_, asc, desc, String, cast, select
 
 from ...database import models as db_models
-from ...shared.database import Base, SessionLocal
+from ...shared.database import Base
 from ...utils import content_extractor as ce
 from ...utils.text_processor import clean_text, readability_scores
 from .schema import ResourceUpdate, PageParams, SortParams, ResourceFilters
@@ -782,7 +783,7 @@ def process_ingestion(
             # Store abstract in description if not already set
             if pdf_metadata.get("abstract") and not resource.description:
                 resource.description = pdf_metadata["abstract"]
-                logger.info(f"Set resource description from PDF abstract")
+                logger.info("Set resource description from PDF abstract")
 
             # Store subject/keywords if available
             if pdf_metadata.get("keywords"):

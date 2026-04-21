@@ -5,8 +5,7 @@ SQLAlchemy models for MCP sessions.
 """
 
 from datetime import datetime
-from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, JSON, String
-from sqlalchemy.orm import relationship
+from sqlalchemy import Column, DateTime, Index, Integer, JSON, String
 
 from ...shared.base_model import Base
 

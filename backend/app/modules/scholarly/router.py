@@ -11,7 +11,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
-from ...shared.database import get_db, get_sync_db
+from ...shared.database import get_sync_db
 from ...database import models as db_models
 from .schema import (
     ScholarlyMetadataResponse,

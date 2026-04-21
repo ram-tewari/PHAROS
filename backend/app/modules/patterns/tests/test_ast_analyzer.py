@@ -7,9 +7,7 @@ architecture detection, style analysis, and fingerprint generation.
 
 import ast
 import textwrap
-from pathlib import Path
 
-import pytest
 
 from app.modules.patterns.logic.ast_analyzer import (
     ASTAnalyzer,

@@ -18,7 +18,6 @@ For GPU-accelerated Node2Vec graph embeddings, use deployment/worker.py with Qdr
 
 import os
 import sys
-import time
 import json
 import asyncio
 import signal
@@ -27,7 +26,7 @@ import tempfile
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -45,7 +44,7 @@ try:
     from app.shared.database import init_database, get_db
     from app.config.settings import get_settings
     # Import converter to register event handler
-    from app.modules.resources import repository_converter
+    from app.modules.resources import repository_converter  # noqa: F401
 except ImportError as e:
     print(f"[ERROR] Import Error: {e}")
     sys.exit(1)
@@ -194,7 +193,7 @@ class RepositoryWorker:
         metadata["total_files"] = len(python_files)
 
         print(f"[PARSE] Found {len(python_files)} Python files")
-        print(f"[PARSE] Parsing ALL files (no limit)...")
+        print("[PARSE] Parsing ALL files (no limit)...")
         sys.stdout.flush()
 
         # Parse ALL files (no artificial limit)
@@ -280,6 +279,7 @@ class RepositoryWorker:
         print("[STORE] Saving to database...")
         sys.stdout.flush()
 
+        repo_id = ""
         async for session in get_db():
             try:
                 # Store embeddings separately (not in metadata JSON to keep it small)
@@ -294,7 +294,7 @@ class RepositoryWorker:
                 
                 if existing_repo:
                     print(f"[INFO] Repository already exists: {existing_repo}")
-                    print(f"[INFO] Updating metadata and creating resources...")
+                    print("[INFO] Updating metadata and creating resources...")
                     repo_id = str(existing_repo)
                     
                     # Update existing repository
@@ -449,7 +449,7 @@ class RepositoryWorker:
                                 })
                             }
                         )
-                        chunk_id = str(result.scalar_one())
+                        str(result.scalar_one())
                         chunks_created += 1
                         
                         # Link embedding if available
@@ -480,7 +480,7 @@ class RepositoryWorker:
                 # Final commit
                 await session.commit()
                 
-                print(f"[OK] Conversion complete!")
+                print("[OK] Conversion complete!")
                 print(f"  Resources: {resources_created}")
                 print(f"  Chunks: {chunks_created}")
                 print(f"  Embeddings: {embeddings_linked}")
@@ -496,6 +496,8 @@ class RepositoryWorker:
                 raise
             finally:
                 break
+        
+        return repo_id
 
     async def generate_embeddings(self, metadata: Dict) -> Dict:
         """Generate embeddings for repository files and functions."""
@@ -549,10 +551,15 @@ class RepositoryWorker:
         """Process a repository ingestion task with full workflow."""
         job_start = datetime.now()
         repo_url = task_data.get("repo_url")
+        
+        if repo_url is None:
+            print("[ERROR] Task missing repo_url")
+            return
+            
         temp_dir = None
 
         print(f"[TASK] Received task: ingest {repo_url}")
-        print(f"[TASK] Full workflow: clone -> parse -> AST -> embeddings -> store -> convert")
+        print("[TASK] Full workflow: clone -> parse -> AST -> embeddings -> store -> convert")
         sys.stdout.flush()
 
         try:
@@ -608,7 +615,7 @@ class RepositoryWorker:
             if temp_dir and temp_dir.exists():
                 try:
                     shutil.rmtree(temp_dir)
-                    print(f"[CLEANUP] Removed temporary directory")
+                    print("[CLEANUP] Removed temporary directory")
                 except Exception as e:
                     print(f"[WARN] Failed to cleanup: {e}")
 

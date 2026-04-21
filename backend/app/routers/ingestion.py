@@ -13,7 +13,6 @@ Security: All /ingest endpoints require valid Bearer token authentication
 to prevent unauthorized users from bombarding the edge worker.
 """
 
-import json
 import logging
 import os
 import re

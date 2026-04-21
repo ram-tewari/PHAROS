@@ -4,7 +4,8 @@ Reciprocal Rank Fusion Service
 Implements Reciprocal Rank Fusion (RRF) for combining multiple ranked lists.
 """
 
-from typing import List, Tuple, Dict
+import heapq
+from typing import List, Optional, Tuple, Dict
 from collections import defaultdict
 
 
@@ -26,7 +27,10 @@ class ReciprocalRankFusionService:
         self.k = k
 
     def fuse(
-        self, ranked_lists: List[List[Tuple[str, float]]], weights: List[float] = None
+        self,
+        ranked_lists: List[List[Tuple[str, float]]],
+        weights: List[float] = None,
+        top_k: Optional[int] = None,
     ) -> List[Tuple[str, float]]:
         """
         Fuse multiple ranked lists using RRF.
@@ -34,6 +38,8 @@ class ReciprocalRankFusionService:
         Args:
             ranked_lists: List of ranked lists, each containing (id, score) tuples
             weights: Optional weights for each list (default: equal weights)
+            top_k: If set, return only the K highest-scoring fused results using
+                a size-K min-heap (O(N log K) instead of O(N log N)).
 
         Returns:
             Fused ranked list of (id, score) tuples
@@ -41,18 +47,16 @@ class ReciprocalRankFusionService:
         if not ranked_lists:
             return []
 
-        # Default to equal weights
         if weights is None:
             weights = [1.0] * len(ranked_lists)
 
-        # Calculate RRF scores
         rrf_scores: Dict[str, float] = defaultdict(float)
 
         for ranked_list, weight in zip(ranked_lists, weights):
             for rank, (doc_id, _) in enumerate(ranked_list, start=1):
                 rrf_scores[doc_id] += weight * (1.0 / (self.k + rank))
 
-        # Sort by RRF score (descending)
-        fused_results = sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)
+        if top_k is not None and top_k < len(rrf_scores):
+            return heapq.nlargest(top_k, rrf_scores.items(), key=lambda x: x[1])
 
-        return fused_results
+        return sorted(rrf_scores.items(), key=lambda x: x[1], reverse=True)

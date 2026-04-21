@@ -85,7 +85,7 @@ def handle_resource_deleted(event):
 
 
 def emit_annotation_created(
-    annotation_id: str, resource_id: str, user_id: str, note: str = None
+    annotation_id: str, resource_id: str, user_id: str, note: str | None = None
 ):
     """
     Emit annotation.created event.

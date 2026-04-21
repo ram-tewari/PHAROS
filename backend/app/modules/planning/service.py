@@ -679,7 +679,7 @@ class ArchitectureParser:
                     )
                 )
 
-        except Exception as e:
+        except Exception:
             # Log error but don't fail - gap detection is optional
             pass
 

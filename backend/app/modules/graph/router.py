@@ -1482,7 +1482,6 @@ def _get_hover_information_impl(
     from app.modules.graph.schema import (
         HoverInformationResponse,
         LocationInfo,
-        ChunkReference,
     )
     from app.modules.graph.logic.static_analysis import StaticAnalysisService
     from app.database.models import Resource, DocumentChunk
@@ -2018,7 +2017,7 @@ async def detect_communities(
 
         # If we have cached assignments for all resources, use them
         if len(db_cached_assignments) == len(resource_id_list):
-            logger.debug(f"Database cache hit for community detection")
+            logger.debug("Database cache hit for community detection")
 
             # Build result from cached assignments
             communities = {

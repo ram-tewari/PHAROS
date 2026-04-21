@@ -16,9 +16,10 @@ Related files:
 - app/config/settings.py: Circuit breaker configuration
 """
 
+import asyncio
 import logging
 from functools import wraps
-from typing import Any, Callable, Optional, TypeVar, ParamSpec
+from typing import Callable, Optional, TypeVar, ParamSpec
 
 try:
     import pybreaker
@@ -227,7 +228,7 @@ def with_circuit_breaker(
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> T:
             try:
                 return breaker.call(func, *args, **kwargs)
-            except pybreaker.CircuitBreakerError as e:
+            except pybreaker.CircuitBreakerError:
                 logger.warning(
                     f"Circuit breaker '{breaker.name}' is open, using fallback"
                 )
@@ -278,7 +279,7 @@ def with_circuit_breaker_async(
                     breaker.failure(e)
                     raise
 
-            except pybreaker.CircuitBreakerError as e:
+            except pybreaker.CircuitBreakerError:
                 logger.warning(
                     f"Circuit breaker '{breaker.name}' is open, using fallback"
                 )

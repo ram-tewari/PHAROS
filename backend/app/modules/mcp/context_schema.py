@@ -227,7 +227,7 @@ def format_context_for_llm(context: AssembledContext) -> str:
     sections = []
 
     # Header
-    sections.append(f"<context_assembly>")
+    sections.append("<context_assembly>")
     sections.append(f"<query>{context.query}</query>")
     sections.append(f"<codebase>{context.codebase}</codebase>")
 
@@ -244,10 +244,10 @@ def format_context_for_llm(context: AssembledContext) -> str:
             sections.append(
                 f"    <similarity>{chunk.similarity_score:.3f}</similarity>"
             )
-            sections.append(f"    <content><![CDATA[")
+            sections.append("    <content><![CDATA[")
             sections.append(chunk.content)
-            sections.append(f"    ]]></content>")
-            sections.append(f"  </chunk>")
+            sections.append("    ]]></content>")
+            sections.append("  </chunk>")
         sections.append("</relevant_code>")
 
     # Graph dependencies section
@@ -260,7 +260,7 @@ def format_context_for_llm(context: AssembledContext) -> str:
             )
             sections.append(f"    <source>{dep.source_chunk_id}</source>")
             sections.append(f"    <target>{dep.target_chunk_id}</target>")
-            sections.append(f"  </dependency>")
+            sections.append("  </dependency>")
         sections.append("</architectural_dependencies>")
 
     # Developer patterns section
@@ -275,11 +275,11 @@ def format_context_for_llm(context: AssembledContext) -> str:
                     f"    <success_rate>{pattern.success_rate:.2f}</success_rate>"
                 )
             if pattern.examples:
-                sections.append(f"    <examples>")
+                sections.append("    <examples>")
                 for example in pattern.examples[:3]:  # Limit to 3 examples
                     sections.append(f"      <example><![CDATA[{example}]]></example>")
-                sections.append(f"    </examples>")
-            sections.append(f"  </pattern>")
+                sections.append("    </examples>")
+            sections.append("  </pattern>")
         sections.append("</developer_style>")
 
     # PDF annotations section
@@ -297,10 +297,10 @@ def format_context_for_llm(context: AssembledContext) -> str:
             )
             if annotation.note:
                 sections.append(f"    <note>{annotation.note}</note>")
-            sections.append(f"    <content><![CDATA[")
+            sections.append("    <content><![CDATA[")
             sections.append(annotation.chunk_content)
-            sections.append(f"    ]]></content>")
-            sections.append(f"  </annotation>")
+            sections.append("    ]]></content>")
+            sections.append("  </annotation>")
         sections.append("</research_papers>")
 
     # Metrics section
@@ -320,7 +320,7 @@ def format_context_for_llm(context: AssembledContext) -> str:
     )
     if context.metrics.partial_results:
         sections.append(
-            f"  <warning>Partial results due to timeout</warning>"
+            "  <warning>Partial results due to timeout</warning>"
         )
     sections.append("</assembly_metrics>")
 

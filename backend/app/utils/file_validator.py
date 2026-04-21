@@ -12,10 +12,8 @@ Related files:
 """
 
 import logging
-import os
-import struct
 from pathlib import Path
-from typing import Tuple, Optional
+from typing import Tuple
 
 from ..config.settings import get_settings
 

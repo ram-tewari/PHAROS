@@ -283,7 +283,7 @@ class RepositoryParser:
         if not file_paths:
             # Empty repository - return empty graph with self-loop
             print("WARNING: No source files found")
-            edge_index = torch.tensor([[0], [0]], dtype=torch.long)
+            edge_index = torch.tensor(  # type: ignore[attr-defined][[0], [0]], dtype=torch.long)
             return DependencyGraph(edge_index=edge_index, file_paths=["<empty>"])
 
         # Create file index mapping
@@ -303,10 +303,10 @@ class RepositoryParser:
 
         # Convert to PyTorch tensor
         if edges:
-            edge_index = torch.tensor(edges, dtype=torch.long).t()
+            edge_index = torch.tensor(  # type: ignore[attr-defined]edges, dtype=torch.long).t()
         else:
             # Empty graph - create self-loops for all nodes
-            edge_index = torch.tensor(
+            edge_index = torch.tensor(  # type: ignore[attr-defined]
                 [[i, i] for i in range(len(file_paths))], dtype=torch.long
             ).t()
 

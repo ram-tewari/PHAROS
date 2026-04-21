@@ -7,7 +7,6 @@ rather than text content. This captures code organization and dependencies.
 
 import os
 import time
-import json
 import logging
 import torch
 from torch_geometric.nn import Node2Vec
@@ -164,7 +163,7 @@ class NeuralGraphService:
                 try:
                     client.upsert(collection_name=collection_name, points=batch)
                     break
-                except Exception as e:
+                except Exception:
                     if attempt == 2:
                         raise
                     logger.warning(

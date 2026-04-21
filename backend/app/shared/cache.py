@@ -149,9 +149,9 @@ class CacheService:
                     # Warn if using non-SSL with Upstash
                     if is_upstash and redis_url.startswith("redis://"):
                         logger.error(
-                            f"CRITICAL: Upstash requires SSL/TLS. "
-                            f"Your REDIS_URL starts with 'redis://' but should start with 'rediss://' (two S's). "
-                            f"Connection will fail. Please update your REDIS_URL."
+                            "CRITICAL: Upstash requires SSL/TLS. "
+                            "Your REDIS_URL starts with 'redis://' but should start with 'rediss://' (two S's). "
+                            "Connection will fail. Please update your REDIS_URL."
                         )
                         self.redis = None
                         self.stats = CacheStats()

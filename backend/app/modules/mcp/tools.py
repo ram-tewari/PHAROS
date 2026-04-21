@@ -7,7 +7,6 @@ This module registers existing backend capabilities as MCP tools.
 import logging
 from typing import Any, Dict
 
-from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
@@ -205,7 +204,7 @@ async def search_resources_handler(
     from ..search.service import SearchService
     from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         service = SearchService(db)
         results = await service.hybrid_search(
@@ -225,7 +224,7 @@ async def get_hover_info_handler(
     from ..graph.router import get_hover_information
     from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         result = await get_hover_information(
             file_path=arguments["file_path"],
@@ -246,7 +245,7 @@ async def compute_graph_metrics_handler(
     from ..graph.service import GraphService
     from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         service = GraphService(db)
         metrics = await service.compute_degree_centrality(arguments["resource_ids"])
@@ -262,7 +261,7 @@ async def detect_communities_handler(
     from ..graph.service import CommunityDetectionService
     from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         service = CommunityDetectionService(db)
         result = await service.detect_communities(
@@ -281,7 +280,7 @@ async def generate_plan_handler(
     from ..planning.service import MultiHopAgent
     from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         # Note: LLM client would need to be initialized
         agent = MultiHopAgent(db, llm_client=None)
@@ -301,7 +300,7 @@ async def parse_architecture_handler(
     from ..planning.service import ArchitectureParser
     from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         # Note: LLM client would need to be initialized
         parser = ArchitectureParser(db, llm_client=None)
@@ -318,10 +317,10 @@ async def link_pdf_to_code_handler(
 ) -> Any:
     """Handler for link_pdf_to_code tool"""
     from ..resources.service import AutoLinkingService
-    from ...shared.database import get_sync_db
     from ...shared.embeddings import EmbeddingGenerator
+    from ...shared.database import get_sync_db
 
-    db = next(get_db())
+    db = next(get_sync_db())
     try:
         embedding_generator = EmbeddingGenerator()
         service = AutoLinkingService(db, embedding_generator)

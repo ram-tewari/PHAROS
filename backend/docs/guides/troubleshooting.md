@@ -112,6 +112,28 @@ sudo cat /etc/postgresql/15/main/pg_hba.conf
 
 ## API Issues
 
+### 403 Forbidden (CSRF Errors)
+
+**Symptom:** `{"detail": "CSRF validation failed: Missing Origin or Referer header"}`
+
+**Root Cause:** CSRF middleware was blocking API requests without Origin/Referer headers (which API clients like curl don't send)
+
+**Solution:** CSRF middleware has been disabled for API-only service. Bearer token authentication provides sufficient protection.
+
+**Verification:**
+```bash
+# Test with admin token (should work)
+curl -X POST "https://pharos-cloud-api.onrender.com/api/github/fetch" \
+  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"github_uri": "...", "start_line": 1, "end_line": 20}'
+```
+
+**Note:** If you see CSRF errors, ensure:
+1. CSRF middleware is commented out in `backend/app/__init__.py`
+2. You're using Bearer token authentication for protected endpoints
+3. Environment variable `PHAROS_ADMIN_TOKEN` is set on Render
+
 ### 422 Validation Error
 
 **Symptom:** `{"detail":[{"loc":["body","field"],"msg":"field required"}]}`
@@ -161,20 +183,61 @@ logging.getLogger('sqlalchemy.engine').setLevel(logging.INFO)
 
 **Symptom:** Search returns empty results for known content
 
+**Root Causes:**
+1. **Using keyword overlap instead of vector similarity** - Search was using simple keyword matching instead of cosine similarity with embeddings
+2. **Embeddings stored as strings** - Embeddings stored as space-separated strings need parsing to float lists
+3. **Model not loaded in CLOUD mode** - Embedding model not loaded on API server for query embeddings
+4. **Missing ML dependencies** - PyTorch/transformers not installed in cloud requirements
+
 **Solutions:**
-1. Check FTS5 index exists:
-```sql
-SELECT * FROM resources_fts;
+
+1. **Verify vector similarity is being used:**
+```python
+# In backend/app/modules/search/service.py
+# Should use _cosine_similarity(), not _compute_similarity_score()
+for chunk in all_chunks:
+    if chunk.embedding:
+        score = self._cosine_similarity(query_embedding, chunk.embedding)
 ```
 
-2. Rebuild search index:
+2. **Check embedding string parsing:**
+```python
+# Embeddings stored as space-separated strings must be parsed
+if isinstance(embedding_str, str):
+    embedding = [float(x) for x in embedding_str.split()]
+```
+
+3. **Verify model loads for queries in CLOUD mode:**
+```python
+# In backend/app/shared/embeddings.py
+query_embedding = embedding_service.generate_embedding(
+    query, 
+    force_load_in_cloud=True  # Force load for queries
+)
+```
+
+4. **Check ML dependencies are installed:**
+```bash
+# requirements-cloud.txt should include:
+sentence-transformers==3.3.1
+torch==2.5.1
+transformers==4.47.1
+```
+
+5. **Verify embeddings exist in correct location:**
+```sql
+-- Embeddings should be in resources.embedding, not chunk metadata
+SELECT COUNT(*) FROM resources WHERE embedding IS NOT NULL;
+
+-- Check sample embedding
+SELECT id, title, 
+       CASE WHEN embedding IS NOT NULL THEN 'YES' ELSE 'NO' END as has_embedding
+FROM resources WHERE type = 'code' LIMIT 5;
+```
+
+6. **Rebuild search index if needed:**
 ```bash
 python -c "from app.services.search_service import rebuild_fts_index; rebuild_fts_index()"
-```
-
-3. Verify embeddings exist:
-```sql
-SELECT COUNT(*) FROM resources WHERE embedding IS NOT NULL;
 ```
 
 ### Search Quality Issues
@@ -193,6 +256,14 @@ SELECT COUNT(*) FROM resources WHERE embedding IS NOT NULL;
 from app.services.ai_core import AICore
 ai = AICore()
 print(ai.embedding_model)  # Should not be None
+```
+
+3. Verify cosine similarity scores are reasonable (0.7-0.95 for good matches):
+```bash
+curl -X POST "https://pharos-cloud-api.onrender.com/api/search/search/advanced" \
+  -H "Content-Type: application/json" \
+  -d '{"query": "authentication", "limit": 5}'
+# Check that results have similarity_score > 0.7
 ```
 
 ## AI/ML Issues
@@ -336,6 +407,51 @@ docker run --user root ...
 ```
 
 ## Getting Help
+
+### Repository Ingestion Issues
+
+**Symptom:** Repository ingestion fails or returns 0 results
+
+**Common Issues:**
+
+1. **Worker not running:**
+```bash
+# Start the edge worker
+cd backend
+python worker.py repo
+```
+
+2. **Missing embeddings after ingestion:**
+```bash
+# Check embedding coverage
+python -c "
+from app.shared.database import init_database, get_db
+from sqlalchemy import text
+import asyncio
+
+async def check():
+    init_database()
+    async for db in get_db():
+        result = await db.execute(text('SELECT COUNT(*) FROM resources WHERE embedding IS NOT NULL'))
+        with_emb = result.scalar()
+        result = await db.execute(text('SELECT COUNT(*) FROM resources'))
+        total = result.scalar()
+        print(f'Embeddings: {with_emb}/{total} ({with_emb/total*100:.1f}%)')
+        break
+
+asyncio.run(check())
+"
+```
+
+3. **Simplified ingestion architecture:**
+   - Worker now creates resources/chunks directly (no separate converter needed)
+   - Single transaction for reliability
+   - 3x faster than previous two-step process
+
+**Expected Performance:**
+- Parsing: ~5.3 files/second
+- Embedding: ~5.3 embeddings/second (GPU)
+- Total: ~2 seconds per file (including storage)
 
 ### Collect Debug Information
 

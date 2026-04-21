@@ -7,10 +7,8 @@ Phase 5.1: Added M2M API Key Authentication for secure access.
 """
 
 import logging
-from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 
 from .context_schema import ContextRetrievalRequest, ContextRetrievalResponse
@@ -24,7 +22,7 @@ from .schema import (
 )
 from .service import MCPServer
 from .tools import register_all_tools
-from ...shared.database import get_db, get_sync_db
+from ...shared.database import get_sync_db
 from ...shared.embeddings import EmbeddingService
 from ...shared.security import verify_api_key
 

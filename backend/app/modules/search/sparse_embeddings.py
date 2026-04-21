@@ -160,7 +160,6 @@ class SparseEmbeddingService:
             batch_size: Batch size for processing
         """
         from ...database.models import Resource
-        from sqlalchemy import or_
         import json
         from datetime import datetime
 

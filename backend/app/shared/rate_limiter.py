@@ -19,9 +19,8 @@ Related files:
 
 import logging
 import time
-from typing import Optional, Tuple
+from typing import Tuple
 
-from fastapi import Request, HTTPException, status, Depends
 
 from ..config.settings import get_settings
 

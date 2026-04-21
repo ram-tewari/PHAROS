@@ -288,13 +288,13 @@ def custom_metrics(request: Request, response: Response) -> None:
         response: FastAPI response object
     """
     # Track request duration and count
-    REQUEST_DURATION.labels(
+    REQUEST_DURATION.labels(  # type: ignore[attr-defined]
         method=request.method,
         endpoint=request.url.path,
         status_code=response.status_code,
     ).observe(0)  # Duration is handled by default metrics
 
-    REQUEST_COUNT.labels(
+    REQUEST_COUNT.labels(  # type: ignore[attr-defined]
         method=request.method,
         endpoint=request.url.path,
         status_code=response.status_code,
@@ -318,7 +318,7 @@ def track_ai_processing(operation: str):
                 return result
             finally:
                 duration = time.time() - start_time
-                AI_PROCESSING_TIME.labels(operation=operation).observe(duration)
+                AI_PROCESSING_TIME.labels(operation=operation).observe(duration)  # type: ignore[attr-defined]
 
         @wraps(func)
         def sync_wrapper(*args, **kwargs) -> Any:
@@ -328,7 +328,7 @@ def track_ai_processing(operation: str):
                 return result
             finally:
                 duration = time.time() - start_time
-                AI_PROCESSING_TIME.labels(operation=operation).observe(duration)
+                AI_PROCESSING_TIME.labels(operation=operation).observe(duration)  # type: ignore[attr-defined]
 
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
@@ -352,7 +352,7 @@ def track_database_query(operation: str):
                 return result
             finally:
                 duration = time.time() - start_time
-                DATABASE_QUERY_TIME.labels(operation=operation).observe(duration)
+                DATABASE_QUERY_TIME.labels(operation=operation).observe(duration)  # type: ignore[attr-defined]
 
         @wraps(func)
         def sync_wrapper(*args, **kwargs) -> Any:
@@ -362,7 +362,7 @@ def track_database_query(operation: str):
                 return result
             finally:
                 duration = time.time() - start_time
-                DATABASE_QUERY_TIME.labels(operation=operation).observe(duration)
+                DATABASE_QUERY_TIME.labels(operation=operation).observe(duration)  # type: ignore[attr-defined]
 
         return async_wrapper if asyncio.iscoroutinefunction(func) else sync_wrapper
 
@@ -381,7 +381,7 @@ def track_ingestion_failure(error_type: str):
     Args:
         error_type: Type of error that caused the failure
     """
-    INGESTION_FAILURE.labels(error_type=error_type).inc()
+    INGESTION_FAILURE.labels(error_type=error_type).inc()  # type: ignore[attr-defined]
 
 
 def track_cache_hit(cache_type: str):
@@ -391,7 +391,7 @@ def track_cache_hit(cache_type: str):
     Args:
         cache_type: Type of cache ('ai_model', 'classification', 'quality')
     """
-    CACHE_HITS.labels(cache_type=cache_type).inc()
+    CACHE_HITS.labels(cache_type=cache_type).inc()  # type: ignore[attr-defined]
 
 
 def track_cache_miss(cache_type: str):
@@ -401,7 +401,7 @@ def track_cache_miss(cache_type: str):
     Args:
         cache_type: Type of cache ('ai_model', 'classification', 'quality')
     """
-    CACHE_MISSES.labels(cache_type=cache_type).inc()
+    CACHE_MISSES.labels(cache_type=cache_type).inc()  # type: ignore[attr-defined]
 
 
 def increment_active_ingestions():

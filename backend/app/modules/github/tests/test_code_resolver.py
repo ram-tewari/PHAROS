@@ -11,7 +11,6 @@ GitHubFetcher is patched so tests run without network or Redis.
 
 from __future__ import annotations
 
-import asyncio
 from dataclasses import dataclass
 from typing import Optional
 from unittest.mock import AsyncMock, MagicMock, patch

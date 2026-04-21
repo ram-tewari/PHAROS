@@ -5,13 +5,10 @@ Business logic for PDF extraction, chunking, and annotation.
 Integrates with GraphRAG for conceptual linking.
 """
 
-import asyncio
 import logging
 import uuid
 from datetime import datetime
-from typing import List, Dict, Any, Optional, BinaryIO
-from pathlib import Path
-import json
+from typing import List, Dict, Any, Optional, BinaryIO, TYPE_CHECKING
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
@@ -32,6 +29,9 @@ from ...database.models import (
 )
 # Lazy import embeddings to avoid loading models in CLOUD mode
 # from ...shared.embeddings import EmbeddingService
+
+if TYPE_CHECKING:
+    from ...shared.embeddings import EmbeddingService
 from ...shared.event_bus import event_bus
 
 logger = logging.getLogger(__name__)
@@ -633,7 +633,7 @@ class PDFIngestionService:
         result = await self.db.execute(
             select(DocumentChunk).where(
                 and_(
-                    DocumentChunk.is_remote == True,  # Code chunks
+                    DocumentChunk.is_remote,  # Code chunks
                     or_(
                         DocumentChunk.semantic_summary.ilike(f"%{concept}%"),
                         DocumentChunk.symbol_name.ilike(f"%{concept}%"),
@@ -672,7 +672,7 @@ class PDFIngestionService:
         logger.info(f"GraphRAG traversal search: {query} (max_hops={max_hops})")
 
         # Step 1: Generate query embedding
-        query_embedding = await self.embedding_service.generate_embedding(query)
+        await self.embedding_service.generate_embedding(query)
 
         # Step 2: Find seed entities matching query
         # (Simplified: search for entities with names matching query terms)

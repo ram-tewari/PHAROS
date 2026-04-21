@@ -49,14 +49,11 @@ Usage
 from __future__ import annotations
 
 import ast
-import hashlib
 import logging
 import shutil
 import tempfile
-import uuid
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 import git
 import pathspec
@@ -308,7 +305,7 @@ def chunk_generic_file(
         end = min(start + chunk_size, len(lines))
         chunk_lines = lines[start:end]
         # Use first non-blank line as a summary proxy
-        summary = next((l.strip() for l in chunk_lines if l.strip()), "")
+        summary = next((line.strip() for line in chunk_lines if line.strip()), "")
         chunks.append((start + 1, end, summary[:512]))   # 1-based
         if end >= len(lines):
             break
@@ -447,8 +444,8 @@ class HybridIngestionPipeline:
             return None
         try:
             lines = [
-                l.strip() for l in gi_path.read_text(encoding="utf-8").splitlines()
-                if l.strip() and not l.strip().startswith("#")
+                line.strip() for line in gi_path.read_text(encoding="utf-8").splitlines()
+                if line.strip() and not line.strip().startswith("#")
             ]
             return pathspec.PathSpec.from_lines("gitwildmatch", lines)
         except Exception as exc:

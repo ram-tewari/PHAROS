@@ -150,7 +150,7 @@ async def create_resource_endpoint(
     db: Session = Depends(get_sync_db),
 ):
     """Create resource from URL (legacy endpoint - use /resources/upload for file upload)"""
-    logger.info(f"=== CREATE RESOURCE ENDPOINT CALLED ===")
+    logger.info("=== CREATE RESOURCE ENDPOINT CALLED ===")
     logger.info(f"Payload URL: {payload.url}")
     logger.info(f"Payload title: {payload.title}")
 
@@ -161,7 +161,7 @@ async def create_resource_endpoint(
         if "url" in payload_dict:
             payload_dict["url"] = str(payload_dict["url"])
 
-        logger.info(f"Creating pending resource...")
+        logger.info("Creating pending resource...")
         
         try:
             # create_pending_resource handles duplicate detection
@@ -209,13 +209,13 @@ async def create_resource_endpoint(
         if mode == "CLOUD":
             # CLOUD mode: Queue to Redis for edge worker processing
             try:
-                logger.info(f"Importing QueueService...")
+                logger.info("Importing QueueService...")
                 from ...services.queue_service import QueueService
                 
-                logger.info(f"Creating QueueService instance...")
+                logger.info("Creating QueueService instance...")
                 queue_service = QueueService()
                 
-                logger.info(f"Preparing task data...")
+                logger.info("Preparing task data...")
                 task_data = {
                     "resource_id": str(resource.id),
                     "url": str(payload.url),
@@ -224,7 +224,7 @@ async def create_resource_endpoint(
                     "ttl": 86400,  # 24 hours
                 }
                 
-                logger.info(f"Submitting job to queue...")
+                logger.info("Submitting job to queue...")
                 # Queue to Redis (async operation)
                 job_id = await queue_service.submit_job(task_data)
                 logger.info(f"✓ Queued resource {resource.id} to Redis (job_id={job_id})")
@@ -291,12 +291,10 @@ async def upload_resource_file(
 
     Returns 202 Accepted with resource ID and status.
     """
-    import os
-    import tempfile
     from pathlib import Path
     import chardet
 
-    logger.info(f"=== UPLOAD RESOURCE FILE ENDPOINT CALLED ===")
+    logger.info("=== UPLOAD RESOURCE FILE ENDPOINT CALLED ===")
     logger.info(f"Filename: {file.filename}")
     logger.info(f"Content type: {file.content_type}")
 
@@ -686,7 +684,6 @@ async def create_resource_chunks(
     try:
         # Load resource content from archive
         from pathlib import Path
-        import chardet
 
         archive_path = Path(resource.identifier)
         if not archive_path.exists():
@@ -942,7 +939,6 @@ async def ingest_repository(
         500: Failed to start ingestion task
     """
     from pathlib import Path
-    import chardet
     from urllib.parse import urlparse
     from ...tasks.celery_tasks import ingest_repo_task
 

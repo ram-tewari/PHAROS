@@ -41,9 +41,9 @@ class Event:
 
     name: str
     data: Dict[str, Any]
-    timestamp: datetime = None
+    timestamp: datetime | None = None
     priority: EventPriority = EventPriority.NORMAL
-    correlation_id: str = None
+    correlation_id: str | None = None
 
     def __post_init__(self):
         if self.timestamp is None:

@@ -14,7 +14,7 @@ Related files:
 from __future__ import annotations
 
 import logging
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 try:
     import tree_sitter
@@ -142,6 +142,30 @@ class StaticAnalysisService:
             logger.warning(
                 "tree-sitter not available. Static analysis will be limited."
             )
+
+    @staticmethod
+    def _iter_nodes(root_node):
+        """
+        Iterative pre-order DFS over a Tree-Sitter AST.
+
+        Uses an explicit stack instead of recursion so that deeply nested
+        syntax trees (long JSX, chained calls, macro-expanded Rust) cannot
+        exceed Python's recursion limit. Traversal order matches the
+        previous recursive implementation: parent before children,
+        left-to-right siblings.
+
+        See ADR-015 §3.
+        """
+        if root_node is None:
+            return
+        stack = [root_node]
+        while stack:
+            node = stack.pop()
+            yield node
+            # Push children in reverse so the leftmost child is popped next.
+            children = node.children
+            for i in range(len(children) - 1, -1, -1):
+                stack.append(children[i])
 
     def _get_parser(self, language: str):
         """
@@ -331,10 +355,8 @@ class StaticAnalysisService:
         """Extract Python import statements."""
         imports = []
 
-        # Simple traversal to find import statements
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "import_statement":
-                # Get import name
                 for child in node.children:
                     if child.type == "dotted_name":
                         import_name = child.text.decode("utf8")
@@ -348,7 +370,6 @@ class StaticAnalysisService:
                         )
 
             elif node.type == "import_from_statement":
-                # Get module and import names
                 module_name = None
                 import_names = []
 
@@ -358,7 +379,6 @@ class StaticAnalysisService:
                     elif child.type == "dotted_name" and module_name:
                         import_names.append(child.text.decode("utf8"))
                     elif child.type == "aliased_import":
-                        # Handle "from x import y as z"
                         for subchild in child.children:
                             if subchild.type in ["identifier", "dotted_name"]:
                                 import_names.append(subchild.text.decode("utf8"))
@@ -376,11 +396,6 @@ class StaticAnalysisService:
                             )
                         )
 
-            # Traverse children
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return imports
 
     def _extract_js_imports(
@@ -389,10 +404,8 @@ class StaticAnalysisService:
         """Extract JavaScript/TypeScript import statements."""
         imports = []
 
-        # Simple traversal to find import statements
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "import_statement":
-                # Get the source (module path)
                 for child in node.children:
                     if child.type == "string":
                         module_path = child.text.decode("utf8").strip("\"'")
@@ -406,11 +419,6 @@ class StaticAnalysisService:
                         )
                         break
 
-            # Traverse children
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return imports
 
     def _extract_go_imports(
@@ -419,11 +427,10 @@ class StaticAnalysisService:
         """Extract Go import statements."""
         imports = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "import_declaration":
                 for child in node.children:
                     if child.type == "import_spec":
-                        # Get package path
                         for spec_child in child.children:
                             if spec_child.type == "interpreted_string_literal":
                                 package_path = spec_child.text.decode("utf8").strip('"')
@@ -436,10 +443,6 @@ class StaticAnalysisService:
                                     )
                                 )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return imports
 
     def _extract_java_imports(
@@ -448,9 +451,8 @@ class StaticAnalysisService:
         """Extract Java import statements."""
         imports = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "import_declaration":
-                # Get the imported class/package
                 for child in node.children:
                     if child.type == "scoped_identifier":
                         import_name = child.text.decode("utf8")
@@ -463,10 +465,6 @@ class StaticAnalysisService:
                             )
                         )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return imports
 
     def _extract_rust_imports(
@@ -475,9 +473,8 @@ class StaticAnalysisService:
         """Extract Rust use statements."""
         imports = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "use_declaration":
-                # Get the use path
                 for child in node.children:
                     if child.type in [
                         "scoped_identifier",
@@ -494,10 +491,6 @@ class StaticAnalysisService:
                             )
                         )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return imports
 
     def _extract_definitions(
@@ -535,9 +528,8 @@ class StaticAnalysisService:
         """Extract Python function and class definitions."""
         definitions = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "function_definition":
-                # Get function name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     func_name = name_node.text.decode("utf8")
@@ -551,7 +543,6 @@ class StaticAnalysisService:
                     )
 
             elif node.type == "class_definition":
-                # Get class name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     class_name = name_node.text.decode("utf8")
@@ -564,11 +555,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            # Traverse children
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return definitions
 
     def _extract_js_definitions(
@@ -577,9 +563,8 @@ class StaticAnalysisService:
         """Extract JavaScript/TypeScript function and class definitions."""
         definitions = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type in ["function_declaration", "function"]:
-                # Get function name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     func_name = name_node.text.decode("utf8")
@@ -593,7 +578,6 @@ class StaticAnalysisService:
                     )
 
             elif node.type == "class_declaration":
-                # Get class name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     class_name = name_node.text.decode("utf8")
@@ -606,11 +590,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            # Traverse children
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return definitions
 
     def _extract_go_definitions(
@@ -619,9 +598,8 @@ class StaticAnalysisService:
         """Extract Go function and type definitions."""
         definitions = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "function_declaration":
-                # Get function name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     func_name = name_node.text.decode("utf8")
@@ -635,7 +613,6 @@ class StaticAnalysisService:
                     )
 
             elif node.type == "type_declaration":
-                # Get type name
                 for child in node.children:
                     if child.type == "type_spec":
                         name_node = child.child_by_field_name("name")
@@ -650,10 +627,6 @@ class StaticAnalysisService:
                                 )
                             )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return definitions
 
     def _extract_java_definitions(
@@ -662,9 +635,8 @@ class StaticAnalysisService:
         """Extract Java class and method definitions."""
         definitions = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "class_declaration":
-                # Get class name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     class_name = name_node.text.decode("utf8")
@@ -678,7 +650,6 @@ class StaticAnalysisService:
                     )
 
             elif node.type == "method_declaration":
-                # Get method name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     method_name = name_node.text.decode("utf8")
@@ -691,10 +662,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return definitions
 
     def _extract_rust_definitions(
@@ -703,9 +670,8 @@ class StaticAnalysisService:
         """Extract Rust function and struct definitions."""
         definitions = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "function_item":
-                # Get function name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     func_name = name_node.text.decode("utf8")
@@ -719,7 +685,6 @@ class StaticAnalysisService:
                     )
 
             elif node.type in ["struct_item", "enum_item"]:
-                # Get struct/enum name
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     type_name = name_node.text.decode("utf8")
@@ -732,10 +697,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return definitions
 
     def _extract_calls(
@@ -782,17 +743,14 @@ class StaticAnalysisService:
         """Extract Python function calls."""
         calls = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "call":
-                # Get function being called
                 function_node = node.child_by_field_name("function")
                 if function_node:
                     callee = function_node.text.decode("utf8")
 
-                    # Determine confidence based on call pattern
                     confidence = 0.8
                     if "." in callee:
-                        # Method call - lower confidence without type info
                         confidence = 0.6
 
                     calls.append(
@@ -805,10 +763,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return calls
 
     def _extract_js_calls(
@@ -817,14 +771,12 @@ class StaticAnalysisService:
         """Extract JavaScript/TypeScript function calls."""
         calls = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "call_expression":
-                # Get function being called
                 function_node = node.child_by_field_name("function")
                 if function_node:
                     callee = function_node.text.decode("utf8")
 
-                    # Determine confidence
                     confidence = 0.8
                     if "." in callee or callee.startswith("this."):
                         confidence = 0.6
@@ -839,10 +791,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return calls
 
     def _extract_go_calls(
@@ -851,9 +799,8 @@ class StaticAnalysisService:
         """Extract Go function calls."""
         calls = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "call_expression":
-                # Get function being called
                 function_node = node.child_by_field_name("function")
                 if function_node:
                     callee = function_node.text.decode("utf8")
@@ -868,10 +815,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return calls
 
     def _extract_java_calls(
@@ -880,14 +823,12 @@ class StaticAnalysisService:
         """Extract Java method calls."""
         calls = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "method_invocation":
-                # Get method being called
                 name_node = node.child_by_field_name("name")
                 if name_node:
                     callee = name_node.text.decode("utf8")
 
-                    # Check for object reference
                     object_node = node.child_by_field_name("object")
                     if object_node:
                         obj_name = object_node.text.decode("utf8")
@@ -903,10 +844,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return calls
 
     def _extract_rust_calls(
@@ -915,9 +852,8 @@ class StaticAnalysisService:
         """Extract Rust function calls."""
         calls = []
 
-        def traverse(node):
+        for node in self._iter_nodes(root_node):
             if node.type == "call_expression":
-                # Get function being called
                 function_node = node.child_by_field_name("function")
                 if function_node:
                     callee = function_node.text.decode("utf8")
@@ -932,10 +868,6 @@ class StaticAnalysisService:
                         )
                     )
 
-            for child in node.children:
-                traverse(child)
-
-        traverse(root_node)
         return calls
 
     def get_symbol_at_position(

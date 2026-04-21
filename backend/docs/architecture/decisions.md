@@ -445,6 +445,115 @@ is a one-time setup step, not a persistent process to manage.
 
 ---
 
+## ADR-014: Data Structures & Algorithms Applied (Existing)
+
+**Status:** Accepted (documented 2026-04-20)
+
+**Context:**
+
+Several hot paths in Pharos already rely on classic DSA primitives. These were introduced incrementally as the ingestion, search, and graph modules grew. Recording them here preserves the reasoning so future refactors don't regress the complexity guarantees.
+
+**Existing Applications:**
+
+### 1. Hash maps / sets — O(1) score accumulation and deduplication
+
+- [modules/search/rrf.py:49](../../app/modules/search/rrf.py#L49) — `defaultdict(float)` accumulates RRF contributions across ranked lists in a single pass. Without it, repeated linear scans of each list would make fusion O(N²).
+- [modules/search/service.py](../../app/modules/search/service.py) — `seen_resources` / `seen_chunks` sets dedupe parent resources and synthetic-question matches in O(1) per probe.
+- [modules/graph/service.py](../../app/modules/graph/service.py) — chunk-score dicts in GraphRAG walks accumulate the best score seen per chunk without re-sorting.
+
+### 2. BFS with visited set — multi-hop graph traversal
+
+- [modules/graph/service.py:1054](../../app/modules/graph/service.py#L1054) — `_get_two_hop_neighbors` maintains `visited = {resource_id}` to avoid revisiting nodes while expanding the citation / call graph. Textbook BFS idea: each node is processed at most once, so 2-hop expansion stays O(V + E) within the reachable frontier.
+
+### 3. Recursive tree traversal (pre-order DFS) — AST walking
+
+- [modules/graph/logic/static_analysis.py](../../app/modules/graph/logic/static_analysis.py) — the `traverse(node)` closures used for import / definition / call extraction are recursive pre-order DFS walks over the Tree-Sitter AST. Recursion mirrors the natural recursive structure of syntax trees.
+
+### 4. Adjacency-list graph representation — NetworkX
+
+- [modules/graph/service.py:1152](../../app/modules/graph/service.py#L1152) — `build_multilayer_graph` returns a `networkx.MultiDiGraph`, which stores edges as adjacency lists under the hood. This is the representation we studied for sparse graphs; it makes neighbor iteration O(deg(v)) rather than O(V) as a matrix would.
+- Centrality methods (`compute_degree_centrality`, `compute_betweenness_centrality`) ride on top of this representation and use Dijkstra-style priority-queue algorithms inside NetworkX for weighted shortest paths.
+
+### 5. FIFO queue — task dispatch
+
+- [services/queue_service.py](../../app/services/queue_service.py) — ingestion jobs are queued via Redis `rpush` and consumed via `lpop`, giving standard FIFO queue semantics for the edge worker.
+
+### 6. Sort-by-score — result ranking
+
+- [modules/search/rrf.py:56](../../app/modules/search/rrf.py#L56), [modules/search/service.py:239](../../app/modules/search/service.py#L239), [:484](../../app/modules/search/service.py#L484), [:797](../../app/modules/search/service.py#L797) — candidate lists are ranked with `sorted(..., reverse=True)`. Timsort runs in O(N log N). See ADR-015 for the follow-up optimization that replaces sort-then-slice with a bounded heap for top-K workloads.
+
+**Consequences:**
+
+- ✅ Every query-time hot loop that needs membership / dedup / accumulation uses a hash-backed container (O(1) per probe) rather than linear scans.
+- ✅ The graph layer uses the right representation (adjacency list) and the right traversal primitive (BFS with visited set) for citation / call expansion.
+- ✅ NetworkX handles the weighted-graph algorithms (Dijkstra-backed centrality) so we don't reimplement them.
+- ⚠️ Recursive AST traversal is bounded by Python's default recursion limit (~1000). Superseded by ADR-015 §3 (iterative DFS).
+- ⚠️ Sort-then-slice for top-K pays O(N log N) when only O(N log K) is needed. Superseded by ADR-015 §1.
+
+---
+
+## ADR-015: DSA-Driven Performance Optimizations (Search, Queue, AST)
+
+**Status:** Accepted (2026-04-20)
+
+**Context:**
+
+ADR-014 audited the existing DSA footprint and surfaced three places where the complexity characteristics of the code did not match the workload:
+
+1. **Top-K ranking** — search and RRF code paths called `sorted(...)` on the full candidate list and then sliced `[:top_k]`. For N candidates and top_k = K, this is O(N log N) when O(N log K) is sufficient.
+2. **Job-status lookup** — `QueueService.get_job_status`, `update_job_status`, and `get_queue_position` each did `LRANGE 0 -1` and linearly scanned every JSON blob in the Redis queue looking for a matching `job_id`. Cost: O(n) per lookup, n = queue size.
+3. **AST traversal** — every per-language import / definition / call extractor in `static_analysis.py` used a recursive `traverse(node)` closure. On deeply nested inputs (long JSX trees, chained method calls, macro-expanded Rust) this can exceed Python's default recursion limit of ~1000 frames and raise `RecursionError`.
+
+Each of these maps cleanly onto a DSA primitive studied in a standard DSA course.
+
+**Decision:**
+
+### 1. Heap-based top-K ranking
+
+Replace `sorted(items, key=..., reverse=True)[:k]` with `heapq.nlargest(k, items, key=...)` in the three hot paths:
+
+- `ReciprocalRankFusionService.fuse` ([modules/search/rrf.py](../../app/modules/search/rrf.py)) — accepts an optional `top_k` parameter; when set, returns the K highest-scoring fused results without sorting the full dict.
+- `SearchService.parent_child_search` ([modules/search/service.py:239](../../app/modules/search/service.py#L239)) — uses `heapq.nlargest` over `(chunk, score)` pairs.
+- GraphRAG chunk-score ranking ([modules/search/service.py:484](../../app/modules/search/service.py#L484)) — uses `heapq.nlargest` over the chunk-score dict items.
+- Synthetic-question ranking ([modules/search/service.py:797](../../app/modules/search/service.py#L797)) — same transformation.
+
+`heapq.nlargest(k, ...)` maintains a size-K min-heap: O(N log K) time, O(K) space. This is the priority-queue / downward-heapify pattern — when a new element beats the current root, sift down once.
+
+### 2. Redis hash for O(1) job-status lookup
+
+Introduce a secondary Redis hash `pharos:jobs` keyed by `job_id` containing the latest JSON representation of each job. The queue list continues to hold job order for FIFO dispatch; the hash provides O(1) metadata access:
+
+- `submit_job` — `HSET pharos:jobs {job_id} {json}` alongside `RPUSH pharos:tasks`.
+- `get_job_status` — `HGET pharos:jobs {job_id}` first (O(1)); only fall back to the history list on miss.
+- `update_job_status` — `HGET` the job, mutate, `HDEL` on terminal status, `LREM` from queue, `LPUSH` to history.
+- `get_queue_position` — still O(n) (position is an ordering property), but the hash lookup short-circuits when the job has already completed.
+- `clear_queue` — also deletes the hash.
+
+This is the classic "secondary hash index" pattern: keep the ordered structure for iteration, add a hash for constant-time random access by key.
+
+### 3. Iterative DFS for AST traversal
+
+Replace the recursive `traverse(node)` closures in `StaticAnalysisService` with an explicit-stack iterative DFS via a shared `_iter_nodes(root_node)` helper. Each extractor becomes a single `for node in self._iter_nodes(root_node): ...` loop. The traversal order is unchanged (pre-order), but Python's recursion limit no longer bounds the usable AST depth.
+
+This is the textbook "convert recursion to iteration with an explicit stack" transform: `stack = [root]; while stack: node = stack.pop(); stack.extend(reversed(node.children))`.
+
+**Consequences:**
+
+- ✅ **Top-K search ranking is O(N log K) instead of O(N log N)**. For N ≈ 2000 chunks and K = 10, theoretical speedup ~2× on the ranking step; measured dominates when paired with the avoided full-materialization of sorted output.
+- ✅ **Job-status lookup is O(1) instead of O(n)** in queue size. Pending queues of 100+ jobs no longer pay a linear-scan penalty on every Ronin status probe.
+- ✅ **AST traversal no longer raises RecursionError** on deep syntax trees. Long JSX / TSX files and deeply nested Rust macros parse reliably.
+- ✅ Every optimization maps 1:1 to a named DSA primitive (min-heap / priority queue, hash table, iterative DFS with explicit stack), so the reasoning is teachable and the complexity claims are auditable.
+- ⚠️ The Redis hash adds one extra write per submit / update. The amortized write cost (~O(1) per op) is negligible compared to the O(1) read savings on every Ronin status poll.
+- ⚠️ `heapq.nlargest` is marginally slower than `sorted(...)[:k]` when K ≈ N (i.e., top_k asks for almost everything). All Pharos call sites have K ≪ N, so this edge case does not apply.
+
+**Alternatives Considered:**
+
+1. **Keep `sorted(...)[:k]` and rely on Timsort's fast path for mostly-sorted input**: rejected. The input is the output of score accumulation, which is unordered; there is no fast path.
+2. **Paginate the Redis queue (`LRANGE 0 99`) instead of adding a hash**: rejected. This caps worst-case latency but still makes the common case O(n) for jobs past the page boundary, and misses genuinely old pending jobs entirely.
+3. **Raise Python's `sys.setrecursionlimit`**: rejected. It papers over the issue, still risks C-stack overflow on very deep trees, and burns memory per-frame. Explicit-stack iteration is the correct fix.
+
+---
+
 ## Decision Template
 
 ```markdown

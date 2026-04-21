@@ -14,7 +14,6 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import or_
 from typing import Optional, Dict, Any, List
 from datetime import datetime
 import logging
@@ -813,12 +812,8 @@ async def health_check(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
 # This router is registered in app/__init__.py to fix 404 errors
 
 from .schema import (
-    AdvancedSearchRequest,
     AdvancedSearchResponse,
-    AdvancedSearchResult,
     CodeFetchMetrics,
-    DocumentChunkResult,
-    GraphPathNode,
 )
 
 advanced_search_router = APIRouter(

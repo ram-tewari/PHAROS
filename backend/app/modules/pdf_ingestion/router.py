@@ -6,7 +6,6 @@ API endpoints for PDF upload, annotation, and GraphRAG search.
 
 import logging
 import os
-from typing import List
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,7 +14,6 @@ from ...shared.database import get_db
 # from ...shared.embeddings import EmbeddingService
 from .service import PDFIngestionService, PDFExtractionError
 from .schema import (
-    PDFUploadRequest,
     PDFUploadResponse,
     PDFAnnotationRequest,
     PDFAnnotationResponse,

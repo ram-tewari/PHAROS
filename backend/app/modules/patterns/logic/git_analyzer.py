@@ -18,7 +18,7 @@ import ast
 import logging
 import re
 import subprocess
-from collections import Counter, defaultdict
+from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
@@ -432,8 +432,8 @@ class _PatternTracker:
                 lifecycle.status = "evolving"
                 lifecycle.confidence = 0.5
                 lifecycle.reasoning = (
-                    f"Pattern was modified during a bugfix but retained. "
-                    f"May be evolving toward a stable form."
+                    "Pattern was modified during a bugfix but retained. "
+                    "May be evolving toward a stable form."
                 )
                 evolving.append(lifecycle)
             else:
