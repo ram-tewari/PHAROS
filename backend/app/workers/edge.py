@@ -24,15 +24,6 @@ import os
 import sys
 import time
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("edge_worker.log"),
-    ],
-)
 logger = logging.getLogger(__name__)
 
 
@@ -309,6 +300,11 @@ async def run_fastapi_server(embedding_service):
 
 async def main():
     """Main entry point for edge worker."""
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
     logger.info("=" * 60)
     logger.info("Pharos Edge Worker - Local GPU Processing")
     logger.info("=" * 60)

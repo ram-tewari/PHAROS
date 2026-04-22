@@ -8,6 +8,14 @@ Pharos worker dispatcher.
 
 import argparse
 import sys
+from pathlib import Path
+
+# Load .env before any app imports so env vars are available to check_environment()
+try:
+    from dotenv import load_dotenv
+    load_dotenv(Path(__file__).parent / ".env")
+except ImportError:
+    pass
 
 
 def main():

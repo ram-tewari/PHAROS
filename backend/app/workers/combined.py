@@ -24,14 +24,6 @@ from app.workers.edge import (
     run_fastapi_server,
 )
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.StreamHandler(sys.stdout),
-        logging.FileHandler("combined_worker.log"),
-    ],
-)
 logger = logging.getLogger(__name__)
 
 
@@ -88,6 +80,11 @@ async def poll_and_dispatch(redis_client, embedding_service, db_session_factory,
 
 
 async def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
     logger.info("=" * 60)
     logger.info("Pharos Combined Worker (edge + repo)")
     logger.info("=" * 60)
