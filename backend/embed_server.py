@@ -145,15 +145,25 @@ async def init_db() -> None:
     log.info("Database connected")
 
 
-async def _update_resource_embedding(resource_id: str, embedding: list[float]) -> None:
+async def _update_resource_embedding(resource_id: str, embedding: list[float]) -> int:
     if _session_factory is None:
-        return
+        return 0
+    # Explicit ::uuid and ::vector casts — asyncpg is strict about
+    # parameter types and won't implicitly cast text to uuid/vector.
+    # pgvector's text format is '[f1,f2,...]', which matches json.dumps output.
     async with _session_factory() as session:
-        await session.execute(
-            text("UPDATE resources SET embedding = :emb WHERE id = :rid"),
+        # Use CAST() not ::type — the :: syntax collides with
+        # SQLAlchemy's :param markers and asyncpg rejects it.
+        result = await session.execute(
+            text(
+                "UPDATE resources "
+                "SET embedding = CAST(:emb AS vector) "
+                "WHERE id = CAST(:rid AS uuid)"
+            ),
             {"emb": json.dumps(embedding), "rid": resource_id},
         )
         await session.commit()
+        return result.rowcount or 0
 
 
 # ---------------------------------------------------------------------------
@@ -191,8 +201,15 @@ async def process_task(task: dict) -> bool:
             return False
 
         vec = embed(text_to_embed)
-        await _update_resource_embedding(resource_id, vec)
-        log.info(f"Task {task_id}: stored embedding dim={len(vec)}")
+        rowcount = await _update_resource_embedding(resource_id, vec)
+        log.info(
+            f"Task {task_id}: stored embedding dim={len(vec)} rows_updated={rowcount}"
+        )
+        if rowcount == 0:
+            log.warning(
+                f"Task {task_id}: UPDATE matched 0 rows for resource {resource_id}"
+            )
+            return False
         return True
 
     except Exception as exc:

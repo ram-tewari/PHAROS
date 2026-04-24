@@ -209,20 +209,39 @@ class SearchService:
 
         # Retrieve top-k resources by embedding similarity using pgvector.
         # resources.embedding is vector(768) with an HNSW cosine index (see
-        # alembic migration 20260410_implement_pgvector_and_splade). Chunks
-        # inherit their parent resource's embedding, so top-K-resources is
-        # equivalent to dedup(top-K-chunks-by-parent-embedding) and avoids
-        # pulling every chunk into Python.
-        from .vector_search_real import RealVectorSearchService
+        # alembic migration 20260410_implement_pgvector_and_splade). Filter
+        # to resources that actually have chunks — test ingests and records
+        # with only a resource-level embedding would otherwise outrank real
+        # content and then get dropped when we look for a representative chunk.
+        from sqlalchemy import text as _sql
 
-        vector_service = RealVectorSearchService(self.db)
+        embedding_str = f"[{','.join(map(str, query_embedding))}]"
+        params: Dict[str, Any] = {"embedding": embedding_str, "top_k": top_k}
+        where = [
+            "r.embedding IS NOT NULL",
+            "EXISTS (SELECT 1 FROM document_chunks dc WHERE dc.resource_id = r.id)",
+        ]
+        if filters:
+            if "resource_type" in filters:
+                where.append("r.type = :resource_type")
+                params["resource_type"] = filters["resource_type"]
+            if "min_quality_score" in filters:
+                where.append("r.quality_score >= :min_quality_score")
+                params["min_quality_score"] = filters["min_quality_score"]
+
+        sql = (
+            "SELECT r.id::text AS resource_id, "
+            "r.embedding <=> CAST(:embedding AS vector) AS distance "
+            "FROM resources r "
+            f"WHERE {' AND '.join(where)} "
+            "ORDER BY distance ASC LIMIT :top_k"
+        )
+
         try:
-            ranked = vector_service.dense_vector_search(
-                query_embedding=query_embedding,
-                top_k=top_k,
-                distance_metric="cosine",
-                filters=filters,
-            )
+            ranked = [
+                (row[0], float(row[1]))
+                for row in self.db.execute(_sql(sql), params).fetchall()
+            ]
         except Exception as exc:
             logger.error(f"pgvector search failed: {exc}", exc_info=True)
             return []
