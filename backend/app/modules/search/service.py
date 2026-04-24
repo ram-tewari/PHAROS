@@ -229,9 +229,19 @@ class SearchService:
                 where.append("r.quality_score >= :min_quality_score")
                 params["min_quality_score"] = filters["min_quality_score"]
 
+        # Penalize files under tests/ directories — they embed similarly to
+        # the modules they exercise (because they import + use everything in
+        # them), so without a penalty a query like "fake LLM" surfaces 4
+        # test files before the one real implementation. 0.10 ≈ 10% of the
+        # 0.4–0.7 distance band these results live in, enough to flip the
+        # ranking without burying test files entirely (they stay reachable
+        # when the query is specifically about testing).
+        # Match both /tests/ (POSIX, new data) and \tests\ (legacy Windows).
         sql = (
             "SELECT r.id::text AS resource_id, "
-            "r.embedding <=> CAST(:embedding AS vector) AS distance "
+            "(r.embedding <=> CAST(:embedding AS vector)) "
+            "+ CASE WHEN r.title ~ '(/|\\\\)tests(/|\\\\)' THEN 0.10 ELSE 0 END "
+            "AS distance "
             "FROM resources r "
             f"WHERE {' AND '.join(where)} "
             "ORDER BY distance ASC LIMIT :top_k"

@@ -189,9 +189,22 @@ async def process_task(task: dict) -> bool:
         return False
 
     try:
+        # Embed title + chunk.semantic_summary (File/Functions/Classes/Imports).
+        # The resource.description is the full ingestion metadata JSON blob
+        # — repo_id, repo_url, file_size, etc. — which dilutes the signal
+        # with boilerplate that's identical across every file in a repo.
+        # semantic_summary was purpose-built by ingestion to describe the
+        # file's actual content.
         async with _session_factory() as session:
             row = (await session.execute(
-                text("SELECT title, description FROM resources WHERE id = :rid"),
+                text(
+                    "SELECT r.title, "
+                    "(SELECT dc.semantic_summary "
+                    " FROM document_chunks dc "
+                    " WHERE dc.resource_id = r.id "
+                    " ORDER BY dc.chunk_index LIMIT 1) AS summary "
+                    "FROM resources r WHERE r.id = CAST(:rid AS uuid)"
+                ),
                 {"rid": resource_id},
             )).fetchone()
 
@@ -199,7 +212,7 @@ async def process_task(task: dict) -> bool:
             log.error(f"Task {task_id}: resource {resource_id} not found")
             return False
 
-        text_to_embed = " ".join(filter(None, [row.title, row.description])).strip()
+        text_to_embed = " ".join(filter(None, [row.title, row.summary])).strip()
         if not text_to_embed:
             log.warning(f"Task {task_id}: resource {resource_id} has no text to embed")
             return False
