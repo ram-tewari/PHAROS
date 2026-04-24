@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import re
 import time
 from typing import Any
 
@@ -24,12 +25,40 @@ logger = logging.getLogger(__name__)
 MAX_REMOTE_CHUNKS = 50
 CHUNK_TIMEOUT_SECONDS = 5.0
 
+# raw.githubusercontent.com/{owner}/{repo}/{ref}/{path...}
+# Replace branch-name refs with HEAD so GitHub resolves to the repo's
+# actual default branch. Pinned SHAs (40-char hex) are left intact for
+# reproducible fetches.
+_RAW_URL_RE = re.compile(
+    r"^(https://raw\.githubusercontent\.com/[^/]+/[^/]+/)([^/]+)(/.*)$"
+)
+_SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+
 
 def _get(obj: Any, name: str, default: Any = None) -> Any:
     """Unified attribute access for ORM objects and plain dicts."""
     if isinstance(obj, dict):
         return obj.get(name, default)
     return getattr(obj, name, default)
+
+
+def _normalize_github_uri(uri: str) -> str:
+    """Windows-backslash → forward-slash, and branch-name refs → HEAD.
+
+    Legacy ingests stored file_path with \\ and a default branch of "main"
+    even for repos whose default is "master". Rewriting the ref to HEAD
+    lets raw.githubusercontent.com resolve to the real default branch.
+    """
+    if not uri:
+        return uri
+    uri = uri.replace("\\", "/")
+    m = _RAW_URL_RE.match(uri)
+    if not m:
+        return uri
+    prefix, ref, suffix = m.groups()
+    if _SHA_RE.match(ref):
+        return uri
+    return f"{prefix}HEAD{suffix}"
 
 
 async def resolve_code_for_chunks(
@@ -81,12 +110,9 @@ async def resolve_code_for_chunks(
     fetched_ok = 0
 
     if remote_chunks:
-        # Ingestion on Windows writes file_path with backslashes, which
-        # propagate into github_uri. GitHub's raw host 404s on those —
-        # normalize to forward slashes before we hand them to the fetcher.
         requests = [
             FetchRequest(
-                github_uri=(_get(c, "github_uri") or "").replace("\\", "/"),
+                github_uri=_normalize_github_uri(_get(c, "github_uri") or ""),
                 branch_reference=_get(c, "branch_reference") or "HEAD",
                 start_line=_get(c, "start_line") or 1,
                 end_line=_get(c, "end_line") or 9999,
