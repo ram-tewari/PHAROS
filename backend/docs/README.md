@@ -33,7 +33,7 @@ Comprehensive documentation for the Pharos code intelligence backend — the mem
 | [Modules](architecture/modules.md) | Vertical slice architecture — module boundaries and isolation rules |
 | [Decision Records](architecture/decisions.md) | ADRs including Local-Heavy Edge Inference and Hybrid Code Storage |
 | [Hybrid Deployment](architecture/phase19-hybrid.md) | Cloud API + Edge Worker split architecture |
-|
+| [Worker Architecture](WORKER_ARCHITECTURE.md) | Unified edge worker design and operation (updated 2026-04-27) |
 
 ## Developer Guides (`docs/guides/`)
 
@@ -54,6 +54,7 @@ Comprehensive documentation for the Pharos code intelligence backend — the mem
 | [AI Planning](guides/ai-planning.md) | Planning session workflows |
 | [MCP Integration](guides/mcp-integration.md) | Model Context Protocol setup for Ronin |
 | [Troubleshooting](guides/troubleshooting.md) | Common issues and resolutions |
+| [Worker Architecture](WORKER_ARCHITECTURE.md) | Unified edge worker design and operation (updated 2026-04-27) |
 
 ## Other Documentation
 

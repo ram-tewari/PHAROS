@@ -38,10 +38,32 @@ Pharos runs as a distributed system with **three deployment targets** and **thre
 ### Process inventory
 
 1. **Cloud API** — FastAPI on Render. Serves REST. Never touches a GPU.
-2. **Edge embed server** — `backend/embed_server.py`, runs in WSL2 on Ram's local machine on port 8001. Zero `app.*` imports (standalone to avoid dependency hell). Exposes `/embed` and `/health`. Also polls `pharos:tasks` for async resource-embedding updates.
-3. **Edge worker** — `backend/app/workers/edge.py` + dispatched via `backend/worker.py edge`. Long-running Python process that polls `pharos:tasks` and calls `process_ingestion(resource_id)` for each task. Runs locally.
-4. **Repo worker** — `backend/app/workers/repo.py` exists. Polling path for `ingest_queue` (GitHub repo bulk ingestion). Not fully wired end-to-end today (see file 4).
-5. **Combined worker** — `backend/app/workers/combined.py`. Alternate entrypoint bundling multiple worker responsibilities.
+2. **Edge embed server** — `backend/embed_server.py`, runs in WSL2 on Ram's local machine on port 8001. Zero `app.*` imports (standalone to avoid dependency hell). Exposes `/embed` and `/health`. Used as the Tailscale-funneled embedding backend for cloud-mode queries.
+3. **Unified edge worker** — `backend/app/workers/main_worker.py`. Single long-running process that:
+   - Loads the local embedding model on the RTX 4070.
+   - Serves the FastAPI `/embed` endpoint on port `EDGE_EMBED_PORT` (default 8001).
+   - Blocks on **both** Redis queues with a single connection:
+     ```
+     BLPOP pharos:tasks ingest_queue 30
+     ```
+     Routing by source queue:
+     - `pharos:tasks` → `process_ingestion(resource_id)` (single-resource pipeline)
+     - `ingest_queue` → `RepositoryIngestor.ingest()` (clone → AST parse → embed → persist)
+   - Wraps each handler in try/except so a poison-pill task is logged and marked `failed` in Redis without taking the loop down.
+
+   Launch from `backend/`:
+   ```
+   bash start_worker.sh    # Linux / WSL / Git Bash
+   python start_worker.py  # Windows
+   python worker.py        # legacy dispatcher, now a thin wrapper around main_worker
+   ```
+   The launcher forces `MODE=EDGE`, loads `.env`, and prints a banner showing the two active queues and the 30 s BLPOP timeout so a successful boot is unambiguous.
+
+   The previous trio of files — `edge.py`, `repo.py`, `combined.py` — has been **deleted**; `main_worker.py` is the only worker entrypoint.
+
+#### Upstash quota optimization
+
+Upstash free tier allows **100,000 commands/month** (~3,200/day). The unified worker uses a single multi-key `BLPOP` with a **30-second** server-side timeout, which means an idle worker issues only `86400 / 30 = 2,880` commands/day — comfortably under the daily budget with headroom for actual task throughput. The previous 9-second timeout (≈9,600 idle cmds/day) was burning through the quota; **do not lower the timeout below 30 s without redoing this math.**
 
 ### Tailscale Funnel
 
@@ -234,7 +256,7 @@ POST /api/context/retrieve or POST /api/search/advanced
 - Render Redis: $10/mo.
 - Cost delta: $10/mo for a single-tenant use case is unjustifiable.
 - Upstash provides both `rediss://` (native protocol) and HTTPS REST. Edge workers use native; cloud workers can use REST to avoid Render's outbound connection costs.
-- Trade-off: BLPOP timeout tuned to **9 seconds** (see `embed_server.py`) to stay under 10 000 req/day while queue is idle.
+- Trade-off: BLPOP timeout tuned to **30 seconds** in `main_worker.py` so an idle worker issues only ~2,880 commands/day, well under Upstash's 100k/month free quota.
 
 ### Why a monolithic event bus instead of, say, Kafka?
 - Single tenant, single Python process. Kafka solves cross-service event durability; Pharos has one service per node.
@@ -268,7 +290,7 @@ POST /api/context/retrieve or POST /api/search/advanced
 ## Failure Modes and Safeguards
 
 - **Edge embed server offline** → Cloud API returns a 503 for search. No silent fallback: a stale keyword-only result would be worse than an honest error.
-- **Upstash rate limit exceeded** → BLPOP 9 s keeps idle load ~8.6k req/day, under the 10k ceiling.
+- **Upstash rate limit exceeded** → BLPOP 30 s in `main_worker.py` keeps idle load ~2.9k cmds/day, well under the 100k/month free quota.
 - **NeonDB suspends free compute** → First request after idle incurs a cold-start (~500 ms). Accepted.
 - **AST parse exception** → Logged; resource marked `ingestion_status='failed'` with `ingestion_error` populated.
 - **Known Python 3.13 Windows WMI hang** when `platform.*()` is called on import. Workaround: `platform.uname` is monkey-patched before the app imports anything. Edge embed server runs in WSL2 to avoid the issue entirely.

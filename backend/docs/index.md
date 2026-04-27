@@ -123,8 +123,12 @@ Getting started and development workflows:
 - [Graph Intelligence Guide](guides/graph-intelligence.md) - Knowledge graph features
 - [Document Intelligence Guide](guides/document-intelligence.md) - PDF and document processing
 
-### Phase 19: Hybrid Edge-Cloud Architecture
+**Worker Architecture:**
+- [Worker Architecture](WORKER_ARCHITECTURE.md) - Unified edge worker design and operation
 
+### Hybrid Edge-Cloud Architecture
+
+- [Worker Architecture](WORKER_ARCHITECTURE.md) - Unified edge worker design (updated 2026-04-27)
 - [Phase 19 Cloud Deployment](guides/phase19-deployment.md) - Deploy Cloud API to Render
 - [Phase 19 Edge Worker Setup](guides/phase19-edge-setup.md) - Set up local GPU worker
 - [Phase 19 Monitoring](guides/phase19-monitoring.md) - Monitor hybrid system health

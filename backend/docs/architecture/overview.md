@@ -303,26 +303,34 @@ All       ──[*.events]──► Monitoring (metrics aggregation)
 │  Search: pgvector parent-child with test penalty (1.8-1.9s)     │
 └──────────┬───────────────────────────────────┬───────────────────┘
            │ HTTPS polling (Edge → Cloud)       │ HTTPS query embed
-           │ BLPOP pharos:tasks (9s timeout)    │ (Cloud → Funnel)
+           │ BLPOP pharos:tasks, ingest_queue   │ (Cloud → Funnel)
+           │ (30s timeout, Upstash-safe)        │
            │                                   ▼
 ┌──────────┴─────────────────┐  ┌─────────────────────────────────┐
-│  EDGE: Ingestion Worker    │  │  Tailscale Funnel               │
+│  EDGE: Unified Worker      │  │  Tailscale Funnel               │
 │  (WSL2 + RTX 4070)         │  │  https://pc.tailf7b210.ts.net   │
 │                            │  │  → 127.0.0.1:8001               │
-│  Tree-sitter AST Parsing   │  └─────────────────┬───────────────┘
-│  Document embeddings        │                    │
-│  (nomic-embed-text-v1, GPU) │                    ▼
-│  Writes to NeonDB via       │  ┌─────────────────────────────────┐
-│  asyncpg with CAST          │  │  EDGE: Embedding HTTP Server    │
-│                             │  │  (embed_server.py on WSL2)      │
-│  GPU: 70-90% during ingest  │  │                                 │
-│  BLPOP interval: 9s         │  │  POST /embed → 768-float vector │
-│  Free-tier safe: ~8.6k/day  │  │  nomic-embed-text-v1 on GPU     │
-└─────────────────────────────┘  │  Latency: ~1.5s per embedding   │
-                                 │  Query latency: ~150ms          │
-                                 │  Embeds: title + semantic_summary│
-                                 └─────────────────────────────────┘
+│  Single process handles:   │  └─────────────────┬───────────────┘
+│  - pharos:tasks queue      │                    │
+│  - ingest_queue            │                    ▼
+│  - /embed HTTP endpoint    │  ┌─────────────────────────────────┐
+│                            │  │  EDGE: Embedding HTTP Server    │
+│  Tree-sitter AST Parsing   │  │  (embed_server.py on WSL2)      │
+│  Document embeddings        │  │                                 │
+│  (nomic-embed-text-v1, GPU) │  │  POST /embed → 768-float vector │
+│  Writes to NeonDB via       │  │  nomic-embed-text-v1 on GPU     │
+│  asyncpg with CAST          │  │  Latency: ~1.5s per embedding   │
+│                             │  │  Query latency: ~150ms          │
+│  GPU: 70-90% during ingest  │  │  Embeds: title + semantic_summary│
+│  BLPOP interval: 30s        │  └─────────────────────────────────┘
+│  Free-tier safe: ~2.9k/day  │
+│                             │
+│  Launcher: start_worker.sh  │
+│  or start_worker.py         │
+└─────────────────────────────┘
 ```
+
+**See [Worker Architecture](../WORKER_ARCHITECTURE.md) for complete unified worker documentation.**
 
 ### Production Status (2026-04-24)
 
@@ -480,6 +488,7 @@ The Event Bus is an in-memory, async pub/sub system with <1ms P95 emission laten
 
 ## Related Documentation
 
+- [Worker Architecture](../WORKER_ARCHITECTURE.md) — Unified edge worker design and operation
 - [Database Schema](database.md) — SQLAlchemy models, pgvector indexes, migration strategy
 - [Event System](event-system.md) — Event Bus internals, handler registration, error handling
 - [Modules](modules.md) — Detailed vertical slice documentation per module

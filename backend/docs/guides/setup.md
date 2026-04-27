@@ -82,6 +82,20 @@ uvicorn app.main:app --reload
 
 The API will be available at `http://127.0.0.1:8000`
 
+### 7. Start Edge Worker (Optional)
+
+For GPU-accelerated embeddings and repository ingestion:
+
+```bash
+# Linux/WSL/Git Bash
+bash start_worker.sh
+
+# Windows
+python start_worker.py
+```
+
+**See [Worker Architecture](../WORKER_ARCHITECTURE.md) for complete worker setup and operation.**
+
 ## Verify Installation
 
 ### Check API Documentation
@@ -331,6 +345,7 @@ Should show events being emitted and delivered. If not:
 
 ## Related Documentation
 
+- [Worker Architecture](../WORKER_ARCHITECTURE.md) - Unified edge worker design and operation
 - [Architecture Overview](../architecture/overview.md) - System architecture and module structure
 - [Module Documentation](../architecture/modules.md) - Complete module reference
 - [Event System](../architecture/event-system.md) - Event-driven communication patterns

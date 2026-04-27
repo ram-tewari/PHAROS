@@ -6,6 +6,19 @@ Common development tasks and patterns for Pharos.
 
 ## Quick Reference
 
+### Worker Commands
+```bash
+# Start unified edge worker (GPU-accelerated)
+bash start_worker.sh    # Linux/WSL/Git Bash
+python start_worker.py  # Windows
+
+# Check worker status
+ps aux | grep main_worker  # Linux/WSL
+tasklist | findstr python  # Windows
+```
+
+**See [Worker Architecture](../WORKER_ARCHITECTURE.md) for complete worker documentation.**
+
 ### Module Structure
 All modules follow a standard structure:
 ```
@@ -785,6 +798,7 @@ def get_item(self, item_id: str):
 
 ## Related Documentation
 
+- [Worker Architecture](../WORKER_ARCHITECTURE.md) - Unified edge worker design and operation
 - [Setup Guide](setup.md) - Installation
 - [Testing Guide](testing.md) - Running tests
 - [Architecture](../architecture/) - System design

@@ -12,7 +12,7 @@ Uses Upstash Redis REST API (not redis-py) for serverless compatibility.
 import json
 import logging
 import os
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List, Tuple
 import httpx
 
 logger = logging.getLogger(__name__)
@@ -48,13 +48,14 @@ class UpstashRedisClient:
         # Remove trailing slash from URL
         self.rest_url = self.rest_url.rstrip("/")
 
-        # Create HTTP client
+        # Create HTTP client. Timeout must exceed the longest BLPOP server-side
+        # wait we issue (30s) so idle polls don't appear as client errors.
         self.client = httpx.AsyncClient(
             headers={
                 "Authorization": f"Bearer {self.rest_token}",
                 "Content-Type": "application/json",
             },
-            timeout=10.0,
+            timeout=45.0,
         )
 
         logger.info(f"Upstash Redis client initialized: {self.rest_url}")
@@ -141,6 +142,40 @@ class UpstashRedisClient:
 
         except Exception as e:
             logger.error(f"Failed to pop task: {e}")
+            return None
+
+    async def pop_from_queues(
+        self,
+        queue_keys: List[str],
+        timeout: int = 30,
+    ) -> Optional[Tuple[str, Dict[str, Any]]]:
+        """Block on multiple queues with a single BLPOP; return (queue, task).
+
+        Upstash bills one command per request. With timeout=30 an idle worker
+        issues ~2,880 BLPOPs/day, which fits the 100k/month free quota.
+
+        Returns:
+            (queue_key, task_dict) of the queue that produced the task,
+            or None if all queues stayed empty for `timeout` seconds.
+        """
+        try:
+            cmd = ["BLPOP", *queue_keys, str(int(timeout))]
+            result = await self._execute(cmd)
+            if not result:
+                return None
+
+            queue_key, raw = result[0], result[1]
+            try:
+                task = json.loads(raw)
+                if not isinstance(task, dict):
+                    task = {"payload": task}
+            except (TypeError, json.JSONDecodeError):
+                task = {"payload": raw}
+
+            logger.debug(f"Popped task from {queue_key}: {task.get('task_id')}")
+            return queue_key, task
+        except Exception as e:
+            logger.error(f"Failed to BLPOP from {queue_keys}: {e}")
             return None
 
     async def update_task_status(self, task_id: str, status: str) -> bool:
