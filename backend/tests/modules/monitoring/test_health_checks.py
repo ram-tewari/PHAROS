@@ -332,7 +332,8 @@ def test_health_check_response_structure(client: TestClient, db_session: Session
     # Celery should have worker_count
     assert "worker_count" in components["celery"]
 
-    # NCF model should have status and message
+    # NCF model should indicate removal (single-tenant optimization)
     assert "ncf_model" in components
     assert "status" in components["ncf_model"]
+    assert components["ncf_model"]["status"] == "not_applicable"
     assert "message" in components["ncf_model"]

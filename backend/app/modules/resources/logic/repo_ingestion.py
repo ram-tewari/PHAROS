@@ -12,6 +12,7 @@ import git
 
 from app.database.models import Resource
 from app.modules.resources.logic.classification import classify_file
+from app.utils.path_exclusions import has_excluded_ancestor, is_excluded_file
 
 
 logger = logging.getLogger(__name__)
@@ -322,20 +323,21 @@ class RepoIngestionService:
         Returns:
             True if file should be ignored
         """
-        if gitignore_spec is None:
-            return False
-
-        # Get relative path from root
         try:
             relative_path = file_path.relative_to(root_path)
         except ValueError:
-            # File is not under root_path
             return True
 
-        # Convert to string with forward slashes (Git convention)
-        relative_path_str = str(relative_path).replace("\\", "/")
+        if has_excluded_ancestor(relative_path.parts):
+            return True
 
-        # Check against gitignore patterns
+        if is_excluded_file(file_path.name):
+            return True
+
+        if gitignore_spec is None:
+            return False
+
+        relative_path_str = str(relative_path).replace("\\", "/")
         return gitignore_spec.match_file(relative_path_str)
 
     def _load_gitignore(self, root_path: Path) -> Optional[pathspec.PathSpec]:

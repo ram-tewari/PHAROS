@@ -1,6 +1,6 @@
 # Pharos — System Architecture
 
-> File 2 of 5. Covers high-level topology, the cloud/edge split, the vertical-slice module pattern, event-driven communication, and the defense of key architectural decisions.
+> File 2 of 6. Covers high-level topology, the cloud/edge split, the vertical-slice module pattern, event-driven communication, and the defense of key architectural decisions. See File 6 for evolution history.
 
 ---
 
@@ -13,7 +13,7 @@ Pharos runs as a distributed system with **three deployment targets** and **thre
                      │   Ronin (Local LLM)     │
                      │   desktop assistant     │
                      └────────────┬────────────┘
-                                  │  HTTPS + Bearer (PHAROS_API_KEY)
+                                  │  HTTPS + Bearer (PHAROS_ADMIN_TOKEN)
                                   ▼
 ┌────────────────────────────────────────────────────────────────┐
 │  RENDER — Cloud API (pharos-cloud-api.onrender.com)            │
@@ -64,7 +64,7 @@ All domain logic under `backend/app/modules/<module_name>/`. Each slice is **sel
 - `authority` — Normalization of subject/creator/publisher names
 - `quality` — Multi-dimensional quality scoring + RAG evaluation router
 - `graph` — Knowledge graph with three routers: `graph_router`, `citations_router`, `discovery_router`
-- `auth` — JWT + OAuth2 (Google / GitHub)
+- `auth` — JWT + OAuth2 (Google / GitHub) - **Note**: Over-engineered for single-tenant
 
 **Additional routers**:
 - `planning.ai_planning_router`
@@ -107,7 +107,7 @@ This is how Render stays under 512 MB RAM: `MODE=CLOUD` prevents importing modul
 | `embeddings.py` | Embedding service; in CLOUD mode it HTTPs out to `EDGE_EMBEDDING_URL`; in EDGE mode loads `nomic-embed-text-v1` locally |
 | `cache.py` + `upstash_redis.py` | Redis clients (rediss:// native + Upstash REST) |
 | `circuit_breaker.py` | Fail-fast wrapper for external calls |
-| `rate_limiter.py` | Tiered rate limiting (Free 100/hr, Premium 1 000/hr, Admin 10 000/hr) |
+| `rate_limiter.py` | Tiered rate limiting (Free 100/hr, Premium 1 000/hr, Admin 10 000/hr) - **Note**: Unnecessary for single-tenant |
 | `security.py` | Password hashing (bcrypt), JWT create/verify |
 | `oauth2.py` | Google / GitHub OAuth2 flows |
 | `ai_core.py` | Shared transformer model wrappers |

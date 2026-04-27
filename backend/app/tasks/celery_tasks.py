@@ -1360,6 +1360,21 @@ def heuristic_sieve_task(self, db=None):
                     except SyntaxError:
                         continue
 
+                    # Density gate: drop flat config / dataclass-only modules
+                    # before they reach the local LLM extraction queue.
+                    flow_nodes, total_nodes = _ast_control_flow_counts(tree)
+                    density = (flow_nodes / total_nodes) if total_nodes else 0.0
+                    if (
+                        flow_nodes < settings.FEEDBACK_MIN_CONTROL_FLOW_NODES
+                        or density < settings.FEEDBACK_MIN_AST_DENSITY
+                    ):
+                        logger.debug(
+                            "Sieve density gate dropped %s @ %s "
+                            "(flow=%d, total=%d, density=%.4f)",
+                            filename, sha[:8], flow_nodes, total_nodes, density,
+                        )
+                        continue
+
                     fingerprint = _ast_structural_fingerprint(tree)
 
                     # Fetch the file at the old commit to compare
@@ -1448,6 +1463,32 @@ def _ast_structural_fingerprint(tree: "ast.AST") -> str:
 
     signature = "\n".join(sorted(parts))
     return hashlib.sha256(signature.encode()).hexdigest()
+
+
+def _ast_control_flow_counts(tree: "ast.AST") -> tuple[int, int]:
+    """Return (control_flow_node_count, total_node_count) for an AST.
+
+    Control-flow nodes are if/for/while/try/with/match (and async variants).
+    A file with very few of these relative to its size is almost certainly
+    flat config, a dataclass schema, or generated boilerplate — not the
+    kind of "logic that survived 14 days" the sieve is meant to capture.
+    """
+    import ast
+
+    flow_types: tuple[type, ...] = (
+        ast.If, ast.For, ast.While, ast.Try, ast.With,
+        ast.AsyncFor, ast.AsyncWith,
+    )
+    if hasattr(ast, "Match"):
+        flow_types = flow_types + (ast.Match,)
+
+    total = 0
+    flow = 0
+    for node in ast.walk(tree):
+        total += 1
+        if isinstance(node, flow_types):
+            flow += 1
+    return flow, total
 
 
 def _decorator_name(node) -> str:

@@ -139,49 +139,46 @@ This creates a **self-improving coding system** where:
 - **Cost**: <$30/mo for 1000 codebases indexed
 - **Scalability**: Handle 10K+ codebases with sub-second retrieval
 
-## Roadmap Themes
+## Current Status (April 2026)
 
-### Current Status (Phase 4 - COMPLETE ✅)
-- **PDF Ingestion & GraphRAG**: Research paper management with code linking
-- **Academic Fidelity**: PyMuPDF extraction preserving equations, tables, figures
-- **Conceptual Annotation**: Tag PDF chunks with concepts (OAuth, Security, etc.)
-- **GraphRAG Linking**: Automatic bidirectional links between PDF concepts and code
-- **Unified Search**: Single query returns both PDF sections and code implementations
-- **Production Ready**: 3 new API endpoints, fully tested, Render-compatible
+### ✅ Production-Ready (Phases 5-8 COMPLETE)
+- **Phase 5: Hybrid GitHub Storage** - 17x storage reduction, on-demand code fetching
+- **Phase 6: Pattern Learning Engine** - AST + Git analysis, learns YOUR coding style
+- **Phase 8: Self-Improving Loop** - LLM-based rule extraction, learns from mistakes
+- **Phase 7: Ronin Integration** - API endpoints ready (desktop app separate project)
 
-### Completed Phases (Standalone Pharos)
-- ✅ Phase 1: Core Infrastructure - FastAPI, SQLAlchemy, event bus, modular architecture
-- ✅ Phase 2: Resource Management - CRUD operations, collections, annotations
-- ✅ Phase 3: Search & Discovery - Hybrid search (keyword + semantic), quality scoring
-- ✅ Phase 4: PDF Ingestion & GraphRAG - Research paper management with code linking
-- ✅ Phase 17: Production hardening with authentication and rate limiting
-- ✅ Phase 17.5: Advanced RAG architecture with parent-child chunking
-- ✅ Phase 18: Code repository analysis and AST-based chunking
-- ✅ Phase 19: Hybrid edge-cloud orchestration and deployment
+### ✅ Core Infrastructure Complete
+- 14 self-contained modules with zero circular dependencies
+- Hybrid edge-cloud architecture ($7/mo production cost)
+- Context retrieval API (<800ms latency)
+- Three-way hybrid search (keyword + dense + sparse)
+- 3,302 LangChain resources indexed with dependency graphs
 
-### Near-term: Pharos + Ronin Integration (Phases 5-9)
-- **Phase 5**: Hybrid GitHub Storage (metadata only, fetch code on-demand) - 17x storage reduction
-- **Phase 6**: Pattern Learning Engine - Extract successful patterns, coding style, architectural decisions
-- **Phase 7**: Ronin Integration API - Context retrieval and pattern learning endpoints
-- **Phase 8**: Self-Improving Loop - Track modifications, learn from refactorings
-- **Phase 9**: Production Deployment - Load testing with 1000 codebases, monitoring
+### ⚠️ Partial Implementation
+- Ronin desktop app (API ready, app not started)
+- Frontend UI (React app exists but dormant)
+- PDF ingestion (module exists, not prioritized)
 
-### Medium-term: Enhanced Capabilities (Phases 10-15)
-- **Phase 10**: Frontend UI for PDF upload, annotation, and graph visualization
-- **Phase 11**: Advanced extraction (LaTeX equations, table structure, citations)
-- **Phase 12**: IDE/Editor plugins (VS Code, JetBrains, Vim) with Ronin integration
-- **Phase 13**: Universal CLI interface for all backend functionality
-- **Phase 14**: Enhanced code navigation and "jump to definition" across repos
-- **Phase 15**: Advanced graph intelligence features and hypothesis discovery
+### Completed Phases (21+ phases over 18 months)
+- ✅ Phases 1-4: Core infrastructure, search, PDF ingestion
+- ✅ Phases 7-11: Collections, annotations, hybrid search, quality, recommendations
+- ✅ Phases 12-14: Event-driven architecture, PostgreSQL, vertical slices
+- ✅ Phases 17-19: Production hardening, advanced RAG, edge-cloud orchestration
+- ✅ Phases 5-8: Hybrid storage, pattern learning, self-improving loop
 
-### Long-term Vision: Ecosystem & Scale (Phases 16+)
-- **Phase 16**: Multi-language support expansion (C++, C#, Ruby, PHP, Kotlin)
-- **Phase 17**: Advanced code visualization tools (call graphs, dependency maps)
-- **Phase 18**: Plugin ecosystem for custom analyzers and language parsers
-- **Phase 19**: Community-contributed patterns and best practices library
-- **Phase 20**: Distributed knowledge graph federation for team collaboration
-- **Phase 21**: AI-powered code explanation and documentation generation
-- **Phase 22**: Real-time collaboration features for team knowledge sharing
+**See `notebooklm/06_EVOLUTION_AND_HISTORY.md` for complete phase-by-phase analysis**
+
+## Roadmap
+
+### Immediate (Next 2 weeks)
+- Build Ronin desktop app (API ready, needs UI)
+- Test self-improving loop end-to-end
+- Document pattern learning workflows
+
+### Short-term (Next month)
+- Production hardening (error tracking, monitoring)
+- Scale testing with 1000 repos
+- Frontend UI (rule review dashboard, PDF upload)
 
 ## Use Cases
 
@@ -329,3 +326,24 @@ Time: ~45s for typical repo
 - Requires GitHub API access (rate limits: 5000 req/hour)
 - Slight latency for first code fetch (cached after)
 - Requires internet connection for code retrieval
+
+
+### Medium-term (Next 3 months)
+- IDE plugins (VS Code, JetBrains, Vim)
+- Advanced graph visualization
+- Multi-language expansion (C++, C#, Ruby, PHP, Kotlin)
+
+### Long-term (6+ months)
+- Plugin ecosystem for custom analyzers
+- Community-contributed patterns library
+- Distributed knowledge graph federation
+
+---
+
+## Documentation
+
+For comprehensive technical details, see:
+- **NotebookLM Docs** (`notebooklm/`) - 6 files covering architecture, data model, API, deployment, and evolution history
+- **Tech Stack** (`tech.md`) - Technology choices and constraints
+- **Repository Structure** (`structure.md`) - Where to find things
+- **Quick References** - Phase 4 PDF ingestion, Pharos + Ronin integration

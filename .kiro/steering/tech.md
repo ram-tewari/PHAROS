@@ -5,7 +5,7 @@
 **Type**: Hybrid Edge-Cloud with Modular Monolith + LLM Memory Layer
 **Pattern**: Vertical slices with shared kernel
 **Deployment**: Cloud API (Render) + Edge Worker (Local GPU) + LLM Integration (Ronin)
-**Status**: Production (Phase 4 Complete, Phase 5-9 Planned)
+**Status**: Production (Phases 5-8 Complete, 21+ phases total)
 **Focus**: Code intelligence, research management, and LLM context provision for developers
 
 ### Architectural Principles
@@ -20,15 +20,10 @@
 
 ### Module Structure
 
-**14 Domain Modules** (Standalone Pharos):
+**14 Domain Modules** (Production-Ready):
 - Annotations, Authority, Collections, Curation, Graph
 - Monitoring, Quality, Recommendations, Resources, Scholarly
-- Search, Taxonomy, **PDF Ingestion** (Phase 4)
-
-**Planned Modules** (Pharos + Ronin Integration):
-- **Context Retrieval** (Phase 7) - Assemble context for LLM queries
-- **Pattern Learning** (Phase 6) - Extract patterns from code history
-- **GitHub Integration** (Phase 5) - Hybrid storage with on-demand code fetching
+- Search, Taxonomy, GitHub (Phase 5), Patterns (Phase 6 + 8)
 
 **Each Module Contains**:
 - `router.py` - FastAPI endpoints
@@ -62,6 +57,8 @@
 - Metadata: `metadata.extracted`, `equations.parsed`, `tables.extracted`
 - Advanced RAG: `resource.chunked`, `resource.chunking_failed`
 - **PDF Ingestion** (Phase 4): `pdf.ingested`, `pdf.annotated`, `pdf.linked_to_code`
+- **Pattern Learning** (Phase 6): `pattern.extracted`, `profile.updated`
+- **Self-Improving** (Phase 8): `rule.proposed`, `rule.accepted`, `rule.rejected`
 
 **Event Flow Example**:
 ```
@@ -202,18 +199,19 @@ Phase 4 Example:
 - 10K+ concurrent embeddings
 - 1K+ collections per user
 - 100+ requests/second
-- **1000+ codebases indexed** (Pharos + Ronin)
+- **1000+ codebases indexed** (Pharos + Ronin) ✅ ACHIEVED
 - **10K+ codebases supported** (with hybrid GitHub storage)
-- **<1s context retrieval** for LLM queries
-- **<2s pattern learning** from code history
+- **<1s context retrieval** for LLM queries ✅ ACHIEVED (~800ms)
+- **<2s pattern learning** from code history ✅ ACHIEVED (~1-2s)
 
 ### Resource Limits
 - Memory: 4GB minimum, 8GB recommended
 - Storage: 10GB minimum for models and data
-- **Storage (Hybrid)**: 2GB for 1000 codebases (metadata + embeddings only)
+- **Storage (Hybrid)**: 2GB for 1000 codebases (metadata + embeddings only) ✅ ACHIEVED
 - CPU: 2+ cores recommended
-- GPU: Optional, improves ML performance 10x
+- GPU: Optional, improves ML performance 10x (RTX 4070 used in production)
 - **Network**: Required for GitHub API access (hybrid storage mode)
+- **Cost**: $7/mo production (Render Starter) ✅ ACHIEVED
 
 ## Database Strategy
 

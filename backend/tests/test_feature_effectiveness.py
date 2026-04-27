@@ -524,7 +524,7 @@ export const UserProfile = ({ userId }) => {
         
         results = {
             "recommendation": {},
-            "claim": "Hybrid NCF + content + graph",
+            "claim": "Content + graph (NCF removed for single-tenant)",
             "status": "UNKNOWN"
         }
         

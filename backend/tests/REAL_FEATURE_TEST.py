@@ -327,7 +327,7 @@ try:
             "key_methods": methods[:10],
             "get_recommendations": "✅" if has_get_recs else "❌",
             "hybrid_approach": "✅" if has_hybrid else "❌",
-            "claim": "Hybrid NCF + content + graph"
+            "claim": "Content + graph (NCF removed for single-tenant)"
         })
     else:
         test_result("Recommendations", "❌ MISSING", {"error": "RecommendationService class not found"})

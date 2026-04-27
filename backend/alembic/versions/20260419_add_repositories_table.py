@@ -24,12 +24,15 @@ def upgrade() -> None:
     tables = inspector.get_table_names()
     
     if 'repositories' not in tables:
+        # Use JSON for SQLite compatibility, JSONB for PostgreSQL
+        metadata_type = postgresql.JSONB if connection.dialect.name == 'postgresql' else sa.JSON
+        
         op.create_table(
             'repositories',
             sa.Column('id', postgresql.UUID(as_uuid=True), primary_key=True, nullable=False),
             sa.Column('url', sa.String(2048), nullable=False),
             sa.Column('name', sa.String(255), nullable=False),
-            sa.Column('metadata', postgresql.JSONB, nullable=False),
+            sa.Column('metadata', metadata_type, nullable=False),
             sa.Column('total_files', sa.Integer(), nullable=False, server_default='0'),
             sa.Column('total_lines', sa.Integer(), nullable=False, server_default='0'),
             sa.Column('created_at', sa.DateTime(timezone=True), nullable=False, server_default=sa.text('CURRENT_TIMESTAMP')),

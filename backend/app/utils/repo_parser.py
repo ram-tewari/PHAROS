@@ -17,6 +17,11 @@ from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
 import tree_sitter_javascript as tsjavascript
 
+from app.utils.path_exclusions import (
+    EXCLUDE_DIRS,
+    is_excluded_file,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -123,23 +128,11 @@ class RepositoryParser:
         """
         source_files = []
 
-        # Directories to skip
-        skip_dirs = {
-            ".git",
-            "node_modules",
-            "__pycache__",
-            "venv",
-            ".venv",
-            "dist",
-            "build",
-            ".pytest_cache",
-            ".hypothesis",
-        }
-
         for ext in self._supported_extensions:
             for file_path in Path(repo_path).rglob(f"*{ext}"):
-                # Skip files in excluded directories
-                if any(skip_dir in file_path.parts for skip_dir in skip_dirs):
+                if any(part in EXCLUDE_DIRS for part in file_path.parts):
+                    continue
+                if is_excluded_file(file_path.name):
                     continue
                 source_files.append(str(file_path))
 

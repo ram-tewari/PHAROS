@@ -4,6 +4,51 @@ All notable changes to Pharos are documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/), and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased] - 2026-04-24 - Search Quality + Embed Server Reliability
+
+### Fixed
+
+- **pgvector parent-child search** (`backend/app/modules/search/service.py`)
+  - Replaced O(N) Python cosine similarity loop (fetched every chunk row, ran `scipy.spatial.distance.cosine` per chunk) with a single pgvector HNSW `<=>` cosine operator on `resources.embedding`.
+  - The prior path hung for 2+ minutes on Render Starter (0.5 CPU) once the langchain corpus (3 302 files) was ingested. Now resolves in ~250ms.
+  - Added `EXISTS (SELECT 1 FROM document_chunks WHERE resource_id = r.id)` filter so test-ingest resources (embedding present, zero chunks) no longer monopolise top-k results.
+  - Commit: `c6000080`
+
+- **asyncpg CAST for uuid/vector parameters** (`backend/embed_server.py`)
+  - `UPDATE resources SET embedding = :emb WHERE id = :rid` silently matched 0 rows when `:emb` and `:rid` were passed as Python strings — asyncpg does not auto-cast `str → uuid` or `str → vector`.
+  - Fixed by replacing `:p::vector` / `:p::uuid` shorthand (which also collides with SQLAlchemy's `:param` marker parser) with `CAST(:p AS vector)` / `CAST(:p AS uuid)`.
+  - `rowcount` is now logged after every embedding write so silent zero-row UPDATEs are immediately visible.
+  - Commit: `c6000080`
+
+- **Upstash free-tier polling compliance** (`backend/embed_server.py`)
+  - Prior BLPOP cycle: 5s timeout + 0.1s sleep ≈ 21k Upstash REST requests/day when queue is idle — more than double the free-tier cap (10k/day).
+  - Fixed: BLPOP timeout raised to 9s, sleep reduced to 1s → ≈8.6k req/day idle.
+  - Commit: `ebe0ce3f`
+
+- **GitHub URI normalization** (`backend/app/modules/ingestion/ast_pipeline.py`)
+  - Windows-ingested repos wrote `github_uri` paths with `\\` backslashes, breaking `raw.githubusercontent.com` URL construction on Render (Linux).
+  - Fixed: all `github_uri` values normalized to POSIX paths at write time.
+  - Commit: `e54cbf1e`
+
+- **Non-SHA branch references rewritten to HEAD** (`backend/app/modules/ingestion/ast_pipeline.py`)
+  - `branch_reference` values like `"main"` or `""` did not resolve on `raw.githubusercontent.com` for all repos. Rewriting to `HEAD` always resolves to the default branch tip.
+  - Commit: `e54cbf1e`
+
+- **Embed semantic_summary not JSON blob** (`backend/app/modules/ingestion/ast_pipeline.py`)
+  - Code chunks were being embedded using the full `chunk_metadata` JSON string (`{"github_uri": ..., "ast_node_type": ...}`) — ~50% noise. Switched to embedding the `semantic_summary` field (`"[python] def fn(...): 'docstring.' deps: [...]"`), which dramatically improved score distribution (from near-uniform to a meaningful 0.44–0.71 spread).
+  - Commit: `6a0d8733`
+
+- **Test-file distance penalty** (`backend/app/modules/search/service.py`)
+  - `/tests/` path resources were dominating top-k for queries that should return production code.
+  - Fixed: +0.10 added to cosine distance for any resource whose path contains `/tests/`.
+  - Commit: `6a0d8733`
+
+### Known Issues / Not Yet Fixed
+
+- `POST /api/v1/ingestion/ingest/{repo_url}` queues to `ingest_queue` but no worker reliably consumes it end-to-end. GitHub bulk ingestion is the next planned fix (option: modify router to call `HybridIngestionPipeline` directly as a `BackgroundTask`).
+
+---
+
 ## [2.3.0] - 2026-01-05 - Phase 18: Code Intelligence Pipeline
 
 ### Added

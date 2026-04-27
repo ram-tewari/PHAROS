@@ -61,6 +61,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import DocumentChunk, Resource
 from app.modules.resources.logic.classification import classify_file
+from app.utils.path_exclusions import has_excluded_ancestor, is_excluded_file
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +103,8 @@ class IngestionResult:
     # Estimate of DB storage saved vs naïve full-content approach
     estimated_storage_saved_bytes: int = 0
     errors: list[dict[str, str]] = field(default_factory=list)
+    # Track resource IDs for staleness management
+    resource_ids: list[str] = field(default_factory=list)
 
     @property
     def storage_saved_mb(self) -> float:
@@ -406,6 +409,16 @@ class HybridIngestionPipeline:
                 logger.warning("Temp dir cleanup failed: %s", exc)
 
         result.ingestion_time_seconds = time.monotonic() - t0
+        
+        # Mark old resources as stale and new ones as fresh
+        if result.resource_ids:
+            from app.modules.resources.logic.staleness import (
+                mark_repo_stale_by_sha,
+                mark_resources_fresh,
+            )
+            await mark_repo_stale_by_sha(self.db, git_url, commit_sha)
+            await mark_resources_fresh(self.db, result.resource_ids, commit_sha)
+        
         logger.info(
             "Ingested %s — %d resources, %d chunks in %.1fs "
             "(saved ~%.1f MB of raw code storage)",
@@ -464,8 +477,13 @@ class HybridIngestionPipeline:
                 continue
             if path.suffix.lower() not in extensions:
                 continue
+            rel_parts = path.relative_to(root).parts
+            if has_excluded_ancestor(rel_parts):
+                continue
+            if is_excluded_file(path.name):
+                continue
             if gitignore:
-                rel = str(path.relative_to(root)).replace("\\", "/")
+                rel = "/".join(rel_parts)
                 if gitignore.match_file(rel):
                     continue
             # Quick binary check
@@ -528,6 +546,7 @@ class HybridIngestionPipeline:
         self.db.add(resource)
         await self.db.flush()
         result.resources_created += 1
+        result.resource_ids.append(str(resource.id))  # Track for staleness management
 
         # Extract symbols
         chunks: list[DocumentChunk] = []

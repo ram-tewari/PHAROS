@@ -6,6 +6,46 @@ Project-level context and guidelines for Pharos.
 
 Steering docs provide high-level context for AI agents and developers without loading large implementation files. They serve as a "map" to the codebase and establish project boundaries.
 
+## Documentation Layers
+
+### Quick Reference (Steering Docs)
+**Purpose**: Lightweight, focused guidance for AI agents and daily development
+**Token Budget**: 2-8KB per file
+**Update Frequency**: With every significant code change
+
+- `product.md` - What we're building (vision, use cases, roadmap)
+- `tech.md` - How we're building it (stack, architecture, commands)
+- `structure.md` - Where things are (repo map, navigation)
+- `admin-credentials.md` - Production secrets and access
+- `frontend-polish.md` - UI/UX standards
+- `issue-tracking.md` - Issue management process
+
+### Deep Dive (NotebookLM Docs)
+**Purpose**: Comprehensive technical documentation for NotebookLM/Gemini
+**Token Budget**: 20-50KB per file
+**Update Frequency**: At major milestones (phases complete)
+
+Located in `notebooklm/`:
+- **File 1**: Complete project overview (what, who, why)
+- **File 2**: System architecture (cloud/edge split, modules, event bus)
+- **File 3**: Data model & module reference (30+ tables, 14 modules)
+- **File 4**: Ingestion & search pipelines (how data flows)
+- **File 5**: API catalog & deployment (100+ endpoints, operations)
+- **File 6**: Evolution & history (21+ phases, what survived, what was cut)
+
+### When to Use Which
+
+| Task | Use Steering Docs | Use NotebookLM Docs |
+|------|------------------|---------------------|
+| Quick lookup | ✅ | ❌ |
+| AI agent context | ✅ | ❌ |
+| Daily development | ✅ | ❌ |
+| Onboarding | ⚠️ Start here | ✅ Then deep dive |
+| Architecture decisions | ⚠️ Overview | ✅ Full rationale |
+| Historical context | ❌ | ✅ |
+| API reference | ⚠️ Key endpoints | ✅ Complete catalog |
+| Operational runbooks | ⚠️ Common tasks | ✅ Full procedures |
+
 ## Files
 
 ### `product.md` - Product Vision

@@ -416,6 +416,13 @@ class Settings(BaseSettings):
     FEEDBACK_REDIS_QUEUE: str = "pharos_extraction_jobs"  # Redis queue name for jobs
     FEEDBACK_LOCAL_LLM_URL: str = "http://localhost:11434"  # Ollama/vLLM endpoint
     FEEDBACK_LOCAL_LLM_MODEL: str = "codellama:13b"  # Model name for extraction
+    # Minimum control-flow node density (control-flow nodes / total AST nodes)
+    # for a file to pass the sieve. Filters out flat config / boilerplate /
+    # dataclass-only modules that survive untouched but carry no logic.
+    FEEDBACK_MIN_AST_DENSITY: float = 0.01
+    # Minimum absolute count of control-flow nodes in a file. Catches tiny
+    # files whose ratio looks high but have no real logic.
+    FEEDBACK_MIN_CONTROL_FLOW_NODES: int = 3
 
     class Config:
         env_file = "config/.env"

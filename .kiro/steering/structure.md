@@ -367,12 +367,18 @@ Each module contains:
 - ✅ **GraphRAG linking between PDFs and code**
 - ✅ **Unified search across research papers and codebase**
 
-### Current Focus (Phase 5-9: Pharos + Ronin Integration)
-- 📋 Phase 5: Hybrid GitHub Storage (metadata only, 17x storage reduction)
-- 📋 Phase 6: Pattern Learning Engine (extract patterns from code history)
-- 📋 Phase 7: Ronin Integration API (context retrieval, pattern learning endpoints)
-- 📋 Phase 8: Self-Improving Loop (track modifications, learn from refactorings)
+### Current Focus (Phases 5-8: Pharos + Ronin Integration - COMPLETE ✅)
+- ✅ Phase 5: Hybrid GitHub Storage (metadata only, 17x storage reduction)
+- ✅ Phase 6: Pattern Learning Engine (extract patterns from code history)
+- ✅ Phase 7: Ronin Integration API (context retrieval, pattern learning endpoints)
+- ✅ Phase 8: Self-Improving Loop (track modifications, learn from refactorings)
 - 📋 Phase 9: Production Deployment (load testing with 1000 codebases)
+
+### Next Steps
+- 📋 Build Ronin desktop app (API ready, needs UI)
+- 📋 Production load testing (1000 repos)
+- 📋 Frontend UI (rule review dashboard, PDF upload)
+- 📋 IDE plugins (VS Code, JetBrains, Vim)
 
 ### Future Focus (Phase 10+: Enhanced Capabilities)
 - 📋 Phase 10: Frontend UI for PDF upload and annotation
@@ -381,15 +387,35 @@ Each module contains:
 - 📋 Phase 13: IDE/Editor plugins with Ronin integration
 - 📋 Phase 14: Universal CLI interface
 
+**See `notebooklm/06_EVOLUTION_AND_HISTORY.md` for complete phase-by-phase evolution (21+ phases)**
+
 ## Related Documentation
 
-- [Product Overview](.kiro/steering/product.md)
-- [Tech Stack](.kiro/steering/tech.md)
-- [Spec Organization](.kiro/specs/README.md)
-- [Documentation Index](../../backend/docs/index.md)
-- [API Reference](../../backend/docs/api/overview.md)
-- [Architecture Overview](../../backend/docs/architecture/overview.md)
-- [Developer Setup Guide](../../backend/docs/guides/setup.md)
+### Steering Docs (Quick Reference)
+- [Product Overview](product.md) - What we're building
+- [Tech Stack](tech.md) - How we're building it
+- [Repository Structure](structure.md) - This file
+- [Admin Credentials](admin-credentials.md) - Production secrets
+- [Frontend Polish](frontend-polish.md) - UI/UX standards
+- [Issue Tracking](issue-tracking.md) - Issue management process
+
+### NotebookLM Docs (Deep Dive)
+For comprehensive technical details, see `notebooklm/`:
+- **File 1**: Complete project overview (what, who, why)
+- **File 2**: System architecture (cloud/edge split, modules, event bus)
+- **File 3**: Data model & module reference (30+ tables, 14 modules)
+- **File 4**: Ingestion & search pipelines (how data flows)
+- **File 5**: API catalog & deployment (100+ endpoints, operations)
+- **File 6**: Evolution & history (21+ phases, what survived, what was cut)
+
+### Quick References
+- [Pharos + Ronin Quick Reference](PHAROS_RONIN_QUICK_REFERENCE.md) - 1-page cheat sheet
+- [Phase 4 Quick Reference](PHASE_4_QUICK_REFERENCE.md) - PDF ingestion quick ref
+
+### Spec Organization
+- [Spec README](.kiro/specs/README.md) - Feature specifications
+- [Backend Specs](.kiro/specs/backend/) - 21+ backend feature specs
+- [Frontend Specs](.kiro/specs/frontend/) - 6 frontend feature specs
 
 ### Phase 4: PDF Ingestion & GraphRAG
 - [Module README](../../backend/app/modules/pdf_ingestion/README.md) - Complete API documentation

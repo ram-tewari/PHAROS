@@ -1,6 +1,6 @@
 # Pharos — API Reference, Deployment, and Operations
 
-> File 5 of 5. Covers the full HTTP API surface (endpoint catalog), authentication, deployment (Render + NeonDB + Upstash + local edge), env vars, and a runbook of common operational tasks / known pitfalls.
+> File 5 of 6. Covers the full HTTP API surface (endpoint catalog), authentication, deployment (Render + NeonDB + Upstash + local edge), env vars, and a runbook of common operational tasks / known pitfalls. See File 6 for evolution history.
 
 ---
 
@@ -18,13 +18,15 @@
 
 ## Authentication
 
+**Note (2026-04-27)**: The current auth system is over-engineered for a single-tenant tool. OAuth2 flows, JWT refresh, and rate limiting tiers are enterprise SaaS features unnecessary for Pharos. Simple API key authentication would suffice. See `ACTUAL_STATUS_2026_04_27.md` for details.
+
 Two authentication modes:
 
 ### 1. Machine-to-machine (Ronin → Pharos) — **preferred for agents**
-Bearer token, static, set in Render env var `PHAROS_API_KEY`.
+Bearer token, static, set in Render env var `PHAROS_ADMIN_TOKEN`.
 
 ```
-Authorization: Bearer <PHAROS_API_KEY>
+Authorization: Bearer <PHAROS_ADMIN_TOKEN>
 ```
 
 All endpoints under `/api/*` accept this header. No user context — all operations run as the single tenant.
@@ -37,7 +39,7 @@ api_key = secrets.token_hex(32)  # 64-character hex string
 
 Then set in Render dashboard:
 1. Go to pharos-cloud-api service → Environment
-2. Add/update `PHAROS_API_KEY` with the new value
+2. Add/update `PHAROS_ADMIN_TOKEN` with the new value
 3. Redeploy (or wait for auto-deploy on next commit)
 4. Update Ronin's config with the new key
 
@@ -143,11 +145,20 @@ This is a conceptual catalog — exact paths live in each `module/router.py`. ~1
 ### Planning (`/api/planning`)
 - Multi-step AI planning sessions.
 
-### Patterns (`/api/patterns`)
-- Extracted coding patterns from indexed repos.
+### Patterns (`/api/patterns`) - ✅ COMPLETE (Phase 6 + Phase 8)
+- `POST /api/patterns/learn` — Analyze repo and extract patterns (AST + Git analysis)
+- `GET /api/patterns/profiles` — List all developer profiles
+- `GET /api/patterns/profiles/{id}` — Get specific profile
+- `GET /api/patterns/profiles/coding` — List all coding profiles (master programmer personalities)
+- `POST /api/patterns/profiles/coding` — Create/update coding profile
+- `POST /api/patterns/propose` — Receive rule proposals from local extraction worker
+- `GET /api/patterns/rules` — List proposed rules (with status filter: PENDING_REVIEW, ACTIVE, REJECTED)
+- `PATCH /api/patterns/rules/{rule_id}` — Accept or reject a proposed rule
 
-### GitHub (`/api/github`)
-- `GET /api/github/fetch?uri=...` — On-demand fetch of raw GitHub source with 1-hr cache.
+### GitHub (`/api/github`) - ✅ COMPLETE (Phase 5)
+- `POST /api/github/fetch` — On-demand fetch of single code chunk from GitHub (with Redis cache)
+- `POST /api/github/fetch-batch` — Fetch up to 50 chunks in parallel
+- `GET /api/github/health` — Module health check (cache availability, token status, concurrency)
 
 ### PDF Ingestion (`/api/pdf`)
 - `POST /api/pdf/ingest` — PDF-specific flow (OCR, layout parsing).
@@ -176,17 +187,28 @@ This is a conceptual catalog — exact paths live in each `module/router.py`. ~1
   │  Gunicorn → Uvicorn workers            │
   │  WEB_CONCURRENCY=1 (to stay <512 MB)    │
   │  MODE=CLOUD → no torch                  │
+  │  ✅ Hybrid storage: metadata only       │
+  │  ✅ Pattern learning: /api/patterns/*   │
+  │  ✅ Self-improving: rule proposals      │
   └───┬───────────────────────────┬──────┘
       │                           │
       │ Redis REST                │ HTTPS (Tailscale Funnel)
       ▼                           ▼
  Upstash Redis (free)      Local RTX 4070 (WSL2 + Windows)
   pharos:tasks               - embed_server.py (FastAPI, port 8001)
-  ingest_queue               - edge worker
+  ingest_queue               - edge worker (polls pharos:tasks)
+  pharos_extraction_jobs     - local extraction worker (self-improving loop)
   10k req/day                - cost: $0
 ```
 
 Total recurring cost: **$7/mo** (Render Starter only).
+
+**Key Features Deployed**:
+- ✅ Hybrid GitHub storage (17x storage reduction)
+- ✅ Pattern learning engine (AST + Git analysis)
+- ✅ Self-improving loop (rule proposals + review)
+- ✅ Context retrieval (<800ms)
+- ✅ On-demand code fetching (Redis cached)
 
 ---
 
@@ -201,7 +223,7 @@ Set in `render.yaml` with `sync: false` → configured manually in Render dashbo
 | `REDIS_URL` | Upstash `rediss://` URL (TLS mandatory) |
 | `UPSTASH_REDIS_REST_URL` | Upstash REST API URL |
 | `UPSTASH_REDIS_REST_TOKEN` | Upstash REST API token |
-| `PHAROS_API_KEY` | M2M bearer for Ronin |
+| `PHAROS_ADMIN_TOKEN` | M2M bearer for Ronin |
 | `SECRET_KEY` | JWT signing secret (auto-generated by Render) |
 | `EDGE_EMBEDDING_URL` | Tailscale Funnel URL, e.g. `https://pc.tailf7b210.ts.net` |
 | `MODE` | `CLOUD` on Render; `EDGE` on local |
@@ -218,12 +240,18 @@ Set in `render.yaml` with `sync: false` → configured manually in Render dashbo
 | `DB_POOL_TIMEOUT` | `30` | Seconds |
 | `DB_STATEMENT_TIMEOUT` | `30000` | Milliseconds |
 | `EMBEDDING_MODEL_NAME` | `nomic-ai/nomic-embed-text-v1` | |
-| `GITHUB_TOKEN` | — | Optional PAT for higher rate limit |
-| `GITHUB_CACHE_TTL` | `3600` | Seconds |
+| `GITHUB_TOKEN` | — | Optional PAT for higher rate limit (5000 req/hr) |
+| `GITHUB_CACHE_TTL` | `3600` | Seconds (1 hour cache for fetched code) |
+| `GITHUB_FETCH_CONCURRENCY` | `10` | Parallel GitHub fetch requests |
 | `CONTEXT_RETRIEVAL_TIMEOUT` | `1000` | ms |
 | `PATTERN_LEARNING_TIMEOUT` | `2000` | ms |
 | `MAX_CODEBASES` | `1000` | |
 | `JSON_LOGGING` | `""` | Set to `true` for structured JSON logs |
+| `FEEDBACK_GITHUB_OWNER` | `""` | GitHub repo owner for self-improving loop |
+| `FEEDBACK_GITHUB_REPO` | `""` | GitHub repo name for self-improving loop |
+| `FEEDBACK_REDIS_QUEUE` | `pharos_extraction_jobs` | Redis queue for rule extraction jobs |
+| `FEEDBACK_LOCAL_LLM_URL` | `http://localhost:11434` | Ollama/vLLM endpoint for local extraction worker |
+| `FEEDBACK_LOCAL_LLM_MODEL` | `codellama:13b` | Model name for rule extraction |
 
 ### Edge worker / embed server
 Same vars plus:
@@ -408,14 +436,14 @@ Pre-deployment:
 - [ ] Create NeonDB project → enable pgvector: `CREATE EXTENSION vector;`
 - [ ] Copy NeonDB **pooled** connection string
 - [ ] Create Upstash Redis database → copy `rediss://` URL + REST URL/token
-- [ ] Generate `PHAROS_API_KEY` (used by Ronin)
+- [ ] Generate `PHAROS_ADMIN_TOKEN` (used by Ronin)
 - [ ] Set up Tailscale Funnel on the local GPU machine → copy public URL
 - [ ] (Optional) Create GitHub PAT for hybrid-storage cache
 
 Render dashboard:
 - [ ] Connect GitHub repo
 - [ ] Apply `render.yaml` blueprint
-- [ ] Set `DATABASE_URL`, `REDIS_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `PHAROS_API_KEY`, `EDGE_EMBEDDING_URL`
+- [ ] Set `DATABASE_URL`, `REDIS_URL`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, `PHAROS_ADMIN_TOKEN`, `EDGE_EMBEDDING_URL`
 - [ ] Confirm `MODE=CLOUD`, `WEB_CONCURRENCY=1`
 - [ ] Deploy (push to `master`/`main`)
 

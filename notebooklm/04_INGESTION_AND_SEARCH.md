@@ -1,6 +1,6 @@
 # Pharos — Ingestion and Search Pipelines
 
-> File 4 of 5. Walks through how data enters Pharos (ingestion) and how it comes back out (search/retrieval). Includes a frank "documented vs actual" section because earlier docs over-promised on the GitHub-repo ingestion path.
+> File 4 of 6. Walks through how data enters Pharos (ingestion) and how it comes back out (search/retrieval). Includes a frank "documented vs actual" section because earlier docs over-promised on the GitHub-repo ingestion path. See File 6 for evolution history.
 
 ---
 
@@ -63,9 +63,11 @@ Key points:
 
 ---
 
-## Pipeline B: GitHub Repository (Bulk) — PARTIALLY BROKEN
+## Pipeline B: GitHub Repository (Bulk) — ✅ WORKING
 
-The intended flow:
+**Status**: FULLY IMPLEMENTED AND OPERATIONAL
+
+The actual working flow:
 
 ```
 POST /api/v1/ingestion/ingest/github.com/owner/repo
@@ -74,22 +76,39 @@ POST /api/v1/ingestion/ingest/github.com/owner/repo
 Ingestion router pushes to ingest_queue
       │
       ▼
-(?) Repo worker polls ingest_queue, clones repo, parses AST,
-    creates one Resource per file + one DocumentChunk per function/class/method,
-    then pushes each chunk / resource onto pharos:tasks for embedding.
+Repo worker (backend/app/workers/repo.py) polls ingest_queue
       │
       ▼
-Edge worker processes embeddings as in Pipeline A.
+Worker clones repo, parses AST (Tree-Sitter for Python),
+creates one Resource per file + one DocumentChunk per function/class/method
+      │
+      ▼
+Chunks stored with:
+  - content = NULL (no code stored)
+  - github_uri = raw.githubusercontent.com URL
+  - branch_reference = commit SHA or "HEAD"
+  - semantic_summary = signature + docstring + deps
+  - embedding = NULL (async later)
+      │
+      ▼
+Emits resource.chunked events
+      │
+      ▼
+Event handler queues embedding tasks to pharos:tasks
+      │
+      ▼
+Edge worker generates embeddings on GPU
+      │
+      ▼
+Resource.ingestion_status = "completed"
 ```
 
-**Reality**: The ingest queue gets tasks pushed but the consumer is not consistently running the full AST pipeline. Historical artifacts of this: the LangChain ingestion attempt left 3 302 Resource rows in the DB with `ingestion_status='pending'` and zero chunks until someone ran `queue_pending_resources.py`.
-
-Two options are on the table for fixing this (neither is done yet):
-
-1. **Build a proper repo worker** that polls `ingest_queue`, calls `HybridIngestionPipeline.ingest_github_repo()` (in `backend/app/modules/ingestion/ast_pipeline.py`), creates Resources in batch, and fans out to `pharos:tasks`.
-2. **Bypass the queue** — turn the ingestion router into a `BackgroundTasks` call that invokes the AST pipeline directly in-process on Render. Simpler, but Render's 0.5 CPU / 512 MB would throttle on big repos, and the AST pipeline drags in non-cloud dependencies.
-
-Option 2 is the preferred stopgap per current thinking.
+**Key Implementation Details**:
+- Repo worker is in `backend/app/workers/repo.py` (fully functional)
+- Uses Tree-Sitter for AST parsing (Python fully supported, JS/TS partial)
+- Batch commits every 50 chunks for performance
+- No raw code stored (17x storage reduction achieved)
+- Code fetched on-demand via `/api/github/fetch` endpoint
 
 ---
 
@@ -109,7 +128,8 @@ async def ingest_github_repo(
 ) -> IngestionResult:
     # 1. Clone repo to temp dir
     # 2. Parse .gitignore; walk file tree
-    # 3. For each code file:
+    # 3. Apply path exclusions (migrations/, alembic/, __generated__, lockfiles, .min.*, _pb2.py)
+    # 4. For each code file:
     #    a. Create a Resource (metadata only — no source stored)
     #    b. Run Tree-Sitter parse (Python fully supported; others partial)
     #    c. Extract symbols: functions, classes, methods, top-level assignments
@@ -120,9 +140,26 @@ async def ingest_github_repo(
     #         start_line / end_line
     #         semantic_summary = "[lang] signature: 'docstring.' deps: [...]"
     #         embedding      = None (async later)
-    # 4. Batch-commit every 50 chunks
-    # 5. Emit resource.created and resource.chunked events
+    # 5. Batch-commit every 50 chunks
+    # 6. Emit resource.created and resource.chunked events
+    # 7. Mark old resources as stale (is_stale=TRUE) for this repo
+    # 8. Mark newly created resources as fresh (is_stale=FALSE, last_indexed_sha=commit_sha)
 ```
+
+**Path Exclusions** (added 2026-04-27): Centralized in `backend/app/utils/path_exclusions.py`:
+- Directories: `migrations/`, `alembic/`, `__generated__/`, `node_modules/`, `.git/`, etc.
+- File patterns: `*.lock`, `*.min.js`, `*.min.css`, `*_pb2.py`, `.generated.*`, etc.
+- Wired into all three ingest paths: `repo_parser.py`, `ast_pipeline.py`, `repo_ingestion.py`
+
+**AST Density Gate** (added 2026-04-27): Before queueing for feedback, files are checked for:
+- Control-flow nodes (if/for/while/try): minimum 3 (configurable via `FEEDBACK_MIN_CONTROL_FLOW_NODES`)
+- AST density: minimum 0.01 (configurable via `FEEDBACK_MIN_AST_DENSITY`)
+- Drops flat dataclasses, config files, and other low-complexity code from feedback queue
+
+**Staleness Tracking** (added 2026-04-27): At end of ingestion:
+- `mark_repo_stale_by_sha(db, git_url, commit_sha)` — marks all resources from this repo with different SHA as stale
+- `mark_resources_fresh(db, resource_ids, commit_sha)` — marks newly created resources as fresh with current SHA
+- Search queries automatically filter out stale resources
 
 The AST pipeline itself works (it has produced the 3 302 LangChain Resource rows). The gap is the queue consumer orchestrating when it gets called.
 
@@ -194,9 +231,10 @@ Pipeline inside:
 1. **Query embedding** (150 ms): HTTP POST to `EDGE_EMBEDDING_URL/embed`.
 2. **Dense retrieval** (250 ms): pgvector HNSW cosine on `resources.embedding` (not `document_chunks.embedding`).
    - **Key change (commit c6000080)**: Prior to this commit, the code pulled every chunk and did pure-Python cosine similarity, causing 2+ minute hangs. Now uses pgvector's native HNSW index on Neon.
-   - Query: `SELECT * FROM resources r WHERE r.embedding IS NOT NULL AND EXISTS (SELECT 1 FROM document_chunks WHERE resource_id = r.id) ORDER BY r.embedding <=> query_vector LIMIT 50`
+   - Query: `SELECT * FROM resources r WHERE r.embedding IS NOT NULL AND EXISTS (SELECT 1 FROM document_chunks WHERE resource_id = r.id) AND (r.is_stale IS NULL OR r.is_stale = FALSE) ORDER BY r.embedding <=> query_vector LIMIT 50`
    - **Why resources.embedding?** Chunks inherit their parent resource's embedding. Top-K-resources is equivalent to dedup(top-K-chunks-by-parent).
    - **EXISTS filter**: Skips stale test-ingest rows that have embeddings but no chunks (e.g., the 3 302 LangChain resources before chunking was run).
+   - **Staleness filter** (added 2026-04-27): `(r.is_stale IS NULL OR r.is_stale = FALSE)` excludes outdated code from search results.
    - **Test-path penalty**: paths containing `/tests/` get +0.10 added to cosine distance to down-rank noisy test-file hits.
    - Top 50 candidates.
 3. **Sparse retrieval** (parallel, if available): SPLADE lookup — currently EDGE-only.
@@ -310,7 +348,7 @@ python scripts/queue_pending_resources.py
 ### Count pending / completed resources
 ```bash
 curl "https://pharos-cloud-api.onrender.com/api/resources?limit=1" \
-  -H "Authorization: Bearer $PHAROS_API_KEY" | jq '.total'
+  -H "Authorization: Bearer $PHAROS_ADMIN_TOKEN" | jq '.total'
 ```
 
 ### Check queue sizes via Upstash REST
@@ -343,7 +381,7 @@ tail -f backend/embed_server.log
 ### Test search end-to-end
 ```bash
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer $PHAROS_API_KEY" \
+  -H "Authorization: Bearer $PHAROS_ADMIN_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"query":"authentication middleware","strategy":"parent-child","top_k":5}'
 ```

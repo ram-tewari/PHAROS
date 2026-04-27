@@ -476,6 +476,74 @@ Include:
 3. Environment details (OS, Python version)
 4. Relevant configuration
 
+---
+
+## Production / NeonDB Issues
+
+### Embeddings silently not writing (rows_updated=0)
+
+**Symptom:** `embed_server.py` logs `stored embedding dim=768` but the resource still shows `embedding IS NULL` in the database. Search returns 0 results.
+
+**Root cause:** asyncpg does not auto-cast Python `str` parameters to `uuid` or `vector` column types. Two failure modes:
+1. **No cast** — `UPDATE resources SET embedding = :emb WHERE id = :rid` with plain string bindings: UPDATE runs, commits, `rowcount=0`. Silent data loss.
+2. **`::` syntax** — `:p::vector` collides with SQLAlchemy's `:param` marker parser and raises `asyncpg.PostgresSyntaxError: syntax error at or near ":"`.
+
+**Fix:** Always use `CAST(:p AS vector)` / `CAST(:p AS uuid)` in `text()` queries, never `::`. Log `result.rowcount` after every embedding write:
+
+```python
+result = await session.execute(
+    text("""
+        UPDATE resources
+        SET embedding = CAST(:emb AS vector)
+        WHERE id = CAST(:rid AS uuid)
+    """),
+    {"emb": json.dumps(embedding_list), "rid": str(resource_id)},
+)
+assert result.rowcount == 1, f"Expected 1 row updated, got {result.rowcount}"
+```
+
+---
+
+### Search hangs for minutes / times out
+
+**Symptom:** `POST /api/search/advanced` with `strategy=parent-child` hangs 2+ minutes on Render Starter.
+
+**Root cause (historical, now fixed):** Prior to 2026-04-24, `parent_child_search` in `search/service.py` fetched every `document_chunk` row from NeonDB and ran Python cosine similarity in a loop — O(N) network round-trips + O(N) CPU. With 3 302 files ingested, this was ~50k+ DB rows pulled to Render's 0.5 CPU.
+
+**Current implementation:** pgvector HNSW cosine on `resources.embedding` with an `EXISTS (document_chunks)` filter. If you see the hang return, check that the HNSW index exists:
+
+```sql
+SELECT indexname FROM pg_indexes
+WHERE tablename = 'resources' AND indexname LIKE '%embedding%';
+```
+
+If missing, the migration `20260410_implement_pgvector_and_splade` did not apply. Re-run `alembic upgrade heads`.
+
+---
+
+### Upstash free-tier quota exceeded
+
+**Symptom:** `embed_server.py` logs show `HTTP 429` from Upstash, or the daily request dashboard shows >10k requests.
+
+**Root cause:** BLPOP timeout too low. Each BLPOP + sleep cycle is one Upstash REST request. At BLPOP=5s + sleep=0.1s the idle rate is ~21k req/day (>10k cap).
+
+**Fix:** Ensure `WORKER_BLPOP_TIMEOUT=9` and `WORKER_POLL_INTERVAL=1` in `backend/.env`. This gives ≈8.6k idle req/day. Do not reduce the timeout to speed up task pickup — idle polling is the bottleneck, not task latency.
+
+---
+
+### Search returns 0 results even though resources exist
+
+**Symptom:** `/api/search/advanced` returns `{"total": 0, "results": []}` despite resources existing in NeonDB.
+
+**Checklist:**
+1. Do any resources have embeddings? Run `python backend/scripts/corpus_audit.py` locally.
+2. If `resources WHERE embedding IS NOT NULL = 0`: embed server hasn't processed them yet. Run `python backend/scripts/queue_pending_resources.py` to re-push all pending resources to `pharos:tasks`.
+3. If resources have embeddings but chunks=0: the `EXISTS (document_chunks)` filter blocks them. Run `process_ingestion` for those resources (queue via `pharos:tasks`).
+4. If embed server is offline: `curl http://localhost:8001/health`. Restart with `bash backend/start_embed_wsl.sh` in WSL2.
+5. If Tailscale Funnel is down: `tailscale funnel status`. The cloud API cannot generate query embeddings without it, and search will return a 503.
+
+---
+
 ## Related Documentation
 
 - [Setup Guide](setup.md) - Installation

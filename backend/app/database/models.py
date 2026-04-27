@@ -274,6 +274,18 @@ class Resource(Base):
         Integer, nullable=False, default=1, server_default="1"
     )
 
+    # Staleness tracking — flipped to True when the indexed snapshot
+    # no longer matches the upstream HEAD for `source` (git_url).
+    # Search/retrieval should filter on this so Ronin doesn't serve
+    # confidently-wrong answers about deleted or moved code.
+    is_stale: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false", index=True
+    )
+    last_indexed_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_indexed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()

@@ -15,7 +15,7 @@ Pharos uses a **hybrid edge-cloud architecture** where compute-intensive ML work
 - Handle HTTP requests from Ronin
 - Store metadata in NeonDB PostgreSQL
 - Queue ingestion tasks in Upstash Redis
-- For search queries: call `EDGE_EMBEDDING_URL/embed` (Tailscale Funnel) to get query embeddings, then run cosine similarity against stored vectors
+- For search queries: call `EDGE_EMBEDDING_URL/embed` (Tailscale Funnel) to get query embeddings, then run **pgvector HNSW cosine similarity** against `resources.embedding` in NeonDB (never pure-Python cosine — that O(N) path was removed in 2026-04-24)
 - **Does NOT load embedding models** (would OOM the 512 MB instance)
 
 **Environment**:

@@ -182,72 +182,16 @@ class MonitoringService:
 
     async def get_model_health(self) -> Dict[str, Any]:
         """
-        Get NCF model health metrics.
+        Model health metrics (NCF removed — single-tenant optimization).
 
         Returns:
             Dictionary with model health information
         """
-        try:
-            # Check if model file exists
-            backend_dir = Path(__file__).parent.parent.parent.parent
-            model_path = os.path.join(backend_dir, "models", "ncf_model.pt")
-
-            model_exists = os.path.exists(model_path)
-
-            if model_exists:
-                # Get model file info
-                model_stat = os.stat(model_path)
-                model_size_mb = model_stat.st_size / (1024 * 1024)
-                last_modified = datetime.fromtimestamp(model_stat.st_mtime)
-
-                # Try to load model info
-                try:
-                    import torch
-
-                    checkpoint = torch.load(model_path, map_location="cpu")
-
-                    return {
-                        "status": "ok",
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "model": {
-                            "available": True,
-                            "path": model_path,
-                            "size_mb": round(model_size_mb, 2),
-                            "last_modified": last_modified.isoformat(),
-                            "num_users": checkpoint.get("num_users", 0),
-                            "num_items": checkpoint.get("num_items", 0),
-                            "embedding_dim": checkpoint.get("embedding_dim", 64),
-                        },
-                    }
-                except Exception as e:
-                    return {
-                        "status": "warning",
-                        "timestamp": datetime.utcnow().isoformat(),
-                        "model": {
-                            "available": True,
-                            "path": model_path,
-                            "size_mb": round(model_size_mb, 2),
-                            "last_modified": last_modified.isoformat(),
-                            "error": f"Could not load model details: {str(e)}",
-                        },
-                    }
-            else:
-                return {
-                    "status": "warning",
-                    "timestamp": datetime.utcnow().isoformat(),
-                    "model": {
-                        "available": False,
-                        "message": "NCF model not trained yet. System will use content-based and graph-based recommendations.",
-                    },
-                }
-
-        except Exception as e:
-            logger.error(f"Error getting model health: {str(e)}", exc_info=True)
-            return {
-                "status": "error",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
-            }
+        return {
+            "status": "not_applicable",
+            "message": "NCF model removed (single-tenant optimization)",
+            "timestamp": datetime.utcnow().isoformat(),
+        }
 
     async def ml_model_health_check(self) -> Dict[str, Any]:
         """
@@ -565,10 +509,8 @@ class MonitoringService:
                 logger.warning(f"Celery health check failed: {str(e)}")
                 celery_message = f"Cannot connect to workers: {str(e)}"
 
-            # Check model availability (optional - not required for healthy status)
-            backend_dir = Path(__file__).parent.parent.parent.parent
-            model_path = os.path.join(backend_dir, "models", "ncf_model.pt")
-            model_available = os.path.exists(model_path)
+            # NCF model removed (single-tenant optimization)
+            model_available = False
 
             # Check all registered modules
             module_health = {}
@@ -627,10 +569,8 @@ class MonitoringService:
                         "worker_count": worker_count,
                     },
                     "ncf_model": {
-                        "status": "available" if model_available else "unavailable",
-                        "message": "Model loaded"
-                        if model_available
-                        else "Model not trained",
+                        "status": "not_applicable",
+                        "message": "NCF model removed (single-tenant optimization)",
                     },
                     "api": {"status": "healthy", "message": "API responding"},
                 },

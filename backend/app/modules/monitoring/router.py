@@ -3,9 +3,8 @@ Monitoring and Metrics Router
 
 Provides endpoints for:
 - Performance metrics summary
-- Recommendation quality metrics
 - User engagement metrics
-- NCF model health
+- ML model health (classification removed)
 - Cache statistics
 - Event history
 - Worker status
@@ -103,14 +102,10 @@ async def get_user_engagement_metrics(
 @router.get("/model-health", response_model=ModelHealthMetrics)
 async def get_model_health() -> Dict[str, Any]:
     """
-    Get NCF model health metrics.
+    Model health metrics (NCF removed — single-tenant optimization).
 
     Returns:
-        Dictionary with model health information including:
-        - Model availability
-        - Model size (users, items)
-        - Last training date
-        - Prediction statistics
+        Dictionary with model health information indicating NCF removal
     """
     service = MonitoringService()
     return await service.get_model_health()

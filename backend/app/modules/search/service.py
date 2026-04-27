@@ -220,6 +220,7 @@ class SearchService:
         where = [
             "r.embedding IS NOT NULL",
             "EXISTS (SELECT 1 FROM document_chunks dc WHERE dc.resource_id = r.id)",
+            "(r.is_stale IS NULL OR r.is_stale = FALSE)",  # Exclude stale resources
         ]
         if filters:
             if "resource_type" in filters:

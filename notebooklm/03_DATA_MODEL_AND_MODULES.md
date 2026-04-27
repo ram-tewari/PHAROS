@@ -1,6 +1,6 @@
 # Pharos — Data Model and Module Reference
 
-> File 3 of 5. Covers the SQLAlchemy data model (the ~30 tables in `backend/app/database/models.py`, which is ~1 864 lines and the single source of truth) and a deep-dive on each vertical-slice module.
+> File 3 of 6. Covers the SQLAlchemy data model (the ~30 tables in `backend/app/database/models.py`, which is ~1 864 lines and the single source of truth) and a deep-dive on each vertical-slice module. See File 6 for evolution history.
 
 ---
 
@@ -73,6 +73,12 @@ One row per ingested thing: a web page, a PDF, a research paper, a code *file*, 
 **Ingestion workflow**:
 - `ingestion_status: str` — `"pending" | "processing" | "completed" | "failed"` (string, not enum-typed in DB).
 - `ingestion_error`, `ingestion_started_at`, `ingestion_completed_at`.
+
+**Staleness Tracking** (added 2026-04-27):
+- `is_stale: bool | None` — TRUE when a repo is re-ingested with a newer commit SHA (indexed for fast filtering).
+- `last_indexed_sha: str(64) | None` — Git commit SHA from last ingestion.
+- `last_indexed_at: DateTime | None` — Timestamp of last ingestion.
+- **Search behavior**: All search queries filter `(r.is_stale IS NULL OR r.is_stale = FALSE)` to exclude outdated code.
 
 **Embeddings**:
 - `embedding: Text` — JSON-serialized 768-dim list (nullable). Nullable because embedding is async.
@@ -251,12 +257,14 @@ module/
 
 ### `collections/`
 - **Purpose**: Hierarchical folders of resources. Visibility: `"private" | "shared" | "public"`. Aggregate embeddings at the collection level. Batch ops: add / remove up to 100 resources per call.
+- **Note (2026-04-27)**: This module IS the recommendation system. Provides `find_similar_resources()` and `find_similar_collections()` using content-based semantic similarity (cosine distance on embeddings). Collaborative filtering (NCF) was removed, but content-based recommendations remain and are appropriate for single-tenant use.
 
 ### `quality/`
 - **Purpose**: Multi-dimensional quality scoring (accuracy, completeness, consistency, timeliness, relevance → overall). Outlier detection. **`rag_evaluation_router`** at `/api/rag-evaluation` evaluates RAG pipeline quality using stored ground-truth.
 
 ### `auth/`
 - **Purpose**: JWT + OAuth2. Endpoints: `/api/auth/register`, `/login`, `/refresh`, `/logout`, `/me`, `/oauth/google`, `/oauth/github`.
+- **Note (2026-04-27)**: Over-engineered for single-tenant. OAuth2 and rate limiting unnecessary. See `ACTUAL_STATUS_2026_04_27.md`.
 
 ### `authority/`
 - **Purpose**: Name normalization. Prevents "Jane Doe" / "J. Doe" / "Doe, Jane" from being treated as three different creators.
@@ -270,14 +278,35 @@ module/
 ### `mcp/`
 - **Purpose**: Implements the Model Context Protocol — exposes Pharos as an MCP server so MCP-aware clients (Claude Desktop, IDEs) can query it directly.
 
-### `patterns/`
+### `patterns/` - ✅ COMPLETE (Phase 6 + Phase 8)
 - **Purpose**: Extracts coding patterns from a user's indexed repos (preferred imports, error-handling styles, test patterns). Feeds Ronin's code generation prompt.
+- **Key endpoints**:
+  - `POST /api/patterns/learn` - Analyze repo and extract patterns (AST + Git analysis)
+  - `GET /api/patterns/profiles` - List all developer profiles
+  - `GET /api/patterns/profiles/{id}` - Get specific profile
+  - `POST /api/patterns/propose` - Receive rule proposals from local extraction worker
+  - `GET /api/patterns/rules` - List proposed rules (with status filter)
+  - `PATCH /api/patterns/rules/{id}` - Accept/reject rules
+- **Self-Improving Loop**: Local extraction worker polls `pharos_extraction_jobs` queue, sends diffs to local LLM, extracts structured rules, POSTs to `/api/patterns/propose`. Human reviews via `/api/patterns/rules`. Accepted rules become ACTIVE and influence code generation.
+- **Tables**: `DeveloperProfileRecord`, `CodingProfile`, `ProposedRule`
 
 ### `planning/`
 - **Purpose**: AI planning module. Stores multi-step planning sessions in `PlanningSession` table.
 
-### `github/`
+### `github/` - ✅ COMPLETE (Phase 5)
 - **Purpose**: On-demand fetch of code from GitHub raw URLs. Wraps the hybrid-storage model: when a search result includes a code chunk, this module fetches the actual bytes from `github_uri`, with a 1-hour cache (`GITHUB_CACHE_TTL=3600`). Optional `GITHUB_TOKEN` to avoid rate limits.
+- **Key endpoints**:
+  - `POST /api/github/fetch` - Fetch single code chunk from GitHub
+  - `POST /api/github/fetch-batch` - Fetch up to 50 chunks in parallel
+  - `GET /api/github/health` - Module health check
+- **Features**:
+  - Redis caching (1-hour TTL)
+  - SSRF protection (validates GitHub URLs)
+  - Concurrent fetching (10 parallel requests)
+  - Line range extraction (start_line to end_line)
+  - Branch reference support (commit SHA or "HEAD")
+- **Performance**: ~50ms per fetch (cached), ~200ms (uncached)
+- **Storage savings**: 17x reduction (metadata only, code fetched on-demand)
 
 ### `pdf_ingestion/`
 - **Purpose**: PDF-specific ingestion (marker / pdfplumber). Separate from web-URL ingestion because PDFs need OCR, layout parsing, equation/table extraction.

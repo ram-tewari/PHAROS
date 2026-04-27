@@ -167,6 +167,7 @@ class RealVectorSearchService:
                 CROSS JOIN query_tokens qt
                 WHERE r.sparse_embedding IS NOT NULL
                   AND r.sparse_embedding ? (qt.token_id::text)
+                  AND (r.is_stale IS NULL OR r.is_stale = FALSE)
                   {'AND ' + ' AND '.join(filter_conditions) if filter_conditions else ''}
         """
 
@@ -220,10 +221,10 @@ class RealVectorSearchService:
 
         params: Dict[str, Any] = {"embedding": embedding_str, "top_k": top_k}
         where_conditions = ["dc.embedding IS NOT NULL"]
-        join_clause = ""
+        join_clause = "JOIN resources r ON dc.resource_id = r.id"
+        where_conditions.append("(r.is_stale IS NULL OR r.is_stale = FALSE)")
 
         if filters:
-            join_clause = "JOIN resources r ON dc.resource_id = r.id"
             if "resource_type" in filters:
                 where_conditions.append("r.type = :resource_type")
                 params["resource_type"] = filters["resource_type"]

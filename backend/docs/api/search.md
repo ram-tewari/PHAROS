@@ -292,12 +292,42 @@ curl -X POST http://127.0.0.1:8000/search/evaluate \
 
 ### POST /search/advanced
 
-**Phase 17.5** - Execute advanced search with multiple retrieval strategies.
+Execute advanced search with multiple retrieval strategies. **This is the primary endpoint for Ronin context retrieval.**
 
 This endpoint provides access to advanced RAG retrieval strategies:
-- **parent-child**: Search at chunk level, return parent resources with context
+- **parent-child**: pgvector HNSW cosine on `resources.embedding`, filtered to resources that have document chunks; returns matched resources with their surrounding chunks
 - **graphrag**: Leverage knowledge graph for relationship-aware search
 - **hybrid**: Combine multiple strategies with weighted fusion
+
+#### Implementation: parent-child (production default)
+
+The `parent-child` strategy (as of commit `c6000080`, 2026-04-24) runs:
+
+```sql
+-- 1. Query embedding generated via Tailscale Funnel → WSL2 embed server
+--    (~150ms, nomic-embed-text-v1, 768-dim)
+
+-- 2. pgvector HNSW cosine similarity on resources.embedding
+SELECT r.id, r.title,
+       r.embedding <=> CAST(:query_embedding AS vector) AS distance
+FROM resources r
+WHERE r.embedding IS NOT NULL
+  AND EXISTS (
+      SELECT 1 FROM document_chunks dc WHERE dc.resource_id = r.id
+  )
+ORDER BY distance ASC
+LIMIT :top_k * 3;   -- over-fetch, then re-rank + deduplicate
+
+-- Test-file penalty: +0.10 added to distance for paths containing /tests/
+-- Resources with chunks=0 (test-ingest rows) are excluded by the EXISTS filter
+```
+
+**Why `resources.embedding` and not `document_chunks.embedding`?**
+- During GitHub hybrid-storage ingestion, code chunks get a `semantic_summary` but the chunk-level embedding generation is async. At any given time, `document_chunks.embedding` may be NULL for most rows.
+- `resources.embedding` is populated by the embed server as part of `process_ingestion()`, and is reliably non-null for completed resources.
+- Chunks inherit their parent resource's semantic identity — top-K-resources is equivalent to dedup(top-K-chunks-by-parent-embedding) for retrieval purposes.
+
+**History**: The prior implementation (`app/modules/search/service.py` pre-2026-04-24) fetched every `document_chunk` row from NeonDB and ran Python-level cosine similarity in a loop — O(N) queries + O(N) CPU. On a 3 302-file corpus this hung for 2+ minutes on Render Starter (0.5 CPU). The pgvector path reduces this to a single indexed HNSW scan (~250ms).
 
 **Request Body:**
 ```json

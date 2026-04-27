@@ -1,16 +1,22 @@
 # Ingestion API
 
-Repository ingestion endpoints for Phase 19 hybrid edge-cloud architecture.
+Repository ingestion endpoints for the hybrid edge-cloud architecture.
 
 ## Overview
 
-The Ingestion API provides endpoints for submitting code repositories for processing by the edge worker. Repositories are queued for asynchronous processing, where they are cloned, parsed, and analyzed to generate structural embeddings using graph neural networks.
+The Ingestion API provides endpoints for submitting code repositories for processing by the edge worker. Repositories are queued for asynchronous processing, where they are cloned, parsed, and analyzed to generate structural embeddings.
 
 **Base URL**: `/api/v1/ingestion`
 
-**Authentication**: Bearer token required (PHAROS_ADMIN_TOKEN)
+**Authentication**: Bearer token required (`PHAROS_ADMIN_TOKEN` env var)
 
 **Architecture**: Hybrid edge-cloud with Cloud API (Render) and Edge Worker (local GPU)
+
+> **⚠️ Current Status (2026-04-24)**: Submitting a repo via this endpoint pushes a task to `ingest_queue` in Upstash Redis, but **no worker is consistently consuming that queue end-to-end**. The `backend/app/workers/repo.py` file exists, but the full path (clone → AST parse → create Resource rows → fan out to `pharos:tasks` for embedding) is not wired. Tasks pushed to `ingest_queue` will sit until manually re-processed.
+>
+> **Working path for single resources**: `POST /api/resources` → queues to `pharos:tasks` → edge worker calls `process_ingestion()`. This is the production-verified pipeline.
+>
+> **To process an existing repo's pending resources**: Run `python backend/scripts/queue_pending_resources.py` locally — it re-pushes every resource with `ingestion_status='pending'` to `pharos:tasks` for the embed server to process.
 
 ## Endpoints
 
@@ -20,7 +26,7 @@ Queue a code repository for processing by the edge worker.
 
 **Endpoint**: `POST /api/v1/ingestion/ingest/{repo_url}`
 
-**Authentication**: Required (Bearer token)
+**Authentication**: Required (Bearer token — `PHAROS_ADMIN_TOKEN`)
 
 **Parameters**:
 - `repo_url` (path, required): Full repository URL (e.g., `github.com/user/repo`)
@@ -32,8 +38,8 @@ Authorization: Bearer <PHAROS_ADMIN_TOKEN>
 
 **Request Example**:
 ```bash
-curl -X POST https://your-app.onrender.com/api/v1/ingestion/ingest/github.com/user/awesome-project \
-  -H "Authorization: Bearer your-admin-token-here"
+curl -X POST https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/user/awesome-project \
+  -H "Authorization: Bearer $PHAROS_ADMIN_TOKEN"
 ```
 
 **Response** (200 OK):
@@ -487,8 +493,7 @@ async function submitWithRetry(repoUrl, token, maxRetries = 3) {
 ### API Limits
 
 - **Cloud API**: Render Free Tier limits apply
-- **Redis**: 10,000 commands/day (Upstash Free Tier)
-- **Qdrant**: 1GB storage (Qdrant Cloud Free Tier)
+- **Redis**: 10,000 commands/day (Upstash Free Tier). BLPOP timeout=9s keeps idle polling ≈8.6k req/day — do not reduce this timeout.
 
 ---
 
