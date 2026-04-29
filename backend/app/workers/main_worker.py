@@ -26,6 +26,7 @@ import logging
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from typing import Any, Dict
 
@@ -36,6 +37,34 @@ RESOURCE_QUEUE = "pharos:tasks"
 REPO_QUEUE = "ingest_queue"
 QUEUES = [RESOURCE_QUEUE, REPO_QUEUE]
 BLPOP_TIMEOUT_SECONDS = 30
+
+# Dead-letter queue. Tasks that sit in the main queue longer than
+# DLQ_AGE_THRESHOLD_SECONDS are routed here instead of being processed, so
+# a long-offline worker doesn't wake up and replay 6-hour-old jobs against a
+# now-stale codebase. Drained back into the main queue on next clean boot.
+DLQ_KEY = "pharos:dlq"
+DLQ_AGE_THRESHOLD_SECONDS = 4 * 60 * 60  # 4 hours
+DLQ_DRAIN_BATCH = 100  # cap LRANGE size on startup so we don't OOM
+HEARTBEAT_INTERVAL_SECONDS = 60
+WORKER_VERSION = "1.0.0"
+
+# Dedicated executor for long-running ingestion work. The default asyncio /
+# Starlette threadpool is left untouched so the FastAPI /embed endpoint can
+# always grab a worker thread, even while a 35,000s Linux ingest is running.
+# Linux ingest hammered the shared executor and stacked up /embed requests
+# until Render's httpx timeout fired — see LINUX_INGESTION_STATUS.md.
+INGESTION_THREADPOOL_SIZE = int(os.getenv("PHAROS_INGESTION_THREADS", "4"))
+_ingestion_executor: ThreadPoolExecutor | None = None
+
+
+def get_ingestion_executor() -> ThreadPoolExecutor:
+    global _ingestion_executor
+    if _ingestion_executor is None:
+        _ingestion_executor = ThreadPoolExecutor(
+            max_workers=INGESTION_THREADPOOL_SIZE,
+            thread_name_prefix="pharos-ingest",
+        )
+    return _ingestion_executor
 
 
 # ---------------------------------------------------------------------------
@@ -143,7 +172,9 @@ async def handle_resource_task(task: Dict[str, Any]) -> bool:
             )
             return False
 
-    return await asyncio.get_event_loop().run_in_executor(None, _run_sync)
+    return await asyncio.get_event_loop().run_in_executor(
+        get_ingestion_executor(), _run_sync
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -251,6 +282,195 @@ async def run_embed_server(embedding_service) -> None:
 
 
 # ---------------------------------------------------------------------------
+# Heartbeat — worker pings the cloud API every HEARTBEAT_INTERVAL_SECONDS.
+# ---------------------------------------------------------------------------
+
+import socket
+import uuid
+
+
+def _worker_id() -> str:
+    """Stable-ish ID for this worker process (host + short uuid)."""
+    return f"{socket.gethostname()}-{uuid.uuid4().hex[:8]}"
+
+
+async def heartbeat_loop(
+    worker_id: str,
+    embedding_service,
+    drained_count: int = 0,
+) -> None:
+    """Ping the cloud API's /health/worker endpoint every 60 seconds.
+
+    The cloud API stores ``last_seen`` in Upstash Redis. When that key goes
+    stale (> 5 min), the ingestion router responds with "System Degraded:
+    Edge Worker Offline" instead of accepting new jobs.
+
+    Heartbeat failures are logged but never crash the worker — a network
+    blip should not take ingestion down. Worth: PHAROS_CLOUD_URL must be
+    set; without it we log once and skip.
+    """
+    import httpx
+
+    cloud_url = (
+        os.getenv("PHAROS_CLOUD_URL")
+        or os.getenv("PHAROS_API_URL")
+        or "https://pharos-cloud-api.onrender.com"
+    ).rstrip("/")
+    admin_token = os.getenv("PHAROS_ADMIN_TOKEN")
+
+    if not admin_token:
+        logger.warning(
+            "PHAROS_ADMIN_TOKEN unset — heartbeat disabled. "
+            "Worker will appear OFFLINE to the cloud API."
+        )
+        return
+
+    endpoint = f"{cloud_url}/api/v1/ingestion/health/worker"
+    body = {
+        "worker_id": worker_id,
+        "version": WORKER_VERSION,
+        "embedding_model": getattr(
+            embedding_service.embedding_generator, "model_name", None
+        ),
+        "queue_drained_count": drained_count,
+    }
+
+    logger.info(
+        f"Heartbeat → {endpoint} every {HEARTBEAT_INTERVAL_SECONDS}s "
+        f"(worker_id={worker_id})"
+    )
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        consecutive_failures = 0
+        while True:
+            try:
+                resp = await client.post(
+                    endpoint,
+                    json=body,
+                    headers={"Authorization": f"Bearer {admin_token}"},
+                )
+                resp.raise_for_status()
+                if consecutive_failures:
+                    logger.info(
+                        f"Heartbeat recovered after {consecutive_failures} failures"
+                    )
+                consecutive_failures = 0
+            except Exception as exc:
+                consecutive_failures += 1
+                # Quiet log every minute, loud log every 10 failed beats.
+                if consecutive_failures % 10 == 1:
+                    logger.warning(
+                        f"Heartbeat failed ({consecutive_failures}x): {exc}"
+                    )
+
+            await asyncio.sleep(HEARTBEAT_INTERVAL_SECONDS)
+
+
+# ---------------------------------------------------------------------------
+# DLQ helpers
+# ---------------------------------------------------------------------------
+
+def _task_age_seconds(task: Dict[str, Any]) -> float | None:
+    """Return age of the task in seconds, or None if no timestamp present."""
+    unix_ts = task.get("submitted_at_unix")
+    if isinstance(unix_ts, (int, float)):
+        return time.time() - float(unix_ts)
+
+    submitted_at = task.get("submitted_at")
+    if isinstance(submitted_at, str):
+        try:
+            ts = datetime.fromisoformat(submitted_at.replace("Z", "+00:00"))
+            return (datetime.now(ts.tzinfo) - ts).total_seconds()
+        except (ValueError, TypeError):
+            return None
+    return None
+
+
+async def _send_to_dlq(
+    redis_client, task: Dict[str, Any], reason: str, source_queue: str
+) -> None:
+    """RPUSH a task into the DLQ with a reason annotation for later triage."""
+    import json
+
+    enriched = dict(task)
+    enriched["_dlq"] = {
+        "reason": reason,
+        "source_queue": source_queue,
+        "moved_at_unix": time.time(),
+        "moved_at_iso": datetime.utcnow().isoformat() + "Z",
+    }
+    try:
+        # Use _execute directly: RPUSH on the DLQ list is the simplest move.
+        await redis_client._execute([
+            "RPUSH", DLQ_KEY, json.dumps(enriched),
+        ])
+        # Cap DLQ at last 1000 entries so it can never grow without bound.
+        await redis_client._execute(["LTRIM", DLQ_KEY, "-1000", "-1"])
+        logger.warning(
+            f"[DLQ] moved task_id={task.get('task_id')} "
+            f"from={source_queue} reason={reason}"
+        )
+    except Exception as exc:
+        logger.error(f"[DLQ] failed to move task to DLQ: {exc}", exc_info=True)
+
+
+async def drain_dlq_on_startup(redis_client) -> int:
+    """Drain ``pharos:dlq`` back into the main queues for one retry attempt.
+
+    A clean restart usually means the previous failure mode (network blip,
+    crash, OOM) is no longer present, so it's worth replaying queued work
+    once. Tasks routed back to the DLQ a second time will simply sit there
+    until manually inspected.
+
+    Returns the number of tasks drained.
+    """
+    import json
+
+    try:
+        length = await redis_client._execute(["LLEN", DLQ_KEY]) or 0
+        if not length:
+            logger.info("[DLQ] empty on startup — nothing to drain")
+            return 0
+
+        drained = 0
+        # Process in batches so we don't blow Upstash request size limits.
+        while drained < length:
+            entries = await redis_client._execute(
+                ["LRANGE", DLQ_KEY, "0", str(DLQ_DRAIN_BATCH - 1)]
+            ) or []
+            if not entries:
+                break
+            for raw in entries:
+                try:
+                    task = json.loads(raw)
+                except (TypeError, json.JSONDecodeError):
+                    logger.warning("[DLQ] dropping un-parseable entry")
+                    continue
+                source_queue = (
+                    task.get("_dlq", {}).get("source_queue") or REPO_QUEUE
+                )
+                # Strip the DLQ annotation and refresh the timestamp so the
+                # age check in the dispatch loop doesn't immediately re-DLQ it.
+                task.pop("_dlq", None)
+                task["submitted_at_unix"] = time.time()
+                task["submitted_at"] = datetime.utcnow().isoformat() + "Z"
+                await redis_client._execute(
+                    ["RPUSH", source_queue, json.dumps(task)]
+                )
+                drained += 1
+            # LTRIM removes the slice we just re-queued.
+            await redis_client._execute(
+                ["LTRIM", DLQ_KEY, str(DLQ_DRAIN_BATCH), "-1"]
+            )
+
+        logger.info(f"[DLQ] drained {drained} task(s) back into main queues")
+        return drained
+    except Exception as exc:
+        logger.error(f"[DLQ] drain failed: {exc}", exc_info=True)
+        return 0
+
+
+# ---------------------------------------------------------------------------
 # Unified poll/dispatch loop
 # ---------------------------------------------------------------------------
 
@@ -275,6 +495,27 @@ async def poll_and_dispatch(redis_client, embedding_service) -> None:
 
             queue_key, task = popped
             task_id = task.get("task_id")
+
+            # DLQ guard: a task that's been queued for > DLQ_AGE_THRESHOLD
+            # hasn't been picked up in time. Likely the worker was down.
+            # Move it to the DLQ rather than processing stale work — the repo
+            # may have moved on, and a 6-hour-old resource ID may already be
+            # gone from the database.
+            age = _task_age_seconds(task)
+            if age is not None and age > DLQ_AGE_THRESHOLD_SECONDS:
+                await _send_to_dlq(
+                    redis_client,
+                    task,
+                    reason=f"age_exceeded ({age:.0f}s > {DLQ_AGE_THRESHOLD_SECONDS}s)",
+                    source_queue=queue_key,
+                )
+                if task_id:
+                    try:
+                        await redis_client.update_task_status(task_id, "dlq")
+                    except Exception:
+                        logger.exception("Failed to mark task as dlq")
+                continue
+
             try:
                 if queue_key == REPO_QUEUE:
                     success = await repo_ingestor.ingest(task)
@@ -334,11 +575,21 @@ async def main() -> None:
     redis_client = await connect_to_redis()
     await connect_to_database()
 
-    logger.info("Boot complete; serving /embed and dispatching tasks")
+    # Drain the DLQ before we start polling so anything queued during the
+    # outage gets a fresh shot at processing. drained_count is reported in
+    # the first heartbeat for observability.
+    drained = await drain_dlq_on_startup(redis_client)
+
+    worker_id = _worker_id()
+    logger.info(
+        f"Boot complete (worker_id={worker_id}, dlq_drained={drained}); "
+        f"serving /embed, dispatching tasks, sending heartbeats"
+    )
 
     await asyncio.gather(
         run_embed_server(embedding_service),
         poll_and_dispatch(redis_client, embedding_service),
+        heartbeat_loop(worker_id, embedding_service, drained_count=drained),
     )
 
 

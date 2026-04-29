@@ -187,8 +187,11 @@ class SearchService:
                 logger.error("EDGE_EMBEDDING_URL not configured in CLOUD mode")
                 return []
             try:
+                # 30s tolerates Render cold-starts and bursts where the edge
+                # /embed endpoint is queued behind heavy ingestion. 10s was
+                # too tight under load and timed out on warm queries.
                 resp = httpx.post(
-                    f"{edge_url}/embed", json={"text": query}, timeout=10.0
+                    f"{edge_url}/embed", json={"text": query}, timeout=30.0
                 )
                 resp.raise_for_status()
                 query_embedding = resp.json().get("embedding")

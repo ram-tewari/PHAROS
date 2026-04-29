@@ -1,0 +1,79 @@
+[Unit]
+Description=Pharos Edge Worker (embedding model + ingestion dispatcher)
+Documentation=https://github.com/ram-tewari/pharos
+# Wait for the network to be reachable so the very first Upstash PING and the
+# first heartbeat to Render don't race the network coming up.
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+
+# --- Edit these three lines for your install ---------------------------------
+# User account that owns the checkout. Don't run as root.
+User=ram
+Group=ram
+# Absolute path to the backend dir (must contain worker.py).
+WorkingDirectory=/home/ram/pharos/backend
+# Absolute path to the venv's python. The worker imports torch + the local
+# embedding model so this must NOT be /usr/bin/python.
+ExecStart=/home/ram/pharos/backend/.venv/bin/python worker.py
+# -----------------------------------------------------------------------------
+
+# Environment is loaded from a separate file kept out of git. Create it with:
+#   sudo install -m 600 -o ram -g ram /dev/null /etc/pharos/edge-worker.env
+# and populate UPSTASH_*, DATABASE_URL, EMBEDDING_MODEL_NAME, PHAROS_ADMIN_TOKEN,
+# PHAROS_CLOUD_URL, MODE=EDGE, etc.
+EnvironmentFile=/etc/pharos/edge-worker.env
+
+# Restart policy: bring the worker back up no matter how it died, but cap the
+# restart rate so a true bug doesn't burn CPU in a tight crash loop.
+Restart=always
+RestartSec=10s
+# Allow up to 5 restarts in 60s before systemd gives up and marks it failed —
+# operator intervention is more useful than another spin.
+StartLimitIntervalSec=60s
+StartLimitBurst=5
+
+# The embedding model can take 30–60s to load on cold cache; give the worker
+# room to come up before systemd panics.
+TimeoutStartSec=180s
+# Give the BLPOP loop a moment to wind down on stop.
+TimeoutStopSec=30s
+
+# stdout/stderr -> journalctl -u pharos-edge-worker -f
+StandardOutput=journal
+StandardError=journal
+
+# Ensure UTF-8 in logs (the worker prints unicode boot banners).
+Environment=PYTHONIOENCODING=utf-8
+Environment=PYTHONUTF8=1
+
+# Hardening: nothing fancy, just the easy wins.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=read-only
+# WorkingDirectory must remain writable for the temp clone dirs the pipeline
+# uses if TMPDIR isn't overridden — adjust below if you point it at /tmp.
+ReadWritePaths=/home/ram/pharos/backend
+# If you set TMPDIR=/var/tmp/pharos, also add it to ReadWritePaths.
+
+[Install]
+WantedBy=multi-user.target
+
+# -----------------------------------------------------------------------------
+# Install
+# -----------------------------------------------------------------------------
+# 1. Copy this file:
+#      sudo cp pharos-edge-worker.service /etc/systemd/system/
+# 2. Create the env file (see EnvironmentFile= above), then:
+#      sudo systemctl daemon-reload
+#      sudo systemctl enable --now pharos-edge-worker
+# 3. Verify:
+#      systemctl status pharos-edge-worker
+#      journalctl -u pharos-edge-worker -f
+#      curl https://pharos-cloud-api.onrender.com/api/v1/ingestion/health/worker
+#
+# To restart after deploying new code:
+#      sudo systemctl restart pharos-edge-worker

@@ -416,6 +416,19 @@ class HybridIngestionPipeline:
                     logger.error("File failed: %s — %s", rel, exc, exc_info=True)
                     result.files_failed += 1
                     result.errors.append({"path": rel, "error": str(exc)})
+                    # A transient DB blip (e.g. NeonDB pooler dropping the
+                    # connection mid-batch) leaves the AsyncSession in an
+                    # invalid-transaction state. Without rolling back, every
+                    # subsequent file fails with "Can't reconnect until invalid
+                    # transaction is rolled back" — that's how the Linux ingest
+                    # cascaded into 57k failures. Rollback here keeps the
+                    # session usable for the next file.
+                    try:
+                        await self.db.rollback()
+                    except Exception as rb_exc:
+                        logger.warning(
+                            "Rollback after file failure also failed: %s", rb_exc
+                        )
 
             # Flush remaining
             if pending_chunks:

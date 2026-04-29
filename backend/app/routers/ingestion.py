@@ -16,6 +16,9 @@ to prevent unauthorized users from bombarding the edge worker.
 import logging
 import os
 import re
+import time
+import uuid
+import json
 from datetime import datetime
 from typing import Optional
 from urllib.parse import urlparse
@@ -38,6 +41,15 @@ TASK_TTL = 86400  # Task TTL in seconds (24 hours)
 QUEUE_KEY = "ingest_queue"
 STATUS_KEY = "worker_status"
 HISTORY_KEY = "job_history"
+
+# Worker liveness keys (shared with main_worker.py).
+# last_seen is a unix timestamp (string) updated by the worker every
+# HEARTBEAT_INTERVAL_SECONDS. The API treats the worker as degraded if
+# now - last_seen > WORKER_OFFLINE_THRESHOLD_SECONDS.
+WORKER_HEARTBEAT_KEY = "pharos:worker:last_seen"
+WORKER_HEARTBEAT_META_KEY = "pharos:worker:meta"
+WORKER_OFFLINE_THRESHOLD_SECONDS = 300  # 5 minutes — see runbook
+HEARTBEAT_TTL_SECONDS = 600  # auto-expire heartbeat key after 10 min of silence
 
 # Queue service instance
 queue_service = QueueService()
@@ -62,6 +74,50 @@ class WorkerStatusResponse(BaseModel):
     """Response model for worker status."""
 
     status: str = Field(..., description="Current worker status")
+
+
+class WorkerHeartbeatRequest(BaseModel):
+    """Body sent by the edge worker on each heartbeat."""
+
+    worker_id: Optional[str] = Field(
+        default=None, description="Stable identifier for the worker process"
+    )
+    version: Optional[str] = Field(default=None, description="Worker code version")
+    embedding_model: Optional[str] = Field(
+        default=None, description="Embedding model loaded on the worker"
+    )
+    queue_drained_count: Optional[int] = Field(
+        default=None, description="Tasks drained from DLQ on this boot"
+    )
+
+
+class WorkerHeartbeatResponse(BaseModel):
+    """Echoes back what the API recorded — useful for worker-side debugging."""
+
+    accepted: bool
+    last_seen_unix: float
+    worker_id: Optional[str] = None
+
+
+class WorkerHealthResponse(BaseModel):
+    """Liveness summary for the edge worker."""
+
+    state: str = Field(
+        ..., description="online | degraded | offline (no heartbeat ever recorded)"
+    )
+    last_seen_unix: Optional[float] = Field(
+        default=None, description="Unix seconds of the last heartbeat"
+    )
+    seconds_since_last_seen: Optional[float] = Field(
+        default=None, description="Age of the last heartbeat"
+    )
+    threshold_seconds: int = Field(
+        default=WORKER_OFFLINE_THRESHOLD_SECONDS,
+        description="Age above which the worker is considered offline",
+    )
+    worker_meta: Optional[dict] = Field(
+        default=None, description="Metadata reported by the worker on its last ping"
+    )
 
 
 class JobRecord(BaseModel):
@@ -282,10 +338,82 @@ def is_valid_repo_url(repo_url: str) -> bool:
         return False
 
 
+# ---------------------------------------------------------------------------
+# Worker liveness helpers
+# ---------------------------------------------------------------------------
+
+def _read_worker_heartbeat(redis: Redis) -> tuple[Optional[float], Optional[dict]]:
+    """Return (last_seen_unix, meta_dict) or (None, None) if no heartbeat yet."""
+    import json
+
+    raw = redis.get(WORKER_HEARTBEAT_KEY)
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8")
+    last_seen: Optional[float] = None
+    if raw:
+        try:
+            last_seen = float(raw)
+        except (TypeError, ValueError):
+            last_seen = None
+
+    meta_raw = redis.get(WORKER_HEARTBEAT_META_KEY)
+    if isinstance(meta_raw, bytes):
+        meta_raw = meta_raw.decode("utf-8")
+    meta: Optional[dict] = None
+    if meta_raw:
+        try:
+            meta = json.loads(meta_raw)
+        except (TypeError, ValueError):
+            meta = None
+
+    return last_seen, meta
+
+
+def is_worker_online(redis: Redis) -> tuple[bool, Optional[float]]:
+    """Return (online, seconds_since_heartbeat).
+
+    Worker is "online" if the latest heartbeat is within
+    WORKER_OFFLINE_THRESHOLD_SECONDS. A missing heartbeat counts as offline.
+    """
+    last_seen, _ = _read_worker_heartbeat(redis)
+    if last_seen is None:
+        return False, None
+    age = time.time() - last_seen
+    return age <= WORKER_OFFLINE_THRESHOLD_SECONDS, age
+
+
+def _enforce_worker_online(redis: Redis, *, context: str) -> None:
+    """Raise 503 'System Degraded' if the worker is offline.
+
+    The Render API uses this in front of the ingestion router so we don't
+    accept work no one will pick up. The caller (e.g. Ronin) sees a clear
+    `X-Pharos-Edge-Status: offline` header and a structured error body.
+    """
+    online, age = is_worker_online(redis)
+    if online:
+        return
+    age_str = f"{age:.0f}s" if age is not None else "never"
+    logger.critical(
+        f"Edge Worker offline (last_seen={age_str} ago) — refusing {context}"
+    )
+    raise HTTPException(
+        status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+        detail={
+            "error": "System Degraded: Edge Worker Offline",
+            "context": context,
+            "last_seen_seconds_ago": age,
+            "threshold_seconds": WORKER_OFFLINE_THRESHOLD_SECONDS,
+        },
+        headers={"X-Pharos-Edge-Status": "offline"},
+    )
+
+
 # Endpoints
 @router.post("/ingest/{repo_url:path}", response_model=IngestionResponse)
 async def trigger_remote_ingestion(
-    repo_url: str, token: str = Depends(verify_admin_token)
+    repo_url: str,
+    token: str = Depends(verify_admin_token),
+    redis: Redis = Depends(get_redis_client),
 ):
     """
     Dispatch a repository ingestion task to the edge worker.
@@ -320,33 +448,53 @@ async def trigger_remote_ingestion(
             detail="Invalid repository URL format",
         )
 
+    # Refuse to queue work the worker can't pick up. Also surfaces a clean
+    # "System Degraded" signal to Ronin via the X-Pharos-Edge-Status header.
+    _enforce_worker_online(redis, context="ingest")
+
     try:
         # Create task with metadata
         task_data = {
             "repo_url": repo_url,
             "submitted_at": datetime.now().isoformat(),
+            "submitted_at_unix": time.time(),
             "ttl": TASK_TTL,
+            "task_id": str(uuid.uuid4()),
+            "job_id": str(uuid.uuid4()),
+            "status": "pending",
+            "created_at": str(int(time.time() * 1e9)),
         }
 
-        # Submit to queue using QueueService
-        job_id = await queue_service.submit_job(task_data)
+        # Push directly to ingest_queue (not pharos:tasks which is for resources)
+        import json
+        await redis._execute(["RPUSH", "ingest_queue", json.dumps(task_data)])
 
-        # Get queue position
-        queue_position = await queue_service.get_queue_position(job_id)
-        queue_size = await queue_service.get_queue_size()
+        # Also record in history for tracking
+        await redis._execute([
+            "RPUSH",
+            "pharos:history",
+            json.dumps({
+                "repo_url": repo_url,
+                "status": "pending",
+                "timestamp": task_data["submitted_at"],
+            }),
+        ])
+
+        # Get queue position (approximate)
+        queue_size = await redis._execute(["LLEN", "ingest_queue"]) or 0
 
         logger.info(
-            f"Task dispatched: {repo_url} (job_id={job_id}, position={queue_position})"
+            f"Task dispatched: {repo_url} (job_id={task_data['job_id']}, queue_size={queue_size})"
         )
 
         return IngestionResponse(
             status="dispatched",
-            job_id=int(job_id.replace("-", "")[:8], 16) if job_id else 0,
-            queue_position=queue_position or 1,
+            job_id=int(task_data["job_id"].replace("-", "")[:8], 16),
+            queue_position=queue_size,
             target="Edge-Worker",
             queue_size=queue_size,
             max_queue_size=MAX_QUEUE_SIZE,
-            message=f"Task queued successfully. Position: {queue_position}/{MAX_QUEUE_SIZE}",
+            message=f"Task queued successfully. Position: {queue_size}/{MAX_QUEUE_SIZE}",
         )
 
     except HTTPException:
@@ -528,3 +676,78 @@ async def health_check():
         return JSONResponse(content=health_status, status_code=503)
 
     return health_status
+
+
+# ---------------------------------------------------------------------------
+# Worker heartbeat
+# ---------------------------------------------------------------------------
+
+@router.post("/health/worker", response_model=WorkerHeartbeatResponse)
+async def record_worker_heartbeat(
+    payload: WorkerHeartbeatRequest,
+    token: str = Depends(verify_admin_token),
+    redis: Redis = Depends(get_redis_client),
+):
+    """
+    Record a heartbeat from the edge worker.
+
+    The worker pings this endpoint every 60 seconds. We persist the unix
+    timestamp under ``pharos:worker:last_seen`` (with a 10-minute TTL so a
+    long-dead worker doesn't appear "online" forever) plus a small JSON blob
+    of metadata for observability.
+
+    The ingestion router consults the same key before accepting new work.
+    """
+    import json
+
+    now = time.time()
+    try:
+        redis.set(WORKER_HEARTBEAT_KEY, str(now), ex=HEARTBEAT_TTL_SECONDS)
+
+        meta = {
+            "worker_id": payload.worker_id,
+            "version": payload.version,
+            "embedding_model": payload.embedding_model,
+            "queue_drained_count": payload.queue_drained_count,
+            "last_seen_iso": datetime.utcfromtimestamp(now).isoformat() + "Z",
+        }
+        redis.set(
+            WORKER_HEARTBEAT_META_KEY, json.dumps(meta), ex=HEARTBEAT_TTL_SECONDS
+        )
+
+        return WorkerHeartbeatResponse(
+            accepted=True, last_seen_unix=now, worker_id=payload.worker_id
+        )
+    except Exception as exc:
+        logger.error(f"Heartbeat write failed: {exc}")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Failed to persist heartbeat: {exc}",
+        )
+
+
+@router.get("/health/worker", response_model=WorkerHealthResponse)
+async def get_worker_health(redis: Redis = Depends(get_redis_client)):
+    """
+    Return the current liveness state of the edge worker.
+
+    States:
+      * ``online``   — last heartbeat within ``WORKER_OFFLINE_THRESHOLD_SECONDS``
+      * ``degraded`` — heartbeat exists but is stale
+      * ``offline``  — no heartbeat ever recorded (or expired from Redis)
+
+    Ronin and the dashboard can poll this to render a banner without having
+    to authenticate as the admin.
+    """
+    last_seen, meta = _read_worker_heartbeat(redis)
+    if last_seen is None:
+        return WorkerHealthResponse(state="offline", worker_meta=meta)
+
+    age = time.time() - last_seen
+    state = "online" if age <= WORKER_OFFLINE_THRESHOLD_SECONDS else "degraded"
+    return WorkerHealthResponse(
+        state=state,
+        last_seen_unix=last_seen,
+        seconds_since_last_seen=age,
+        worker_meta=meta,
+    )
