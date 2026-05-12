@@ -241,6 +241,31 @@ class UpstashRedisClient:
             logger.error(f"Failed to clear queue: {e}")
             return False
 
+    async def trim_history(
+        self, key: str = "pharos:history", max_entries: int = 100
+    ) -> int:
+        """Keep only the last `max_entries` items in a Redis list.
+
+        LTRIM with -N..-1 keeps the tail (most recent RPUSHes). One
+        command per call — safe to run on a schedule (e.g. cron every
+        hour) to prevent the history list from bloating to MBs of
+        stale state during long-running ingest sessions.
+
+        Returns the list's length after trim (0 if the key didn't exist).
+        """
+        if max_entries < 1:
+            raise ValueError("max_entries must be >= 1")
+        try:
+            await self._execute(["LTRIM", key, f"-{max_entries}", "-1"])
+            length = await self._execute(["LLEN", key])
+            logger.info(
+                "trimmed %s to last %d entries (len=%s)", key, max_entries, length
+            )
+            return int(length or 0)
+        except Exception as e:
+            logger.error("trim_history(%s) failed: %s", key, e)
+            return 0
+
     async def close(self):
         """Close HTTP client."""
         await self.client.aclose()

@@ -271,7 +271,13 @@ class SearchService:
                 "score": score,
             })
 
-        logger.info("parent_child_search → %d results", len(results))
+        # MMR-style per-source diversity rerank: prevents high-volume
+        # repos (linux-kernel, langchain) from drowning out smaller
+        # ones (pflag, ronin) when they share a dense-rank tier.
+        from .diversity import rerank_search_results
+        results = rerank_search_results(results, top_k=top_k, lambda_penalty=0.15)
+
+        logger.info("parent_child_search → %d results (post-MMR)", len(results))
         return results
 
     def parent_child_search_json(
@@ -296,18 +302,31 @@ class SearchService:
             return "[]"
 
         embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+        # Per-source cap of 3, over-fetched 5x so the cap has candidates to
+        # chew on without underfilling top_k. Wraps the json_agg path in
+        # SQL-side diversity so Postgres builds the response and Python
+        # still holds exactly one string — preserves the memory win.
+        per_source_cap = 3
+        overfetch_multiplier = 5
         params: Dict[str, Any] = {
             "embedding": embedding_str,
             "top_k": top_k,
             "ctx": context_window,
+            "pool_size": top_k * overfetch_multiplier,
+            "per_source_cap": per_source_cap,
         }
 
         sql = """
-        WITH ranked AS (
+        WITH pool AS (
             SELECT r.id AS resource_id,
                    (r.embedding <=> CAST(:embedding AS vector))
                    + CASE WHEN r.title ~ '(/|\\\\)tests(/|\\\\)' THEN 0.10 ELSE 0 END
-                     AS distance
+                     AS distance,
+                   COALESCE(
+                       substring(r.source from 'github\\.com[:/]+([^/]+/[^/#?]+?)(?:\\.git|[/#?]|$)'),
+                       regexp_replace(r.source, '^https?://([^/]+).*', '\\1'),
+                       r.source
+                   ) AS source_bucket
             FROM resources r
             WHERE r.embedding IS NOT NULL
               AND (r.is_stale IS NULL OR r.is_stale = FALSE)
@@ -315,6 +334,21 @@ class SearchService:
                   SELECT 1 FROM document_chunks dc
                   WHERE dc.resource_id = r.id
               )
+            ORDER BY distance ASC
+            LIMIT :pool_size
+        ),
+        capped AS (
+            SELECT pool.*,
+                   ROW_NUMBER() OVER (
+                       PARTITION BY source_bucket
+                       ORDER BY distance ASC
+                   ) AS source_rank
+            FROM pool
+        ),
+        ranked AS (
+            SELECT resource_id, distance
+            FROM capped
+            WHERE source_rank <= :per_source_cap
             ORDER BY distance ASC
             LIMIT :top_k
         ),

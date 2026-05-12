@@ -757,90 +757,79 @@ async def list_resource_chunks(
     offset: int = 0,
     db: Session = Depends(get_sync_db),
 ):
+    """List all chunks for a resource with pagination.
+
+    Returns 200 with an empty items list when the resource has zero chunks
+    (previously this path could 500 because the response schema required
+    `content: str` while remote code chunks legitimately store NULL — the
+    source lives on GitHub at github_uri).
     """
-    List all chunks for a resource with pagination.
+    from sqlalchemy import select, func
+    from sqlalchemy.orm import selectinload
+    from ...database.models import DocumentChunk, Resource
+    from .schema import DocumentChunkResponse
 
-    Args:
-        resource_id: UUID of the resource
-        limit: Maximum number of chunks to return (default: 25, max: 100)
-        offset: Number of chunks to skip (default: 0)
-        db: Database session
-
-    Returns:
-        List of chunks with pagination metadata
-
-    Raises:
-        404: Resource not found
-    """
-    from .service import get_resource
-    from ...database import models as db_models
-
-    # Verify resource exists
-    resource = get_resource(db, str(resource_id))
-    if not resource:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Resource not found: {resource_id}",
-        )
-
-    # Validate pagination parameters
-    if limit < 1 or limit > 100:
+    if not 1 <= limit <= 100:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Limit must be between 1 and 100",
         )
-
     if offset < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Offset must be non-negative",
         )
 
-    try:
-        # Query chunks for this resource
-        query = (
-            db.query(db_models.DocumentChunk)
-            .filter(db_models.DocumentChunk.resource_id == resource_id)
-            .order_by(db_models.DocumentChunk.chunk_index)
-        )
-
-        # Get total count
-        total = query.count()
-
-        # Apply pagination
-        chunks = query.offset(offset).limit(limit).all()
-
-        # Convert to response format
-        from .schema import DocumentChunkResponse
-
-        chunk_responses = [
-            DocumentChunkResponse(
-                id=str(chunk.id),
-                resource_id=str(chunk.resource_id),
-                content=chunk.content,
-                chunk_index=chunk.chunk_index,
-                chunk_metadata=chunk.chunk_metadata,
-                embedding_id=str(chunk.embedding_id) if chunk.embedding_id else None,
-                created_at=chunk.created_at,
-            )
-            for chunk in chunks
-        ]
-
-        return {
-            "items": chunk_responses,
-            "total": total,
-            "limit": limit,
-            "offset": offset,
-        }
-
-    except Exception as exc:
-        logger.error(
-            f"Failed to list chunks for resource {resource_id}: {exc}", exc_info=True
-        )
+    # Cheap existence probe — one column, no row materialization.
+    resource_exists = db.execute(
+        select(Resource.id).where(Resource.id == resource_id)
+    ).first()
+    if not resource_exists:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve chunks",
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Resource not found: {resource_id}",
         )
+
+    total = db.execute(
+        select(func.count(DocumentChunk.id))
+        .where(DocumentChunk.resource_id == resource_id)
+    ).scalar_one()
+
+    # Empty-set fast path: skip the chunk SELECT and the selectinload.
+    if total == 0:
+        return {"items": [], "total": 0, "limit": limit, "offset": offset}
+
+    # selectinload runs a single IN-list follow-up for resources — avoids
+    # the lazy-load-per-chunk that previously triggered 500s in async ctx.
+    stmt = (
+        select(DocumentChunk)
+        .options(selectinload(DocumentChunk.resource))
+        .where(DocumentChunk.resource_id == resource_id)
+        .order_by(DocumentChunk.chunk_index)
+        .offset(offset)
+        .limit(limit)
+    )
+    chunks = db.execute(stmt).scalars().all()
+
+    items = [
+        DocumentChunkResponse(
+            id=str(c.id),
+            resource_id=str(c.resource_id),
+            content=c.content,
+            chunk_index=c.chunk_index,
+            chunk_metadata=c.chunk_metadata,
+            embedding_id=str(c.embedding_id) if c.embedding_id else None,
+            is_remote=bool(c.is_remote),
+            github_uri=c.github_uri,
+            start_line=c.start_line,
+            end_line=c.end_line,
+            ast_node_type=c.ast_node_type,
+            symbol_name=c.symbol_name,
+            created_at=c.created_at,
+        )
+        for c in chunks
+    ]
+    return {"items": items, "total": total, "limit": limit, "offset": offset}
 
 
 @router.get("/chunks/{chunk_id}")

@@ -240,7 +240,9 @@ class DocumentChunkResponse(BaseModel):
 
     id: str = Field(..., description="Chunk UUID")
     resource_id: str = Field(..., description="Parent resource UUID")
-    content: str = Field(..., description="Chunk text content")
+    # content is None for remote (GitHub-backed) code chunks where the
+    # source lives at github_uri rather than inline in the database.
+    content: Optional[str] = Field(None, description="Inline chunk text; NULL for remote code chunks")
     chunk_index: int = Field(
         ..., description="Sequential position within parent resource"
     )
@@ -249,6 +251,12 @@ class DocumentChunkResponse(BaseModel):
         description="Flexible metadata: PDF {page, coordinates} or Code {start_line, end_line, function_name, file_path}",
     )
     embedding_id: Optional[str] = Field(None, description="Associated embedding UUID")
+    is_remote: bool = Field(False, description="True if source content lives on GitHub")
+    github_uri: Optional[str] = Field(None, description="Full GitHub raw URL when is_remote")
+    start_line: Optional[int] = Field(None, description="1-based inclusive start line within github_uri")
+    end_line: Optional[int] = Field(None, description="1-based inclusive end line within github_uri")
+    ast_node_type: Optional[str] = Field(None, description="function|class|method|module|block")
+    symbol_name: Optional[str] = Field(None, description="Fully-qualified symbol name")
     created_at: datetime = Field(..., description="Creation timestamp")
 
 
