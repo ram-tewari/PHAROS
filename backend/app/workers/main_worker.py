@@ -177,6 +177,78 @@ async def handle_resource_task(task: Dict[str, Any]) -> bool:
     )
 
 
+async def handle_embedding_task(task: Dict[str, Any], embedding_service) -> bool:
+    """Backfill a single chunk's embedding.
+
+    Reads `text` (the chunk's semantic_summary) from the task, runs it
+    through the GPU-loaded embedding model, and writes the vector to
+    document_chunks.embedding for chunk_id.
+
+    Routed here from poll_and_dispatch when task_type == "embedding"; the
+    worker previously had no chunk-embed handler so embedding tasks were
+    silently being run through full resource re-ingestion (see
+    feedback_worker_queue_routing memory, 2026-05-13).
+    """
+    task_id = task.get("task_id")
+    chunk_id = task.get("chunk_id")
+    text = task.get("text") or ""
+    if not chunk_id or not text.strip():
+        logger.error(
+            f"[EMBED] task={task_id} missing chunk_id or text; payload={task}"
+        )
+        return False
+
+    def _run_sync() -> bool:
+        from sqlalchemy import text as _sql
+        from app.shared.database import SessionLocal
+        try:
+            t0 = time.time()
+            vec = embedding_service.generate_embedding(text)
+            if not vec:
+                logger.error(f"[EMBED] chunk_id={chunk_id} model returned empty")
+                return False
+            vec_literal = "[" + ",".join(map(str, vec)) + "]"
+
+            if SessionLocal is None:
+                logger.error("[EMBED] SessionLocal is None — database not initialized")
+                return False
+            session = SessionLocal()
+            try:
+                # CAST(:p AS type), never :p::type — see feedback_asyncpg_casts.
+                # Log rowcount; SQLAlchemy text() + asyncpg silently writes 0
+                # rows when the cast is wrong.
+                res = session.execute(
+                    _sql(
+                        "UPDATE document_chunks "
+                        "SET embedding = CAST(:vec AS vector) "
+                        "WHERE id = CAST(:cid AS uuid)"
+                    ),
+                    {"vec": vec_literal, "cid": str(chunk_id)},
+                )
+                session.commit()
+                if res.rowcount != 1:
+                    logger.error(
+                        f"[EMBED] chunk_id={chunk_id} UPDATE wrote {res.rowcount} rows"
+                    )
+                    return False
+            finally:
+                session.close()
+
+            logger.info(
+                f"[EMBED] chunk_id={chunk_id} done in {time.time() - t0:.2f}s"
+            )
+            return True
+        except Exception as exc:
+            logger.error(
+                f"[EMBED] chunk_id={chunk_id} failed: {exc}", exc_info=True
+            )
+            return False
+
+    return await asyncio.get_event_loop().run_in_executor(
+        get_ingestion_executor(), _run_sync
+    )
+
+
 # ---------------------------------------------------------------------------
 # Repository handler (formerly RepositoryWorker in repo.py)
 # ---------------------------------------------------------------------------
@@ -520,7 +592,17 @@ async def poll_and_dispatch(redis_client, embedding_service) -> None:
                 if queue_key == REPO_QUEUE:
                     success = await repo_ingestor.ingest(task)
                 elif queue_key == RESOURCE_QUEUE:
-                    success = await handle_resource_task(task)
+                    # task_type switch added 2026-05-13: pharos:tasks now
+                    # carries both resource-ingestion tasks (legacy default)
+                    # and chunk-embedding backfill tasks. Route on task_type;
+                    # missing/unknown values fall through to the original
+                    # resource-ingestion handler to preserve old behavior.
+                    if task.get("task_type") == "embedding":
+                        success = await handle_embedding_task(
+                            task, embedding_service
+                        )
+                    else:
+                        success = await handle_resource_task(task)
                 else:
                     logger.warning(f"Unknown queue {queue_key!r}; dropping task")
                     success = False
