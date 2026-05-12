@@ -12,7 +12,8 @@ API endpoints for search functionality including:
 
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
+import json as _json
 from sqlalchemy.orm import Session
 from typing import Optional, Dict, Any, List
 from datetime import datetime
@@ -834,51 +835,47 @@ advanced_search_router = APIRouter(
 
 @advanced_search_router.post(
     "",
-    response_model=AdvancedSearchResponse,
+    response_model=None,  # bypass Pydantic validation; we return Response directly
     status_code=status.HTTP_200_OK,
 )
 async def advanced_search_endpoint(
     payload: AdvancedSearchRequest, db: Session = Depends(get_sync_db)
 ):
     """
-    Execute advanced search with multiple retrieval strategies.
-
-    This endpoint implements advanced RAG patterns:
-
-    **Parent-Child Strategy**:
-    - Retrieves small, precise chunks by embedding similarity
-    - Expands to parent resources for full context
-    - Includes surrounding chunks based on context_window parameter
-    - Deduplicates results when multiple chunks from same resource
-
-    **GraphRAG Strategy**:
-    - Extracts entities from user query
-    - Finds matching entities in knowledge graph
-    - Traverses relationships to find related entities
-    - Retrieves chunks associated with entities via provenance
-    - Ranks by combining embedding similarity and graph weights
-    - Optionally filters by relation_type (CONTRADICTS, SUPPORTS, etc.)
-
-    **Hybrid Strategy**:
-    - Combines parent-child and GraphRAG approaches
-    - Merges results using weighted scoring
-    - Provides both context expansion and graph relationships
-
-    Set `include_code=true` to fetch and attach source code to each result chunk.
-    Local chunks use stored content; remote chunks are fetched from GitHub on demand.
+    Memory-frugal advanced search. Parent-child path streams a Postgres-
+    built JSON body straight to the wire (no ORM, no Pydantic walk).
+    GraphRAG / hybrid still go through the ORM path (lower fan-out).
     """
     try:
         start_time = time.time()
         search_service = _get_search_service(db)
 
         if payload.strategy == "parent-child":
-            results = search_service.parent_child_search(
+            results_json = search_service.parent_child_search_json(
                 query=payload.query,
                 top_k=payload.top_k,
                 context_window=payload.context_window,
             )
+            latency_ms = (time.time() - start_time) * 1000
 
-        elif payload.strategy == "graphrag":
+            # Splice the pre-built results array into the envelope without
+            # re-parsing — results_json is already a valid JSON array literal.
+            envelope_head = _json.dumps({
+                "query":        payload.query,
+                "strategy":     payload.strategy,
+                "total":        results_json.count('"score":'),
+                "latency_ms":   latency_ms,
+                "code_metrics": None,
+            })
+            body = (
+                envelope_head[:-1]
+                + ',"results":'
+                + results_json
+                + "}"
+            ).encode("utf-8")
+            return Response(content=body, media_type="application/json")
+
+        if payload.strategy == "graphrag":
             results = search_service.graphrag_search(
                 query=payload.query,
                 top_k=payload.top_k,

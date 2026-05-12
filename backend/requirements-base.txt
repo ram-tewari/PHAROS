@@ -33,8 +33,18 @@ spacy>=3.7.0
 en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
 
 # Code Analysis
-tree-sitter>=0.20.0
-tree-sitter-languages>=1.8.0
+# tree-sitter 0.23+ is required: language_parser.py uses the new
+# Parser(language) constructor and dict-form Query.captures() return.
+# Each grammar ships as its own pip package post-tree_sitter_languages.
+tree-sitter>=0.23.0
+tree-sitter-c>=0.24.0
+tree-sitter-cpp>=0.23.0
+tree-sitter-go>=0.23.0
+tree-sitter-rust>=0.23.0
+tree-sitter-javascript>=0.23.0
+tree-sitter-typescript>=0.23.0
+tree-sitter-python>=0.23.0
+tree-sitter-java>=0.23.0
 
 # PDF Processing
 PyMuPDF>=1.23.0  # PDF extraction with academic fidelity

@@ -274,6 +274,156 @@ class SearchService:
         logger.info("parent_child_search → %d results", len(results))
         return results
 
+    def parent_child_search_json(
+        self,
+        query: str,
+        top_k: int = 10,
+        context_window: int = 2,
+    ) -> str:
+        """Memory-frugal parent-child retrieval. Postgres builds the response
+        body via json_build_object / json_agg and returns ONE text column;
+        Python only holds a single str. Bypasses ORM and Pydantic entirely.
+
+        Returns:
+            JSON-encoded string ready to splice into a fastapi.Response.
+            Shape: '[{score, chunk, parent_resource, surrounding_chunks, graph_path}, ...]'
+            On empty result returns the literal '[]'.
+        """
+        from sqlalchemy import text as _sql
+
+        query_embedding = self._embed_query(query)
+        if not query_embedding:
+            return "[]"
+
+        embedding_str = "[" + ",".join(map(str, query_embedding)) + "]"
+        params: Dict[str, Any] = {
+            "embedding": embedding_str,
+            "top_k": top_k,
+            "ctx": context_window,
+        }
+
+        sql = """
+        WITH ranked AS (
+            SELECT r.id AS resource_id,
+                   (r.embedding <=> CAST(:embedding AS vector))
+                   + CASE WHEN r.title ~ '(/|\\\\)tests(/|\\\\)' THEN 0.10 ELSE 0 END
+                     AS distance
+            FROM resources r
+            WHERE r.embedding IS NOT NULL
+              AND (r.is_stale IS NULL OR r.is_stale = FALSE)
+              AND EXISTS (
+                  SELECT 1 FROM document_chunks dc
+                  WHERE dc.resource_id = r.id
+              )
+            ORDER BY distance ASC
+            LIMIT :top_k
+        ),
+        representative AS (
+            SELECT DISTINCT ON (dc.resource_id)
+                   dc.id            AS chunk_id,
+                   dc.resource_id   AS resource_id,
+                   dc.chunk_index   AS chunk_index
+            FROM document_chunks dc
+            JOIN ranked rk ON dc.resource_id = rk.resource_id
+            ORDER BY dc.resource_id,
+                     CASE WHEN dc.ast_node_type IN ('function','class','method')
+                          THEN 0 ELSE 1 END,
+                     dc.chunk_index
+        ),
+        surrounding AS (
+            SELECT rep.chunk_id AS rep_id,
+                   json_agg(
+                       json_build_object(
+                           'id',               dc.id::text,
+                           'resource_id',      dc.resource_id::text,
+                           'chunk_index',      dc.chunk_index,
+                           'content',          dc.content,
+                           'chunk_metadata',   dc.chunk_metadata,
+                           'symbol_name',      dc.symbol_name,
+                           'ast_node_type',    dc.ast_node_type,
+                           'semantic_summary', dc.semantic_summary,
+                           'file_name',        split_part(dc.github_uri, '/', -1),
+                           'github_uri',       dc.github_uri,
+                           'branch_reference', dc.branch_reference,
+                           'start_line',       dc.start_line,
+                           'end_line',         dc.end_line,
+                           'code',             NULL,
+                           'source',           NULL,
+                           'cache_hit',        NULL
+                       ) ORDER BY dc.chunk_index
+                   ) AS surrounding_json
+            FROM representative rep
+            JOIN document_chunks dc
+              ON dc.resource_id = rep.resource_id
+             AND dc.id <> rep.chunk_id
+             AND dc.chunk_index BETWEEN rep.chunk_index - :ctx
+                                    AND rep.chunk_index + :ctx
+            GROUP BY rep.chunk_id
+        )
+        SELECT COALESCE(
+          json_agg(payload ORDER BY distance ASC)::text,
+          '[]'
+        ) AS body
+        FROM (
+            SELECT rk.distance,
+                   json_build_object(
+                       'score', GREATEST(0.0, 1.0 - rk.distance),
+                       'chunk', json_build_object(
+                           'id',               dc.id::text,
+                           'resource_id',      dc.resource_id::text,
+                           'chunk_index',      dc.chunk_index,
+                           'content',          dc.content,
+                           'chunk_metadata',   dc.chunk_metadata,
+                           'symbol_name',      dc.symbol_name,
+                           'ast_node_type',    dc.ast_node_type,
+                           'semantic_summary', dc.semantic_summary,
+                           'file_name',        split_part(dc.github_uri, '/', -1),
+                           'github_uri',       dc.github_uri,
+                           'branch_reference', dc.branch_reference,
+                           'start_line',       dc.start_line,
+                           'end_line',         dc.end_line,
+                           'code',             NULL,
+                           'source',           NULL,
+                           'cache_hit',        NULL
+                       ),
+                       'parent_resource', json_build_object(
+                           'id',                      r.id::text,
+                           'title',                   r.title,
+                           'description',             r.description,
+                           'type',                    r.type,
+                           'language',                r.language,
+                           'source',                  r.source,
+                           'url',                     r.source,
+                           'subject',                 r.subject,
+                           'relation',                r.relation,
+                           'quality_score',           r.quality_score,
+                           'read_status',             r.read_status,
+                           'ingestion_status',        r.ingestion_status,
+                           'ingestion_error',         r.ingestion_error,
+                           'ingestion_started_at',    r.ingestion_started_at,
+                           'ingestion_completed_at',  r.ingestion_completed_at,
+                           'created_at',              r.created_at,
+                           'updated_at',              r.updated_at
+                       ),
+                       'surrounding_chunks', COALESCE(s.surrounding_json, '[]'::json),
+                       'graph_path',         '[]'::json
+                   ) AS payload
+            FROM ranked rk
+            JOIN representative rep ON rep.resource_id = rk.resource_id
+            JOIN document_chunks dc ON dc.id = rep.chunk_id
+            JOIN resources r       ON r.id  = dc.resource_id
+            LEFT JOIN surrounding s ON s.rep_id = rep.chunk_id
+        ) inner_q
+        """
+
+        try:
+            row = self.db.execute(_sql(sql), params).first()
+        except Exception as exc:
+            logger.error("parent_child_search_json failed: %s", exc, exc_info=True)
+            return "[]"
+
+        return row[0] if row and row[0] else "[]"
+
     def _embed_query(self, query: str) -> Optional[List[float]]:
         """Edge-or-local query embedding, factored out so other strategies
         can reuse it without duplicating the CLOUD-mode branching."""

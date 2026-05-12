@@ -374,13 +374,29 @@ This split is the single biggest tool for keeping the Render image under 512 MB.
 3. Look for leaked DB sessions — `GET /api/monitoring/pool-status`.
 4. Upgrade to Standard ($25/mo, 2 GB) as last resort.
 
-### "Embeddings aren't being generated"
+### "Embeddings aren't being generated" / "Worker is offline"
 
-1. Is edge worker running locally? `ps aux | grep worker.py` / Task Manager.
-2. Is Upstash free-tier quota exceeded? Check Upstash dashboard.
-3. Is `EDGE_EMBEDDING_URL` reachable from Render? `curl {URL}/health`.
-4. Is Tailscale Funnel up? `tailscale funnel status`.
-5. Inspect `backend/edge_worker.log` and `backend/embed_server.log`.
+**Preferred path (2026-05-12+)**: use the `pharos-edge` CLI. It owns supervision, restart, and live status — no more curl-and-format scripts.
+
+```powershell
+# From repo root
+.\pharos-edge.ps1 status         # supervisor + worker PIDs, cloud heartbeat, queue lengths, recent logs
+.\pharos-edge.ps1 doctor         # validates env, deps, GPU, Upstash + cloud reachability, WSL presence
+.\pharos-edge.ps1 logs -n 200    # last 200 lines of worker.log
+.\pharos-edge.ps1 restart        # stop + start, supervisor auto-restarts worker on crash with backoff
+.\pharos-edge.ps1 restart --wsl  # fallback: run worker under WSL
+```
+
+Things to check, in order:
+
+1. `pharos-edge status` — is supervisor `running`? Is worker `running`? Is `Cloud heartbeat: online`?
+2. `pharos-edge logs -n 200` — any `Traceback` / `Failed to load embedding model` / `exited code=` lines?
+3. If the worker crash-loops on model load, the silent-crash bug may have regressed. Required: `model_kwargs={"use_safetensors": True}` in `backend/app/shared/embeddings.py` and `faulthandler.enable()` at the top of `backend/worker.py`. See `UPDATES_2026_05_12.md`.
+4. Is Upstash quota exceeded? Check Upstash dashboard.
+5. Is `EDGE_EMBEDDING_URL` reachable from Render (if testing the embed server, not just the worker)? `curl {URL}/health`.
+6. Is Tailscale Funnel up (only needed for embed server)? `tailscale funnel status`.
+
+**Legacy path (deprecated)**: `backend/edge_worker.log` was the old location. New logs are at `backend/.pharos_edge/logs/worker.log` (10 MB rotation, keep last 5).
 
 ### "NeonDB is suspended / slow"
 

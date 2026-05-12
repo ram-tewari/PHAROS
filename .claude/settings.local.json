@@ -44,7 +44,8 @@
       "Bash(curl -s --max-time 3 http://localhost:8001/health)",
       "Bash(git commit -m ' *)",
       "Bash(curl -s -w \"\\\\nHTTP %{http_code}\\\\n\" -H \"Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74\" \"https://pharos-cloud-api.onrender.com/api/v1/ingestion/jobs/history?limit=10\")",
-      "Bash(curl -s -H \"Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74\" https://pharos-cloud-api.onrender.com/api/v1/ingestion/worker/status)"
+      "Bash(curl -s -H \"Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74\" https://pharos-cloud-api.onrender.com/api/v1/ingestion/worker/status)",
+      "Bash(python pharos_edge.py doctor)"
     ]
   }
 }

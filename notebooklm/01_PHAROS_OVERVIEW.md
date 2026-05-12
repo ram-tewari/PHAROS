@@ -201,9 +201,42 @@ pharos/
 
 ---
 
-## Known Issues & Technical Debt (2026-04-27)
+## Edge Worker Operator Surface (2026-05-12)
 
-**See `ACTUAL_STATUS_2026_04_27.md` and `ACTUAL_PIPELINE_STATUS.md` for complete analysis.**
+The edge worker is managed by a single CLI tool: **`backend/pharos_edge.py`**, invokable from the repo root via `.\pharos-edge.ps1`. See `UPDATES_2026_05_12.md` for full context.
+
+```powershell
+.\pharos-edge.ps1 start          # detached supervisor, auto-restarts worker on crash
+.\pharos-edge.ps1 start --wsl    # run worker under WSL (fallback)
+.\pharos-edge.ps1 status         # rich live status — supervisor + worker PIDs, heartbeat, queues, logs
+.\pharos-edge.ps1 logs -n 100    # tail worker log
+.\pharos-edge.ps1 stop
+.\pharos-edge.ps1 restart
+.\pharos-edge.ps1 doctor         # env / deps / GPU / cloud + Upstash reachability
+```
+
+State lives in `backend/.pharos_edge/` (gitignored): `supervisor.pid`, `worker.pid`, `state.json`, and rotating logs.
+
+The supervisor restarts the worker on crash with exponential backoff (5 s → 15 s → 60 s → 300 s, capped). Backoff resets to 0 after 60 s of stable uptime.
+
+This replaces the older `restart_worker.ps1` / `check_worker_status.ps1` scripts.
+
+---
+
+## Known Issues & Technical Debt (2026-05-12)
+
+**See `UPDATES_2026_05_12.md` for current status and `ACTUAL_STATUS_2026_04_27.md` / `ACTUAL_PIPELINE_STATUS.md` for prior analyses.**
+
+### 0. ~~Edge worker silently crashing on model load~~ ✅ FIXED (2026-05-12)
+- **Problem**: `SentenceTransformer("nomic-ai/nomic-embed-text-v1")` exited silently with `0xC0000005 ACCESS_VIOLATION` on Windows + Python 3.13 immediately after `HEAD pytorch_model.bin → 302`. No traceback was captured because the prior handler used a bare `pass`. Worker had been failing this way for ~25 days; all ingestion jobs sat as `pending` in `pharos:history`.
+- **Fix**: `model_kwargs={"use_safetensors": True}` to bypass the `pytorch_model.bin` path, `faulthandler.enable()` so future native crashes dump a stack, `logger.exception(...)` instead of `logger.error(...)` so tracebacks reach the log.
+- **File**: `backend/app/shared/embeddings.py:69-115`
+- **Verified**: 12+ min stable run, 74-resource ingestion completed in 86.8s.
+
+### 0.5 Polyglot AST silently falls back to block-chunking
+- **Problem**: `tree_sitter_<lang>` packages (go, rust, c, cpp, ts, js) are imported by `app/modules/ingestion/language_parser.py` but **not in `requirements-edge.txt`**. When a Go file is parsed the worker logs `Failed to load go grammar: ... pip install tree_sitter_go` and falls back to line-based block chunking with synthetic `symbol_name=file.go:1-50`.
+- **Impact**: Phase 2 polyglot AST is effectively Python-only in production. Search quality on non-Python content is significantly degraded.
+- **Priority**: HIGH
 
 ### 1. ~~Stale Data Detection Missing~~ ✅ FIXED (2026-04-27)
 - **Solution**: Added `is_stale`, `last_indexed_sha`, `last_indexed_at` columns to Resource table

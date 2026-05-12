@@ -221,3 +221,6 @@ embeddings/
 # Local development
 local/
 scratch/
+
+# pharos-edge supervisor state (PID files, rotating logs, status snapshots)
+.pharos_edge/

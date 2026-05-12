@@ -11,6 +11,22 @@ ingest_queue with a single BLPOP and routes by source queue.
 import sys
 from pathlib import Path
 
+# Arm faulthandler immediately so a native segfault in torch / nomic custom
+# code prints a Python stack to stderr instead of vanishing silently.
+try:
+    import faulthandler
+    faulthandler.enable()
+except Exception:
+    pass
+
+# Force line-buffered stdio so log lines surface in real time even when our
+# stdout is a pipe (supervisor, file redirect, etc).
+try:
+    sys.stdout.reconfigure(line_buffering=True)  # type: ignore[attr-defined]
+    sys.stderr.reconfigure(line_buffering=True)  # type: ignore[attr-defined]
+except Exception:
+    pass
+
 # Load .env before any app imports so check_environment() sees the vars.
 try:
     from dotenv import load_dotenv

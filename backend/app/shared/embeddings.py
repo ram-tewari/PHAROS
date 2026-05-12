@@ -66,19 +66,55 @@ class EmbeddingGenerator:
                     if SentenceTransformer is None:  # pragma: no cover
                         # Leave model as None; caller will use fallback
                         return
+                    # Arm faulthandler so a native crash inside torch / nomic
+                    # custom code dumps a stack instead of dying silently.
                     try:
-                        # FIX: Add trust_remote_code=True for nomic models
-                        # FIX: Use GPU if available for 4-10x speedup
+                        import faulthandler
+                        if not faulthandler.is_enabled():
+                            faulthandler.enable()
+                    except Exception:
+                        pass
+
+                    try:
+                        logger.info(
+                            f"Loading SentenceTransformer model={self.model_name!r} "
+                            f"device={self.device} (use_safetensors=True)"
+                        )
+                        # use_safetensors avoids the pytorch_model.bin load path,
+                        # which has been observed to crash silently on Windows +
+                        # Python 3.13 + nomic-bert custom remote code.
                         self._model = SentenceTransformer(
                             self.model_name,
                             trust_remote_code=True,
-                            device=self.device
+                            device=self.device,
+                            model_kwargs={"use_safetensors": True},
                         )
-                        logger.info(f"Loaded embedding model on {self.device}: {self.model_name}")
-                    except Exception as e:  # pragma: no cover - model loading failures
-                        # Model loading failed, leave as None for fallback
-                        logger.error(f"Failed to load embedding model: {e}")
-                        pass
+                        logger.info(
+                            f"Loaded embedding model on {self.device}: {self.model_name}"
+                        )
+                    except TypeError:
+                        # Older sentence-transformers (<3) doesn't accept
+                        # model_kwargs. Fall back to the plain constructor.
+                        logger.warning(
+                            "sentence-transformers does not accept model_kwargs; "
+                            "retrying without use_safetensors hint"
+                        )
+                        try:
+                            self._model = SentenceTransformer(
+                                self.model_name,
+                                trust_remote_code=True,
+                                device=self.device,
+                            )
+                            logger.info(
+                                f"Loaded embedding model on {self.device}: {self.model_name}"
+                            )
+                        except Exception as e:
+                            logger.exception(f"Failed to load embedding model: {e}")
+                    except Exception as e:
+                        # Use .exception so the traceback reaches the log, not
+                        # just the message. The previous handler swallowed the
+                        # stack and made silent crashes look like clean exits.
+                        logger.exception(f"Failed to load embedding model: {e}")
 
     def warmup(self) -> bool:
         """Warmup the model with a dummy encoding to avoid cold start latency.
