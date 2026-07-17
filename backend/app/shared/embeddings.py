@@ -22,13 +22,24 @@ import threading
 from typing import List, Optional
 from sqlalchemy.orm import Session
 
-# Lazy import sentence-transformers for embeddings
-try:
-    from sentence_transformers import SentenceTransformer  # type: ignore
-except Exception:  # pragma: no cover
-    SentenceTransformer = None  # type: ignore
-
 logger = logging.getLogger(__name__)
+
+
+def _load_sentence_transformer_cls():
+    """Import SentenceTransformer on first use only.
+
+    CRITICAL: this import pulls torch (~2 GB). It must NOT run at module load —
+    shared.embeddings is imported transitively by cloud-registered modules
+    (e.g. mcp), and CLOUD mode is meant to keep torch out of Render's 512 MB
+    container entirely (query embeddings go over HTTP to the edge). The
+    _ensure_loaded gate below returns before calling this when MODE=CLOUD.
+    Returns the class, or None if sentence-transformers is unavailable.
+    """
+    try:
+        from sentence_transformers import SentenceTransformer  # type: ignore
+        return SentenceTransformer
+    except Exception:  # pragma: no cover
+        return None
 
 
 class EmbeddingGenerator:
@@ -63,6 +74,7 @@ class EmbeddingGenerator:
                         logger.info("Cloud mode detected - skipping embedding model load (query embeddings via Tailscale Funnel)")
                         return
                     
+                    SentenceTransformer = _load_sentence_transformer_cls()
                     if SentenceTransformer is None:  # pragma: no cover
                         # Leave model as None; caller will use fallback
                         return

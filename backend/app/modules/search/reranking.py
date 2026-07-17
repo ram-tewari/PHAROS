@@ -10,14 +10,25 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# Try to import CrossEncoder from sentence-transformers
-try:
-    from sentence_transformers import CrossEncoder
+# CrossEncoder lives in sentence-transformers, which imports torch. Do NOT
+# import it at module load: search/service.py imports this module, and service
+# is registered in CLOUD mode — a top-level import would drag the whole torch
+# stack (~2 GB) into Render's 512 MB container. Resolve availability lazily.
+CROSSENCODER_AVAILABLE: bool | None = None  # None = not yet probed
 
-    CROSSENCODER_AVAILABLE = True
-except ImportError:
-    CROSSENCODER_AVAILABLE = False
-    logger.info("sentence-transformers CrossEncoder not available, reranking disabled")
+
+def _load_crossencoder_cls():
+    """Import CrossEncoder on first use; cache availability. Returns the class
+    or None. Only the edge worker (torch present) ever gets a real class."""
+    global CROSSENCODER_AVAILABLE
+    try:
+        from sentence_transformers import CrossEncoder
+        CROSSENCODER_AVAILABLE = True
+        return CrossEncoder
+    except Exception:
+        CROSSENCODER_AVAILABLE = False
+        logger.info("sentence-transformers CrossEncoder not available, reranking disabled")
+        return None
 
 
 class RerankingService:
@@ -40,7 +51,7 @@ class RerankingService:
         """
         self.db = db
         self.model_name = model_name
-        self.model: Optional["CrossEncoder"] = None
+        self.model = None
         self._model_loaded = False
 
     def _load_model(self):
@@ -50,13 +61,14 @@ class RerankingService:
 
         self._model_loaded = True
 
-        if not CROSSENCODER_AVAILABLE:
+        crossencoder_cls = _load_crossencoder_cls()
+        if crossencoder_cls is None:
             logger.warning("CrossEncoder not available, reranking will be skipped")
             return
 
         try:
             logger.info(f"Loading cross-encoder model: {self.model_name}")
-            self.model = CrossEncoder(self.model_name, max_length=512)
+            self.model = crossencoder_cls(self.model_name, max_length=512)
             logger.info("Cross-encoder model loaded successfully")
         except Exception as e:
             logger.warning(f"Could not load reranking model: {e}")

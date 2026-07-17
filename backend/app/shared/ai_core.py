@@ -21,11 +21,22 @@ from __future__ import annotations
 
 from typing import List, Optional, Sequence
 
-# Lazy import transformers to avoid heavy import at module load in tests
-try:
-    from transformers import pipeline  # type: ignore
-except Exception:  # pragma: no cover
-    pipeline = None  # type: ignore
+def _load_pipeline_factory():
+    """Import transformers.pipeline on first use only.
+
+    CRITICAL: importing transformers at module load pulls the entire
+    torch/torchvision stack (~2 GB, ~20 s) into the process. In CLOUD mode
+    (Render, 512 MB) that either OOMs the container or, if torch isn't
+    installed, makes this module — and every router that imports it — fail to
+    load. Keep the import inside the function so it only fires on the edge
+    worker when a summary/classification is actually computed.
+    Returns the pipeline factory, or None if transformers is unavailable.
+    """
+    try:
+        from transformers import pipeline  # type: ignore
+        return pipeline
+    except Exception:  # pragma: no cover
+        return None
 
 
 class Summarizer:
@@ -47,6 +58,7 @@ class Summarizer:
 
     def _ensure_loaded(self):
         if self._pipe is None:
+            pipeline = _load_pipeline_factory()
             if pipeline is None:  # pragma: no cover
                 # Leave pipe as None; caller will use fallback
                 return
@@ -130,6 +142,7 @@ class ZeroShotTagger:
 
     def _ensure_loaded(self):
         if self._pipe is None:
+            pipeline = _load_pipeline_factory()
             if pipeline is None:  # pragma: no cover
                 # Leave pipe as None; caller will use heuristics
                 return

@@ -145,6 +145,7 @@ def register_all_modules(app: FastAPI) -> None:
     failed_count = 0
     handler_count = 0
     total_routers = 0
+    failed_modules: List[str] = []
 
     for module_name, module_path, router_names in modules:
         try:
@@ -191,6 +192,7 @@ def register_all_modules(app: FastAPI) -> None:
 
         except Exception as e:
             failed_count += 1
+            failed_modules.append(module_name)
             logger.error(
                 f"✗ Failed to register module {module_name}: {e}",
                 exc_info=True,
@@ -200,13 +202,25 @@ def register_all_modules(app: FastAPI) -> None:
                     "error_type": type(e).__name__,
                 },
             )
-            # Continue with other modules even if one fails
+            # Continue so we collect ALL failures before deciding whether to abort.
 
     logger.info(
         f"Module registration complete: {registered_count} modules registered, "
         f"{total_routers} routers registered, "
         f"{handler_count} event handler sets registered, {failed_count} failed"
     )
+
+    # Fail loud in production. A module that fails to register means its
+    # endpoints silently 404 — exactly the class of invisible outage that let
+    # the edge worker sit dead for 25 days. In prod, refuse to boot instead;
+    # Render will surface the failed deploy. Outside prod we keep booting so a
+    # half-broken dev tree is still explorable.
+    if failed_modules and settings.ENV == "prod":
+        raise RuntimeError(
+            f"Refusing to start: {len(failed_modules)} module(s) failed to "
+            f"register in production: {', '.join(failed_modules)}. "
+            f"See logs above for the underlying import/registration errors."
+        )
 
 
 @asynccontextmanager
@@ -398,7 +412,12 @@ def create_app() -> FastAPI:
         from fastapi import HTTPException, status
         from fastapi.responses import JSONResponse
 
-        # Define excluded paths
+        # Define excluded paths.
+        # SECURITY: only unauthenticated health checks and API docs belong here.
+        # Data-bearing endpoints (search, job history, worker status) were
+        # previously public — they exposed the indexed corpus and operational
+        # internals to anyone with the URL. Ronin already sends the admin token,
+        # so re-protecting them costs nothing.
         excluded_paths = [
             "/health",  # Root health check for Render
             "/docs",
@@ -406,9 +425,6 @@ def create_app() -> FastAPI:
             "/redoc",
             "/api/monitoring/health",  # Health check endpoint (with /api prefix)
             "/api/v1/ingestion/health",  # Ingestion health check
-            "/api/v1/ingestion/worker/status",  # Worker status (public for monitoring)
-            "/api/v1/ingestion/jobs/history",  # Job history (public for monitoring)
-            "/api/search/search/three-way-hybrid",  # Public search endpoint
             "/api/search/health",  # Search health endpoint
             "/api/github/health",  # GitHub health endpoint
         ]
@@ -422,8 +438,15 @@ def create_app() -> FastAPI:
         )
 
         if not is_excluded:
-            # Check for test authentication bypass
-            test_bypass = request.headers.get("X-Test-Auth-Bypass") or os.getenv("TEST_AUTH_BYPASS")
+            # Test authentication bypass.
+            # SECURITY: never honor a client-supplied header for this — a request
+            # header is attacker-controlled and would let anyone skip auth. The
+            # bypass is opt-in via a server-side env var AND only outside prod.
+            settings = get_settings()
+            test_bypass = (
+                settings.ENV != "prod"
+                and os.getenv("TEST_AUTH_BYPASS", "").lower() in ("true", "1", "yes")
+            )
 
             if not test_bypass:
                 # Require authentication for all other endpoints
@@ -541,11 +564,16 @@ def create_app() -> FastAPI:
                 content={"detail": "Internal server error"},
             )
 
-    # Ensure tables exist for SQLite environments without migrations
+    # Ensure tables exist for SQLite environments without migrations.
+    # Postgres/prod uses Alembic, so a create_all failure there is not fatal —
+    # but it must never be swallowed silently (that hid real schema drift).
     try:
         Base.metadata.create_all(bind=sync_engine)
-    except Exception:
-        pass
+    except Exception as e:
+        logger.warning(
+            f"Base.metadata.create_all failed (expected on prod/Postgres where "
+            f"Alembic owns schema; investigate if on SQLite): {e}"
+        )
 
     # Add root-level health check endpoint for Render
     @app.get("/health")

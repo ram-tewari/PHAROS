@@ -342,7 +342,13 @@ class LanguageParser:
         query_src = QUERIES.get(name)
         if query_src is None:
             raise ValueError(f"No tags query defined for grammar {name!r}")
-        q = lang.query(query_src)
+        # tree-sitter < 0.25 exposes Language.query(); 0.25+ removed it in favor
+        # of constructing Query(lang, src) directly. Support both.
+        if hasattr(lang, "query"):
+            q = lang.query(query_src)
+        else:
+            from tree_sitter import Query
+            q = Query(lang, query_src)
         cls._query_cache[name] = q
         return q
 
@@ -360,8 +366,14 @@ class LanguageParser:
             return []
 
         try:
-            # tree-sitter 0.23+ returns dict[str, list[Node]]
-            captures_dict = self._query.captures(tree.root_node)
+            # captures() returns dict[str, list[Node]]. Its home moved between
+            # versions: Query.captures() in < 0.25, QueryCursor(query).captures()
+            # in 0.25+. Detect which is available at call time.
+            if hasattr(self._query, "captures"):
+                captures_dict = self._query.captures(tree.root_node)
+            else:
+                from tree_sitter import QueryCursor
+                captures_dict = QueryCursor(self._query).captures(tree.root_node)
         except Exception as exc:
             logger.warning(
                 "Query.captures failed (%s, %s): %s",

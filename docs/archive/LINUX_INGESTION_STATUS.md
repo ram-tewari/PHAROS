@@ -60,7 +60,7 @@ The embedding model is taking longer than expected to load. Typical load time is
 - UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
 - DATABASE_URL=postgresql+asyncpg://...
 - EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
-
+11
 ### 📈 Expected Timeline (Once Worker Starts)
 
 For Linux kernel (70,000+ C/C++ files):

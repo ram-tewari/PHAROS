@@ -6,17 +6,23 @@
 
 ## Two Redis Queues — What They Actually Do
 
-- **`pharos:tasks`** — single-resource embedding / full-ingestion tasks. Polled by `backend/app/workers/edge.py` (and also by `backend/embed_server.py` in WSL2). Task format:
+> **Correction (2026-07-09):** earlier revisions of this file referenced
+> `backend/app/workers/edge.py` and `backend/app/workers/repo.py`. Those files
+> were deleted; the single worker entrypoint is
+> `backend/app/workers/main_worker.py`, which blocks on **both** queues with one
+> `BLPOP pharos:tasks ingest_queue 30` and routes by source queue (see File 2).
+
+- **`pharos:tasks`** — single-resource embedding / full-ingestion tasks. Polled by `main_worker.py` (and also by `backend/embed_server.py` in WSL2). Task format:
   ```json
   {"task_id": "uuid", "resource_id": "uuid"}
   ```
-  When a task pops off this queue, the edge worker calls `process_ingestion(resource_id)` — the monolithic ingestion function — which does fetching, chunking, embedding, quality, and citations in one pass.
+  When a task pops off this queue, the worker calls `process_ingestion(resource_id)` — the monolithic ingestion function — which does fetching, chunking, embedding, quality, and citations in one pass.
 
 - **`ingest_queue`** — GitHub-repo bulk-ingestion tasks. Pushed by `app/routers/ingestion.py`. Task format:
   ```json
   {"repo_url": "github.com/owner/repo", "submitted_at": "...", "ttl": 86400}
   ```
-  **⚠ No worker reliably consumes this queue end-to-end today.** The `backend/app/workers/repo.py` file exists but the full path from queue → clone → Resource rows → `pharos:tasks` fan-out is not wired. Documented flows that claim otherwise are aspirational.
+  Consumed by `main_worker.py`, which routes `ingest_queue` items to the repo-level clone/parse/embed/store path. (Historical note: earlier docs alternately claimed this queue had "no worker" and that it was "fully operational" — the truth is the consumer now exists in `main_worker.py`; treat any surviving "aspirational"/"no worker" phrasing elsewhere as stale.)
 
 ---
 

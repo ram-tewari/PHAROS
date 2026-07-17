@@ -10,6 +10,11 @@ All fixtures are self-contained and independent.
 import os
 
 os.environ["TESTING"] = "true"
+# Auth middleware no longer honors a client-supplied bypass header (that was a
+# security hole). The bypass is now server-side + non-prod only, opted into via
+# this env var. Safe here: ENV is never "prod" under test, and the app refuses
+# to boot in prod when TESTING is set.
+os.environ["TEST_AUTH_BYPASS"] = "true"
 
 import logging
 import sys

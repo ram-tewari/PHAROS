@@ -9,6 +9,7 @@ Tests the complete flow:
 """
 
 import pytest
+import pytest_asyncio
 import uuid
 import io
 from datetime import datetime

@@ -1,0 +1,73 @@
+name: CI
+
+# Lean, actually-runnable CI. Gates on the things that are green today:
+# syntax errors, a torch-free cloud boot, and the smoke suite. Module
+# isolation runs as a visible (non-blocking) report until its 6 known
+# violations are cleared, at which point flip continue-on-error to false.
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  lint-and-smoke:
+    name: Lint + Cloud boot + Smoke
+    runs-on: ubuntu-latest
+    env:
+      # Mirror production: cloud process must never need torch.
+      MODE: CLOUD
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          cache: pip
+
+      - name: Install dependencies (torch-free cloud set)
+        run: |
+          python -m pip install --upgrade pip
+          # requirements-cloud.txt pulls requirements-base.txt (incl. tree-sitter
+          # grammars) but deliberately NOT torch / sentence-transformers.
+          pip install -r requirements-cloud.txt
+          pip install ruff pytest pytest-asyncio httpx
+
+      - name: Ruff — syntax errors (blocking)
+        # E9 = real syntax breakage (a broken file can't import). Style rules
+        # are intentionally not gated yet; add them once the tree is clean.
+        run: ruff check app --select E9 --output-format concise
+
+      - name: Ruff — full report (non-blocking)
+        continue-on-error: true
+        run: ruff check app --output-format concise
+
+      - name: Smoke suite (auth, cloud-boot, polyglot AST)
+        run: pytest tests/smoke -q
+
+  module-isolation:
+    name: Module isolation (report-only)
+    runs-on: ubuntu-latest
+    env:
+      PYTHONIOENCODING: utf-8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Check module isolation
+        # TODO: flip to a hard gate (remove continue-on-error) once the 6 known
+        # cross-module imports are moved onto the event bus:
+        #   ingestion->resources, resources->authority, search->github
+        continue-on-error: true
+        run: python scripts/check_module_isolation.py --verbose

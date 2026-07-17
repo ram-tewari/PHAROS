@@ -8,6 +8,10 @@
 
 Your second brain for code. An AI-powered knowledge management system that understands code repositories, research papers, and technical documentation through intelligent analysis, semantic search, and knowledge graphs.
 
+> **📚 Canonical documentation lives in [`notebooklm/`](notebooklm/)** — start with [`01_PHAROS_OVERVIEW.md`](notebooklm/01_PHAROS_OVERVIEW.md). Those six files are the single source of truth for what Pharos is and how it works.
+>
+> Historical, point-in-time status reports (`*_COMPLETE.md`, `*_STATUS.md`, phase summaries, etc.) have been moved to [`docs/archive/`](docs/archive/). They are kept for provenance but are **not** maintained — do not treat them as current.
+
 ## Table of Contents
 
 - [Overview](#overview)

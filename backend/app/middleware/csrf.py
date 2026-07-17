@@ -210,8 +210,8 @@ class CSRFMiddleware(BaseHTTPMiddleware):
             allowed.append(settings.FRONTEND_URL)
 
         # Add API URL if set
-        if hasattr(settings, "API_URL") and settings.API_URL  # type: ignore[attr-defined]:
-            allowed.append(settings.API_URL  # type: ignore[attr-defined])
+        if hasattr(settings, "API_URL") and settings.API_URL:  # type: ignore[attr-defined]
+            allowed.append(settings.API_URL)  # type: ignore[attr-defined]
 
         # Add localhost origins for development
         allowed.extend(

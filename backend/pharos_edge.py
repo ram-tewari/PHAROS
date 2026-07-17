@@ -720,6 +720,32 @@ def cmd_doctor(args: argparse.Namespace) -> int:
     except Exception as e:
         _check("CUDA", False, str(e))
 
+    console.rule("Polyglot AST")
+    # A live round-trip per language: catches both missing grammar packages
+    # AND tree-sitter API drift (e.g. Language.query() removed in 0.25+), which
+    # would otherwise silently degrade every non-Python file to line-chunking.
+    _AST_PROBES = {
+        "go": ("x.go", "package m\nfunc F() {}\n"),
+        "rust": ("x.rs", "fn f() {}\n"),
+        "typescript": ("x.ts", "function f(): void {}\n"),
+        "javascript": ("x.js", "function f() {}\n"),
+        "c": ("x.c", "int f() { return 0; }\n"),
+        "cpp": ("x.cpp", "int f() { return 0; }\n"),
+    }
+    try:
+        from pathlib import Path as _Path
+        from app.modules.ingestion.language_parser import LanguageParser
+        for lang_name, (fname, src) in _AST_PROBES.items():
+            try:
+                parser = LanguageParser.for_path(_Path(fname))
+                syms = parser.extract(src, "probe") if parser else []
+                got = any(s.node_type == "function" for s in syms)
+                _check(lang_name, got, "" if got else "grammar/API failure -> line-chunk fallback")
+            except Exception as e:
+                _check(lang_name, False, f"({e.__class__.__name__}: {e})")
+    except Exception as e:
+        _check("language_parser import", False, str(e))
+
     console.rule("Network")
     hb = _query_cloud_heartbeat(env)
     if hb.get("_error"):
