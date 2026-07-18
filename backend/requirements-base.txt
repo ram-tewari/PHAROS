@@ -25,9 +25,11 @@ python-multipart>=0.0.6
 # Redis
 redis>=5.0.0
 
-# NLP and Text Processing
-spacy>=3.7.0
-en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.7.1/en_core_web_sm-3.7.1.tar.gz
+# NLP and Text Processing (OPTIONAL — do not reinstate here)
+# spacy is only used by graph/service.py behind a try/except lazy import;
+# the app degrades gracefully without it. The 3.7 pins have no Python 3.13
+# wheels and broke every pip install on 3.13. Install manually if wanted:
+#   pip install "spacy>=3.8" && python -m spacy download en_core_web_sm
 
 # Code Analysis
 # tree-sitter 0.23+ is required: language_parser.py uses the new
