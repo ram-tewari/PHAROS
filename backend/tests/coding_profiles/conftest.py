@@ -18,23 +18,12 @@ from app.database.models import (  # noqa: F401 — register all tables
     CodingProfile,
     ProposedRule,
     RuleStatus,
-    User,
     Resource,
-    Collection,
-    CollectionResource,
     Annotation,
     Citation,
     GraphEdge,
     GraphEmbedding,
     DiscoveryHypothesis,
-    UserProfile,
-    UserInteraction,
-    AuthoritySubject,
-    AuthorityCreator,
-    AuthorityPublisher,
-    ClassificationCode,
-    ModelVersion,
-    ABTestExperiment,
     PlanningSession,
     DeveloperProfileRecord,
 )
@@ -76,27 +65,25 @@ def db(engine) -> Session:
 
 
 @pytest.fixture(scope="function")
-def seed_user(db: Session) -> User:
+def seed_user(db: Session):
+    # The User model / users table was removed in the Phase 2 amputation
+    # (single-tenant). Fixtures only need a stable id/username.
     from uuid import UUID
+    from types import SimpleNamespace
 
-    user = User(
+    return SimpleNamespace(
         id=UUID("00000000-0000-0000-0000-000000000001"),
         email="test@example.com",
         username="testuser",
-        hashed_password="fakehash_for_testing",
         full_name="Test User",
         role="user",
         is_active=True,
         is_verified=True,
     )
-    db.add(user)
-    db.commit()
-    db.refresh(user)
-    return user
 
 
 @pytest.fixture(scope="function")
-def client(db: Session, seed_user: User) -> TestClient:
+def client(db: Session, seed_user) -> TestClient:
     """
     Create a minimal FastAPI app with just the patterns router.
 

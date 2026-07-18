@@ -41,35 +41,21 @@ from app.shared.event_bus import event_bus
 # Import create_app instead of app to avoid module-level initialization
 from app import create_app
 
-# Import all models to register them with SQLAlchemy
-# This ensures all tables are created in test database
+# Import all models to register them with SQLAlchemy.
+# Neo Alexandria models (Collection, authority, recommender, ML-registry, User,
+# etc.) were dropped in the Phase 2 amputation (2026-07).
 from app.database.models import (  # noqa: F401
     Resource,
-    Collection,
-    CollectionResource,
     Annotation,
     Citation,
     GraphEdge,
     GraphEmbedding,
     DiscoveryHypothesis,
-    UserProfile,
-    UserInteraction,
-    AuthoritySubject,
-    AuthorityCreator,
-    AuthorityPublisher,
-    User,
-    ClassificationCode,
-    ModelVersion,
-    ABTestExperiment,
     PlanningSession,
     CodingProfile,
     ProposedRule,
     RuleStatus,
 )
-try:
-    from app.modules.auth.model import OAuthAccount  # noqa: F401
-except ImportError:
-    pass  # auth module may have stale imports during refactoring
 
 
 # ============================================================================
@@ -385,38 +371,31 @@ def mock_redis():
 
 
 @pytest.fixture(scope="function")
-def test_user(db_session: Session) -> User:
+def test_user(db_session: Session):
     """
-    Create a test user for authentication.
+    A lightweight stand-in for the authenticated user.
 
-    This user is created before the test client is initialized,
-    ensuring it exists when authentication dependencies are called.
-
-    Uses a fixed UUID that matches the one returned by _get_current_user_id()
-    in the recommendation router.
+    The User model / users table was removed in the Phase 2 amputation (Pharos
+    is single-tenant; the admin bearer token is the real auth). Fixtures only
+    need a stable ``.id`` / ``.username`` to feed dependency overrides, so this
+    returns a simple object with the same fixed UUID the old fixture used.
     """
     from uuid import UUID
-    from app.shared.security import get_password_hash
+    from types import SimpleNamespace
 
-    # Use the same fixed UUID as _get_current_user_id returns
-    user = User(
+    return SimpleNamespace(
         id=UUID("00000000-0000-0000-0000-000000000001"),
         email="test@example.com",
         username="testuser",
-        hashed_password=get_password_hash("testpassword123"),
         full_name="Test User",
         role="user",
         is_active=True,
         is_verified=True,
     )
-    db_session.add(user)
-    db_session.commit()
-    db_session.refresh(user)
-    return user
 
 
 @pytest.fixture(scope="function")
-def auth_token(test_user: User) -> str:
+def auth_token(test_user) -> str:
     """
     Generate a valid JWT access token for the test user.
 
@@ -446,7 +425,7 @@ def auth_headers(auth_token: str) -> dict:
 
 
 @pytest.fixture(scope="function")
-def bypass_auth(db_session: Session, test_user: User) -> TestClient:
+def bypass_auth(db_session: Session, test_user) -> TestClient:
     """
     Fixture to bypass authentication in tests via dependency override.
 
@@ -540,7 +519,7 @@ def bypass_auth(db_session: Session, test_user: User) -> TestClient:
 
 
 @pytest.fixture(scope="function")
-def client(db_session: Session, test_user: User) -> Generator[TestClient, None, None]:
+def client(db_session: Session, test_user) -> Generator[TestClient, None, None]:
     """
     Create a TestClient with database dependency override.
 
@@ -614,7 +593,7 @@ def client(db_session: Session, test_user: User) -> Generator[TestClient, None, 
 
 @pytest.fixture(scope="function")
 def authenticated_client(
-    db_session: Session, test_user: User, auth_headers: dict
+    db_session: Session, test_user, auth_headers: dict
 ) -> Generator[TestClient, None, None]:
     """
     Create a TestClient that uses actual JWT authentication.

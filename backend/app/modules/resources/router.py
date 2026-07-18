@@ -899,93 +899,18 @@ async def ingest_repository(
     req: Request,
     db: Session = Depends(get_sync_db),
 ):
-    """
-    Trigger async repository ingestion from local path or Git URL.
-
-    This endpoint starts an asynchronous Celery task to ingest an entire
-    code repository. The task will:
-    1. Crawl the directory or clone the Git repository
-    2. Create Resource entries for each file
-    3. Respect .gitignore rules and exclude binary files
-    4. Auto-classify files (PRACTICE, THEORY, GOVERNANCE)
-    5. Emit resource.created events for downstream processing
-
-    Authentication: Required (JWT token) - enforced by middleware
-    Rate Limiting: Applied by middleware based on user tier
-
-    Args:
-        request: Repository ingestion request (path or git_url)
-        req: FastAPI request object (contains authenticated user in state)
-        db: Database session
-
-    Returns:
-        Task ID and initial status for progress tracking
-
-    Raises:
-        400: Invalid request (path doesn't exist, invalid URL, or both/neither provided)
-        401: Authentication required (enforced by middleware)
-        429: Rate limit exceeded (enforced by middleware)
-        500: Failed to start ingestion task
-    """
-    from pathlib import Path
-    from urllib.parse import urlparse
-    from ...tasks.celery_tasks import ingest_repo_task
-
-    # Validate request
-    if request.path:
-        # Validate local path exists
-        path_obj = Path(request.path)
-        if not path_obj.exists():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Path does not exist: {request.path}",
-            )
-        if not path_obj.is_dir():
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Path is not a directory: {request.path}",
-            )
-
-    elif request.git_url:
-        # Validate Git URL format
-        try:
-            parsed = urlparse(request.git_url)
-            # Only allow https:// URLs for security
-            if parsed.scheme != "https":
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Only HTTPS Git URLs are allowed",
-                )
-            if not parsed.netloc:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Invalid Git URL format",
-                )
-        except Exception as e:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid Git URL: {str(e)}",
-            )
-
-    try:
-        # Trigger Celery task
-        task = ingest_repo_task.delay(path=request.path, git_url=request.git_url)
-
-        logger.info(
-            f"Started repository ingestion task {task.id}: "
-            f"path={request.path}, git_url={request.git_url}"
-        )
-
-        return IngestionTaskResponse(
-            task_id=task.id, status="PENDING", message="Repository ingestion started"
-        )
-
-    except Exception as exc:
-        logger.error(f"Failed to start repository ingestion: {exc}", exc_info=True)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to start repository ingestion: {str(exc)}",
-        )
+    """DEPRECATED (Phase 2, 2026-07): the Celery-backed repo-ingestion path was
+    removed with Celery. Repository ingestion now goes through the ingestion
+    router (`POST /api/v1/ingestion/ingest/...`), which enqueues onto
+    `ingest_queue` for `main_worker.py`. This endpoint returns 410 Gone."""
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail=(
+            "The Celery repo-ingestion path was removed. Use the ingestion "
+            "router (/api/v1/ingestion/ingest/{repo}) which enqueues to the "
+            "edge worker via ingest_queue."
+        ),
+    )
 
 
 @router.get("/ingest-repo/{task_id}/status", response_model=IngestionStatusResponse)
@@ -993,64 +918,13 @@ async def get_ingestion_status(
     task_id: str,
     req: Request,
 ):
-    """
-    Get status of repository ingestion task.
-
-    This endpoint queries the Celery task state and returns progress information
-    including files processed, total files, and current file being processed.
-
-    Authentication: Required (JWT token) - enforced by middleware
-
-    Args:
-        task_id: Celery task ID returned from ingest-repo endpoint
-        req: FastAPI request object (contains authenticated user in state)
-
-    Returns:
-        Task status with progress information
-
-    Raises:
-        404: Task not found
-        401: Authentication required (enforced by middleware)
-        500: Failed to retrieve task status
-    """
-    from celery.result import AsyncResult
-    from ...tasks.celery_app import celery_app
-
-    try:
-        # Get task result
-        task_result = AsyncResult(task_id, app=celery_app)
-
-        # Build response based on task state
-        response = IngestionStatusResponse(task_id=task_id, status=task_result.state)
-
-        # Add progress information if available
-        if task_result.state == "PROCESSING":
-            info = task_result.info or {}
-            response.files_processed = info.get("current", 0)
-            response.total_files = info.get("total", 0)
-            response.current_file = info.get("current_file")
-            response.started_at = info.get("started_at")
-
-        elif task_result.state == "COMPLETED":
-            info = task_result.info or {}
-            response.files_processed = info.get("files_processed", 0)
-            response.total_files = info.get("files_processed", 0)
-            response.completed_at = info.get("completed_at")
-
-        elif task_result.state == "FAILED":
-            info = task_result.info or {}
-            response.error = info.get("error", str(task_result.info))
-
-        return response
-
-    except Exception as exc:
-        logger.error(
-            f"Failed to retrieve task status for {task_id}: {exc}", exc_info=True
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Failed to retrieve task status: {str(exc)}",
-        )
+    """DEPRECATED (Phase 2, 2026-07): Celery task-status endpoint removed with
+    Celery. Job status now lives with the ingestion router / worker. Returns
+    410 Gone."""
+    raise HTTPException(
+        status_code=status.HTTP_410_GONE,
+        detail="Celery task status was removed. See the ingestion router for job status.",
+    )
 
 
 # ============================================================================

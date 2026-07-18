@@ -15,7 +15,6 @@ from sqlalchemy.orm import Session
 from ...shared.database import get_pool_status
 from ...shared.event_bus import event_bus
 from ...shared.cache import cache
-from ...database.models import UserInteraction, UserProfile
 from ...utils.performance_monitoring import metrics as perf_metrics
 
 logger = logging.getLogger(__name__)
@@ -82,103 +81,19 @@ class MonitoringService:
         self, db: Session, time_window_days: int
     ) -> Dict[str, Any]:
         """
-        Get user engagement metrics.
+        User engagement metrics (recommender removed — single-tenant optimization).
 
-        Args:
-            db: Database session
-            time_window_days: Time window for metrics calculation
-
-        Returns:
-            Dictionary with engagement metrics
+        The UserProfile / UserInteraction tables were dropped in the Phase 2
+        amputation (2026-07). Pharos is single-tenant; there is no engagement to
+        track. Endpoint kept for contract stability; returns a not-applicable stub.
         """
-        try:
-            from sqlalchemy import select, func
-
-            cutoff_date = datetime.utcnow() - timedelta(days=time_window_days)
-
-            # Total users with profiles
-            try:
-                result = db.execute(select(func.count(UserProfile.id)))
-                total_users = result.scalar() or 0
-            except Exception:
-                total_users = 0
-
-            # Active users (with interactions in time window)
-            result = db.execute(
-                select(func.count(func.distinct(UserInteraction.user_id))).where(
-                    UserInteraction.interaction_timestamp >= cutoff_date
-                )
-            )
-            active_users = result.scalar() or 0
-
-            # Total interactions
-            result = db.execute(
-                select(func.count(UserInteraction.id)).where(
-                    UserInteraction.interaction_timestamp >= cutoff_date
-                )
-            )
-            total_interactions = result.scalar() or 0
-
-            # Interactions by type
-            result = db.execute(
-                select(
-                    UserInteraction.interaction_type,
-                    func.count(UserInteraction.id).label("count"),
-                )
-                .where(UserInteraction.interaction_timestamp >= cutoff_date)
-                .group_by(UserInteraction.interaction_type)
-            )
-            interactions_by_type = result.all()
-
-            interaction_breakdown = {
-                itype: count for itype, count in interactions_by_type
-            }
-
-            # Average session duration
-            result = db.execute(select(func.avg(UserProfile.avg_session_duration)))
-            avg_session = result.scalar() or 0.0
-
-            # Positive interaction rate
-            result = db.execute(
-                select(func.count(UserInteraction.id)).where(
-                    UserInteraction.interaction_timestamp >= cutoff_date,
-                    UserInteraction.is_positive == 1,
-                )
-            )
-            positive_interactions = result.scalar() or 0
-
-            positive_rate = (
-                positive_interactions / total_interactions
-                if total_interactions > 0
-                else 0.0
-            )
-
-            return {
-                "status": "ok",
-                "timestamp": datetime.utcnow().isoformat(),
-                "time_window_days": time_window_days,
-                "metrics": {
-                    "total_users": total_users,
-                    "active_users": active_users,
-                    "total_interactions": total_interactions,
-                    "positive_interactions": positive_interactions,
-                    "positive_rate": round(positive_rate, 4),
-                    "interactions_by_type": interaction_breakdown,
-                    "avg_session_duration_seconds": round(avg_session, 2)
-                    if avg_session
-                    else 0.0,
-                },
-            }
-
-        except Exception as e:
-            logger.error(
-                f"Error getting user engagement metrics: {str(e)}", exc_info=True
-            )
-            return {
-                "status": "error",
-                "error": str(e),
-                "timestamp": datetime.utcnow().isoformat(),
-            }
+        return {
+            "status": "not_applicable",
+            "message": "User engagement tracking removed (single-tenant optimization)",
+            "timestamp": datetime.utcnow().isoformat(),
+            "time_window_days": time_window_days,
+            "metrics": {},
+        }
 
     async def get_model_health(self) -> Dict[str, Any]:
         """

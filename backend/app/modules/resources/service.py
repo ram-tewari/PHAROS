@@ -86,20 +86,10 @@ def create_pending_resource(db: Session, payload: Dict[str, Any]) -> db_models.R
     logger.info(f"Creating new pending resource for URL: {url}")
     now = datetime.now(timezone.utc)
 
-    # Import authority control service (optional - gracefully handle if not available)
+    # Authority-control name normalization was removed with the Neo Alexandria
+    # amputation (Phase 2, 2026-07). Use raw creator/publisher values.
     creator_value = payload.get("creator")
     publisher_value = payload.get("publisher")
-
-    try:
-        from ...modules.authority.service import AuthorityControl
-
-        authority = AuthorityControl(db)
-        if creator_value:
-            creator_value = authority.normalize_creator(creator_value)
-        if publisher_value:
-            publisher_value = authority.normalize_publisher(publisher_value)
-    except Exception as e:
-        logger.warning(f"Authority control not available, using raw values: {e}")
 
     resource = db_models.Resource(
         title=payload.get("title") or "Untitled",
@@ -593,15 +583,9 @@ def process_ingestion(
             f"[INGESTION] {resource_id} - Generated summary ({len(summary)} chars) and {len(tags_raw)} tags"
         )
 
-        # Query: Normalize tags
-        from ...modules.authority.service import AuthorityControl
-
-        logger.info(f"[INGESTION] {resource_id} - Normalizing tags")
-        authority = AuthorityControl(session)
-        normalized_tags = authority.normalize_subjects(tags_raw)
-        logger.info(
-            f"[INGESTION] {resource_id} - Normalized to {len(normalized_tags)} tags"
-        )
+        # Authority-control tag normalization removed (Phase 2, 2026-07).
+        # Use the raw extracted tags directly.
+        normalized_tags = tags_raw
 
         # Taxonomy/classification module has been removed (single-tenant optimization).
         # classification_code is left as None; the field remains on the model for
@@ -1054,7 +1038,7 @@ def list_resources(
 
 
 def _apply_resource_updates(
-    resource: db_models.Resource, updates: Dict[str, Any], authority
+    resource: db_models.Resource, updates: Dict[str, Any]
 ) -> Tuple[bool, bool, bool]:
     """
     Apply updates to resource fields (modifier helper).
@@ -1062,10 +1046,12 @@ def _apply_resource_updates(
     Args:
         resource: Resource to update
         updates: Dictionary of field updates
-        authority: Authority control service
 
     Returns:
         Tuple of (embedding_fields_changed, quality_fields_changed, content_changed)
+
+    Note: authority-control normalization (subject/creator/publisher) was removed
+    in the Phase 2 amputation (2026-07); values are assigned as provided.
     """
     embedding_fields_changed = False
     embedding_affecting_fields = {"title", "description", "subject"}
@@ -1099,18 +1085,18 @@ def _apply_resource_updates(
 
     for key, value in updates.items():
         if key == "subject" and isinstance(value, list):
-            setattr(resource, key, authority.normalize_subjects(value))
+            setattr(resource, key, value)
             embedding_fields_changed = True
             # Only trigger recomputation if quality_score wasn't manually set
             if not quality_score_manually_set:
                 quality_fields_changed = True
         elif key == "creator":
-            setattr(resource, key, authority.normalize_creator(value))
+            setattr(resource, key, value)
             # Only trigger recomputation if quality_score wasn't manually set
             if not quality_score_manually_set:
                 quality_fields_changed = True
         elif key == "publisher":
-            setattr(resource, key, authority.normalize_publisher(value))
+            setattr(resource, key, value)
             # Only trigger recomputation if quality_score wasn't manually set
             if not quality_score_manually_set:
                 quality_fields_changed = True
@@ -1262,11 +1248,8 @@ def update_resource(
     changed_fields = list(updates.keys())
 
     # Modifier: Apply updates
-    from ...modules.authority.service import AuthorityControl
-
-    authority = AuthorityControl(db)
     embedding_changed, quality_changed, content_changed = _apply_resource_updates(
-        resource, updates, authority
+        resource, updates
     )
 
     # Modifier: Regenerate embeddings if needed

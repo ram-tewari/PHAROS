@@ -69,29 +69,24 @@ def register_all_modules(app: FastAPI) -> None:
     # Define modules to register: (module_name, import_path, router_names)
     # router_names can be a single string or a list of strings for modules with multiple routers
     # Modular vertical slices (completed)
+    # Phase 2 amputation (2026-07): the Neo Alexandria modules (annotations,
+    # authority, scholarly, quality, collections, auth) were removed. Pharos is
+    # now a focused code-intelligence backend. graph keeps its citations/
+    # discovery sub-routers (their models are still referenced internally).
     base_modules: List[Tuple[str, str, List[str]]] = [
-        ("collections", "app.modules.collections", ["collections_router"]),
         ("resources", "app.modules.resources", ["resources_router"]),
         ("search", "app.modules.search", ["search_router"]),
-        ("annotations", "app.modules.annotations", ["annotations_router"]),
-        ("scholarly", "app.modules.scholarly", ["scholarly_router"]),
-        ("authority", "app.modules.authority", ["authority_router"]),
-        ("quality", "app.modules.quality", ["quality_router"]),
         (
             "graph",
             "app.modules.graph",
             ["graph_router", "citations_router", "discovery_router"],
         ),
-        ("auth", "app.modules.auth", ["router"]),  # Re-enabled after fixing imports
     ]
 
-    # Additional routers for Phase 19/21.5 fixes (registered separately with their own prefixes)
-    # These routers have their prefixes already defined in their router.py files
+    # Additional routers registered separately with their own prefixes.
     additional_routers: List[Tuple[str, str, List[str]]] = [
-        ("quality", "app.modules.quality", ["rag_evaluation_router"]),
         ("search", "app.modules.search", ["advanced_search_router"]),
         ("resources", "app.modules.resources", ["chunking_router"]),
-        ("scholarly", "app.modules.scholarly", ["document_intelligence_router"]),
         ("planning", "app.modules.planning", ["ai_planning_router"]),
         ("mcp", "app.modules.mcp", ["mcp_router"]),
         ("patterns", "app.modules.patterns", ["patterns_router"]),
