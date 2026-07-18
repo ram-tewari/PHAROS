@@ -159,6 +159,49 @@ def test_cloud_mode_does_not_import_torch():
     )
 
 
+def test_prod_entrypoint_imports():
+    """`app.main` must import with ENV=prod — the exact path Render boots.
+
+    create_app()-based tests never execute main.py's module-level code, so a
+    broken prod-only import (e.g. the JSON-logging branch pulling in a
+    deleted module) boots fine in tests and crash-loops in production.
+    This happened: ml_monitoring/__init__.py kept importing files deleted
+    in Phase 2 and only ENV=prod hit it.
+    """
+    import subprocess
+    import textwrap
+
+    code = textwrap.dedent(
+        """
+        import os, secrets
+        os.environ["ENV"] = "prod"
+        os.environ["MODE"] = "CLOUD"
+        # prod refuses to boot with the default secret; Render sets a real one
+        os.environ["JWT_SECRET_KEY"] = secrets.token_hex(32)
+        # neutralize dev-machine leakage (.env / shell) that prod forbids
+        os.environ["TEST_MODE"] = "false"
+        os.environ.pop("TEST_AUTH_BYPASS", None)
+        os.environ.pop("TESTING", None)
+        # prod requires HTTPS redirect URLs (Render sets real ones)
+        os.environ["FRONTEND_URL"] = "https://example.invalid"
+        os.environ["ALLOWED_REDIRECT_URLS"] = '["https://example.invalid"]'
+        import app.main
+        assert app.main.app is not None
+        """
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        cwd=str(Path(__file__).resolve().parents[2]),
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    assert result.returncode == 0, (
+        f"app.main failed to import with ENV=prod (Render's boot path):\n"
+        f"{result.stderr[-2000:]}"
+    )
+
+
 # ---------------------------------------------------------------------------
 # Polyglot AST — grammars present AND tree-sitter API compatible
 # ---------------------------------------------------------------------------
