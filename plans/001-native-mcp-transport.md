@@ -1,5 +1,5 @@
 ---
-status: needs-review
+status: done
 created: 2026-07-18
 milestone: M1-real-mcp
 branch: feat/plan-001-native-mcp
@@ -248,4 +248,26 @@ No modifications to `router.py`, `service.py`, `context_service.py`, or
 
 ## Review
 
-(appended by reviewer)
+**Verdict: PASS** — `status: done`
+
+Reviewer independently re-ran all four verification commands (not trusting the log):
+- `python -m pytest tests/modules/mcp -q` → 17 passed (includes handshake, tools/list, retrieve_context call).
+- `python -m pytest tests/smoke -q` → 11 passed (includes the `/mcp` mount + no-torch assertion).
+- `ruff check app --select E9` → all checks passed.
+- `python scripts/check_module_isolation.py` → 11/11 modules, 0 violations, 0 circular deps.
+
+Acceptance criteria, each verified against the diff:
+1. `mcp>=1.9,<2` present in `requirements-base.txt`; installed mcp 1.28.1 confirmed torch-free (`any('torch' in sys.modules)` == False). ✓
+2. Real SDK streamable-HTTP client completes initialize → tools/list; tool set contains all five named tools (test asserts `expected <= names`). ✓
+3. Served at exactly `/mcp` — `FastMCP(streamable_http_path="/")` mounted at `/mcp`; the native test connects to `.../mcp` and initializes, and smoke asserts a route with path `/mcp`. No `/mcp/mcp`. ✓
+4. Auth unchanged — `excluded_paths` not modified (only referenced in a comment); no bypass added. ✓
+5. REST endpoints untouched — diff touches none of `router.py`, `service.py`, `context_service.py`, `context_schema.py`. ✓
+6. No new cross-module internal imports outside `tools.py` — `native_server.py` imports only `.tools`, `.context_*`, and `...shared.*`; isolation gate green. ✓
+
+Scope: diff is exactly the 8 files the plan names; no out-of-scope changes. Wrapper delegation (`handler(arguments, context={})`) matches the real handler signatures; `retrieve_context` mirrors the REST construction and uses `model_dump()` (schema is pydantic v2). Prod boot path (`app.main` → `create_app()`) receives the mount + `session_manager.run()` in the real `lifespan`, with fail-loud on prod mount failure — correct.
+
+Non-blocking nits (do not block merge; a follow-up plan can address):
+1. Transitive `starlette`/`sse-starlette` are unpinned. The executor's "Deviation 1" (starlette 1.3.1 breaking fastapi 0.115.6) was an artifact of an incremental install into a venv with fastapi already pinned. A clean resolve (`pip install --dry-run "fastapi>=0.104.0" "mcp>=1.9,<2"`) instead selects starlette 0.47.3 + a newer fastapi and is internally consistent — so a fresh Render build resolves fine. Note this also means fresh installs float fastapi past the 0.115.6 currently in the dev venv; that unpinned-fastapi behavior predates this plan (`requirements-base.txt` already had `fastapi>=0.104.0`). Recommend a follow-up to pin fastapi + starlette for reproducible cloud builds — not attributable to this diff.
+2. Reviewer did not independently re-run the full ~700-test suite; the executor's baseline-comparison analysis (failures pre-existing, cascade originating in `tests/integration/test_phase20_e2e_workflows.py` which sorts before any MCP code) is consistent with the targeted MCP/smoke suites being green and this diff touching no shared fixtures.
+
+One-line reason: real MCP server mounts at exactly `/mcp` with auth intact, all five tools reachable by a real SDK client, no torch leak, isolation clean — every acceptance criterion independently verified green.
