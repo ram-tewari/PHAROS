@@ -17,6 +17,9 @@ asyncpg>=0.29.0  # Async PostgreSQL support
 # HTTP Client
 httpx>=0.25.0
 
+# Real MCP (Model Context Protocol) server — streamable-HTTP transport
+mcp>=1.9,<2
+
 # Authentication
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4

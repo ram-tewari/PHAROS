@@ -138,11 +138,18 @@ def test_cloud_mode_does_not_import_torch():
         os.environ["MODE"] = "CLOUD"
         os.environ.pop("TESTING", None)
         from app import create_app
-        create_app()
+        app = create_app()
         heavy = [m for m in ("torch", "transformers", "sentence_transformers")
                  if m in sys.modules]
         print("HEAVY=" + ",".join(heavy))
-        sys.exit(1 if heavy else 0)
+        # The native MCP server (real MCP protocol, mcp>=1.9,<2) must be
+        # mounted at exactly "/mcp" without dragging torch into the CLOUD
+        # boot path — the SDK depends only on httpx/anyio/pydantic/starlette.
+        mcp_mounted = any(
+            getattr(route, "path", None) == "/mcp" for route in app.routes
+        )
+        print("MCP_MOUNTED=" + str(mcp_mounted))
+        sys.exit(1 if (heavy or not mcp_mounted) else 0)
         """
     )
     result = subprocess.run(
@@ -153,9 +160,14 @@ def test_cloud_mode_does_not_import_torch():
         timeout=120,
     )
     assert result.returncode == 0, (
-        "CLOUD mode imported the ML stack at load time: "
-        + [ln for ln in result.stdout.splitlines() if ln.startswith("HEAVY=")][-1:]
-        .__repr__()
+        "CLOUD mode imported the ML stack at load time, or /mcp was not "
+        "mounted: "
+        + [
+            ln
+            for ln in result.stdout.splitlines()
+            if ln.startswith("HEAVY=") or ln.startswith("MCP_MOUNTED=")
+        ].__repr__()
+        + f"\nstderr tail: {result.stderr[-1000:]}"
     )
 
 

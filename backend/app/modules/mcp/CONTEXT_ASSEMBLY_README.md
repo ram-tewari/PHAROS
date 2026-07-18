@@ -562,6 +562,32 @@ logger.info(
 
 ---
 
+## Connecting a real MCP client
+
+Since the M1 milestone (native MCP transport), Pharos also serves a real
+[Model Context Protocol](https://modelcontextprotocol.io) server — using the
+official `mcp` Python SDK, streamable-HTTP transport — at `/mcp`, in addition
+to the REST-shaped `/api/v1/mcp/...` endpoints documented above. This lets an
+MCP-native client (Claude Code, Cursor, ...) connect to Pharos directly and
+call `retrieve_context`, `search_resources`, `get_hover_info`,
+`compute_graph_metrics`, and `detect_communities` as real MCP tools.
+
+`/mcp` sits behind the same auth middleware as everything else — it is
+**not** in `excluded_paths` — so the client must send the admin bearer token
+on every request.
+
+```bash
+claude mcp add --transport http pharos \
+  https://pharos-cloud-api.onrender.com/mcp \
+  --header "Authorization: Bearer <PHAROS_ADMIN_TOKEN>"
+```
+
+Replace `<PHAROS_ADMIN_TOKEN>` with the real token from your environment —
+never commit an actual token. (`render.yaml`'s `name` field is stale; the
+real cloud API host is `pharos-cloud-api.onrender.com`.)
+
+See `app/modules/mcp/native_server.py` for the server implementation.
+
 ## Related Documentation
 
 - [Pharos + Ronin Vision](../../../../PHAROS_RONIN_VISION.md)

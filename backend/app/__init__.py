@@ -230,9 +230,16 @@ async def lifespan(app: FastAPI):
     - Initialize Redis cache connection
     - Log event system initialization
 
+    The native MCP server is mounted as a sub-app (see create_app below) and
+    does NOT receive this lifespan automatically — its session manager must
+    be run explicitly for the streamable-HTTP transport to work, or every
+    request to /mcp 500s.
+
     Shutdown:
     - Clean up resources if needed
     """
+    from .modules.mcp import mcp_native
+
     # Startup
     logger.info("Starting Neo Alexandria 2.0...")
 
@@ -328,7 +335,8 @@ async def lifespan(app: FastAPI):
 
     logger.info("Neo Alexandria 2.0 startup complete")
 
-    yield
+    async with mcp_native.session_manager.run():
+        yield
 
     # Shutdown
     logger.info("Shutting down Neo Alexandria 2.0...")
@@ -359,8 +367,20 @@ def create_app() -> FastAPI:
         init_database(settings.get_database_url(), settings.ENV)
         app = FastAPI(title="Neo Alexandria 2.0", version="0.4.0", lifespan=lifespan)
     else:
-        # Test mode: create app without lifespan to avoid blocking
-        app = FastAPI(title="Neo Alexandria 2.0", version="0.4.0")
+        # Test mode: skip the heavy startup path, but the native MCP server's
+        # session manager still must run for the whole app lifetime, or every
+        # request to the mounted /mcp sub-app 500s (mounted sub-apps do not
+        # receive the parent app's lifespan automatically).
+        @asynccontextmanager
+        async def _test_mode_lifespan(app: FastAPI):
+            from .modules.mcp import mcp_native
+
+            async with mcp_native.session_manager.run():
+                yield
+
+        app = FastAPI(
+            title="Neo Alexandria 2.0", version="0.4.0", lifespan=_test_mode_lifespan
+        )
 
     # Add CORS middleware to allow frontend connections
     settings = get_settings() if not is_test_mode else None
@@ -586,6 +606,24 @@ def create_app() -> FastAPI:
     # This must happen before processing requests to ensure event handlers are registered
     logger.info("Registering modular vertical slices...")
     register_all_modules(app)
+
+    # Mount the native MCP server (real MCP protocol, streamable-HTTP
+    # transport) at exactly "/mcp". native_server.py builds FastMCP with
+    # streamable_http_path="/", so mounting its app at "/mcp" here serves at
+    # "/mcp" and NOT "/mcp/mcp". Auth middleware still applies — "/mcp" is
+    # not in excluded_paths, so MCP clients must send the bearer token.
+    try:
+        from .modules.mcp.native_server import get_streamable_http_app
+
+        app.mount("/mcp", get_streamable_http_app())
+        logger.info("✓ Mounted native MCP server at /mcp")
+    except Exception as e:
+        logger.error(f"✗ Failed to mount native MCP server: {e}", exc_info=True)
+        settings_for_mcp = get_settings() if not is_test_mode else None
+        if settings_for_mcp and settings_for_mcp.ENV == "prod":
+            raise RuntimeError(
+                f"Refusing to start: native MCP server failed to mount: {e}"
+            )
 
     # Set up performance monitoring
     if not is_test_mode:
