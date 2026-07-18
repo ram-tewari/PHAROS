@@ -48,7 +48,16 @@ jobs:
         run: ruff check app --output-format concise
 
       - name: Smoke suite (auth, cloud-boot, polyglot AST)
-        run: pytest tests/smoke -q
+        # On failure, surface the tail of the output as a workflow annotation
+        # so the failure is diagnosable from the public API.
+        run: |
+          set +e
+          pytest tests/smoke -q --tb=long 2>&1 | tee smoke.out
+          code=${PIPESTATUS[0]}
+          if [ "$code" -ne 0 ]; then
+            tail -c 2000 smoke.out | while IFS= read -r line; do echo "::error::$line"; done
+          fi
+          exit "$code"
 
   module-isolation:
     name: Module isolation
