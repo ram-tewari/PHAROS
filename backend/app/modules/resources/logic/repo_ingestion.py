@@ -11,7 +11,7 @@ import pathspec
 import git
 
 from app.database.models import Resource
-from app.modules.resources.logic.classification import classify_file
+from app.shared.classification import classify_file
 from app.utils.path_exclusions import has_excluded_ancestor, is_excluded_file
 
 

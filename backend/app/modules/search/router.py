@@ -908,7 +908,7 @@ async def advanced_search_endpoint(
         code_metrics = None
         if payload.include_code and results:
             from ...database.models import DocumentChunk
-            from ...modules.github.code_resolver import resolve_code_for_chunks
+            from ...shared.code_resolution import resolve_code_for_chunks
 
             all_chunks: list = []
             seen_ids: set[str] = set()

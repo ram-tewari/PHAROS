@@ -198,23 +198,19 @@ class Resource(Base):
 
     search_vector: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    # Scholarly Metadata Fields
+    # Scholarly metadata — the surviving core used by pdf_ingestion and
+    # graph/discovery. The wider Neo Alexandria scholarly/quality/OCR
+    # column set was dropped in migration f3a1b2c4d5e6 (Phase 3 column surgery).
     authors: Mapped[str | None] = mapped_column(Text, nullable=True)
     affiliations: Mapped[str | None] = mapped_column(Text, nullable=True)
     doi: Mapped[str | None] = mapped_column(String(255), nullable=True, index=True)
     pmid: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
     arxiv_id: Mapped[str | None] = mapped_column(String(50), nullable=True, index=True)
-    isbn: Mapped[str | None] = mapped_column(String(20), nullable=True)
     journal: Mapped[str | None] = mapped_column(String, nullable=True)
-    conference: Mapped[str | None] = mapped_column(String, nullable=True)
-    volume: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    issue: Mapped[str | None] = mapped_column(String(50), nullable=True)
-    pages: Mapped[str | None] = mapped_column(String(50), nullable=True)
     publication_year: Mapped[int | None] = mapped_column(
         Integer, nullable=True, index=True
     )
     funding_sources: Mapped[str | None] = mapped_column(Text, nullable=True)
-    acknowledgments: Mapped[str | None] = mapped_column(Text, nullable=True)
     equation_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
@@ -224,50 +220,8 @@ class Resource(Base):
     figure_count: Mapped[int] = mapped_column(
         Integer, nullable=False, default=0, server_default="0"
     )
-    reference_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
-    equations: Mapped[str | None] = mapped_column(Text, nullable=True)
-    tables: Mapped[str | None] = mapped_column(Text, nullable=True)
-    figures: Mapped[str | None] = mapped_column(Text, nullable=True)
-    metadata_completeness_score: Mapped[float | None] = mapped_column(
-        Float, nullable=True
-    )
-    extraction_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
-    requires_manual_review: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false"
-    )
 
-    quality_accuracy: Mapped[float | None] = mapped_column(Float, nullable=True)
-    quality_completeness: Mapped[float | None] = mapped_column(Float, nullable=True)
-    quality_consistency: Mapped[float | None] = mapped_column(Float, nullable=True)
-    quality_timeliness: Mapped[float | None] = mapped_column(Float, nullable=True)
-    quality_relevance: Mapped[float | None] = mapped_column(Float, nullable=True)
     quality_overall: Mapped[float | None] = mapped_column(Float, nullable=True)
-    quality_weights: Mapped[str | None] = mapped_column(Text, nullable=True)
-    quality_last_computed: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    quality_computation_version: Mapped[str | None] = mapped_column(
-        String(50), nullable=True
-    )
-    is_quality_outlier: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false"
-    )
-    outlier_score: Mapped[float | None] = mapped_column(Float, nullable=True)
-    outlier_reasons: Mapped[str | None] = mapped_column(Text, nullable=True)
-    needs_quality_review: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false"
-    )
-    summary_coherence: Mapped[float | None] = mapped_column(Float, nullable=True)
-    summary_consistency: Mapped[float | None] = mapped_column(Float, nullable=True)
-    summary_fluency: Mapped[float | None] = mapped_column(Float, nullable=True)
-    summary_relevance: Mapped[float | None] = mapped_column(Float, nullable=True)
-
-    # OCR Metadata
-    is_ocr_processed: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default="false"
-    )
-    ocr_confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
-    ocr_corrections_applied: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     # Optimistic concurrency control
     version: Mapped[int] = mapped_column(

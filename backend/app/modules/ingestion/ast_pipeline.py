@@ -60,7 +60,7 @@ import pathspec
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database.models import DocumentChunk, Resource
-from app.modules.resources.logic.classification import classify_file
+from app.shared.classification import classify_file
 from app.utils.path_exclusions import has_excluded_ancestor, is_excluded_file
 
 logger = logging.getLogger(__name__)
@@ -449,7 +449,7 @@ class HybridIngestionPipeline:
         
         # Mark old resources as stale and new ones as fresh
         if result.resource_ids:
-            from app.modules.resources.logic.staleness import (
+            from app.shared.staleness import (
                 mark_repo_stale_by_sha,
                 mark_resources_fresh,
             )

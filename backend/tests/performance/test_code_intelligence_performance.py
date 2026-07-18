@@ -472,7 +472,7 @@ class TestCachingPerformance:
 
         Cached classification rules should improve performance for repeated classifications.
         """
-        from app.modules.resources.logic.classification import classify_file
+        from app.shared.classification import classify_file
 
         # Create test file paths
         test_files = [

@@ -12,7 +12,7 @@ import asyncio
 from pathlib import Path
 from hypothesis import given, strategies as st, settings, HealthCheck
 
-from app.modules.resources.logic.classification import classify_file
+from app.shared.classification import classify_file
 
 
 # ============================================================================

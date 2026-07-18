@@ -1,9 +1,7 @@
 name: CI
 
-# Lean, actually-runnable CI. Gates on the things that are green today:
-# syntax errors, a torch-free cloud boot, and the smoke suite. Module
-# isolation runs as a visible (non-blocking) report until its 6 known
-# violations are cleared, at which point flip continue-on-error to false.
+# Lean, actually-runnable CI. Gates on syntax errors, a torch-free cloud
+# boot, the smoke suite, and module isolation (hard gate since Phase 3).
 
 on:
   push:
@@ -53,7 +51,7 @@ jobs:
         run: pytest tests/smoke -q
 
   module-isolation:
-    name: Module isolation (report-only)
+    name: Module isolation
     runs-on: ubuntu-latest
     env:
       PYTHONIOENCODING: utf-8
@@ -66,8 +64,5 @@ jobs:
           python-version: '3.13'
 
       - name: Check module isolation
-        # TODO: flip to a hard gate (remove continue-on-error) once the 6 known
-        # cross-module imports are moved onto the event bus:
-        #   ingestion->resources, resources->authority, search->github
-        continue-on-error: true
+        # Hard gate since Phase 3: zero cross-module imports allowed.
         run: python scripts/check_module_isolation.py --verbose
