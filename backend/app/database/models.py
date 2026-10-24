@@ -41,10 +41,12 @@ from sqlalchemy import (
     ForeignKey,
     Index,
     Boolean,
+    text,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, backref
 
 from ..shared.base_model import Base, GUID
+from ..shared.vector_type import EMBEDDING_DIM, EmbeddingVector
 
 # ============================================================================
 # Enums
@@ -98,7 +100,29 @@ class Repository(Base):
     # Statistics
     total_files: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_lines: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    
+
+    # ── Code-index state (see app/codeintel/indexer.py) ────────────────────
+    # "github" | "git" (any other https remote) | "local" (path on the
+    # worker's filesystem; only registrable from the CLI, never the API).
+    source_type: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="git", server_default="git"
+    )
+    # Branch being tracked; NULL means the remote's default branch.
+    branch: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    last_commit_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    last_indexed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    # never_indexed | indexing | ready | failed
+    index_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="never_indexed",
+        server_default="never_indexed",
+    )
+    # Absolute checkout path for source_type="local". Never returned by the API.
+    local_path: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Statistics from the most recent successful index run.
+    stats: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
@@ -181,10 +205,10 @@ class Resource(Base):
         DateTime(timezone=True), nullable=True
     )
 
-    # Vector embedding for hybrid search
-    # Use Text to avoid JSON casting issues with NULL in PostgreSQL
+    # File-level embedding: vector(768) on PostgreSQL (HNSW-indexed), JSON
+    # text on SQLite. Code files store the mean of their chunk embeddings.
     embedding: Mapped[List[float] | None] = mapped_column(
-        Text,
+        EmbeddingVector(EMBEDDING_DIM),
         nullable=True,
     )
 
@@ -232,6 +256,18 @@ class Resource(Base):
     # no longer matches the upstream HEAD for `source` (git_url).
     # Search/retrieval should filter on this so Ronin doesn't serve
     # confidently-wrong answers about deleted or moved code.
+    # Code files: owning repository and the git blob SHA of the indexed
+    # content (drives incremental re-indexing).
+    repository_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(),
+        ForeignKey(
+            "repositories.id", ondelete="CASCADE", name="fk_resources_repository_id"
+        ),
+        nullable=True,
+        index=True,
+    )
+    content_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     is_stale: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=False, server_default="false", index=True
     )
@@ -264,6 +300,12 @@ class Resource(Base):
 
     __table_args__ = (
         Index("idx_resources_sparse_updated", "sparse_embedding_updated_at"),
+        Index(
+            "idx_resources_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ).ddl_if(dialect="postgresql"),
     )
 
     def __repr__(self) -> str:
@@ -345,6 +387,35 @@ class DocumentChunk(Base):
     # Stored so the embedding can be re-generated without re-fetching GitHub.
     semantic_summary: Mapped[str | None] = mapped_column(Text, nullable=True)
 
+    # Chunk-level embedding of semantic_summary (pgvector on PostgreSQL).
+    embedding: Mapped[List[float] | None] = mapped_column(
+        EmbeddingVector(EMBEDDING_DIM), nullable=True
+    )
+    # Which embedder produced `embedding` (e.g. "hash-v1",
+    # "nomic-ai/nomic-embed-text-v1"). Dense search only compares vectors
+    # from the same model as the query.
+    embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+
+    # ── Code-index fields ──────────────────────────────────────────────────
+    repository_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(),
+        ForeignKey(
+            "repositories.id",
+            ondelete="CASCADE",
+            name="fk_document_chunks_repository_id",
+        ),
+        nullable=True,
+        index=True,
+    )
+    language: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # How the chunk was produced: "python-ast" | "tree-sitter" |
+    # "line-fallback". Fallback chunks are never reported as AST output.
+    parser: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # Lower-cased, identifier-split tokens for full-text search (path,
+    # symbol, signature, docstring, referenced identifiers). Derived
+    # metadata, not source code.
+    search_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+
     # Audit fields
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
@@ -360,6 +431,20 @@ class DocumentChunk(Base):
     __table_args__ = (
         Index("idx_chunk_resource", "resource_id"),
         Index("idx_chunk_resource_index", "resource_id", "chunk_index"),
+        Index("idx_chunk_repo_symbol", "repository_id", "symbol_name"),
+        Index(
+            "idx_chunks_embedding_hnsw",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ).ddl_if(dialect="postgresql"),
+        # Full-text index; app/codeintel/retrieval.py must use the identical
+        # expression (CHUNK_TSVECTOR_SQL) for PostgreSQL to use it.
+        Index(
+            "idx_chunks_search_text_fts",
+            text("to_tsvector('simple', coalesce(search_text, ''))"),
+            postgresql_using="gin",
+        ).ddl_if(dialect="postgresql"),
     )
 
     def __repr__(self) -> str:
@@ -1170,3 +1255,131 @@ __all__ = [
     "RuleStatus",
     "ProposedRule",
 ]
+
+
+# ============================================================================
+# Code-intelligence tables (app/codeintel)
+# ============================================================================
+
+
+class CodeEdge(Base):
+    """Structural relationship between two code chunks of one repository.
+
+    edge_type:
+      * ``calls``    — source body calls ``target_name``
+      * ``imports``  — source file imports the module behind ``target_name``
+      * ``contains`` — source class contains target method
+
+    resolution records how ``target_chunk_id`` was chosen: ``same_file``,
+    ``imported_file``, ``unique_name`` or ``unresolved`` (target_chunk_id is
+    NULL). Ambiguous names are left unresolved rather than guessed.
+    """
+
+    __tablename__ = "code_edges"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="CASCADE"), nullable=False
+    )
+    source_chunk_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("document_chunks.id", ondelete="CASCADE"), nullable=False
+    )
+    target_chunk_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("document_chunks.id", ondelete="CASCADE"), nullable=True
+    )
+    target_name: Mapped[str] = mapped_column(String(512), nullable=False)
+    edge_type: Mapped[str] = mapped_column(String(16), nullable=False)
+    resolution: Mapped[str] = mapped_column(String(16), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+
+    __table_args__ = (
+        Index("idx_code_edges_repo", "repository_id"),
+        Index("idx_code_edges_source", "source_chunk_id"),
+        Index("idx_code_edges_target", "target_chunk_id"),
+    )
+
+
+class IngestionJob(Base):
+    """Durable repository-ingestion job.
+
+    The database row is the source of truth for job state; Redis (when
+    configured) only carries wake-up notifications, so a lost or duplicated
+    notification can never lose or double-run a job. Transitions::
+
+        queued -> running -> succeeded
+                          -> failed            (non-retryable, or attempts exhausted)
+                          -> queued            (retryable error / stale heartbeat)
+        queued -> cancelled
+    """
+
+    __tablename__ = "ingestion_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID | None] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="SET NULL"), nullable=True
+    )
+    repo_url: Mapped[str] = mapped_column(String(2048), nullable=False)
+    # "" when tracking the default branch (keeps the uniqueness index simple).
+    branch_key: Mapped[str] = mapped_column(
+        String(255), nullable=False, default="", server_default=""
+    )
+    force: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="false"
+    )
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_kind: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    commit_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    stats: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    worker_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    # Earliest time a queued job may be claimed (retry backoff); NULL = now.
+    available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("idx_ingestion_jobs_status_created", "status", "created_at"),
+        # At most one active job per repository: duplicate submissions return
+        # the existing job instead of queueing a second clone, and two
+        # branches can never race on the same repository row.
+        Index(
+            "uq_ingestion_jobs_active",
+            "repo_url",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running')"),
+            sqlite_where=text("status IN ('queued', 'running')"),
+        ),
+    )
+
+
+# ============================================================================
+# MCP (legacy REST tool sessions, /api/v1/mcp/sessions)
+# ============================================================================
+
+
+class MCPSession(Base):
+    """Session record for the legacy REST MCP tool-invocation endpoints."""
+
+    __tablename__ = "mcp_sessions"
+
+    id: Mapped[str] = mapped_column(String, primary_key=True)
+    user_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    context: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
+    tool_invocations: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    status: Mapped[str] = mapped_column(String, nullable=False, default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    last_activity: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+    __table_args__ = (
+        Index("idx_mcp_user", "user_id"),
+        Index("idx_mcp_status", "status"),
+        Index("idx_mcp_activity", "last_activity"),
+    )

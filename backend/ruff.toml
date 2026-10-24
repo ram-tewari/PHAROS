@@ -1,0 +1,15 @@
+# Ruff configuration (pinned rule set; ruff >= 0.15 changed its defaults).
+#
+# The whole tree is held to the classic pyflakes/pycodestyle errors. Newer
+# code paths are additionally checked with the stricter rule set in
+# `make lint` / CI (see Makefile: RUFF_STRICT_PATHS).
+target-version = "py311"
+line-length = 120
+extend-exclude = ["alembic/archive"]
+
+[lint]
+select = ["E4", "E7", "E9", "F"]
+
+[lint.flake8-bugbear]
+# FastAPI dependency injection idiom.
+extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Body", "fastapi.Header", "fastapi.Security"]

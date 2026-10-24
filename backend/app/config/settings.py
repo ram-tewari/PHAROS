@@ -24,6 +24,9 @@ from pydantic import SecretStr, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
 
 
+_SQLITE_DEFAULT_URL = "sqlite:///./backend.db"
+
+
 class Settings(BaseSettings):
     """
     Application settings using Pydantic Settings for configuration management.
@@ -32,7 +35,7 @@ class Settings(BaseSettings):
     sensible defaults for development and production environments.
     """
 
-    DATABASE_URL: str = "sqlite:///./backend.db"
+    DATABASE_URL: str = _SQLITE_DEFAULT_URL
     TEST_DATABASE_URL: str | None = None  # Optional test database URL
     ENV: Literal["dev", "staging", "prod"] = "dev"
 
@@ -395,8 +398,45 @@ class Settings(BaseSettings):
     QDRANT_URL: str | None = None
     QDRANT_API_KEY: SecretStr | None = None
 
-    # API Authentication
-    PHAROS_ADMIN_TOKEN: SecretStr | None = None  # Bearer token for /ingest endpoint
+    # API Authentication (machine-to-machine bearer tokens; see SECURITY.md)
+    # Full access: ingestion, admin, everything.
+    PHAROS_ADMIN_TOKEN: SecretStr | None = None
+    # Optional read-only token for assistants: search, context, repository
+    # listing, MCP. Cannot trigger ingestion or admin operations.
+    PHAROS_READ_TOKEN: SecretStr | None = None
+
+    # Host headers the native MCP endpoint accepts (DNS-rebinding protection
+    # stays on). Localhost is always allowed; add your public hostname, e.g.
+    # ["pharos-cloud-api.onrender.com"], or MCP requests get HTTP 421.
+    MCP_ALLOWED_HOSTS: list[str] = []
+
+    # ── Embeddings (app/codeintel/embeddings.py) ───────────────────────────
+    # auto | none | hash | sentence-transformers | http | onnx
+    # auto = http in CLOUD mode when EDGE_EMBEDDING_URL is set, else none;
+    #        sentence-transformers in EDGE mode.
+    EMBEDDING_BACKEND: str = "auto"
+    EDGE_EMBEDDING_URL: str | None = None
+    # Bearer token the edge embed server requires (strongly recommended when
+    # the server is exposed through Tailscale Funnel or any public URL).
+    EDGE_EMBED_TOKEN: SecretStr | None = None
+    EMBEDDING_ONNX_DIR: str | None = None
+    EMBEDDING_MODEL_ID: str | None = None
+
+    # ── Code ingestion limits & safety (app/codeintel) ─────────────────────
+    # Remote hosts the API may ask the worker to clone from (https only).
+    CODEINTEL_ALLOWED_GIT_HOSTS: list[str] = ["github.com", "gitlab.com", "bitbucket.org"]
+    CODEINTEL_MAX_FILE_BYTES: int = 1_000_000
+    CODEINTEL_MAX_FILES: int = 20_000
+    CODEINTEL_CLONE_TIMEOUT_SECONDS: int = 600
+    # Token used for cloning private repositories on allowed hosts (sent as
+    # an HTTP header via git config, never placed in URLs or logs).
+    GIT_CLONE_TOKEN: SecretStr | None = None
+    # Ingestion jobs whose heartbeat is older than this are re-queued.
+    INGESTION_JOB_STALE_SECONDS: int = 900
+    # Redis key carrying job-id wake-up notifications (state lives in Postgres).
+    # Defaults to the queue main_worker.py already BLPOPs, so the edge worker
+    # picks up jobs without an extra Redis poll (Upstash quota).
+    INGESTION_NOTIFY_KEY: str = "ingest_queue"
 
     # Task Queue Configuration
     QUEUE_SIZE: int = Field(default=10, alias="MAX_QUEUE_SIZE")  # Maximum pending tasks
@@ -467,29 +507,26 @@ class Settings(BaseSettings):
 
     def get_database_url(self) -> str:
         """
-        Construct database URL based on configuration.
+        Return the configured database URL.
 
-        Returns SQLite URL if DATABASE_URL is set to SQLite,
-        otherwise constructs PostgreSQL async URL using asyncpg driver.
-        Handles special characters in passwords via URL encoding.
+        ``DATABASE_URL`` always wins when it is set (this is how Neon, Docker
+        Compose and CI provide the database). Only when it is left at the
+        SQLite default *and* ``POSTGRES_PASSWORD`` is set do we assemble a
+        URL from the individual ``POSTGRES_*`` settings. Driver selection
+        happens later, in ``app.shared.db_url.normalize_database_url``.
 
-        Returns:
-            str: Database connection URL (SQLite or PostgreSQL)
-
-        Examples:
-            SQLite: sqlite:///./backend.db
-            PostgreSQL: postgresql+asyncpg://user:pass@host:5432/db
+        (Previously any PostgreSQL ``DATABASE_URL`` was silently replaced by
+        one built from ``POSTGRES_*`` defaults, i.e. ``localhost`` — so
+        Alembic never connected to the database it was pointed at.)
         """
         from urllib.parse import quote
 
-        if "sqlite" in self.DATABASE_URL.lower():
+        if self.DATABASE_URL != _SQLITE_DEFAULT_URL or not self.POSTGRES_PASSWORD:
             return self.DATABASE_URL
 
-        # URL-encode special characters in password
-        encoded_password = quote(self.POSTGRES_PASSWORD or "", safe="")
-
+        encoded_password = quote(self.POSTGRES_PASSWORD, safe="")
         return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:"
+            f"postgresql://{self.POSTGRES_USER}:"
             f"{encoded_password}@{self.POSTGRES_SERVER}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
@@ -570,33 +607,7 @@ def get_settings() -> Settings:
             f"got {settings.RATE_LIMIT_ADMIN_TIER}. Expected type: int (>= 0)"
         )
 
-    # Validate PostgreSQL configuration when using PostgreSQL
-    if "postgresql" in settings.DATABASE_URL.lower():
-        if not settings.POSTGRES_SERVER:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_SERVER must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if not settings.POSTGRES_USER:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_USER must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if not settings.POSTGRES_PASSWORD:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_PASSWORD must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if not settings.POSTGRES_DB:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_DB must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if settings.POSTGRES_PORT <= 0 or settings.POSTGRES_PORT > 65535:
-            raise ValueError(
-                f"Configuration validation failed: POSTGRES_PORT must be between 1 and 65535, "
-                f"got {settings.POSTGRES_PORT}. Expected type: int (1-65535)"
-            )
+    # A PostgreSQL DATABASE_URL is self-contained; no POSTGRES_* checks needed.
 
     # Validate Redis configuration
     if settings.REDIS_PORT <= 0 or settings.REDIS_PORT > 65535:
