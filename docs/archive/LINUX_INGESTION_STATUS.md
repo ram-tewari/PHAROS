@@ -101,7 +101,7 @@ For Linux kernel (70,000+ C/C++ files):
 
 **Check Worker Status:**
 ```powershell
-$headers = @{ "Authorization" = "Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" }
+$headers = @{ "Authorization" = "Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" }
 Invoke-WebRequest -Uri "https://pharos-cloud-api.onrender.com/api/v1/ingestion/worker/status" -Headers $headers | Select-Object -ExpandProperty Content
 ```
 

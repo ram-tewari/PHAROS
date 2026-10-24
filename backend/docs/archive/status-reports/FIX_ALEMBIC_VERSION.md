@@ -76,7 +76,7 @@ If you have `psql` installed locally:
 
 ```bash
 # Connect to NeonDB
-psql "postgresql://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
+psql "postgresql://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require"
 
 # Run the fix
 ALTER TABLE alembic_version ALTER COLUMN version_num TYPE VARCHAR(64);

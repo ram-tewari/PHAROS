@@ -49,7 +49,7 @@ REDIS_URL=rediss://default:YOUR_PASSWORD@living-sculpin-96916.upstash.io:6379
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
 
 # ✅ CORRECT - REST API token (for task queue)
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 ```
 
 **Note**: You have the REST API URL and token correct. You just need to fix the `REDIS_URL`.
@@ -91,7 +91,7 @@ The correct Redis URL should:
 
 Example format:
 ```
-rediss://default:AbCdEf123456@living-sculpin-96916.upstash.io:6379
+rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379
 ```
 
 ---

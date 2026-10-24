@@ -9,7 +9,7 @@ Before implementing Phase 2.5, you need a valid authentication token to test aga
 A 30-day admin token has been generated for you:
 
 ```
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBuZW9hbGV4YW5kcmlhLmRldiIsImV4cCI6MTc3MTgxNzU4OSwidHlwZSI6ImFjY2VzcyIsInRpZXIiOiJhZG1pbiIsImlzX3ByZW1pdW0iOnRydWV9.xOlt0fzmShEQpB0ypY0rhe-0bU9qeIr13XxV1x3Fwt8
+<REDACTED-JWT>
 ```
 
 **To use this token:**
@@ -26,7 +26,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBuZW9hbGV4YW5kcmlhLmRldiI
 
 4. Paste this command:
    ```javascript
-   localStorage.setItem('access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkBuZW9hbGV4YW5kcmlhLmRldiIsImV4cCI6MTc3MTgxNzU4OSwidHlwZSI6ImFjY2VzcyIsInRpZXIiOiJhZG1pbiIsImlzX3ByZW1pdW0iOnRydWV9.xOlt0fzmShEQpB0ypY0rhe-0bU9qeIr13XxV1x3Fwt8');
+   localStorage.setItem('access_token', '<REDACTED-JWT>');
    localStorage.setItem('refresh_token', 'admin-refresh-token');
    ```
 

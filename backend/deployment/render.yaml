@@ -17,7 +17,7 @@ services:
       
       # Database (NeonDB PostgreSQL - Free Tier)
       - key: DATABASE_URL
-        value: postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+        value: postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
       
       # PostgreSQL Components (extracted from DATABASE_URL for validation)
       - key: POSTGRES_SERVER
@@ -25,7 +25,7 @@ services:
       - key: POSTGRES_USER
         value: neondb_owner
       - key: POSTGRES_PASSWORD
-        value: npg_2Lv8pxVJzgyd
+        value: <REDACTED-NEON_PASSWORD-rotate>
       - key: POSTGRES_DB
         value: neondb
       - key: POSTGRES_PORT
@@ -35,7 +35,7 @@ services:
       - key: UPSTASH_REDIS_REST_URL
         value: https://living-sculpin-96916.upstash.io
       - key: UPSTASH_REDIS_REST_TOKEN
-        value: gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
+        value: <REDACTED-UPSTASH_TOKEN-rotate>
       
       # Authentication (Generate secure token)
       - key: PHAROS_ADMIN_TOKEN

@@ -91,7 +91,7 @@ Invoke-WebRequest -Uri "https://pc.tailf7b210.ts.net/health" -UseBasicParsing
 ### Test Cloud API Search
 ```powershell
 $headers = @{
-    "Authorization" = "Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+    "Authorization" = "Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
     "Content-Type" = "application/json"
 }
 $body = @{

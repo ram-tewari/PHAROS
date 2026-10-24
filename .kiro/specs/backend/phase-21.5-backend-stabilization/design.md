@@ -321,7 +321,7 @@ def mock_settings():
     settings = Settings(
         ENV="test",
         DATABASE_URL="sqlite:///:memory:",
-        JWT_SECRET_KEY="test-secret-key-min-32-chars-long",
+        JWT_SECRET_KEY="<REDACTED-rotate>",
         JWT_ALGORITHM="HS256",
         JWT_ACCESS_TOKEN_EXPIRE_MINUTES=30,
         JWT_REFRESH_TOKEN_EXPIRE_DAYS=7,

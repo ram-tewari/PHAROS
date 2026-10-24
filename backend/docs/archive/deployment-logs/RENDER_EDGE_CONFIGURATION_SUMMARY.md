@@ -63,7 +63,7 @@ Add these environment variables:
 ```bash
 MODE=CLOUD  # CRITICAL: Queue tasks, don't load models
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 ```
 
 ### Local Edge Worker
@@ -73,8 +73,8 @@ Create `.env` file in `backend/` directory:
 ```bash
 MODE=EDGE  # CRITICAL: Load models locally
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
+DATABASE_URL=postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
 EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
 WORKER_POLL_INTERVAL=2
 ```

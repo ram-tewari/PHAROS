@@ -23,13 +23,13 @@ NOT: neondb_owner
 ### 2. POSTGRES_USER  
 ```
 Should be: neondb_owner
-NOT: npg_2Lv8pxVJzgyd
+NOT: <REDACTED-NEON_PASSWORD-rotate>
 NOT: ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech
 ```
 
 ### 3. POSTGRES_PASSWORD
 ```
-Should be: npg_2Lv8pxVJzgyd
+Should be: <REDACTED-NEON_PASSWORD-rotate>
 NOT: neondb_owner
 NOT: ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech
 ```
@@ -50,7 +50,7 @@ Click **Edit** on each wrong variable and fix it:
 ```
 POSTGRES_SERVER = ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech
 POSTGRES_USER = neondb_owner
-POSTGRES_PASSWORD = npg_2Lv8pxVJzgyd
+POSTGRES_PASSWORD = <REDACTED-NEON_PASSWORD-rotate>
 ```
 
 Then click **Save Changes** and wait for redeploy.
@@ -60,7 +60,7 @@ Then click **Save Changes** and wait for redeploy.
 The code uses `get_database_url()` which reconstructs the connection string:
 
 ```python
-f"postgresql+asyncpg://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
+f"postgresql+asyncpg://{POSTGRES_USER}:<REDACTED-rotate>@{POSTGRES_SERVER}:{POSTGRES_PORT}/{POSTGRES_DB}"
 ```
 
 If `POSTGRES_SERVER = neondb_owner` (wrong), it tries to connect to:
@@ -74,7 +74,7 @@ postgresql+asyncpg://???:???@neondb_owner:5432/???
 
 Should be:
 ```
-postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech:5432/neondb
+postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech:5432/neondb
                      └────┬─────┘ └─────┬──────┘ └──────────────────────┬──────────────────────┘      └─┬──┘
                         USER        PASSWORD                          SERVER                           DB
 ```

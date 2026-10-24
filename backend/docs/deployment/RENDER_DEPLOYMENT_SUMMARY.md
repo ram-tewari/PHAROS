@@ -114,7 +114,7 @@
 
 ### NeonDB (PostgreSQL)
 ```bash
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+DATABASE_URL=postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
 ```
 
 **Specs**:
@@ -126,7 +126,7 @@ DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-a
 ### Upstash (Redis)
 ```bash
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 ```
 
 **Specs**:

@@ -87,12 +87,12 @@ POST /api/search/advanced
 ```bash
 # Check current state
 curl "https://pharos-cloud-api.onrender.com/api/resources?limit=1" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
 # Shows: 3,302 resources with ingestion_status="pending"
 
 # Try search
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -H "Content-Type: application/json" \
   -d '{"query": "message translator", "strategy": "parent-child", "top_k": 5}'
 # Returns: No results (no chunks/embeddings)
@@ -486,7 +486,7 @@ python worker.py repo
 ```bash
 # Test with psf/requests (small repo, ~50 files)
 curl -X POST "https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/psf/requests" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
 ```
 
 ### Step 3: Monitor Both Workers
@@ -504,15 +504,15 @@ tail -f backend/edge_worker.log
 ```bash
 # Check resources created
 curl "https://pharos-cloud-api.onrender.com/api/resources?limit=5" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
 
 # Check chunks created
 curl "https://pharos-cloud-api.onrender.com/api/resources/{resource_id}/chunks" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
 
 # Test search
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -H "Content-Type: application/json" \
   -d '{"query": "http request", "strategy": "parent-child", "top_k": 5}'
 ```
@@ -532,7 +532,7 @@ curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
 
 ```bash
 curl -X POST "https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/langchain-ai/langchain?force_reingest=true" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
 ```
 
 ### Step 3: Monitor Progress
@@ -554,12 +554,12 @@ curl -X POST "$UPSTASH_REDIS_REST_URL" \
 
 # Check resources
 curl "https://pharos-cloud-api.onrender.com/api/resources?limit=1" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   | jq '.total'
 
 # Check ingestion status
 curl "https://pharos-cloud-api.onrender.com/api/resources?limit=10" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   | jq '.items[] | {title, ingestion_status}'
 ```
 
@@ -568,7 +568,7 @@ curl "https://pharos-cloud-api.onrender.com/api/resources?limit=10" \
 ```bash
 # Test semantic search
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "message translator",
@@ -581,7 +581,7 @@ curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
 
 # Test another query
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "openai chat completion",

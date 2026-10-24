@@ -201,11 +201,11 @@ LIMIT 10;
 
 ## Credentials
 
-**Admin Token**: `4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74`
+**Admin Token**: `<REDACTED-PHAROS_ADMIN_TOKEN-rotate>`
 
 **Usage**:
 ```bash
-export PHAROS_ADMIN_TOKEN='4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74'
+export PHAROS_ADMIN_TOKEN='<REDACTED-PHAROS_ADMIN_TOKEN-rotate>'
 curl -H "Authorization: Bearer $PHAROS_ADMIN_TOKEN" ...
 ```
 

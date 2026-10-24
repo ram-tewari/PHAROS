@@ -140,7 +140,7 @@ Expected: ingestion_status should change from "pending" to "completed"
 1. Check `.env.edge` file:
    ```
    UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-   UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
+   UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
    ```
 
 2. Restart edge worker:

@@ -94,7 +94,7 @@ Expected response:
 
 ## Next Steps After Success
 
-1. **Save your API token**: `PHAROS_ADMIN_TOKEN=4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74`
+1. **Save your API token**: `PHAROS_ADMIN_TOKEN=<REDACTED-PHAROS_ADMIN_TOKEN-rotate>`
 2. **Test API endpoints**: Visit `/docs` for interactive API documentation
 3. **Configure Ronin**: Use Pharos API URL and token
 4. **Set up keep-alive**: See `backend/docs/deployment/UPTIMEROBOT_SETUP.md` (optional)

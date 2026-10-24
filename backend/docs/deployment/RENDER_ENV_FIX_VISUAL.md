@@ -135,7 +135,7 @@ JWT_SECRET_KEY = (empty)  ← Missing
 ### ✅ AFTER (Correct)
 ```
 ENV = prod                                              ← Correct
-JWT_SECRET_KEY = a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6...  ← Secure
+JWT_SECRET_KEY = <REDACTED-rotate>  ← Secure
 ```
 
 ---

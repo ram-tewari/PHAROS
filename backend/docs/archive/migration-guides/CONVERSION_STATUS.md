@@ -59,7 +59,7 @@ column "entity_metadata" does not exist
 
 ```bash
 # Set DATABASE_URL to cloud database
-export DATABASE_URL="postgresql://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb"
+export DATABASE_URL="postgresql://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb"
 
 # Run migration
 cd backend

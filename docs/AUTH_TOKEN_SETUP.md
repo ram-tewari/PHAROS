@@ -15,7 +15,7 @@ A test user has been created with a 7-day access token.
 4. Paste this command and press Enter:
 
 ```javascript
-localStorage.setItem('access_token', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0QGV4YW1wbGUuY29tIiwiZXhwIjoxNzY4NDY3NDI4LCJ0eXBlIjoiYWNjZXNzIn0.pJgRA9KzwckELmz7o7Ja9KJSE7gQcpeBSoRy8_HFKug');
+localStorage.setItem('access_token', '<REDACTED-JWT>');
 localStorage.setItem('refresh_token', 'dummy-refresh-token');
 ```
 

@@ -44,7 +44,7 @@ Authorization: Bearer <PHAROS_ADMIN_TOKEN>
 
 ```bash
 # Required for heartbeat
-PHAROS_ADMIN_TOKEN=4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74
+PHAROS_ADMIN_TOKEN=<REDACTED-PHAROS_ADMIN_TOKEN-rotate>
 PHAROS_CLOUD_URL=https://pharos-cloud-api.onrender.com
 
 # Optional

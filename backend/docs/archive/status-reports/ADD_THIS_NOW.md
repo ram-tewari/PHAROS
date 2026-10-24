@@ -37,7 +37,7 @@ Value: neondb_owner
 ### 4. POSTGRES_PASSWORD
 ```
 Key: POSTGRES_PASSWORD
-Value: npg_2Lv8pxVJzgyd
+Value: <REDACTED-NEON_PASSWORD-rotate>
 ```
 
 ### 5. POSTGRES_DB

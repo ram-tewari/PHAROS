@@ -90,7 +90,7 @@ curl https://pc.tailf7b210.ts.net/health
 
 ```bash
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "xai chat models",

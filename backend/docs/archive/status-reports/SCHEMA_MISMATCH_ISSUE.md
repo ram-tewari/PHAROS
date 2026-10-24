@@ -160,7 +160,7 @@ If Alembic isn't set up, manually run SQL:
 
 ```sql
 -- Connect to NeonDB
-psql postgresql://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb
+psql postgresql://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb
 
 -- Add missing fields
 ALTER TABLE resources 

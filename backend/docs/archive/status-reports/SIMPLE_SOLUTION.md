@@ -21,13 +21,13 @@ https://dashboard.render.com → pharos-cloud-api → Environment
 **Variable 1: CELERY_BROKER_URL**
 ```
 Key: CELERY_BROKER_URL
-Value: rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379/0
+Value: rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379/0
 ```
 
 **Variable 2: CELERY_RESULT_BACKEND**
 ```
 Key: CELERY_RESULT_BACKEND
-Value: rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379/1
+Value: rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379/1
 ```
 
 ### 3. Save Changes

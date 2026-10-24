@@ -11,7 +11,7 @@ This document traces the ENTIRE automatic pipeline from calling the ingestion en
 ### Entry Point
 ```bash
 POST https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/langchain-ai/langchain
-Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74
+Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>
 ```
 
 ### Step-by-Step Flow
@@ -349,7 +349,7 @@ async def handle_chunk_embedded(event: Event):
 ### Entry Point
 ```bash
 POST https://pharos-cloud-api.onrender.com/api/resources/upload
-Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74
+Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>
 Content-Type: multipart/form-data
 
 file: <zip file of repository>
@@ -569,7 +569,7 @@ python worker.py edge
 
 # 2. Trigger ingestion
 curl -X POST "https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/langchain-ai/langchain?force_reingest=true" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74"
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>"
 
 # 3. Monitor edge worker logs
 # Should see:
@@ -579,7 +579,7 @@ curl -X POST "https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/gith
 
 # 4. Test search
 curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -H "Content-Type: application/json" \
   -d '{
     "query": "message translator",
@@ -602,7 +602,7 @@ zip -r ../test-repo.zip .
 
 # 2. Upload
 curl -X POST "https://pharos-cloud-api.onrender.com/api/resources/upload" \
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -F "file=@/tmp/test-repo.zip" \
   -F "title=Test Repo" \
   -F "type=code"
