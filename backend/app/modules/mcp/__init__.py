@@ -6,6 +6,6 @@ It exposes backend capabilities as MCP-compatible tools for frontend integration
 """
 
 from .router import router, mcp_router
-from .native_server import mcp_native
+from .native_server import build_mcp_server
 
-__all__ = ["router", "mcp_router", "mcp_native"]
+__all__ = ["router", "mcp_router", "build_mcp_server"]
