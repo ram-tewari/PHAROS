@@ -16,7 +16,7 @@ Backends (``EMBEDDING_BACKEND``):
     neural dense retrieval.
 ``sentence-transformers``
     Local model, default ``nomic-ai/nomic-embed-text-v1`` (the production
-    model). Needs ``requirements-ml.txt`` (torch). Uses CUDA when present.
+    model). Needs ``requirements-edge.txt`` (torch). Uses CUDA when present.
 ``http``
     POSTs to an embedding server (the edge worker's ``/embed`` endpoint,
     reached over Tailscale in production). Optional bearer token.
@@ -182,7 +182,7 @@ class SentenceTransformerEmbedder(_PrefixMixin, Embedder):
                 except ImportError as exc:
                     raise EmbeddingUnavailable(
                         "sentence-transformers is not installed "
-                        "(pip install -r requirements-ml.txt)"
+                        "(pip install -r requirements-edge.txt)"
                     ) from exc
                 device = self._device
                 if device is None:

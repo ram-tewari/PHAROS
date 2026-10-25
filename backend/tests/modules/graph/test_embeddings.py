@@ -18,7 +18,7 @@ from app.modules.graph.embeddings import GraphEmbeddingsService
 
 requires_gensim = pytest.mark.skipif(
     importlib.util.find_spec("gensim") is None,
-    reason="gensim (graph embeddings) is an optional extra: pip install -r requirements-ml.txt",
+    reason="gensim (graph embeddings) is an optional extra: pip install gensim",
 )
 
 class TestGraphEmbeddingsService:

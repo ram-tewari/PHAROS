@@ -223,27 +223,21 @@ async def test_property_11_auto_linking_performance(num_chunks: int):
     # Measure execution time
     start_time = time.time()
 
-    try:
-        links = await service.link_pdf_to_code(pdf_resource_id)
+    links = await service.link_pdf_to_code(pdf_resource_id)
 
-        elapsed_time = time.time() - start_time
+    elapsed_time = time.time() - start_time
 
-        # Property: Auto-linking should complete within 5 seconds for 100 chunks
-        # Scale the threshold based on actual chunk count
-        time_threshold = 5.0 * (num_chunks / 100.0)
+    # Property: Auto-linking should complete within 5 seconds for 100 chunks
+    # Scale the threshold based on actual chunk count
+    time_threshold = 5.0 * (num_chunks / 100.0)
 
-        assert elapsed_time < time_threshold, (
-            f"Auto-linking took {elapsed_time:.2f}s for {num_chunks} chunks, "
-            f"should be < {time_threshold:.2f}s"
-        )
+    assert elapsed_time < time_threshold, (
+        f"Auto-linking took {elapsed_time:.2f}s for {num_chunks} chunks, "
+        f"should be < {time_threshold:.2f}s"
+    )
 
-        # Property: Links should be created
-        assert isinstance(links, list), "Should return list of links"
-
-    except Exception as e:
-        # Performance test should not fail on implementation errors
-        # Just verify the method exists and is callable
-        pytest.skip(f"Auto-linking not fully implemented: {e}")
+    # Property: Links should be created
+    assert isinstance(links, list), "Should return list of links"
 
 
 # ============================================================================

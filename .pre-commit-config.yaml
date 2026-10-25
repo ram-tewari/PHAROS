@@ -10,3 +10,9 @@ repos:
         description: Validates that modules follow vertical slice architecture rules
         always_run: true
         stages: [commit, push]
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
+        args: ["--baseline", ".secrets.baseline"]
+        exclude: package-lock\.json$|requirements-[a-z]+\.txt$|^backend/alembic/archive/
