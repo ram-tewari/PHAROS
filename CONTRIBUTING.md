@@ -35,6 +35,8 @@ make test-pg                  # the same suite with the PostgreSQL parametrisati
   `detect-secrets` against `.secrets.baseline`. A new finding fails the build. If it's a false
   positive, audit it and update the baseline with
   `detect-secrets scan --baseline .secrets.baseline` followed by `detect-secrets audit .secrets.baseline`.
+  Moving an audited line (for example, adding lines above it) also fails the check. Run
+  `make secrets`, which updates the line numbers in the baseline, then commit `.secrets.baseline`.
 - **Benchmarks:** any change to retrieval or ranking should be measured with
   `python -m benchmarks.retrieval_eval`. Do not tune weights on `codeqa_v1`, which is the test set;
   add a separate development set first.
