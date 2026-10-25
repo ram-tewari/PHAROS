@@ -387,6 +387,11 @@ def storage(factory, clones: dict[str, Path], repo_ids: dict) -> dict:
     }
 
 
+def _plan_nodes(node: dict) -> list[str]:
+    here = node["Node Type"] + (f" on {node['Index Name']}" if "Index Name" in node else "")
+    return [here] + [n for child in node.get("Plans", []) for n in _plan_nodes(child)]
+
+
 def query_plans(factory, embedder: Embedder, repo_ids: dict) -> dict:
     """Which index the planner uses for the dense and keyword candidate queries."""
     from app.codeintel.retrieval import CHUNK_TSVECTOR_SQL
@@ -406,15 +411,7 @@ def query_plans(factory, embedder: Embedder, repo_ids: dict) -> dict:
         for name, q in sql.items():
             plan = db.execute(text("EXPLAIN (FORMAT JSON) " + q),
                               {"m": embedder.model_id, "r": repo, "v": vec}).scalar_one()
-            nodes = []
-
-            def walk(node):
-                nodes.append(node["Node Type"] + (f" on {node['Index Name']}" if "Index Name" in node else ""))
-                for child in node.get("Plans", []):
-                    walk(child)
-
-            walk(plan[0]["Plan"])
-            out[name] = nodes
+            out[name] = _plan_nodes(plan[0]["Plan"])
     return out
 
 

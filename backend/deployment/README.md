@@ -1,64 +1,20 @@
-# Deployment Configuration
+# Deployment files
 
-This directory contains all deployment-related files for Pharos.
+| File | Used for | Status |
+|---|---|---|
+| `render.yaml` | Render blueprint for the Docker service `pharos-cloud-api` | Secrets are `sync: false` (managed in the Render dashboard) |
+| `../render.yaml` | Alternative Render blueprint (`pharos-api`, Python runtime, gunicorn) | Same convention |
+| `Dockerfile.cloud` | Image built by `render.yaml` (context `backend/`) | Installs from the hash-pinned lock |
+| `../Dockerfile` | Recommended API/worker image (non-root user, gunicorn, `RUN_MIGRATIONS` switch) | Used by `docker-compose.yml` and CI |
+| `Dockerfile.edge`, `docker-compose.edge.yml`, `build-and-test-edge.*` | GPU edge worker in a container | **Not validated** |
+| `setup_edge.sh`, `setup_edge.ps1`, `pharos-edge-worker.service`, `NSSM_WINDOWS_SETUP.md` | Edge worker on a host (systemd / Windows service) running `backend/worker.py` | Not validated in CI |
 
-## Contents
+Both blueprints point their auto-deploy at a `main` branch. This repository's default branch is
+`master`, so check which branch the live services actually deploy from before relying on either
+file.
 
-### Docker Files
-- `Dockerfile` - Standard production Docker image
-- `Dockerfile.cloud` - Cloud API deployment (lightweight, 512MB RAM)
-- `Dockerfile.edge` - Edge worker deployment (GPU-accelerated)
-- `Dockerfile.minimal` - Minimal deployment without ML features
-- `.dockerignore` - Files to exclude from Docker builds
-
-### Docker Compose
-- `docker-compose.yml` - Full production stack
-- `docker-compose.dev.yml` - Development with backing services only
-- `docker-compose.edge.yml` - Edge worker configuration
-- `docker-compose.minimal.yml` - Minimal deployment
-
-### Setup Scripts
-- `setup_edge.ps1` / `setup_edge.sh` - Edge worker setup
-- `build-and-test-edge.bat` / `build-and-test-edge.sh` - Edge build and test
-- `start.bat` / `start.sh` - Quick start scripts
-- `docker-build.bat` / `docker-build.sh` - Docker build helpers
-
-### Deployment Configs
-- `render.yaml` - Render.com deployment configuration
-- `gunicorn.conf.py` - Gunicorn WSGI server configuration
-- `worker.py` - Celery worker entry point
-- `neo-alexandria-worker.service` - Systemd service file
-
-### Docker Subdirectory
-- `docker/` - Additional Docker configurations and documentation
-
-## Quick Start
-
-### Development (Docker)
-```bash
-cd deployment
-docker-compose -f docker-compose.dev.yml up -d
-```
-
-### Production (Docker)
-```bash
-cd deployment
-docker-compose up -d
-```
-
-### Edge Worker
-```bash
-cd deployment
-# Windows
-.\setup_edge.ps1
-
-# Linux/Mac
-./setup_edge.sh
-```
-
-## Documentation
-
-For detailed deployment instructions, see:
-- [Deployment Guide](../docs/guides/deployment.md)
-- [Docker Setup Guide](../docs/guides/DOCKER_SETUP_GUIDE.md)
-- [Edge Setup Guide](../docs/guides/phase19-edge-setup.md)
+**Before the first deploy of 0.5.0** to an existing database, follow
+[docs/operations/database-migrations.md](../../docs/operations/database-migrations.md). Then set
+`PHAROS_ADMIN_TOKEN` and `PHAROS_READ_TOKEN`; `PHAROS_API_KEY` is no longer read. Also set
+`MCP_ALLOWED_HOSTS` to the service hostname. Rotate the credentials listed in
+[docs/security/credential-exposure-2026-10.md](../../docs/security/credential-exposure-2026-10.md).

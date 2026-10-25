@@ -1,0 +1,5 @@
+# Optional CPU embedding backend (EMBEDDING_BACKEND=onnx). Install on top of
+# requirements-cloud.txt; the model directory needs model.onnx + tokenizer.json.
+onnxruntime>=1.18
+tokenizers>=0.19
+numpy>=1.26

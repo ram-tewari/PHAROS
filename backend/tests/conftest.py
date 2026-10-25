@@ -332,6 +332,9 @@ def override_get_settings(test_settings):
     import app.config.settings as settings_module
 
     original_cached = settings_module.get_settings
+    # Tests that need the real (cached, validating) function can restore it.
+    if not hasattr(settings_module, "_real_get_settings"):
+        settings_module._real_get_settings = original_cached
 
     # Replace with our test version
     settings_module.get_settings = _get_test_settings

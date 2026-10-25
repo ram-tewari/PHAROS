@@ -1,7 +1,9 @@
 # Pharos Edge Requirements
 # Edge-specific dependencies (with GPU support)
 
--r requirements-base.txt
+# Edge worker: cloud dependencies (ranges) + GPU ML stack. Not hash-locked:
+# the CUDA wheels come from download.pytorch.org. NOT validated in CI.
+-r requirements-cloud.in
 
 # PyTorch with CUDA 11.8 support (RTX 4070 / consumer GPUs)
 # Pull CUDA 11.8 compiled wheels — do NOT install vanilla torch from PyPI

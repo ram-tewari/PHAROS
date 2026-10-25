@@ -1,45 +1,28 @@
-# Pharos Cloud API - Lightweight Dockerfile
-# Optimized for Render Free Tier (512MB RAM)
-
+# PHAROS cloud API image (referenced by deployment/render.yaml).
+# Build context: backend/   docker build -f deployment/Dockerfile.cloud .
+# Prefer backend/Dockerfile (non-root user, gunicorn) for new deployments.
 FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    curl \
-    gcc \
-    postgresql-client \
+RUN apt-get update && apt-get install -y --no-install-recommends curl git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements (from backend root or config directory)
-COPY requirements-base.txt ./
+# Hash-pinned lock (regenerate with `make lock`)
 COPY requirements-cloud.txt ./
+RUN pip install --no-cache-dir --require-hashes -r requirements-cloud.txt
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements-cloud.txt
-
-# Copy application code
 COPY app ./app
 COPY alembic ./alembic
-COPY config/alembic.ini ./alembic.ini
+COPY config/alembic.ini ./config/alembic.ini
 
-# Fix alembic script_location path for Docker
-RUN sed -i 's|script_location = %(here)s/../alembic|script_location = /app/alembic|g' alembic.ini
-
-# Fix imports in alembic env.py (remove 'backend.' prefix)
-RUN sed -i 's|from backend.app|from app|g' alembic/env.py && \
-    sed -i 's|import backend.app|import app|g' alembic/env.py
-
-# Create necessary directories
-RUN mkdir -p /app/storage /app/logs
-
-# Expose port (Render provides $PORT)
 EXPOSE 8000
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${PORT:-8000}/health || exit 1
 
-# Run migrations and start server
-CMD alembic -c alembic.ini upgrade head && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}
+# Migrations run unless RUN_MIGRATIONS=0. A database created before the
+# 2026-10 migration squash needs the one-time procedure in
+# docs/operations/database-migrations.md first (until then this fails with
+# "Can't locate revision" and changes nothing).
+CMD sh -c 'if [ "${RUN_MIGRATIONS:-1}" != "0" ]; then alembic -c config/alembic.ini upgrade head || exit 1; fi; exec uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}'

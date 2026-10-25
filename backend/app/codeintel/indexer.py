@@ -27,7 +27,7 @@ import math
 import time
 from collections import defaultdict
 from collections.abc import Callable
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
 from datetime import UTC, datetime
 
 from sqlalchemy import delete, func, select, update
@@ -84,13 +84,19 @@ class IndexStats:
         return self.languages.setdefault(name, LanguageStats())
 
     def as_dict(self) -> dict:
-        data = asdict(self)
-        data["skipped"] = dict(self.skipped)
-        data["timings_s"] = {k: round(v, 3) for k, v in self.timings_s.items()}
-        for lang in data["languages"].values():
-            lang["fallback_reasons"] = dict(lang["fallback_reasons"])
-        data["errors"] = self.errors[:50]
-        return data
+        # asdict() rebuilds dicts as type(d)(pairs), which fails for
+        # defaultdict on Python < 3.12: convert those fields first.
+        plain = replace(
+            self,
+            skipped=dict(self.skipped),
+            timings_s={k: round(v, 3) for k, v in self.timings_s.items()},
+            languages={
+                name: replace(lang, fallback_reasons=dict(lang.fallback_reasons))
+                for name, lang in self.languages.items()
+            },
+            errors=self.errors[:50],
+        )
+        return asdict(plain)
 
 
 def _utcnow() -> datetime:

@@ -41,6 +41,10 @@ authentication (see `SECURITY.md`).
 - Extends `.gitignore` so env files, local agent state and databases are not
   re-committed.
 - Adds a secret scan (`detect-secrets` with a reviewed baseline) to CI.
+- Changes both `render.yaml` blueprints to `sync: false` for every secret and
+  connection string. The first commit had replaced the values with `<REDACTED-…>`
+  placeholders; with `sync: false` a blueprint sync can never push a placeholder (or
+  a real value) into the live service.
 
 ## Proposed history remediation (requires owner approval — not done)
 

@@ -22,9 +22,9 @@ Threat model and rotation are documented in ``SECURITY.md``. Properties:
 from __future__ import annotations
 
 import hmac
-import uuid
 import logging
 import os
+import uuid
 from dataclasses import dataclass
 
 from fastapi import HTTPException, Request, status

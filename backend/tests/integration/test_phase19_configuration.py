@@ -14,6 +14,8 @@ Requirements tested:
 """
 
 import os
+import re
+
 import pytest
 from unittest.mock import patch, MagicMock
 from pathlib import Path
@@ -30,15 +32,17 @@ def setup_phase19_env(monkeypatch):
     monkeypatch.setenv("UPSTASH_REDIS_REST_TOKEN", "test-token")
     monkeypatch.setenv("PHAROS_ADMIN_TOKEN", "test-admin-token")
 
-    # Clear settings cache before each test
-    from app.config.settings import get_settings
+    # These tests exercise the real, cached get_settings() and its validation;
+    # the suite-wide conftest replaces it with a fixed test Settings.
+    import app.config.settings as settings_module
 
-    get_settings.cache_clear()
+    real = settings_module._real_get_settings
+    monkeypatch.setattr(settings_module, "get_settings", real)
+    real.cache_clear()
 
     yield
 
-    # Clear cache after test
-    get_settings.cache_clear()
+    real.cache_clear()
 
 
 class TestModeConfiguration:
@@ -120,49 +124,20 @@ class TestModeConfiguration:
 
     def test_edge_mode_without_torch_raises_error(self, monkeypatch):
         """
-        Test that MODE=EDGE raises error if torch not installed.
+        MODE=EDGE without torch installed fails at settings load with an install hint.
 
         Validates: Requirement 7.3
         """
-        # Set MODE to EDGE
-        monkeypatch.setenv("MODE", "EDGE")
+        import importlib.util
 
-        # Set required EDGE credentials
-        monkeypatch.setenv("QDRANT_URL", "https://test.qdrant.io")
-        monkeypatch.setenv("QDRANT_API_KEY", "test-api-key")
+        if importlib.util.find_spec("torch") is not None:
+            pytest.skip("needs an environment without torch")
+        monkeypatch.setenv("MODE", "EDGE")
 
         from app.config.settings import get_settings
 
-        # Simulate torch not being installed by making import fail
-        # We need to test the __init__ method which tries to import torch
-        # The simplest way is to temporarily remove torch from available modules
-        import sys
-
-        # Save original torch if it exists
-        torch_backup = sys.modules.get("torch")
-
-        try:
-            # Remove torch from sys.modules
-            if "torch" in sys.modules:
-                del sys.modules["torch"]
-
-            # Create a mock that raises ImportError when torch is imported
-            def failing_import(name, *args, **kwargs):
-                if name == "torch":
-                    raise ImportError("No module named 'torch'")
-                # For other imports, use the real import
-                import importlib
-
-                return importlib.__import__(name, *args, **kwargs)
-
-            # This test is complex due to how Settings.__init__ works
-            # For now, we'll skip this test as it requires deep mocking
-            pytest.skip("Complex test requiring deep import mocking")
-
-        finally:
-            # Restore torch if it was there
-            if torch_backup is not None:
-                sys.modules["torch"] = torch_backup
+        with pytest.raises(ImportError, match="MODE=EDGE requires torch"):
+            get_settings()
 
 
 class TestEnvironmentVariableValidation:
@@ -279,153 +254,64 @@ class TestEnvironmentVariableValidation:
 
 
 class TestRequirementsFileStructure:
-    """Test requirements file inheritance and structure."""
+    """Direct dependencies live in requirements-*.in; requirements-*.txt are hash-pinned locks."""
 
-    def test_requirements_base_exists(self):
-        """
-        Test that requirements-base.txt exists.
+    BACKEND = Path(__file__).resolve().parents[2]
+    ML_FRAMEWORKS = ("torch", "torchvision", "torchaudio", "transformers", "sentence-transformers",
+                     "torch-geometric", "accelerate", "bitsandbytes")
 
-        Validates: Requirement 7.4
-        """
-        base_file = Path("requirements-base.txt")
-        assert base_file.exists(), "requirements-base.txt must exist"
+    @staticmethod
+    def _norm(name: str) -> str:
+        return re.sub(r"[-_.]+", "-", name).lower()
 
-    def test_requirements_cloud_exists(self):
-        """
-        Test that requirements-cloud.txt exists.
+    def _lock(self, name: str) -> dict[str, str]:
+        """{package: version} from a uv-compiled lock, asserting every pin carries hashes."""
+        text = (self.BACKEND / name).read_text()
+        pins = {}
+        for block in re.split(r"\n(?=[A-Za-z0-9])", text):
+            first = block.split("\n", 1)[0]
+            m = re.match(r"([A-Za-z0-9_.\-]+)(?:\[[^\]]*\])?==([^\s;\\]+)", first)
+            if not m:
+                continue
+            assert "--hash=sha256:" in block, f"{name}: {m.group(1)} is pinned without a hash"
+            pins[self._norm(m.group(1))] = m.group(2)
+        assert pins, f"{name} has no pins"
+        return pins
 
-        Validates: Requirement 7.5
-        """
-        cloud_file = Path("requirements-cloud.txt")
-        assert cloud_file.exists(), "requirements-cloud.txt must exist"
+    def _direct(self, name: str) -> set[str]:
+        out = set()
+        for line in (self.BACKEND / name).read_text().splitlines():
+            line = line.split("#", 1)[0].strip()
+            if line and not line.startswith("-"):
+                out.add(self._norm(re.split(r"[\[<>=!~ ;]", line, 1)[0]))
+        return out
 
-    def test_requirements_edge_exists(self):
-        """
-        Test that requirements-edge.txt exists.
+    def test_cloud_lock_is_hash_pinned_and_covers_every_direct_dependency(self):
+        lock = self._lock("requirements-cloud.txt")
+        missing = self._direct("requirements-cloud.in") - set(lock)
+        assert not missing, f"requirements-cloud.txt is stale (run `make lock`): missing {sorted(missing)}"
 
-        Validates: Requirement 7.6
-        """
-        edge_file = Path("requirements-edge.txt")
-        assert edge_file.exists(), "requirements-edge.txt must exist"
+    def test_cloud_lock_has_no_ml_frameworks(self):
+        """The cloud API must stay light: no torch or transformers in its lock (Requirement 7.2)."""
+        lock = self._lock("requirements-cloud.txt")
+        assert not set(self.ML_FRAMEWORKS) & set(lock)
 
-    def test_requirements_cloud_inherits_base(self):
-        """
-        Test that requirements-cloud.txt properly inherits from base.
+    def test_dev_lock_pins_the_same_versions_as_cloud(self):
+        cloud, dev = self._lock("requirements-cloud.txt"), self._lock("requirements-dev.txt")
+        drift = {p: (v, dev.get(p)) for p, v in cloud.items() if dev.get(p) != v}
+        assert not drift, f"dev and cloud locks disagree: {drift}"
+        assert "-r requirements-cloud.in" in (self.BACKEND / "requirements-dev.in").read_text()
 
-        Validates: Requirement 7.5, 7.8
-        """
-        cloud_file = Path("requirements-cloud.txt")
-        content = cloud_file.read_text()
+    def test_onnx_lock_is_constrained_by_cloud(self):
+        cloud, onnx = self._lock("requirements-cloud.txt"), self._lock("requirements-onnx.txt")
+        assert {"onnxruntime", "tokenizers"} <= set(onnx)
+        assert all(cloud[p] == v for p, v in onnx.items() if p in cloud)
 
-        assert "-r requirements-base.txt" in content, (
-            "requirements-cloud.txt must inherit from base using '-r requirements-base.txt'"
-        )
-
-    def test_requirements_edge_inherits_base(self):
-        """
-        Test that requirements-edge.txt properly inherits from base.
-
-        Validates: Requirement 7.6, 7.8
-        """
-        edge_file = Path("requirements-edge.txt")
-        content = edge_file.read_text()
-
-        assert "-r requirements-base.txt" in content, (
-            "requirements-edge.txt must inherit from base using '-r requirements-base.txt'"
-        )
-
-    def test_base_contains_shared_dependencies(self):
-        """
-        Test that requirements-base.txt contains expected shared dependencies.
-
-        Validates: Requirement 7.4
-        """
-        base_file = Path("requirements-base.txt")
-        content = base_file.read_text()
-
-        # Check for key shared dependencies
-        assert "fastapi" in content, "base must include fastapi"
-        assert "upstash-redis" in content, "base must include upstash-redis"
-        assert "gitpython" in content, "base must include gitpython"
-        assert "pydantic" in content, "base must include pydantic"
-
-    def test_cloud_excludes_torch(self):
-        """
-        Test that requirements-cloud.txt does NOT include torch.
-
-        Validates: Requirement 7.2
-        """
-        cloud_file = Path("requirements-cloud.txt")
-        content = cloud_file.read_text()
-
-        # Check that torch is not listed as a dependency (ignore comments)
-        lines = [
-            line.strip()
-            for line in content.split("\n")
-            if line.strip() and not line.strip().startswith("#")
-        ]
-        torch_deps = [
-            line for line in lines if "torch" in line.lower() and "==" in line
-        ]
-
-        assert len(torch_deps) == 0, (
-            f"requirements-cloud.txt must NOT include torch dependencies (cloud is lightweight). Found: {torch_deps}"
-        )
-
-    def test_edge_includes_torch(self):
-        """
-        Test that requirements-edge.txt includes torch and ML dependencies.
-
-        Validates: Requirement 7.6
-        """
-        edge_file = Path("requirements-edge.txt")
-        content = edge_file.read_text()
-
-        assert "torch" in content, "requirements-edge.txt must include torch"
-        assert "torch-geometric" in content, (
-            "requirements-edge.txt must include torch-geometric"
-        )
-        assert "tree-sitter" in content, (
-            "requirements-edge.txt must include tree-sitter"
-        )
-
-    def test_version_consistency_across_files(self):
-        """
-        Test that shared dependencies have consistent versions.
-
-        This test ensures the base + extension strategy prevents version mismatches.
-
-        Validates: Requirement 7.8
-        """
-        base_file = Path("requirements-base.txt")
-        cloud_file = Path("requirements-cloud.txt")
-        edge_file = Path("requirements-edge.txt")
-
-        base_content = base_file.read_text()
-        cloud_content = cloud_file.read_text()
-        edge_content = edge_file.read_text()
-
-        # Parse base dependencies
-        base_deps = {}
-        for line in base_content.split("\n"):
-            line = line.strip()
-            if line and not line.startswith("#") and "==" in line:
-                pkg, version = line.split("==")
-                base_deps[pkg.strip()] = version.strip()
-
-        # Check that cloud and edge don't duplicate base dependencies
-        for pkg in base_deps:
-            # Cloud should not duplicate (except via -r)
-            assert (
-                f"{pkg}==" not in cloud_content
-                or "-r requirements-base.txt" in cloud_content
-            ), f"{pkg} should not be duplicated in requirements-cloud.txt"
-
-            # Edge should not duplicate (except via -r)
-            assert (
-                f"{pkg}==" not in edge_content
-                or "-r requirements-base.txt" in edge_content
-            ), f"{pkg} should not be duplicated in requirements-edge.txt"
+    def test_edge_extends_cloud_and_adds_torch(self):
+        edge = (self.BACKEND / "requirements-edge.txt").read_text()
+        assert "-r requirements-cloud.in" in edge
+        assert re.search(r"^torch==", edge, re.M), "requirements-edge.txt must pin torch"
+        assert "sentence-transformers" in edge
 
 
 class TestConfigurationDefaults:
@@ -440,7 +326,7 @@ class TestConfigurationDefaults:
         from app.config.settings import get_settings
 
         settings = get_settings()
-        assert settings.MAX_QUEUE_SIZE == 10, "Default queue size should be 10"
+        assert settings.QUEUE_SIZE == 10, "Default queue size should be 10"  # env: MAX_QUEUE_SIZE
 
     def test_default_task_ttl(self):
         """
@@ -451,7 +337,7 @@ class TestConfigurationDefaults:
         from app.config.settings import get_settings
 
         settings = get_settings()
-        assert settings.TASK_TTL_SECONDS == 86400, (
+        assert settings.TASK_TTL == 86400, (  # env: TASK_TTL_SECONDS
             "Default TTL should be 24 hours (86400 seconds)"
         )
 

@@ -15,38 +15,38 @@ services:
       - key: ENV
         value: prod
       
-      # Database (NeonDB PostgreSQL - Free Tier)
+      # Secrets and connection strings are managed in the Render dashboard
+      # (sync: false): a blueprint sync never writes values from this file.
+      # DATABASE_URL must include ?sslmode=require for Neon.
       - key: DATABASE_URL
-        value: postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
-      
-      # PostgreSQL Components (extracted from DATABASE_URL for validation)
-      - key: POSTGRES_SERVER
-        value: ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech
-      - key: POSTGRES_USER
-        value: neondb_owner
-      - key: POSTGRES_PASSWORD
-        value: <REDACTED-NEON_PASSWORD-rotate>
-      - key: POSTGRES_DB
-        value: neondb
-      - key: POSTGRES_PORT
-        value: 5432
-      
-      # Redis (Upstash - Free Tier)
+        sync: false
       - key: UPSTASH_REDIS_REST_URL
-        value: https://living-sculpin-96916.upstash.io
+        sync: false
       - key: UPSTASH_REDIS_REST_TOKEN
-        value: <REDACTED-UPSTASH_TOKEN-rotate>
-      
-      # Authentication (Generate secure token)
+        sync: false
+
+      # API tokens (machine-to-machine). Admin: indexing and deletes;
+      # read: search, context and the MCP endpoint (give this one to MCP clients).
+      # PHAROS_API_KEY / JWT_SECRET_KEY / ALLOWED_REDIRECT_URLS are no longer read.
       - key: PHAROS_ADMIN_TOKEN
         generateValue: true
-      - key: JWT_SECRET_KEY
+      - key: PHAROS_READ_TOKEN
         generateValue: true
-      
-      # OAuth Redirect URLs (Production - HTTPS only)
-      - key: ALLOWED_REDIRECT_URLS
-        value: '["https://pharos-cloud-api.onrender.com"]'
-      
+
+      # Hostnames clients use for /mcp (DNS-rebinding protection; localhost is always allowed)
+      - key: MCP_ALLOWED_HOSTS
+        value: '["pharos-cloud-api.onrender.com"]'
+
+      # Query embeddings come from the edge worker's embedding server
+      # (EMBEDDING_BACKEND=auto -> http when EDGE_EMBEDDING_URL is set; without
+      # it only keyword search is available and dense modes report "unavailable").
+      - key: EMBEDDING_BACKEND
+        value: auto
+      - key: EDGE_EMBEDDING_URL
+        sync: false
+      - key: EDGE_EMBED_TOKEN
+        sync: false
+
       # Resource Limits (Free Tier Optimized)
       - key: MAX_QUEUE_SIZE
         value: 10

@@ -18,6 +18,7 @@ Configuration includes:
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import SecretStr, Field, field_validator, model_validator
@@ -25,6 +26,7 @@ from pydantic_settings import BaseSettings
 
 
 _SQLITE_DEFAULT_URL = "sqlite:///./backend.db"
+_BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -183,7 +185,7 @@ class Settings(BaseSettings):
     def validate_queue_size(cls, v: int) -> int:
         """Validate QUEUE_SIZE is positive."""
         if v <= 0:
-            raise ValueError(f"QUEUE_SIZE must be positive, got: {v}")
+            raise ValueError(f"MAX_QUEUE_SIZE must be positive, got: {v}")
         return v
 
     @model_validator(mode="after")
@@ -355,7 +357,9 @@ class Settings(BaseSettings):
     FEEDBACK_MIN_CONTROL_FLOW_NODES: int = 3
 
     class Config:
-        env_file = "config/.env"
+        # backend/.env, then backend/config/.env (later files win); resolved
+        # from this file so the API, CLI and worker agree whatever their cwd.
+        env_file = (str(_BACKEND_DIR / ".env"), str(_BACKEND_DIR / "config" / ".env"))
         env_file_encoding = "utf-8"
         extra = "ignore"  # Ignore extra fields in .env file
 
@@ -580,13 +584,13 @@ def get_settings() -> Settings:
         # Validate queue configuration
         if settings.QUEUE_SIZE <= 0:
             raise ValueError(
-                f"Configuration validation failed: QUEUE_SIZE must be positive, "
+                f"Configuration validation failed: MAX_QUEUE_SIZE must be positive, "
                 f"got {settings.QUEUE_SIZE}. Expected type: int (> 0)"
             )
 
         if settings.TASK_TTL <= 0:
             raise ValueError(
-                f"Configuration validation failed: TASK_TTL must be positive, "
+                f"Configuration validation failed: TASK_TTL_SECONDS must be positive, "
                 f"got {settings.TASK_TTL}. Expected type: int (> 0)"
             )
 

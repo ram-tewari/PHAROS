@@ -1,449 +1,272 @@
-# Pharos
+# PHAROS — A Code-Intelligence Backend for AI Coding Assistants
 
-![Build Status](https://img.shields.io/badge/build-passing-brightgreen)
-![Python](https://img.shields.io/badge/python-3.8%2B-blue)
+[![CI](https://github.com/ram-tewari/PHAROS/actions/workflows/ci.yml/badge.svg)](https://github.com/ram-tewari/PHAROS/actions/workflows/ci.yml)
+![Python](https://img.shields.io/badge/python-3.11%20%7C%203.13-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
-![Coverage](https://img.shields.io/badge/coverage-85%25-yellowgreen)
-![API Endpoints](https://img.shields.io/badge/endpoints-97%2B-blue)
 
-Your second brain for code. An AI-powered knowledge management system that understands code repositories, research papers, and technical documentation through intelligent analysis, semantic search, and knowledge graphs.
+PHAROS indexes git repositories into PostgreSQL and serves them to AI coding assistants:
+- **Repository-scoped search:** keyword, dense, hybrid and call-graph modes.
+- **Symbol lookup with callers and callees.**
+- **A `retrieve_context` call** that returns the most relevant functions with their source.
 
-> **📚 Canonical documentation lives in [`notebooklm/`](notebooklm/)** — start with [`01_PHAROS_OVERVIEW.md`](notebooklm/01_PHAROS_OVERVIEW.md). Those six files are the single source of truth for what Pharos is and how it works.
->
-> Historical, point-in-time status reports (`*_COMPLETE.md`, `*_STATUS.md`, phase summaries, etc.) have been moved to [`docs/archive/`](docs/archive/). They are kept for provenance but are **not** maintained — do not treat them as current.
+Source is read from git at the indexed commit and checked against the blob SHA before it is
+returned. Everything is available over a REST API and a native
+[MCP](https://modelcontextprotocol.io) endpoint.
 
-## Table of Contents
+> **Status:** beta, single maintainer. The core path is tested end to end on SQLite and PostgreSQL,
+> covering clone → AST → embed → index → retrieve → context. Retrieval quality is measured on a
+> small hand-labelled benchmark ([results](docs/benchmarks/retrieval-2026-10.md)). Read
+> [Limitations](#limitations) before relying on it.
 
-- [Overview](#overview)
-- [Key Features](#key-features)
-- [Architecture](#architecture)
-- [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage Examples](#usage-examples)
-- [Documentation](#documentation)
-- [Project Structure](#project-structure)
-- [Development](#development)
-- [Deployment](#deployment)
-- [Contributing](#contributing)
-- [License](#license)
+## What it does
 
-## Overview
-
-Pharos is your second brain for code - a production-ready knowledge management platform designed specifically for developers, researchers, and technical teams. It transforms how you organize, discover, and interact with code repositories, research papers, and technical documentation.
-
-**What makes Pharos different:**
-
-- **Code-First Intelligence**: AST-based code analysis that understands Python, JavaScript, TypeScript, Rust, Go, and Java at a structural level
-- **Repository Understanding**: Ingest entire codebases, extract dependencies, build call graphs, and navigate code semantically
-- **Research Integration**: Manage research papers alongside code with automatic citation extraction, metadata parsing, and quality assessment
-- **Knowledge Graph**: Connect code, papers, and concepts through citation networks, entity relationships, and semantic links
-- **Semantic Search**: Find code and documentation by meaning, not just keywords - powered by hybrid search with sub-500ms latency
-- **Active Reading**: Annotate code and papers with precise highlights, notes, and tags that are semantically searchable
-- **Production Ready**: JWT authentication, OAuth2 social login, tiered rate limiting, and comprehensive monitoring
-
-## Key Features
-
-### Authentication and Security
-- JWT-based authentication with access and refresh tokens
-- OAuth2 integration (Google, GitHub)
-- Tiered rate limiting (Free: 100/hr, Premium: 1,000/hr, Admin: 10,000/hr)
-- Bcrypt password hashing and token revocation
-
-### Code Repository Analysis
-- **AST-based chunking**: Parse code into logical units (functions, classes, methods) using Tree-Sitter
-- **Multi-language support**: Python, JavaScript, TypeScript, Rust, Go, Java with extensible parser architecture
-- **Dependency graphs**: Automatically extract IMPORTS, DEFINES, and CALLS relationships
-- **Static analysis**: Understand code structure without execution - safe for any codebase
-- **Performance**: Sub-2s per file parsing (P95), handles repositories with 10K+ files
-- **Smart filtering**: Respects .gitignore, excludes binaries, focuses on source code
-
-### Intelligent Content Processing
-- **Multi-format ingestion**: HTML, PDF, plain text, Markdown, and entire Git repositories
-- **AI-powered analysis**: Automatic summarization, tagging, and classification using transformer models
-- **Quality assessment**: Multi-dimensional scoring (completeness, accuracy, relevance, clarity)
-- **Metadata extraction**: Equations, tables, citations, and scholarly metadata from papers
-
-### Advanced Search and Discovery
-- **Hybrid search**: Configurable weighting between keyword and semantic search
-- **Vector embeddings**: Semantic similarity using nomic-embed-text-v1
-- **Full-text search**: SQLite FTS5 with PostgreSQL fallback
-- **Faceted filtering**: By classification, language, quality, and subjects
-- **GraphRAG retrieval**: Entity-based graph traversal for context-aware search
-
-### Code Repository Analysis
-- **AST-based chunking**: Parse code into logical units (functions, classes, methods)
-- **Multi-language support**: Python, JavaScript, TypeScript, Rust, Go, Java
-- **Dependency graphs**: IMPORTS, DEFINES, and CALLS relationships
-- **Static analysis**: Extract structure without code execution
-- **Performance**: Sub-2s per file parsing (P95)
-
-### Knowledge Graph for Code and Research
-- **Citation networks**: Automatic extraction and resolution from papers and documentation
-- **Code dependency graphs**: Visualize how functions, classes, and modules connect
-- **PageRank scoring**: Compute importance of code modules and research papers
-- **Entity relationships**: Semantic triple storage linking concepts, code, and papers
-- **Contradiction detection**: Identify conflicting information across documentation
-- **Graph visualization**: Interactive mind-map and network views
-
-### Personalized Recommendations
-- **Content-based filtering**: Learn from user library
-- **Hybrid scoring**: Combine content, graph, and collaborative signals
-- **Fresh discovery**: Source new content from external providers
-- **Explainable AI**: Transparent recommendation reasoning
-
-### Collection Management
-- **Hierarchical organization**: Nested collections with descriptions
-- **Visibility controls**: Private, shared, or public
-- **Aggregate embeddings**: Semantic collection representation
-- **Batch operations**: Add/remove up to 100 resources at once
-
-### Annotation System for Code and Papers
-- **Precise highlighting**: Character-offset-based text selection in code and documents
-- **Rich notes**: Personal annotations with semantic embeddings for intelligent search
-- **Tag organization**: Custom tags with color-coding for categorization
-- **Semantic search**: Find conceptually related annotations across your entire knowledge base
-- **Export**: Markdown and JSON formats for integration with other tools
-- **Code context**: Annotations preserve surrounding code context for better understanding
+| | |
+|---|---|
+| **Indexing** | Shallow-clones an https repository (GitHub, GitLab or Bitbucket, allowlisted), or a local checkout through the CLI. It walks the committed tree only, skipping vendored, minified, binary and oversized files and symlinks. Each function, method, class and module becomes a chunk. Re-indexing is incremental by blob SHA. |
+| **AST parsing** | Python (stdlib `ast`), plus JavaScript, TypeScript/TSX, Go, Rust, C, C++ and Java (tree-sitter). Other files fall back to line windows, and the fallback is recorded per chunk and per language, never presented as AST output. Repository code is parsed, never executed. |
+| **Embeddings** | Pluggable: `hash` (offline, lexical, not semantic), `onnx` (CPU, e.g. all-MiniLM-L6-v2), `http` (the edge worker's GPU model server) or `sentence-transformers`. Vectors from different models are never compared. |
+| **Retrieval** | `keyword` uses PostgreSQL full-text search over identifiers, paths, signatures and docstrings. `dense` uses pgvector HNSW. `hybrid` is reciprocal-rank fusion plus an exact-symbol boost. `graph` is hybrid plus call-graph neighbours. When a mode cannot run it is reported as unavailable (HTTP 503), not silently degraded. |
+| **Context** | The top chunks with verified source, their resolved callers and callees, and the repository's coding rules, rendered as Markdown with `path:line` citations inside a character budget. |
+| **Jobs** | Durable ingestion jobs in PostgreSQL: atomic claims, retries with backoff, recovery of stalled workers, cancellation, and a queue cap (HTTP 429). Redis only wakes workers up; they also poll. |
+| **Interfaces** | REST under `/api/v1`, MCP at `/mcp`, and the CLI `python -m app.cli`. Auth is static machine-to-machine bearer tokens with two scopes (admin, read). |
 
 ## Architecture
 
-Pharos uses a **Vertical Slice Architecture** with event-driven communication:
+```mermaid
+flowchart LR
+  subgraph Clients
+    A["AI assistant<br/>(Claude Code, Cursor, …)"]
+    C[CLI / scripts]
+  end
+  subgraph API["PHAROS API (FastAPI)"]
+    MCP["/mcp<br/>MCP tools"]
+    REST["/api/v1<br/>repositories · jobs · search · context"]
+    RET[Retriever<br/>keyword · dense · RRF · graph]
+    CTX[Context assembly]
+  end
+  W[Ingestion worker]
+  PG[("PostgreSQL + pgvector<br/>chunks · vectors · call graph · jobs")]
+  R[(Redis<br/>wake-up only)]
+  G[(Git host<br/>source of truth for code)]
+  E[Embedding backend<br/>hash · ONNX · edge GPU]
 
+  A -- "bearer token" --> MCP
+  C --> REST
+  MCP --> RET & CTX
+  REST --> RET & CTX
+  REST -- "enqueue job" --> PG
+  REST -. notify .-> R -. wake .-> W
+  W -- "claim job" --> PG
+  W -- "shallow clone" --> G
+  W --> E
+  W -- "chunks, vectors, edges" --> PG
+  RET --> PG
+  RET --> E
+  CTX -- "code at pinned commit,<br/>verified by blob SHA" --> G
 ```
-┌─────────────────────────────────────────────────────────┐
-│                    FastAPI Application                  │
-├─────────────────────────────────────────────────────────┤
-│  13 Domain Modules (Self-Contained Vertical Slices)     │
-│  ├── Resources      ├── Search          ├── Graph       │
-│  ├── Collections    ├── Recommendations ├── Quality     │
-│  ├── Annotations    ├── Taxonomy        ├── Scholarly   │
-│  ├── Authority      ├── Curation        ├── Monitoring  │
-│  └── Auth                                               │
-├─────────────────────────────────────────────────────────┤
-│              Shared Kernel (Cross-Cutting)              │
-│  ├── Database Sessions    ├── Vector Embeddings         │
-│  ├── Event Bus (<1ms)     ├── AI Operations             │
-│  └── Redis Cache           └── Security                 │
-├─────────────────────────────────────────────────────────┤
-│              Data Layer (SQLite / PostgreSQL)           │
-└─────────────────────────────────────────────────────────┘
+
+```mermaid
+flowchart LR
+  clone["clone @ commit<br/>(https, allowlisted host)"] --> tree["ls-tree<br/>skip vendored / binary /<br/>minified / large / symlinks"]
+  tree --> diff["diff by blob SHA<br/>(unchanged files kept)"]
+  diff --> parse["parse<br/>ast · tree-sitter · line fallback"]
+  parse --> chunks["one chunk per symbol:<br/>span, signature, docstring,<br/>calls, imports"]
+  chunks --> embed["embed semantic summary"]
+  chunks --> graph["resolve calls / imports<br/>(ambiguous names left unlinked)"]
+  embed & graph --> write["write chunks, vectors, edges<br/>(no source stored)"]
 ```
 
-**Key Architectural Principles:**
-- **Zero circular dependencies**: Modules communicate via event bus only
-- **API-first design**: All functionality exposed via REST API
-- **Event-driven**: <1ms event emission and delivery (P95)
-- **Modular monolith**: Easy to understand, deploy, and scale
+## Quick start
 
-## Quick Start
-
-### Prerequisites
-
-- Python 3.8+
-- Docker Desktop (optional, for PostgreSQL/Redis)
-- 4GB RAM minimum (8GB recommended)
-
-### 5-Minute Setup (SQLite)
+You need Python 3.11+, git and Docker (for PostgreSQL with pgvector and Redis).
 
 ```bash
-# Clone the repository
-git clone https://github.com/yourusername/pharos.git
-cd pharos/backend
-
-# Create virtual environment
-python -m venv .venv
-source .venv/bin/activate  # Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install -r config/requirements.txt
-
-# Configure environment
-cp config/.env.example .env
-
-# Run migrations
-alembic upgrade head -c config/alembic.ini
-
-# Start the server
-uvicorn app.main:app --reload
+git clone https://github.com/ram-tewari/PHAROS && cd PHAROS
+python -m venv .venv && . .venv/bin/activate
+make install                 # pip install --require-hashes -r backend/requirements-dev.txt
+make demo                    # no database needed: indexes a polyglot fixture into a temp SQLite DB
 ```
 
-The API is now running at `http://127.0.0.1:8000`
+`make demo` runs the real CLI end to end; trimmed output:
 
-### Verify Installation
+```
+[ok  ] schema: at head (0002_codeintel)
+[ok  ] tree-sitter grammar go: ok        (… c, cpp, rust, javascript, typescript, tsx, java)
+AST-parsed files per language: {'java': 1, 'c': 2, 'cpp': 1, 'rust': 1, 'python': 6, 'go': 1,
+                                'javascript': 2, 'typescript': 2} | line-fallback files: 0
+$ python -m app.cli search verify a user's password -k 3
+mode=graph (33.7 ms)
+ 1. 0.0325  shop/auth.py:27-32  shop.auth.authenticate          [function, python-ast]  kw=2 dense=1
+ 2. 0.0325  shop/auth.py:20-24  shop.auth.verify_password       [function, python-ast]  kw=1 dense=2
+ 3. 0.0313  shop/auth.py:47-57  shop.auth.TokenSigner.verify    [method, python-ast]    kw=3 dense=5
+context: 3 chunks, 1160 chars; top: shop.api.login_handler (shop/api.py:12) code_verified=True
+OK.
+```
+
+### Run the service
 
 ```bash
-# Check health
-curl http://127.0.0.1:8000/health
-
-# View API documentation
-open http://127.0.0.1:8000/docs
+make db-up                                   # pgvector/pgvector + redis via docker compose
+cp backend/config/.env.example backend/config/.env
+python -m app.cli gen-token                  # run in backend/; paste into PHAROS_ADMIN_TOKEN, run again for PHAROS_READ_TOKEN
+make migrate                                 # alembic -c config/alembic.ini upgrade head
+make serve                                   # API on :8000      (or: docker compose up --build)
+make worker                                  # in another shell: runs ingestion jobs
 ```
 
-## Installation
-
-### Option 1: Docker Development (Recommended)
-
-Use Docker for backing services while running the app locally:
+Index a repository and query it. This is real output against `pallets/click` 8.1.7 with
+`EMBEDDING_BACKEND=onnx` (all-MiniLM-L6-v2):
 
 ```bash
-# Start PostgreSQL and Redis
-cd backend/deployment
-docker-compose -f docker-compose.dev.yml up -d
+curl -s -X POST localhost:8000/api/v1/repositories -H "Authorization: Bearer $PHAROS_ADMIN_TOKEN" \
+  -H 'Content-Type: application/json' -d '{"repository": "https://github.com/pallets/click", "branch": "8.1.7"}'
+# → {"created": true, "notified": true, "job": {"status": "queued", ...}}
+# worker log: job succeeded: https://github.com/pallets/click @ 874ca2bc1c30 (71 files indexed, 1043 chunks)
 
-# Install and run application
-cd ..
-python -m venv .venv
-source .venv/bin/activate
-pip install -r config/requirements.txt
-cp config/.env.development .env
-alembic upgrade head -c config/alembic.ini
-uvicorn app.main:app --reload
+curl -s -X POST localhost:8000/api/v1/search/code -H "Authorization: Bearer $PHAROS_READ_TOKEN" \
+  -H 'Content-Type: application/json' \
+  -d '{"query": "prompt the user to confirm before continuing", "repository": "pallets/click", "k": 3}'
+# 1. click.termui.confirm               src/click/termui.py:190-248
+# 2. click.core.Option.prompt_for_value src/click/core.py:2870-2894
+# 3. click.termui.prompt                src/click/termui.py:79-187
 ```
 
-### Option 2: Full Docker Stack
-
-Run everything in containers:
+### Connect an AI assistant (MCP)
 
 ```bash
-cd backend/deployment
-docker-compose up -d
+claude mcp add --transport http pharos http://localhost:8000/mcp \
+  --header "Authorization: Bearer $PHAROS_READ_TOKEN"
 ```
 
-### Option 3: Production Deployment
+| Tool | Returns |
+|---|---|
+| `retrieve_context` | Ranked chunks with verified source, callers/callees and rules, plus a Markdown rendering with citations |
+| `search_code` | Chunk pointers (path, lines, symbol) with retrieval evidence (keyword/dense rank, graph hops) |
+| `find_symbol` | Definitions of a (qualified) name with resolved callers and callees |
+| `list_repositories` | Indexed repositories with commit, language coverage and status |
 
-Deploy to cloud platforms:
+For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
 
-```bash
-# Render (Cloud API)
-# See docs/guides/phase19-deployment.md
+## REST API
 
-# Edge Worker (Local GPU)
-cd backend/deployment
-./setup_edge.sh  # Linux/macOS
-# or
-.\setup_edge.ps1  # Windows
-```
+| Method and path | Scope | Purpose |
+|---|---|---|
+| `POST /api/v1/repositories` | admin | Queue indexing for `{"repository", "branch"?, "force"?}`. Deduplicates against active jobs; 429 when the queue is full. |
+| `GET /api/v1/repositories`, `GET /api/v1/repositories/{id}` | read | Index status, commit, per-language AST/fallback counts, graph stats |
+| `DELETE /api/v1/repositories/{id}` | admin | Remove a repository and its chunks, vectors and edges |
+| `GET /api/v1/ingestion/jobs`, `GET …/{id}`, `POST …/{id}/cancel` | read / admin | Job state machine: queued → running → succeeded, failed or cancelled |
+| `POST /api/v1/search/code` | read | `{"query", "repository"?, "mode"?, "k"?, "languages"?, "kinds"?, "path_prefix"?}` |
+| `POST /api/v1/search/symbol` | read | `{"name", "repository"?}`: definitions plus call graph |
+| `POST /api/v1/context/retrieve` | read | `{"query", "repository"?, "max_chunks"?, "max_chars"?, "include_code"?, "profile_id"?}` |
+| `GET /api/v1/system/status` | read | Embedding backend, available modes, repositories |
+| `GET /health` | public | Liveness |
 
-## Usage Examples
+OpenAPI is served at `/docs`. Older routers (papers and PDFs, the legacy resource graph, planning,
+patterns, monitoring) are still mounted. They are maintained to a lower bar; see
+[Limitations](#limitations).
 
-### Ingest a Web Resource
+## Retrieval quality
 
-```bash
-curl -X POST http://127.0.0.1:8000/resources \
-  -H "Content-Type: application/json" \
-  -d '{
-    "url": "https://arxiv.org/abs/2301.00001",
-    "title": "Attention Is All You Need"
-  }'
-```
+There are 75 hand-labelled questions over `pallets/flask` 3.0.3 and `spf13/cobra` v1.8.1, all CPU.
+The table uses all-MiniLM-L6-v2 embeddings. Full method, confidence intervals, the hash-model
+run and failure analysis are in the [report](docs/benchmarks/retrieval-2026-10.md).
 
-### Search with Hybrid Mode
+| Mode | Recall@10 | MRR | nDCG@10 | p50 latency |
+|---|---|---|---|---|
+| keyword | 0.649 | 0.477 | 0.488 | 46 ms |
+| dense | **0.838** | **0.661** | **0.675** | 18 ms |
+| hybrid | 0.769 | 0.642 | 0.632 | 39 ms |
+| graph (default `auto`) | 0.769 | 0.641 | 0.631 | 43 ms |
 
-```bash
-curl -X GET "http://127.0.0.1:8000/search?query=machine+learning&mode=hybrid&limit=10"
-```
+- Semantic dense retrieval beats keyword search clearly: nDCG +0.19, 95% CI [+0.11, +0.27].
+- Keyword and hybrid win on questions that name the identifier.
+- Hybrid is **not** better than dense overall, and graph expansion does not change the
+  ranking (identical top-5 on 73 of 75 questions). It only adds callers and callees as context.
+- The production model (`nomic-embed-text-v1`) and the GPU path were not measured.
 
-### Create an Annotation
+**Storage:** pointing at code instead of storing it saves about 5% of the database, not the "17×"
+claimed in older docs. Vectors and the HNSW index dominate, and the index is about 18× the size of
+the source it covers ([details](docs/benchmarks/retrieval-2026-10.md#storage)).
 
-```bash
-curl -X POST http://127.0.0.1:8000/annotations \
-  -H "Content-Type: application/json" \
-  -d '{
-    "resource_id": 1,
-    "start_offset": 100,
-    "end_offset": 250,
-    "highlighted_text": "Key insight from the paper",
-    "note": "This explains the core concept",
-    "tags": ["important", "concept"]
-  }'
-```
+## Configuration
 
-### Ingest a Code Repository
+Every setting is documented in [`backend/config/.env.example`](backend/config/.env.example). The ones that matter most:
 
-```bash
-curl -X POST http://127.0.0.1:8000/resources/ingest-repository \
-  -H "Content-Type: application/json" \
-  -d '{
-    "repo_path": "/path/to/local/repo",
-    "title": "My Python Project"
-  }'
-```
+| Variable | Default | |
+|---|---|---|
+| `DATABASE_URL` | SQLite file | PostgreSQL + pgvector for real use; `sslmode=require` is honoured |
+| `PHAROS_ADMIN_TOKEN`, `PHAROS_READ_TOKEN` | unset | With neither set, every protected endpoint returns 401 |
+| `EMBEDDING_BACKEND` | `auto` | `hash`, `onnx`, `http`, `sentence-transformers`, `none` |
+| `CODEINTEL_ALLOWED_GIT_HOSTS` | github.com, gitlab.com, bitbucket.org | Only https URLs on these hosts can be indexed |
+| `MAX_QUEUE_SIZE` | 10 | Queued jobs before submissions get 429 |
+| `MCP_ALLOWED_HOSTS` | `[]` | Public hostnames for `/mcp` |
 
-### Get Citation Network
+## Security
 
-```bash
-curl -X GET "http://127.0.0.1:8000/graph/citations/1?depth=2"
-```
+- **Authentication** uses static bearer tokens, compared in constant time, and fails closed.
+  `TEST_AUTH_BYPASS`, `TESTING` and `TEST_MODE` are refused in production. The read token cannot
+  index, delete or invoke admin tools.
+- **Repository URLs** must be https on an allowlisted host. The validator rejects IP literals,
+  credentials, ports, queries, path traversal, control characters and non-https transports such
+  as `ext::` or `file://`. Clone tokens go into a host-scoped header, never into URLs or logs.
+- **Repository code is parsed, never executed or imported.** A test indexes hostile `setup.py`,
+  `conftest.py` and `Makefile` files and asserts that nothing runs. Code fetched for context is
+  verified against the indexed blob SHA.
+- **Credential rotation:** credentials were committed to this repository's history before
+  2026-10. Rotating them is required; see
+  [docs/security/credential-exposure-2026-10.md](docs/security/credential-exposure-2026-10.md).
+  To report a vulnerability, see [SECURITY.md](SECURITY.md).
 
-## Documentation
+## Limitations
 
-📖 **[Complete Documentation Index](docs/README.md)** - Start here for all documentation
-
-### Quick Links
-
-**Getting Started**:
-- [Product Vision](.kiro/steering/product.md) - What we're building and why
-- [Quick Start Guide](backend/docs/guides/QUICK_START.md) - Get up and running in 5 minutes
-- [API Reference](backend/docs/index.md) - Complete endpoint documentation
-
-**Development**:
-- [Tech Stack](.kiro/steering/tech.md) - Technologies and tools
-- [Repository Structure](.kiro/steering/structure.md) - Where things are located
-- [Developer Setup](backend/docs/guides/setup.md) - Detailed installation guide
-- [Architecture Overview](backend/docs/architecture/overview.md) - System design
-- [Testing Guide](backend/docs/guides/testing.md) - Testing strategies
-
-**Deployment**:
-- [Deploy Now](backend/docs/deployment/DEPLOY_NOW.md) - Quick deployment (30 min)
-- [Render Free Tier](backend/RENDER_FREE_DEPLOYMENT.md) - Free tier deployment guide
-- [Pre-Flight Checklist](backend/docs/deployment/PRE_FLIGHT_CHECKLIST.md) - Deployment verification
-- [Docker Setup](backend/docs/guides/DOCKER_SETUP_GUIDE.md) - Container orchestration
-
-**Vision & Roadmap**:
-- [Pharos + Ronin Vision](docs/vision/PHAROS_RONIN_VISION.md) - Complete technical vision
-- [Quick Reference](.kiro/steering/PHAROS_RONIN_QUICK_REFERENCE.md) - Quick reference card
-- [Future Steps](docs/PHAROS_future_steps.md) - Development roadmap
-
-## Project Structure
-
-```
-pharos/
-├── backend/                    # Python/FastAPI backend
-│   ├── app/
-│   │   ├── modules/            # 13 domain modules
-│   │   ├── shared/             # Shared kernel
-│   │   ├── database/           # Database models
-│   │   └── main.py             # Application entry
-│   ├── tests/                  # Test suite
-│   ├── docs/                   # Technical documentation
-│   ├── scripts/                # Utility scripts
-│   └── alembic/                # Database migrations
-├── frontend/                   # React/TypeScript frontend
-│   ├── src/
-│   │   ├── components/         # React components
-│   │   ├── lib/                # Utilities and API client
-│   │   └── App.tsx             # Application entry
-│   └── package.json
-├── .kiro/                      # Project configuration
-│   ├── steering/               # High-level documentation
-│   └── specs/                  # Feature specifications
-└── docs/                       # User documentation
-```
+- **Embeddings:** quality numbers come from a general sentence model (MiniLM) on two repositories
+  and 75 questions written by a single annotator. Chunks are embedded from a summary (signature,
+  docstring, calls), not the body, so behaviour that lives only in a function body is missed.
+- **Call graph:** resolution is conservative. Calls to names defined more than once, such as
+  `self.invoke()` in click's `core.py`, are left unlinked, and dynamic dispatch is not followed.
+  Resolution covers 35–56% of call sites on the benchmark repositories; most of the rest go to
+  the standard library or dependencies.
+- **Scale:** measured up to about 1,600 chunks in one database (two repositories). pgvector 0.6 filters after the HNSW search, so
+  with many repositories in one database a repository-filtered dense query can return fewer than
+  the requested candidates. pgvector ≥ 0.8 iterative scans would fix this; they are not used yet.
+- **Performance:** keyword ranking recomputes `to_tsvector` for every matched row. Indexing
+  writes rows one at a time, at about 140 chunks/s plus embedding time.
+- **GPU / edge worker:** the CUDA image and the edge worker's GPU path are **not validated** in CI.
+- **Legacy modules** (papers/PDFs, resource graph, planning, monitoring) predate the code index.
+  Notably:
+  - document-graph entity extraction has no offline extractor and reports `unavailable`;
+  - parent-child search is PostgreSQL-only;
+  - "AI planning" returns a fixed template plan;
+  - URL resource ingestion still calls services that were removed earlier and logs errors for those steps.
+- **Database migrations:** the migrations were squashed in 2026-10. An existing database needs the
+  one-time procedure in [docs/operations/database-migrations.md](docs/operations/database-migrations.md).
 
 ## Development
 
-### Running Tests
-
 ```bash
-# All tests
-pytest backend/tests/ -v
-
-# With coverage
-pytest backend/tests/ --cov=app --cov-report=html
-
-# Specific module
-pytest backend/tests/modules/test_resources_endpoints.py -v
-
-# Property-based tests
-pytest backend/tests/properties/ -v
+make test        # full suite on SQLite (~4 min)
+make test-pg     # plus PostgreSQL/pgvector parametrisations (needs `make db-up`)
+make lint        # ruff: bug-class rules everywhere, full rules on new code
+make isolation   # module-boundary check
+make bench       # retrieval benchmark (needs a database named *bench*)
 ```
 
-### Code Quality
+CI runs lint, the secret scan, the module-isolation check, the full suite on Python 3.11 and 3.13
+against PostgreSQL + pgvector and Redis service containers, migration checks, the demo, a
+dependency audit and a Docker build. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-```bash
-# Lint and format
-ruff check backend/
-ruff format backend/
-
-# Check module isolation
-python backend/scripts/check_module_isolation.py
-
-# Verify startup
-python backend/test_app_startup.py
 ```
-
-### Database Migrations
-
-```bash
-# Create migration
-cd backend
-alembic revision --autogenerate -m "description" -c config/alembic.ini
-
-# Apply migrations
-alembic upgrade head -c config/alembic.ini
-
-# Rollback
-alembic downgrade -1 -c config/alembic.ini
+backend/
+  app/codeintel/      indexing, parsers, embeddings, retrieval, context, jobs (the core)
+  app/modules/code/   /api/v1 code-intelligence endpoints
+  app/modules/mcp/    native MCP server (/mcp) and the legacy REST tool router
+  app/modules/…       legacy modules (resources, search, graph, planning, patterns, …)
+  app/workers/        ingest_worker (CPU), main_worker (edge/GPU)
+  alembic/            migrations (squashed 2026-10; history in alembic/archive)
+  benchmarks/         retrieval benchmark harness, dataset and results
+  tests/codeintel/    tests for the core, parametrised over SQLite and PostgreSQL
 ```
-
-## Deployment
-
-### Cloud Deployment (Render)
-
-```bash
-# Deploy via render.yaml
-git push origin main
-# Render auto-deploys from main branch
-```
-
-### Edge Worker (Local GPU)
-
-```bash
-cd backend/deployment
-./setup_edge.sh  # Configures local GPU worker
-```
-
-### Docker Production
-
-```bash
-cd backend/deployment
-docker-compose -f docker-compose.yml up -d
-```
-
-See [Deployment Guide](backend/docs/guides/deployment.md) for detailed instructions.
-
-## Contributing
-
-We welcome contributions! Here's how to get started:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes** and add tests
-4. **Run tests**: `pytest backend/tests/ -v`
-5. **Check code quality**: `ruff check backend/`
-6. **Commit**: `git commit -m "Add amazing feature"`
-7. **Push**: `git push origin feature/amazing-feature`
-8. **Open a Pull Request**
-
-### Development Guidelines
-
-- Follow the vertical slice architecture pattern
-- Use event bus for cross-module communication
-- Add tests for new features (aim for 85%+ coverage)
-- Update documentation for API changes
-- Run `check_module_isolation.py` to verify no circular dependencies
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Acknowledgments
-
-Built with:
-- [FastAPI](https://fastapi.tiangolo.com/) - Modern Python web framework
-- [SQLAlchemy](https://www.sqlalchemy.org/) - SQL toolkit and ORM
-- [Transformers](https://huggingface.co/transformers/) - State-of-the-art NLP
-- [React](https://react.dev/) - UI library
-- [Vite](https://vitejs.dev/) - Frontend build tool
-
-## Support
-
-- **Documentation**: [backend/docs/index.md](backend/docs/index.md)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/pharos/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/pharos/discussions)
-
----
-
-**Status**: Production (Phase 19 Complete)  
-**API**: https://pharos.onrender.com  
-**Coverage**: 88.9% endpoint coverage, 85%+ code coverage
+MIT, see [LICENSE](LICENSE).

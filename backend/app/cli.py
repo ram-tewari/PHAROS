@@ -22,6 +22,7 @@ import logging
 import secrets
 import shutil
 import sys
+from pathlib import Path
 
 from .config.settings import get_settings
 
@@ -195,6 +196,16 @@ def cmd_gen_token(_args) -> int:
     return 0
 
 
+def _migration_head() -> str:
+    from alembic.config import Config
+    from alembic.script import ScriptDirectory
+
+    backend = Path(__file__).resolve().parents[1]
+    cfg = Config(str(backend / "config" / "alembic.ini"))
+    cfg.set_main_option("script_location", str(backend / "alembic"))
+    return ScriptDirectory.from_config(cfg).get_current_head()
+
+
 def cmd_doctor(_args) -> int:
     """Report on everything the core workflow needs. Exit 1 on hard failures."""
     from sqlalchemy import text
@@ -229,14 +240,21 @@ def cmd_doctor(_args) -> int:
             if database_kind(url) == "postgresql":
                 ext = db.execute(text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")).scalar()
                 report(ext is not None, "pgvector extension", ext or "missing: CREATE EXTENSION vector")
-                try:
-                    rev = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
-                    report(bool(rev), "migrations", ", ".join(rev) or "none applied")
-                except Exception:
-                    db.rollback()
-                    report(False, "migrations", "alembic_version missing: run `make migrate`")
             else:
                 report(None, "database", "SQLite: fine for tests, use PostgreSQL + pgvector for real use")
+            head = _migration_head()
+            try:
+                rev = db.execute(text("SELECT version_num FROM alembic_version")).scalars().all()
+            except Exception:
+                db.rollback()
+                rev = []
+            if not rev:
+                report(False, "schema", "not migrated: run `make migrate` (alembic -c config/alembic.ini upgrade head)")
+            elif head in rev:
+                report(True, "schema", f"at head ({head})")
+            else:
+                report(False, "schema", f"at {', '.join(rev)}, code expects {head}: run `make migrate` "
+                       "(pre-2026-10 databases: see docs/operations/database-migrations.md)")
     except Exception as exc:
         report(False, "database connection", f"{type(exc).__name__}: {exc}"[:200])
 

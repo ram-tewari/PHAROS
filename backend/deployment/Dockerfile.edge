@@ -1,3 +1,5 @@
+# NOT VALIDATED: GPU/CUDA images have not been built or tested in CI.
+# Build context: backend/   docker build -f deployment/Dockerfile.edge .
 # Dockerfile for Phase 19 Edge Worker
 # This provides a complete environment with torch-cluster pre-built wheels
 
@@ -13,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements files
-COPY requirements-base.txt .
+COPY requirements-cloud.in .
 COPY requirements-edge.txt .
 
 # Install Python dependencies
