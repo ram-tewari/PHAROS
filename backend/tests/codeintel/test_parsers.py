@@ -145,3 +145,14 @@ def test_deeply_nested_code_does_not_recurse():
     src = "const x = " + "[" * 3000 + "]" * 3000 + ";\nfunction f() { return 1; }\n"
     r = parse_file("deep.js", src)
     assert any(s.name == "f" for s in r.symbols)
+
+
+def test_src_layout_is_not_part_of_the_module_path():
+    from app.codeintel.parsers.python_parser import module_path_for
+
+    assert module_path_for("src/flask/app.py") == "flask.app"
+    assert module_path_for("src/flask/__init__.py") == "flask"
+    assert module_path_for("src/tool.py") == "src.tool"  # a top-level src.py module dir is ambiguous; keep it
+    assert module_path_for("pkg/src/x.py") == "pkg.src.x"
+    r = parse_file("src/pkg/a.py", "from .b import helper\n\ndef main():\n    helper()\n")
+    assert r.import_map["helper"] == "pkg.b.helper"

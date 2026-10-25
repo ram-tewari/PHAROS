@@ -1,0 +1,751 @@
+{
+ "name": "pharos-codeqa",
+ "version": 1,
+ "created": "2026-10-25",
+ "labeling": "Queries and graded relevance were written by hand by the benchmark author, from reading the source at the pinned commits, before any retrieval was run on these repositories. 'behavior' queries paraphrase what the code does without naming identifiers; 'identifier' queries name the API the way a developer would. Grade 2 = the implementation the question asks about; grade 1 = closely related and acceptable. Relevance is judged per indexed symbol (qualified name). Small n and a single annotator: treat differences inside the bootstrap confidence intervals as noise.",
+ "repositories": [
+  {
+   "name": "flask",
+   "url": "https://github.com/pallets/flask",
+   "ref": "3.0.3",
+   "commit": "c12a5d874c5a014495eb2db8a73f40037bc813ac",
+   "language": "python"
+  },
+  {
+   "name": "cobra",
+   "url": "https://github.com/spf13/cobra",
+   "ref": "v1.8.1",
+   "commit": "e94f6d0dd9a5e5738dca6bce03c4b1207ffbc0ec",
+   "language": "go"
+  }
+ ],
+ "queries": [
+  {
+   "id": "flask-01",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "how does the app turn whatever a view returns (a string, dict or tuple) into a response object",
+   "relevant": {
+    "flask.app.Flask.make_response": 2
+   }
+  },
+  {
+   "id": "flask-02",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "where is the view function for the matched URL rule actually called",
+   "relevant": {
+    "flask.app.Flask.dispatch_request": 2,
+    "flask.app.Flask.full_dispatch_request": 1
+   }
+  },
+  {
+   "id": "flask-03",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "run the hooks registered to execute before each request and stop early if one returns a value",
+   "relevant": {
+    "flask.app.Flask.preprocess_request": 2
+   }
+  },
+  {
+   "id": "flask-04",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "apply the after-request functions to the outgoing response and save the session",
+   "relevant": {
+    "flask.app.Flask.process_response": 2
+   }
+  },
+  {
+   "id": "flask-05",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "load configuration values from environment variables that share a common prefix",
+   "relevant": {
+    "flask.config.Config.from_prefixed_env": 2
+   }
+  },
+  {
+   "id": "flask-06",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "load settings from a Python file given its path",
+   "relevant": {
+    "flask.config.Config.from_pyfile": 2,
+    "flask.config.Config.from_envvar": 1
+   }
+  },
+  {
+   "id": "flask-07",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "sign and serialize the session into a cookie on the response",
+   "relevant": {
+    "flask.sessions.SecureCookieSessionInterface.save_session": 2,
+    "flask.sessions.SecureCookieSessionInterface.get_signing_serializer": 1
+   }
+  },
+  {
+   "id": "flask-08",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "read the session back from the request cookie and verify its signature",
+   "relevant": {
+    "flask.sessions.SecureCookieSessionInterface.open_session": 2,
+    "flask.sessions.SecureCookieSessionInterface.get_signing_serializer": 1
+   }
+  },
+  {
+   "id": "flask-09",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "decide whether the session cookie needs to be written for this response",
+   "relevant": {
+    "flask.sessions.SessionInterface.should_set_cookie": 2
+   }
+  },
+  {
+   "id": "flask-10",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "keep tuples, bytes, UUIDs and datetimes intact when the session is stored as JSON",
+   "relevant": {
+    "flask.json.tag.TaggedJSONSerializer": 2,
+    "flask.json.tag.TaggedJSONSerializer.dumps": 1,
+    "flask.json.tag.TaggedJSONSerializer.tag": 1
+   }
+  },
+  {
+   "id": "flask-11",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "store a one-time message for the user to show on the next page",
+   "relevant": {
+    "flask.helpers.flash": 2,
+    "flask.helpers.get_flashed_messages": 1
+   }
+  },
+  {
+   "id": "flask-12",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "serve a file from a folder without letting the user escape the directory",
+   "relevant": {
+    "flask.helpers.send_from_directory": 2
+   }
+  },
+  {
+   "id": "flask-13",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "build the URL for an endpoint name with keyword arguments",
+   "relevant": {
+    "flask.app.Flask.url_for": 2,
+    "flask.helpers.url_for": 2
+   }
+  },
+  {
+   "id": "flask-14",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "keep the request context available inside a generator that streams the response",
+   "relevant": {
+    "flask.helpers.stream_with_context": 2
+   }
+  },
+  {
+   "id": "flask-15",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "find the application object when the command line tool starts",
+   "relevant": {
+    "flask.cli.ScriptInfo.load_app": 2,
+    "flask.cli.locate_app": 1,
+    "flask.cli.find_best_app": 1
+   }
+  },
+  {
+   "id": "flask-16",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "load environment variables from dotenv files before running a command",
+   "relevant": {
+    "flask.cli.load_dotenv": 2
+   }
+  },
+  {
+   "id": "flask-17",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "print the registered routes and their allowed methods from the command line",
+   "relevant": {
+    "flask.cli.routes_command": 2
+   }
+  },
+  {
+   "id": "flask-18",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "look up the error handler registered for an exception class or HTTP status code",
+   "relevant": {
+    "flask.sansio.app.App._find_error_handler": 2,
+    "flask.app.Flask.handle_user_exception": 1,
+    "flask.app.Flask.handle_http_exception": 1
+   }
+  },
+  {
+   "id": "flask-19",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "what happens to an unhandled exception at the top level: log it and return an internal server error",
+   "relevant": {
+    "flask.app.Flask.handle_exception": 2,
+    "flask.app.Flask.log_exception": 1
+   }
+  },
+  {
+   "id": "flask-20",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "register a blueprint on the application with a URL prefix",
+   "relevant": {
+    "flask.sansio.app.App.register_blueprint": 2,
+    "flask.sansio.blueprints.Blueprint.register": 2
+   }
+  },
+  {
+   "id": "flask-21",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "class-based view that dispatches to a method named after the HTTP verb",
+   "relevant": {
+    "flask.views.MethodView.dispatch_request": 2,
+    "flask.views.MethodView": 1
+   }
+  },
+  {
+   "id": "flask-22",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "turn a view class into a function that can be routed",
+   "relevant": {
+    "flask.views.View.as_view": 2
+   }
+  },
+  {
+   "id": "flask-23",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "search the template folders of the app and every blueprint for a template",
+   "relevant": {
+    "flask.templating.DispatchingJinjaLoader.get_source": 2,
+    "flask.templating.DispatchingJinjaLoader._iter_loaders": 1,
+    "flask.templating.DispatchingJinjaLoader._get_source_fast": 1
+   }
+  },
+  {
+   "id": "flask-24",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "render a template with the context processors applied",
+   "relevant": {
+    "flask.templating.render_template": 2,
+    "flask.templating._render": 1,
+    "flask.app.Flask.update_template_context": 1
+   }
+  },
+  {
+   "id": "flask-25",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "explain why a template could not be found while debugging",
+   "relevant": {
+    "flask.debughelpers.explain_template_loading_attempts": 2
+   }
+  },
+  {
+   "id": "flask-26",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "make the application context active so the current app proxy works",
+   "relevant": {
+    "flask.ctx.AppContext.push": 2,
+    "flask.app.Flask.app_context": 1
+   }
+  },
+  {
+   "id": "flask-27",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "register a function to run after the current request only",
+   "relevant": {
+    "flask.ctx.after_this_request": 2
+   }
+  },
+  {
+   "id": "flask-28",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "modify the session inside a test before sending a request",
+   "relevant": {
+    "flask.testing.FlaskClient.session_transaction": 2
+   }
+  },
+  {
+   "id": "flask-29",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "convert Python data to a JSON response with the correct mimetype",
+   "relevant": {
+    "flask.json.provider.DefaultJSONProvider.response": 2,
+    "flask.json.provider.JSONProvider.response": 1,
+    "flask.json.jsonify": 2
+   }
+  },
+  {
+   "id": "flask-30",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "limit on how large an incoming request body may be",
+   "relevant": {
+    "flask.wrappers.Request.max_content_length": 2
+   }
+  },
+  {
+   "id": "flask-31",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "the WSGI entry point that handles a request from start to finish",
+   "relevant": {
+    "flask.app.Flask.wsgi_app": 2
+   }
+  },
+  {
+   "id": "flask-32",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "decorator that registers a route only for POST requests",
+   "relevant": {
+    "flask.sansio.scaffold.Scaffold.post": 2,
+    "flask.sansio.scaffold.Scaffold._method_route": 1
+   }
+  },
+  {
+   "id": "flask-33",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "derive the endpoint name from the view function when none is given",
+   "relevant": {
+    "flask.sansio.scaffold._endpoint_from_view_func": 2
+   }
+  },
+  {
+   "id": "flask-34",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "functions called when the request context is torn down",
+   "relevant": {
+    "flask.app.Flask.do_teardown_request": 2,
+    "flask.ctx.RequestContext.pop": 1
+   }
+  },
+  {
+   "id": "flask-35",
+   "repo": "flask",
+   "category": "identifier",
+   "query": "send_file conditional requests and etag handling",
+   "relevant": {
+    "flask.helpers.send_file": 2,
+    "flask.helpers._prepare_send_file_kwargs": 1
+   }
+  },
+  {
+   "id": "flask-36",
+   "repo": "flask",
+   "category": "identifier",
+   "query": "where is Config.from_mapping implemented",
+   "relevant": {
+    "flask.config.Config.from_mapping": 2
+   }
+  },
+  {
+   "id": "flask-37",
+   "repo": "flask",
+   "category": "identifier",
+   "query": "Config.get_namespace",
+   "relevant": {
+    "flask.config.Config.get_namespace": 2
+   }
+  },
+  {
+   "id": "flask-38",
+   "repo": "flask",
+   "category": "identifier",
+   "query": "how does async_to_sync run coroutine views",
+   "relevant": {
+    "flask.app.Flask.async_to_sync": 2,
+    "flask.app.Flask.ensure_sync": 1
+   }
+  },
+  {
+   "id": "flask-39",
+   "repo": "flask",
+   "category": "identifier",
+   "query": "SessionInterface.make_null_session",
+   "relevant": {
+    "flask.sessions.SessionInterface.make_null_session": 2
+   }
+  },
+  {
+   "id": "flask-40",
+   "repo": "flask",
+   "category": "identifier",
+   "query": "FlaskGroup loading plugin commands from entry points",
+   "relevant": {
+    "flask.cli.FlaskGroup._load_plugin_commands": 2
+   }
+  },
+  {
+   "id": "cobra-01",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "check that a command received exactly N positional arguments",
+   "relevant": {
+    "args.ExactArgs": 2,
+    "args.RangeArgs": 1
+   }
+  },
+  {
+   "id": "cobra-02",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "only accept positional arguments from the list of valid arguments",
+   "relevant": {
+    "args.OnlyValidArgs": 2,
+    "args.ExactValidArgs": 1
+   }
+  },
+  {
+   "id": "cobra-03",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "combine several positional argument validators into one",
+   "relevant": {
+    "args.MatchAll": 2
+   }
+  },
+  {
+   "id": "cobra-04",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "suggest similar command names when the user mistypes a subcommand",
+   "relevant": {
+    "command.Command.SuggestionsFor": 2,
+    "command.Command.findSuggestions": 1
+   }
+  },
+  {
+   "id": "cobra-05",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "find which subcommand to run from the command line arguments",
+   "relevant": {
+    "command.Command.Find": 2,
+    "command.Command.Traverse": 1,
+    "command.Command.findNext": 1
+   }
+  },
+  {
+   "id": "cobra-06",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "entry point that parses arguments and runs the matched command",
+   "relevant": {
+    "command.Command.ExecuteC": 2,
+    "command.Command.execute": 2,
+    "command.Command.Execute": 1
+   }
+  },
+  {
+   "id": "cobra-07",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "run the persistent pre-run hooks inherited from parent commands",
+   "relevant": {
+    "command.Command.execute": 2
+   }
+  },
+  {
+   "id": "cobra-08",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "flags that must be given together",
+   "relevant": {
+    "flag_groups.Command.MarkFlagsRequiredTogether": 2,
+    "flag_groups.validateRequiredFlagGroups": 1
+   }
+  },
+  {
+   "id": "cobra-09",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "flags that cannot be used at the same time",
+   "relevant": {
+    "flag_groups.Command.MarkFlagsMutuallyExclusive": 2,
+    "flag_groups.validateExclusiveFlagGroups": 1
+   }
+  },
+  {
+   "id": "cobra-10",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "fail when a required flag was not provided",
+   "relevant": {
+    "command.Command.ValidateRequiredFlags": 2,
+    "shell_completions.Command.MarkFlagRequired": 1
+   }
+  },
+  {
+   "id": "cobra-11",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "generate a bash completion script",
+   "relevant": {
+    "bash_completionsV2.Command.GenBashCompletionV2": 2,
+    "bash_completions.Command.GenBashCompletion": 2,
+    "bash_completionsV2.genBashComp": 1
+   }
+  },
+  {
+   "id": "cobra-12",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "generate the zsh completion script",
+   "relevant": {
+    "zsh_completions.Command.GenZshCompletion": 2,
+    "zsh_completions.genZshComp": 1
+   }
+  },
+  {
+   "id": "cobra-13",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "shell completion for the fish shell",
+   "relevant": {
+    "fish_completions.Command.GenFishCompletion": 2,
+    "fish_completions.genFishComp": 1
+   }
+  },
+  {
+   "id": "cobra-14",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "PowerShell completion script that includes descriptions",
+   "relevant": {
+    "powershell_completions.Command.GenPowerShellCompletionWithDesc": 2,
+    "powershell_completions.genPowerShellComp": 1
+   }
+  },
+  {
+   "id": "cobra-15",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "compute completion suggestions for the partially typed command line",
+   "relevant": {
+    "completions.Command.getCompletions": 2,
+    "completions.Command.initCompleteCmd": 1
+   }
+  },
+  {
+   "id": "cobra-16",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "register a custom completion function for a flag",
+   "relevant": {
+    "completions.Command.RegisterFlagCompletionFunc": 2
+   }
+  },
+  {
+   "id": "cobra-17",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "write man pages for a whole tree of commands",
+   "relevant": {
+    "doc.man_docs.GenManTree": 2,
+    "doc.man_docs.GenManTreeFromOpts": 1
+   }
+  },
+  {
+   "id": "cobra-18",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "generate markdown documentation for a command",
+   "relevant": {
+    "doc.md_docs.GenMarkdown": 2,
+    "doc.md_docs.GenMarkdownCustom": 2
+   }
+  },
+  {
+   "id": "cobra-19",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "add a default help subcommand to the root command",
+   "relevant": {
+    "command.Command.InitDefaultHelpCmd": 2
+   }
+  },
+  {
+   "id": "cobra-20",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "add the version flag automatically",
+   "relevant": {
+    "command.Command.InitDefaultVersionFlag": 2
+   }
+  },
+  {
+   "id": "cobra-21",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "merge persistent flags from parent commands into the child's flag set",
+   "relevant": {
+    "command.Command.mergePersistentFlags": 2,
+    "command.Command.updateParentsPflags": 1
+   }
+  },
+  {
+   "id": "cobra-22",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "print usage text when a command is misused",
+   "relevant": {
+    "command.Command.Usage": 2,
+    "command.Command.UsageFunc": 1,
+    "command.Command.UsageString": 1
+   }
+  },
+  {
+   "id": "cobra-23",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "group subcommands under headings in the help output",
+   "relevant": {
+    "command.Command.AddGroup": 2,
+    "command.Group": 1,
+    "command.Command.checkCommandGroups": 1
+   }
+  },
+  {
+   "id": "cobra-24",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "functions to run when each command is initialized",
+   "relevant": {
+    "cobra.OnInitialize": 2,
+    "command.Command.preRun": 1
+   }
+  },
+  {
+   "id": "cobra-25",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "register custom functions usable in help and usage templates",
+   "relevant": {
+    "cobra.AddTemplateFunc": 2,
+    "cobra.AddTemplateFuncs": 2
+   }
+  },
+  {
+   "id": "cobra-26",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "add a hint message shown to the user during shell completion",
+   "relevant": {
+    "active_help.AppendActiveHelp": 2
+   }
+  },
+  {
+   "id": "cobra-27",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "read the active help setting from an environment variable",
+   "relevant": {
+    "active_help.GetActiveHelpConfig": 2
+   }
+  },
+  {
+   "id": "cobra-28",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "full path of the command from the root command",
+   "relevant": {
+    "command.Command.CommandPath": 2
+   }
+  },
+  {
+   "id": "cobra-29",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "check whether a command can be invoked by an alias",
+   "relevant": {
+    "command.Command.HasAlias": 2
+   }
+  },
+  {
+   "id": "cobra-30",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "remove flags from the argument list before looking up the command",
+   "relevant": {
+    "command.stripFlags": 2
+   }
+  },
+  {
+   "id": "cobra-31",
+   "repo": "cobra",
+   "category": "identifier",
+   "query": "ExecuteContext",
+   "relevant": {
+    "command.Command.ExecuteContext": 2
+   }
+  },
+  {
+   "id": "cobra-32",
+   "repo": "cobra",
+   "category": "identifier",
+   "query": "SetHelpFunc override",
+   "relevant": {
+    "command.Command.SetHelpFunc": 2
+   }
+  },
+  {
+   "id": "cobra-33",
+   "repo": "cobra",
+   "category": "identifier",
+   "query": "MarkFlagFilename extensions",
+   "relevant": {
+    "shell_completions.Command.MarkFlagFilename": 2,
+    "shell_completions.MarkFlagFilename": 1
+   }
+  },
+  {
+   "id": "cobra-34",
+   "repo": "cobra",
+   "category": "identifier",
+   "query": "NoFileCompletions",
+   "relevant": {
+    "completions.NoFileCompletions": 2
+   }
+  },
+  {
+   "id": "cobra-35",
+   "repo": "cobra",
+   "category": "identifier",
+   "query": "FixedCompletions helper",
+   "relevant": {
+    "completions.FixedCompletions": 2
+   }
+  }
+ ]
+}

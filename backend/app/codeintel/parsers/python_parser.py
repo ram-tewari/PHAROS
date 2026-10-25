@@ -14,8 +14,15 @@ from .base import (
 
 
 def module_path_for(path: str) -> str:
-    """``pkg/sub/mod.py`` -> ``pkg.sub.mod``; ``pkg/__init__.py`` -> ``pkg``."""
+    """``pkg/sub/mod.py`` -> ``pkg.sub.mod``; ``pkg/__init__.py`` -> ``pkg``.
+
+    A leading ``src/`` (the PyPA "src layout") is not part of the import
+    path: ``src/flask/app.py`` is ``flask.app``, which is also what other
+    files import, so call/import resolution can match it.
+    """
     parts = path.split("/")
+    if len(parts) > 2 and parts[0] == "src":
+        parts = parts[1:]
     last = parts[-1]
     for suffix in (".pyi", ".py"):
         if last.endswith(suffix):
