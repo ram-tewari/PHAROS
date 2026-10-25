@@ -365,7 +365,7 @@ curl https://pharos-cloud-api.onrender.com/api/resources/{resource_id} \
 5. **Free-tier compliance**
    - BLPOP 9s → ~8.6k Upstash req/day (under 10k limit)
    - Redis cache for GitHub fetches (1h TTL)
-   - Hybrid storage: 17x reduction (100GB → 6GB)
+   - Hybrid storage: claimed 17× (100GB → 6GB); measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md
 
 ### Benchmark Results
 

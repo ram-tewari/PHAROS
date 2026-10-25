@@ -204,7 +204,7 @@ This is a conceptual catalog — exact paths live in each `module/router.py`. ~1
 Total recurring cost: **$7/mo** (Render Starter only).
 
 **Key Features Deployed**:
-- ✅ Hybrid GitHub storage (17x storage reduction)
+- ✅ Hybrid GitHub storage (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - ✅ Pattern learning engine (AST + Git analysis)
 - ✅ Self-improving loop (rule proposals + review)
 - ✅ Context retrieval (<800ms)

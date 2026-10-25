@@ -115,7 +115,7 @@ This directory contains detailed summaries of completed implementation phases fo
 - ✅ Phase 19: Hybrid edge-cloud deployment
 
 ### Planned (Phases 5.2-9)
-- 📋 Phase 5.2: Hybrid GitHub Storage (metadata only, 17x storage reduction)
+- 📋 Phase 5.2: Hybrid GitHub Storage (metadata only, storage reduction (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md))
 - 📋 Phase 6: Pattern Learning Engine (extract patterns from code history)
 - 📋 Phase 7: Ronin Integration API (context retrieval, pattern learning endpoints)
 - 📋 Phase 8: Self-Improving Loop (track modifications, learn from refactorings)

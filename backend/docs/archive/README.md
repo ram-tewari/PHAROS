@@ -2,6 +2,12 @@
 
 Historical documentation for reference. These documents are no longer actively maintained but preserved for context.
 
+> **Unverified claims.** Performance and storage figures in this archive were not reproduced.
+> In particular the "17× storage reduction" was measured in October 2026 at about 1.05×
+> (5%): see [docs/benchmarks/retrieval-2026-10.md](../../../docs/benchmarks/retrieval-2026-10.md).
+> Credentials that appeared in some of these files were exposed and must be rotated; see
+> [docs/security/credential-exposure-2026-10.md](../../../docs/security/credential-exposure-2026-10.md).
+
 ## Archive Categories
 
 ### Deployment Logs

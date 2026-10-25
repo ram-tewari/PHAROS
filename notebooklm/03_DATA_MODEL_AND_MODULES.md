@@ -341,7 +341,7 @@ module/
   - Line range extraction (start_line to end_line)
   - Branch reference support (commit SHA or "HEAD")
 - **Performance**: ~50ms per fetch (cached), ~200ms (uncached)
-- **Storage savings**: 17x reduction (metadata only, code fetched on-demand)
+- **Storage savings**: metadata only, code fetched on demand (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 
 ### `pdf_ingestion/`
 - **Purpose**: PDF-specific ingestion (marker / pdfplumber). Separate from web-URL ingestion because PDFs need OCR, layout parsing, equation/table extraction.

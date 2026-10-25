@@ -13,7 +13,7 @@ A complete serverless deployment architecture that reduces costs by 71% while ma
 ### Key Achievements
 
 1. **Cost Optimization**: $24/mo → $7/mo (71% savings)
-2. **Storage Efficiency**: 17x reduction (100GB → 6GB)
+2. **Storage Efficiency**: claimed 17× (100GB → 6GB); measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md
 3. **Zero Cold Starts**: API always-on for instant Ronin responses
 4. **Infinite Scalability**: Databases scale to zero when idle
 5. **Production-Hardened**: Connection pooling, retries, timeouts
@@ -303,7 +303,7 @@ curl -X POST https://pharos-api.onrender.com/api/context/retrieve \
 ## 🎯 Next Steps
 
 ### Phase 5: Hybrid GitHub Storage (2 weeks)
-- Metadata-only storage (17x reduction)
+- Metadata-only storage (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - On-demand code fetching from GitHub
 - Redis caching (1 hour TTL)
 - Cost: $0/mo (GitHub API free)
@@ -347,7 +347,7 @@ curl -X POST https://pharos-api.onrender.com/api/context/retrieve \
 ## 🎉 Success Criteria
 
 - ✅ Cost reduced by 71% ($24 → $7/mo)
-- ✅ Storage reduced by 17x (100GB → 6GB)
+- ❌ Storage reduced by 17x (100GB → 6GB) — measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md
 - ✅ Zero cold starts (API always-on)
 - ✅ Infinite scalability (databases scale to zero)
 - ✅ Production-ready (connection pooling, retries, timeouts)
