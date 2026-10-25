@@ -37,7 +37,7 @@ from app.modules.github.fetcher import (
 # A real public file on GitHub.
 # Pinned to a verified commit in psf/requests (v2.31.0 tag SHA).
 # If this SHA is ever unreachable, fall back to branch "main".
-_REAL_SHA   = "b811857e42dc8d9e69d2218ecd8d32b5e79dc1d4"
+_REAL_SHA   = "0e322af87745eff34caffe4df68456ebc20d9068"  # psf/requests v2.32.3
 _REAL_URI   = f"https://raw.githubusercontent.com/psf/requests/{_REAL_SHA}/README.md"
 _REAL_START = 1
 _REAL_END   = 5
@@ -273,6 +273,7 @@ async def test_line_range_slicing_is_correct():
 @pytest.mark.asyncio
 @pytest.mark.integration
 @pytest.mark.slow
+@pytest.mark.network
 async def test_real_github_fetch_cache_miss_latency():
     """
     INTEGRATION: Fetch a real public file from GitHub.
@@ -309,6 +310,7 @@ async def test_real_github_fetch_cache_miss_latency():
 @pytest.mark.asyncio
 @pytest.mark.integration
 @pytest.mark.slow
+@pytest.mark.network
 async def test_real_github_fetch_cache_hit_latency():
     """
     INTEGRATION: After populating the cache, hit latency must be < 500 ms.

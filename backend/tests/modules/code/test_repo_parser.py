@@ -16,7 +16,25 @@ from app.utils.repo_parser import RepositoryParser, DependencyGraph
 class TestRepositoryParser:
     """Unit tests for RepositoryParser class."""
 
+    @pytest.mark.parametrize("url", ["ext::sh -c touch% /tmp/pwned", "--upload-pack=touch /tmp/x",
+                                     "http://github.com/a/b", "https://evil.example/a/b"])
+    def test_clone_rejects_unsafe_urls_before_cloning(self, url):
+        from app.codeintel.git_source import RepoSpecError
+
+        with pytest.raises(RepoSpecError):
+            RepositoryParser().clone_repository(url)
+
+    def test_edge_index_tensor_is_built_lazily(self, tmp_path):
+        (tmp_path / "a.py").write_text("import b\n")
+        (tmp_path / "b.py").write_text("x = 1\n")
+        graph = RepositoryParser().build_dependency_graph(str(tmp_path))
+        assert graph._edge_index is None  # no torch needed to build or inspect the graph
+        torch = pytest.importorskip("torch", reason="torch is an edge-only dependency")
+        assert tuple(graph.edge_index.shape) == (2, len(graph.edges))
+        assert graph.edge_index.dtype == torch.long
+
     def test_clone_with_valid_url(self):
+        pytest.importorskip("git", reason="GitPython is an edge-only dependency")
         """Test cloning a valid repository URL."""
         parser = RepositoryParser()
 
@@ -40,6 +58,7 @@ class TestRepositoryParser:
                 parser.cleanup(repo_path)
 
     def test_clone_with_url_without_protocol(self):
+        pytest.importorskip("git", reason="GitPython is an edge-only dependency")
         """Test cloning with URL that doesn't have protocol prefix."""
         parser = RepositoryParser()
 
@@ -57,6 +76,7 @@ class TestRepositoryParser:
                 parser.cleanup(repo_path)
 
     def test_clone_with_invalid_url_raises_exception(self):
+        pytest.importorskip("git", reason="GitPython is an edge-only dependency")
         """Test that cloning an invalid URL raises an exception."""
         parser = RepositoryParser()
 
@@ -264,7 +284,7 @@ class TestRepositoryParser:
             assert graph.num_nodes == 2
 
             # Should have self-loops (no actual imports)
-            assert graph.edge_index.shape[1] == 2
+            assert graph.edges == [[0, 0], [1, 1]]
 
         finally:
             shutil.rmtree(temp_dir, ignore_errors=True)

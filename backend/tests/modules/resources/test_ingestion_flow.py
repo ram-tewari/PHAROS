@@ -9,11 +9,44 @@ Tests the complete resource ingestion workflow including:
 All assertions use Golden Data from resource_ingestion.json.
 """
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 from backend.tests.protocol import load_golden_data
+
+
+@pytest.fixture(autouse=True)
+def fake_queue(monkeypatch):
+    """The suite runs in CLOUD mode, where ingestion is handed to the edge
+    worker through a Redis queue. Stand in for the queue so these tests check
+    the API/database flow without a live Redis."""
+    from app.services.queue_service import QueueService
+
+    monkeypatch.setattr(QueueService, "__init__", lambda self: None)
+    submit = AsyncMock(return_value="job-1")
+    monkeypatch.setattr(QueueService, "submit_job", submit)
+    return submit
+
+
+def test_create_resource_queue_unavailable_is_503_and_marks_failed(
+    client: TestClient, db_session: Session, monkeypatch
+):
+    """No queue configured: honest 503 (not a 500), and the row is not left pending."""
+    from app.database.models import Resource
+    from app.services.queue_service import QueueService
+
+    def not_configured(self):
+        raise ValueError("Queue service not configured: REDIS_URL must be set in CLOUD mode")
+
+    monkeypatch.setattr(QueueService, "__init__", not_configured)
+    response = client.post("/api/resources", json={"url": "https://example.org/no-queue", "title": "No queue"})
+
+    assert response.status_code == 503
+    row = db_session.query(Resource).filter(Resource.title == "No queue").one()
+    db_session.refresh(row)
+    assert row.ingestion_status == "failed" and "REDIS_URL" in row.ingestion_error
 
 
 def test_create_resource_success(

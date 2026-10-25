@@ -22,6 +22,7 @@ Threat model and rotation are documented in ``SECURITY.md``. Properties:
 from __future__ import annotations
 
 import hmac
+import uuid
 import logging
 import os
 from dataclasses import dataclass
@@ -73,9 +74,19 @@ class Principal:
     def is_admin(self) -> bool:
         return "admin" in self.scopes
 
+    @property
+    def user_uuid(self) -> uuid.UUID:
+        """Stable identifier for per-principal records (e.g. developer profiles)."""
+        return uuid.uuid5(uuid.NAMESPACE_URL, f"pharos:principal:{self.name}")
+
     def as_state(self) -> dict:
         # Shape kept for existing code that reads request.state.user.
-        return {"user_id": self.name, "username": self.name, "scopes": sorted(self.scopes), "tier": self.name}
+        return {
+            "user_id": str(self.user_uuid),
+            "username": self.name,
+            "scopes": sorted(self.scopes),
+            "tier": self.name,
+        }
 
 
 ADMIN = Principal("admin", frozenset({"admin", "read"}))

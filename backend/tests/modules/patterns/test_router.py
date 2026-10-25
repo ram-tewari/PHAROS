@@ -309,12 +309,25 @@ class TestLearnEndpoint:
 class TestProfileManagementEndpoints:
     """Test profile listing and retrieval endpoints."""
     
-    def test_list_profiles_unauthenticated(self, client):
-        """Test listing profiles without authentication."""
+    @pytest.fixture
+    def real_auth(self, monkeypatch):
+        """Real token auth instead of the suite-wide TEST_AUTH_BYPASS."""
+        monkeypatch.delenv("TEST_AUTH_BYPASS", raising=False)
+        monkeypatch.setenv("PHAROS_ADMIN_TOKEN", "p" * 40)
+        return {"Authorization": "Bearer " + "p" * 40}
+
+    def test_list_profiles_unauthenticated(self, client, real_auth):
+        """Without a bearer token the auth middleware rejects the request."""
         response = client.get("/api/patterns/profiles")
-        
+
         assert response.status_code == 401
-        assert "Not authenticated" in response.json()["detail"]
+
+    def test_list_profiles_with_token(self, client, real_auth):
+        """An authenticated principal gets its (empty) profile list."""
+        response = client.get("/api/patterns/profiles", headers=real_auth)
+
+        assert response.status_code == 200
+        assert response.json() == []
     
     def test_list_profiles_authenticated(self, client, mock_user):
         """Test listing profiles with authentication."""
@@ -335,13 +348,16 @@ class TestProfileManagementEndpoints:
             # Will fail auth, but endpoint exists
             assert response.status_code in [200, 401]
     
-    def test_get_profile_unauthenticated(self, client):
-        """Test getting a profile without authentication."""
-        profile_id = str(uuid4())
-        response = client.get(f"/api/patterns/profiles/{profile_id}")
-        
+    def test_get_profile_unauthenticated(self, client, real_auth):
+        """Without a bearer token the auth middleware rejects the request."""
+        response = client.get(f"/api/patterns/profiles/{uuid4()}")
+
         assert response.status_code == 401
-        assert "Not authenticated" in response.json()["detail"]
+
+    def test_get_unknown_profile_with_token(self, client, real_auth):
+        response = client.get(f"/api/patterns/profiles/{uuid4()}", headers=real_auth)
+
+        assert response.status_code == 404
     
     def test_get_profile_not_found(self, client, mock_user):
         """Test getting a non-existent profile."""

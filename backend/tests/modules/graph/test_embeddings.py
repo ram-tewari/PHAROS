@@ -6,12 +6,20 @@ Tests Node2Vec, DeepWalk, similarity search, and performance.
 Note: Tests now verify actual functionality with gensim 4.4.0 on Python 3.13.4.
 """
 
+import importlib.util
+
 import pytest
 from unittest.mock import Mock
 from uuid import uuid4
 
 from app.modules.graph.embeddings import GraphEmbeddingsService
 
+
+
+requires_gensim = pytest.mark.skipif(
+    importlib.util.find_spec("gensim") is None,
+    reason="gensim (graph embeddings) is an optional extra: pip install -r requirements-ml.txt",
+)
 
 class TestGraphEmbeddingsService:
     """Test suite for GraphEmbeddingsService"""
@@ -133,6 +141,7 @@ class TestGraphEmbeddingsService:
 
         assert len(service.embeddings_cache) == 0
 
+    @requires_gensim
     def test_compute_node2vec_empty_graph(self, service, mock_db):
         """Test Node2Vec computation with empty graph"""
         # Mock empty database
@@ -144,6 +153,7 @@ class TestGraphEmbeddingsService:
         assert result["embeddings_computed"] == 0
         assert "no nodes" in result["message"].lower()
 
+    @requires_gensim
     def test_compute_deepwalk_empty_graph(self, service, mock_db):
         """Test DeepWalk computation with empty graph"""
         # Mock empty database
@@ -203,6 +213,7 @@ class TestGraphEmbeddingsService:
         # Should return one of the neighbors
         assert choice in neighbors
 
+    @requires_gensim
     def test_update_embeddings_incremental(self, service, mock_db):
         """Test incremental embedding updates"""
         # Mock empty database
@@ -265,6 +276,7 @@ class TestGraphEmbeddingsService:
         assert G.number_of_nodes() == 2
         assert G.number_of_edges() == 1
 
+    @requires_gensim
     def test_deepwalk_is_node2vec_with_default_params(self, service, mock_db):
         """Test that DeepWalk is Node2Vec with p=1, q=1"""
         # Mock empty database
@@ -326,6 +338,7 @@ class TestGraphEmbeddingsPerformance:
 class TestGraphEmbeddingsIntegration:
     """Integration tests for graph embeddings"""
 
+    @requires_gensim
     def test_full_workflow_with_gensim(self):
         """Test the full workflow with gensim 4.4.0 on Python 3.13"""
         from sqlalchemy.orm import Session
@@ -356,6 +369,7 @@ class TestGraphEmbeddingsIntegration:
         assert len(similar) == 1
         assert similar[0][0] == other_id
 
+    @requires_gensim
     def test_gensim_availability(self):
         """Test that gensim is available and working"""
         try:

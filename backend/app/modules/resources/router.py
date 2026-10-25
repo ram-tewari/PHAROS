@@ -237,10 +237,14 @@ async def create_resource_endpoint(
                 )
             except Exception as queue_error:
                 logger.error(f"Failed to queue resource {resource.id} to Redis: {queue_error}", exc_info=True)
+                # Don't leave the row "pending" forever: nothing will pick it up.
+                resource.ingestion_status = "failed"
+                resource.ingestion_error = f"queueing failed: {queue_error}"[:2000]
+                db.commit()
                 raise HTTPException(
                     status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                     detail=f"Failed to queue ingestion task: {str(queue_error)}"
-                )
+                ) from queue_error
         else:
             # EDGE mode: Process locally with background task
             logger.info(f"Adding background task for resource {resource.id}")
@@ -262,6 +266,8 @@ async def create_resource_endpoint(
             title=resource.title,
             ingestion_status=resource.ingestion_status,
         )
+    except HTTPException:
+        raise  # keep deliberate statuses (e.g. 503 queue unavailable) instead of turning them into 500
     except ValueError as ve:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as exc:  # pragma: no cover - unexpected error path

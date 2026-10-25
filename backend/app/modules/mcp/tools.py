@@ -50,7 +50,7 @@ TOOL_SCHEMAS = {
                 "file_path": {"type": "string", "description": "File path"},
                 "line": {"type": "integer", "description": "Line number"},
                 "column": {"type": "integer", "description": "Column number"},
-                "resource_id": {"type": "integer", "description": "Resource ID"},
+                "resource_id": {"type": "string", "format": "uuid", "description": "Resource UUID"},
             },
             "required": ["file_path", "line", "column", "resource_id"],
         },
@@ -73,7 +73,7 @@ TOOL_SCHEMAS = {
             "properties": {
                 "resource_ids": {
                     "type": "array",
-                    "items": {"type": "integer"},
+                    "items": {"type": "string", "format": "uuid"},
                     "description": "Resource IDs to compute metrics for",
                 },
             },
@@ -95,7 +95,7 @@ TOOL_SCHEMAS = {
             "properties": {
                 "resource_ids": {
                     "type": "array",
-                    "items": {"type": "integer"},
+                    "items": {"type": "string", "format": "uuid"},
                     "description": "Resource IDs to analyze",
                 },
                 "resolution": {
@@ -201,18 +201,31 @@ async def search_resources_handler(
     arguments: Dict[str, Any], context: Dict[str, Any]
 ) -> Any:
     """Handler for search_resources tool"""
+    from ..search.schema import SearchQuery
     from ..search.service import SearchService
     from ...shared.database import get_sync_db
 
     db = next(get_sync_db())
     try:
-        service = SearchService(db)
-        results = await service.hybrid_search(
-            query=arguments["query"],
+        query = SearchQuery(
+            text=arguments["query"],
             limit=arguments.get("limit", 10),
             offset=arguments.get("offset", 0),
         )
-        return {"results": results, "total": len(results)}
+        # hybrid_search is synchronous and takes a SearchQuery; it returns
+        # (resources, total, facets, snippets).
+        resources, total, _facets, snippets = SearchService(db).hybrid_search(query)
+        results = [
+            {
+                "id": str(r.id),
+                "title": r.title,
+                "identifier": r.identifier,
+                "type": r.type,
+                "snippet": snippets.get(str(r.id)) if snippets else None,
+            }
+            for r in resources
+        ]
+        return {"results": results, "total": total}
     finally:
         db.close()
 
@@ -221,19 +234,21 @@ async def get_hover_info_handler(
     arguments: Dict[str, Any], context: Dict[str, Any]
 ) -> Any:
     """Handler for get_hover_info tool"""
+    from uuid import UUID
+
     from ..graph.router import get_hover_information
     from ...shared.database import get_sync_db
 
     db = next(get_sync_db())
     try:
-        result = await get_hover_information(
+        # Synchronous route function; returns a plain dict.
+        return get_hover_information(
             file_path=arguments["file_path"],
             line=arguments["line"],
             column=arguments["column"],
-            resource_id=arguments["resource_id"],
+            resource_id=UUID(str(arguments["resource_id"])),
             db=db,
         )
-        return result.dict()
     finally:
         db.close()
 
@@ -249,7 +264,7 @@ async def compute_graph_metrics_handler(
     try:
         service = GraphService(db)
         metrics = await service.compute_degree_centrality(arguments["resource_ids"])
-        return {"metrics": {str(k): v.dict() for k, v in metrics.items()}}
+        return {"metrics": {str(k): v for k, v in metrics.items()}}
     finally:
         db.close()
 
@@ -268,7 +283,7 @@ async def detect_communities_handler(
             resource_ids=arguments["resource_ids"],
             resolution=arguments.get("resolution", 1.0),
         )
-        return result.dict()
+        return result
     finally:
         db.close()
 
@@ -351,8 +366,8 @@ def register_all_tools(mcp_server) -> None:
         handler = TOOL_HANDLERS.get(tool_name)
         if handler:
             mcp_server.register_tool(tool_name, schema, handler)
-            logger.info(f"Registered MCP tool: {tool_name}")
+            logger.debug("Registered MCP tool: %s", tool_name)
         else:
             logger.warning(f"No handler found for tool: {tool_name}")
 
-    logger.info(f"Registered {len(TOOL_SCHEMAS)} MCP tools")
+    logger.debug("Registered %d MCP tools", len(TOOL_SCHEMAS))

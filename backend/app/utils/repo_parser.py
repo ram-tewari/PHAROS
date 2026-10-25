@@ -11,8 +11,6 @@ import tempfile
 import shutil
 from pathlib import Path
 from typing import List, Optional, Dict, Any
-import torch
-from git import Repo
 from tree_sitter import Language, Parser
 import tree_sitter_python as tspython
 import tree_sitter_javascript as tsjavascript
@@ -26,19 +24,28 @@ logger = logging.getLogger(__name__)
 
 
 class DependencyGraph:
-    """Container for dependency graph data."""
+    """Container for dependency graph data.
 
-    def __init__(self, edge_index: torch.Tensor, file_paths: List[str]):
-        """
-        Initialize a dependency graph.
+    ``edges`` is a plain ``[[src, dst], ...]`` list. ``edge_index`` (a torch
+    tensor of shape [2, num_edges], for GNN training) is built on first
+    access, so callers that only need ``file_paths``/``edges`` -- e.g. the
+    planning module's architecture parser in the cloud API -- do not need
+    torch installed.
+    """
 
-        Args:
-            edge_index: Edge list tensor of shape [2, num_edges]
-            file_paths: List of file paths corresponding to node indices
-        """
-        self.edge_index = edge_index
+    def __init__(self, file_paths: List[str], edges: Optional[List[List[int]]] = None, edge_index=None):
         self.file_paths = file_paths
         self.num_nodes = len(file_paths)
+        self.edges = edges if edges is not None else []
+        self._edge_index = edge_index
+
+    @property
+    def edge_index(self):
+        if self._edge_index is None:
+            import torch
+
+            self._edge_index = torch.tensor(self.edges, dtype=torch.long).t()
+        return self._edge_index
 
 
 class RepositoryParser:
@@ -87,9 +94,18 @@ class RepositoryParser:
         Raises:
             Exception: If cloning fails
         """
-        # Ensure URL has protocol
-        if not repo_url.startswith(("http://", "https://", "git@")):
-            repo_url = f"https://{repo_url}"
+        from app.codeintel.git_source import parse_repo_spec
+        from app.config.settings import get_settings
+
+        # Same validation as the API (https only, allowlisted hosts, no
+        # credentials/ports/options), so a queued URL can never select a
+        # git transport such as ext:: (CVE-2022-24439) or inject options.
+        # Raises RepoSpecError (a ValueError) before anything is cloned.
+        repo_url = parse_repo_spec(
+            repo_url, allowed_hosts=get_settings().CODEINTEL_ALLOWED_GIT_HOSTS
+        ).clone_url
+
+        from git import Repo  # GitPython: edge-only dependency
 
         # Create temp directory with unique prefix (includes timestamp and PID)
         # This ensures concurrent clones use different directories
@@ -276,8 +292,7 @@ class RepositoryParser:
         if not file_paths:
             # Empty repository - return empty graph with self-loop
             print("WARNING: No source files found")
-            edge_index = torch.tensor([[0], [0]], dtype=torch.long)  # type: ignore[attr-defined]
-            return DependencyGraph(edge_index=edge_index, file_paths=["<empty>"])
+            return DependencyGraph(file_paths=["<empty>"], edges=[[0, 0]])
 
         # Create file index mapping
         file_to_idx = {path: idx for idx, path in enumerate(file_paths)}
@@ -294,18 +309,13 @@ class RepositoryParser:
                     # Add edge: file -> imported_file
                     edges.append([file_to_idx[file_path], file_to_idx[resolved]])
 
-        # Convert to PyTorch tensor
-        if edges:
-            edge_index = torch.tensor(edges, dtype=torch.long).t()  # type: ignore[attr-defined]
-        else:
+        if not edges:
             # Empty graph - create self-loops for all nodes
-            edge_index = torch.tensor(  # type: ignore[attr-defined]
-                [[i, i] for i in range(len(file_paths))], dtype=torch.long
-            ).t()
+            edges = [[i, i] for i in range(len(file_paths))]
 
-        print(f"[STATS]Built graph: {len(file_paths)} nodes, {edge_index.shape[1]} edges")
+        print(f"[STATS]Built graph: {len(file_paths)} nodes, {len(edges)} edges")
 
-        return DependencyGraph(edge_index=edge_index, file_paths=file_paths)
+        return DependencyGraph(file_paths=file_paths, edges=edges)
 
     def _resolve_import(
         self, import_path: str, current_file: str, repo_path: str

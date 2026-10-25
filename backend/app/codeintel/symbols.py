@@ -96,3 +96,63 @@ def repository_summary(db: Session, repo: Repository) -> dict:
         },
         "graph": stats.get("graph"),
     }
+
+
+HOVER_CONTEXT_LINES = 3
+
+
+def hover(db: Session, resource, line: int, *, fetch_token: str | None = None) -> dict:
+    """Hover information for ``line`` of an indexed code file (``resource``).
+
+    Picks the innermost indexed symbol whose span contains ``line``; its
+    docstring/signature come from the index, the surrounding lines are read
+    from git at the indexed commit and verified against the file's blob SHA
+    (empty when the source cannot be resolved). Shape matches
+    ``app.modules.graph.schema.HoverInformationResponse``.
+    """
+    from .source import SourceRequest, resolve_sources
+
+    empty = {"symbol_name": None, "symbol_type": None, "definition_location": None,
+             "documentation": None, "related_chunks": [], "context_lines": []}
+    chunks = db.execute(
+        select(DocumentChunk).where(
+            DocumentChunk.resource_id == resource.id,
+            DocumentChunk.start_line <= line,
+            DocumentChunk.end_line >= line,
+        )
+    ).scalars().all()
+    if not chunks:
+        return empty
+    # Innermost span wins; a module chunk only when nothing narrower matches.
+    target = min(chunks, key=lambda c: (c.ast_node_type == "module", c.end_line - c.start_line))
+    meta = target.chunk_metadata or {}
+    path = meta.get("path") or resource.identifier
+
+    graph = symbol_graph(db, target.id, limit=10)
+    related = [
+        {"chunk_id": n["chunk_id"], "content_preview": f"{relation}: {n['symbol']} ({n['path']}:{n['start_line']})",
+         "similarity_score": None}
+        for relation in ("calls", "called_by")
+        for n in graph[relation]
+    ]
+
+    context_lines: list[str] = []
+    repo = db.get(Repository, target.repository_id) if target.repository_id else None
+    if repo is not None and target.branch_reference:
+        start = max(1, line - HOVER_CONTEXT_LINES)
+        result = resolve_sources([SourceRequest(
+            key="hover", source_type=repo.source_type, repository_url=repo.url, local_path=repo.local_path,
+            commit=target.branch_reference, path=path, start_line=start, end_line=line + HOVER_CONTEXT_LINES,
+            blob_sha=resource.content_sha,
+        )], fetch_token)["hover"]
+        if result.verified and result.code is not None:
+            context_lines = result.code.splitlines()
+
+    return {
+        "symbol_name": target.symbol_name,
+        "symbol_type": target.ast_node_type,
+        "definition_location": {"file_path": path, "line": target.start_line, "column": None},
+        "documentation": meta.get("docstring") or meta.get("signature"),
+        "related_chunks": related,
+        "context_lines": context_lines,
+    }

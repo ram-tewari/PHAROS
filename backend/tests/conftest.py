@@ -934,3 +934,13 @@ def celery_eager_mode():
     celery_app.conf.task_always_eager = original_always_eager
     celery_app.conf.task_eager_propagates = original_eager_propagates
     celery_app.conf.result_backend = original_result_backend
+
+
+def pytest_collection_modifyitems(config, items):
+    """Tests marked ``network`` reach the internet: opt in with PHAROS_NETWORK_TESTS=1."""
+    if os.getenv("PHAROS_NETWORK_TESTS", "").lower() in ("1", "true", "yes"):
+        return
+    skip = pytest.mark.skip(reason="needs internet; set PHAROS_NETWORK_TESTS=1 to run")
+    for item in items:
+        if "network" in item.keywords:
+            item.add_marker(skip)

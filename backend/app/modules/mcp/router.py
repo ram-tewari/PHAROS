@@ -26,21 +26,15 @@ from ...shared.database import get_sync_db
 logger = logging.getLogger(__name__)
 
 
-# Tool registration only needs to happen once
-_tools_registered = False
-
-
 def get_mcp_server(db: Session = Depends(get_sync_db)) -> MCPServer:
-    """Get MCP server instance with fresh DB session per request."""
-    global _tools_registered
+    """Get an MCP server (with its tools) bound to this request's DB session.
+
+    Each MCPServer has its own ToolRegistry, so tools are registered on every
+    instance. (Registering only "once per process" left every request after
+    the first with an empty registry: "Tool not found".)
+    """
     server = MCPServer(db)
-
-    # Register tools on first access
-    if not _tools_registered:
-        register_all_tools(server)
-        _tools_registered = True
-        logger.info("MCP tools registered successfully")
-
+    register_all_tools(server)
     return server
 
 
@@ -85,6 +79,7 @@ def retrieve_context(request: ContextRetrievalRequest, db: Session = Depends(get
                 repository=request.codebase or None,
                 max_chunks=request.max_code_chunks,
                 include_rules=request.include_patterns,
+                profile_id=request.profile_id,
             ),
         )
     except RepositoryNotFound as exc:
@@ -159,8 +154,9 @@ async def create_session_di(
     Returns:
         SessionResponse: Created session information
     """
-    user_id = current_user.get("user_id") if current_user else None
-    session = mcp_server.create_session(user_id=user_id, context=request.context)
+    # mcp_sessions.user_id is a legacy integer column; M2M principals have no
+    # integer id, so sessions are not attributed to a user.
+    session = mcp_server.create_session(user_id=None, context=request.context)
     return session
 
 

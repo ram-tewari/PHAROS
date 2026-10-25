@@ -25,7 +25,7 @@ from dataclasses import dataclass
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from ..database.models import DocumentChunk, ProposedRule, Repository, Resource
+from ..database.models import CodingProfile, DocumentChunk, ProposedRule, Repository, Resource
 from .embeddings import Embedder
 from .git_source import web_file_url
 from .retrieval import Filters, Hit, Retriever, repositories_matching
@@ -47,6 +47,7 @@ class ContextRequest:
     include_code: bool = True
     include_related: bool = True
     include_rules: bool = True
+    profile_id: str | None = None  # a CodingProfile's rules instead of the repository's
     max_chars: int = 24_000
     languages: list[str] | None = None
     path_prefix: str | None = None
@@ -208,21 +209,16 @@ def assemble_context(db: Session, embedder: Embedder | None, req: ContextRequest
         timings["related"] = (time.perf_counter() - t) * 1000
 
     rules: list[dict] = []
+    warnings = list(outcome.warnings)
     if req.include_rules:
-        urls = [r.url for r in repos] or list({h.repository_url for h in outcome.hits})
-        names = [r.name for r in repos] or list({h.repository_name for h in outcome.hits})
-        if urls or names:
-            stmt = select(ProposedRule).where(
-                ProposedRule.status == "ACTIVE",
-                ProposedRule.repository.in_(urls + names),
-            ).order_by(ProposedRule.confidence.desc()).limit(10)
-            for rule in db.execute(stmt).scalars():
-                rules.append({
-                    "name": rule.rule_name,
-                    "description": rule.rule_description,
-                    "confidence": rule.confidence,
-                    "file_path": rule.file_path,
-                })
+        if req.profile_id:
+            if db.get(CodingProfile, req.profile_id) is None:
+                warnings.append(f"unknown coding profile {req.profile_id!r}: no profile rules applied")
+            rules = select_rules(db, profile_id=req.profile_id)
+        else:
+            urls = [r.url for r in repos] or list({h.repository_url for h in outcome.hits})
+            names = [r.name for r in repos] or list({h.repository_name for h in outcome.hits})
+            rules = select_rules(db, repositories=urls + names)
 
     budget = _Budget(req.max_chars)
     context_text = _render(req.query, chunks, related, rules, budget)
@@ -233,7 +229,7 @@ def assemble_context(db: Session, embedder: Embedder | None, req: ContextRequest
         "mode_requested": outcome.mode_requested,
         "mode_used": outcome.mode_used,
         "embedding_model": outcome.embedding_model,
-        "warnings": outcome.warnings,
+        "warnings": warnings,
         "repositories": [
             {"id": str(r.id), "name": r.name, "url": r.url, "commit_sha": r.last_commit_sha}
             for r in repos
@@ -250,6 +246,35 @@ def assemble_context(db: Session, embedder: Embedder | None, req: ContextRequest
         },
     }
 
+
+def select_rules(db: Session, *, profile_id: str | None = None, repositories: list[str] | None = None) -> list[dict]:
+    """ACTIVE coding rules: a CodingProfile's (when ``profile_id`` is given)
+    or those learned for ``repositories``; highest confidence first."""
+    if profile_id:
+        scope, limit = ProposedRule.profile_id == profile_id, 20
+    elif repositories:
+        scope, limit = ProposedRule.repository.in_(repositories), 10
+    else:
+        return []
+    stmt = (
+        select(ProposedRule)
+        .where(ProposedRule.status == "ACTIVE", scope)
+        .order_by(ProposedRule.confidence.desc())
+        .limit(limit)
+    )
+    out = []
+    for rule in db.execute(stmt).scalars():
+        schema = rule.rule_schema or {}
+        out.append({
+            "name": rule.rule_name,
+            "description": rule.rule_description,
+            "confidence": rule.confidence,
+            "pattern_type": schema.get("pattern_type"),
+            "example": schema.get("example_code") or None,
+            "file_path": rule.file_path,
+            "profile_id": rule.profile_id,
+        })
+    return out
 
 def _render(query: str, chunks: list[dict], related: list[dict], rules: list[dict], budget: _Budget) -> str:
     parts: list[str] = []
@@ -276,9 +301,12 @@ def _render(query: str, chunks: list[dict], related: list[dict], rules: list[dic
         if taken:
             parts.append(taken)
     if rules:
-        lines = ["\n## Coding rules for this repository\n"]
+        profile = rules[0].get("profile_id")
+        lines = [f"\n## Coding rules (profile {profile})\n" if profile else "\n## Coding rules for this repository\n"]
         for r in rules:
             lines.append(f"- **{r['name']}**: {r['description']}\n")
+            if r.get("example"):
+                lines.append(f"  Example: `{r['example']}`\n")
         taken = budget.take("".join(lines))
         if taken:
             parts.append(taken)

@@ -72,7 +72,15 @@ async def test_handshake_reports_server_name(native_mcp_server):
 
 @pytest.mark.asyncio
 async def test_tools_list_contains_expected_tools(native_mcp_server):
-    """tools/list must surface retrieve_context plus the four delegated tools."""
+    """tools/list surfaces the code-intelligence tools (app.codeintel).
+
+    The previous native server also listed search_resources, get_hover_info,
+    compute_graph_metrics and detect_communities; their handlers raised on
+    every call (wrong signatures), and this test only checked that the names
+    were listed. They remain available through POST /api/v1/mcp/invoke (now
+    fixed and tested in tests/codeintel/test_api.py); natively, search_code
+    and find_symbol cover search and hover for indexed code.
+    """
     from mcp import ClientSession
     from mcp.client.streamable_http import streamablehttp_client
 
@@ -82,14 +90,7 @@ async def test_tools_list_contains_expected_tools(native_mcp_server):
             result = await session.list_tools()
             names = {tool.name for tool in result.tools}
 
-    expected = {
-        "retrieve_context",
-        "search_resources",
-        "get_hover_info",
-        "compute_graph_metrics",
-        "detect_communities",
-    }
-    assert expected <= names, f"missing tools: {expected - names}"
+    assert names == {"retrieve_context", "search_code", "find_symbol", "list_repositories"}
 
 
 @pytest.mark.asyncio
@@ -106,7 +107,7 @@ async def test_retrieve_context_tool_call_returns_mcp_result(native_mcp_server):
             await session.initialize()
             result = await session.call_tool(
                 "retrieve_context",
-                {"query": "how does auth work", "codebase": "pharos"},
+                {"query": "how does auth work"},
             )
 
     # Whether the call succeeds or the handler surfaces an error, it must

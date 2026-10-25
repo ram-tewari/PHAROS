@@ -93,6 +93,7 @@ def build_mcp_server() -> FastMCP:
         max_chunks: int = 8,
         include_code: bool = True,
         max_chars: int = 24000,
+        profile_id: str | None = None,
     ) -> dict[str, Any]:
         with session_scope() as db:
             try:
@@ -105,6 +106,7 @@ def build_mcp_server() -> FastMCP:
                         max_chunks=max(1, min(max_chunks, 50)),
                         include_code=include_code,
                         max_chars=max(1000, min(max_chars, 400_000)),
+                        profile_id=profile_id,
                     ),
                     fetch_token=secret(get_settings().GIT_CLONE_TOKEN),
                 )

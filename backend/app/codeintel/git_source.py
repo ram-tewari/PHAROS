@@ -150,14 +150,18 @@ def parse_repo_spec(
         else:
             spec = f"https://{spec}"
 
-    parts = urlsplit(spec)
+    try:
+        parts = urlsplit(spec)
+        port = parts.port  # raises ValueError for "host:junk" (e.g. "javascript:alert(1)")
+    except ValueError as exc:
+        raise RepoSpecError("malformed repository URL") from exc
     if parts.scheme != "https":
         raise RepoSpecError("only https:// repository URLs are accepted")
     if parts.username or parts.password or "@" in parts.netloc:
         raise RepoSpecError(
             "credentials in repository URLs are not accepted; configure GIT_CLONE_TOKEN instead"
         )
-    if parts.port is not None:
+    if port is not None:
         raise RepoSpecError("custom ports are not accepted in repository URLs")
     if parts.query or parts.fragment:
         raise RepoSpecError("repository URLs must not contain a query or fragment")

@@ -129,6 +129,9 @@ class ContextRequestIn(BaseModel):
     include_code: bool = True
     include_related: bool = True
     include_rules: bool = True
+    profile_id: str | None = Field(
+        None, max_length=64, description="Apply this CodingProfile's rules instead of the repository's"
+    )
     max_chars: int = Field(24_000, ge=1_000, le=400_000)
     languages: list[str] | None = None
     kinds: list[str] | None = None

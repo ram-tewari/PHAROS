@@ -64,7 +64,8 @@ def test_auth_fails_closed_without_configured_token(api, monkeypatch):
 @pytest.mark.parametrize(
     "repository",
     ["/etc", "file:///etc/passwd", "http://github.com/a/b", "https://169.254.169.254/x/y",
-     "https://gitlab.com/a/b", "github.com/a/b; rm -rf /", "x" * 3000],
+     "https://gitlab.com/a/b", "github.com/a/b; rm -rf /", "x" * 3000,
+     "javascript:alert(1)", "github.com:junk/a/b"],
 )
 def test_repository_validation(api, repository):
     resp = api.post("/api/v1/repositories", json={"repository": repository}, headers=auth())
@@ -217,3 +218,58 @@ def test_mcp_tools_and_calls(indexed_api):
 
 def test_mcp_requires_token(indexed_api):
     assert _mcp(indexed_api, "tools/list", token="wrong").status_code == 401
+
+
+# ── code-aware legacy endpoints ────────────────────────────────────────────
+
+
+def _resource_id(session, path):
+    from sqlalchemy import select
+
+    from app.database.models import Resource
+
+    return str(session.execute(select(Resource.id).where(Resource.identifier == path)).scalar_one())
+
+
+def test_hover_on_indexed_code(indexed_api, session):
+    """GET /api/graph/code/hover resolves the innermost symbol from the code index."""
+    rid = _resource_id(session, "shop/auth.py")
+    resp = indexed_api.get(
+        "/api/graph/code/hover",
+        params={"file_path": "shop/auth.py", "line": 22, "column": 8, "resource_id": rid},
+        headers=auth(READ_TOKEN),
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["symbol_name"] == "shop.auth.verify_password" and body["symbol_type"] == "function"
+    assert body["definition_location"]["line"] == 20
+    assert "constant time" in body["documentation"]
+    previews = " ".join(r["content_preview"] for r in body["related_chunks"])
+    assert "calls: shop.auth.hash_password" in previews and "called_by: shop.auth.authenticate" in previews
+    assert any("def verify_password" in line for line in body["context_lines"])  # verified source from git
+
+
+@pytest.mark.parametrize("tool", ["search_resources", "get_hover_info", "compute_graph_metrics", "detect_communities"])
+def test_legacy_mcp_invoke_tools_run(indexed_api, session, tool):
+    """The REST tool-invocation endpoint's read tools execute (they used to raise TypeError/AttributeError)."""
+    rid = _resource_id(session, "shop/auth.py")
+    arguments = {
+        "search_resources": {"query": "password", "limit": 3},
+        "get_hover_info": {"file_path": "shop/auth.py", "line": 22, "column": 8, "resource_id": rid},
+        "compute_graph_metrics": {"resource_ids": [rid]},
+        "detect_communities": {"resource_ids": [rid]},
+    }[tool]
+    resp = indexed_api.post("/api/v1/mcp/invoke", json={"tool_name": tool, "arguments": arguments}, headers=auth())
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["success"] is True and body["error"] is None, body
+    if tool == "get_hover_info":
+        assert body["result"]["symbol_name"] == "shop.auth.verify_password"
+
+
+def test_principals_have_stable_distinct_uuids():
+    from app.shared.auth import ADMIN, READER
+
+    assert ADMIN.as_state()["user_id"] == str(ADMIN.user_uuid)
+    assert ADMIN.user_uuid != READER.user_uuid
+    assert ADMIN.user_uuid.version == 5  # deterministic across processes and restarts

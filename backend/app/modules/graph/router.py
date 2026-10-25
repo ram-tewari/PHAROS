@@ -1507,6 +1507,20 @@ def _get_hover_information_impl(
                 status_code=404, detail=f"Resource with ID {resource_id} not found"
             )
 
+        if resource.repository_id is not None:
+            # A file from the code-intelligence index: chunks hold no source
+            # (content is NULL) and carry their spans in columns, so the
+            # legacy path below cannot see them.
+            from app.codeintel.runtime import secret
+            from app.codeintel.symbols import hover
+            from app.config.settings import get_settings
+
+            result = HoverInformationResponse(
+                **hover(db, resource, line, fetch_token=secret(get_settings().GIT_CLONE_TOKEN))
+            ).model_dump()
+            cache_service.set(cache_key, result, ttl=300)
+            return result
+
         # Get resource metadata to determine language
         language = resource.language
 

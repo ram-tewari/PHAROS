@@ -428,6 +428,10 @@ class CodeIndexer:
                 "parent": sym.parent,
                 "calls": sym.calls,
             }
+            if sym.signature:
+                meta["signature"] = sym.signature[:500]
+            if sym.docstring:
+                meta["docstring"] = sym.docstring[:2000]
             if parsed.parser == "line-fallback":
                 meta["fallback_reason"] = parsed.fallback_reason
             if parsed.partial:
