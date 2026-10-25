@@ -4,7 +4,9 @@
 #   docker compose up --build -d
 #   curl -s localhost:8000/health
 #
-# Credentials below are for this local stack only.
+# Credentials below are for this local stack only. Published ports are bound to 127.0.0.1:
+# Redis has no password, and the database password is public, so neither may be reachable from
+# the network.
 
 services:
   db:
@@ -13,7 +15,7 @@ services:
       POSTGRES_USER: pharos
       POSTGRES_PASSWORD: pharos
       POSTGRES_DB: pharos
-    ports: ["5432:5432"]
+    ports: ["127.0.0.1:5432:5432"]
     volumes: ["pgdata:/var/lib/postgresql/data"]
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U pharos -d pharos"]
@@ -23,7 +25,7 @@ services:
 
   redis:
     image: redis:7.4-alpine
-    ports: ["6379:6379"]
+    ports: ["127.0.0.1:6379:6379"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 2s
@@ -38,7 +40,7 @@ services:
       MODE: ${MODE:-CLOUD}
       EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-hash}
       WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
-    ports: ["8000:8000"]
+    ports: ["127.0.0.1:8000:8000"]
     depends_on:
       db: { condition: service_healthy }
       redis: { condition: service_healthy }
