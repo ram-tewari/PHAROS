@@ -32,7 +32,6 @@ import json
 import os
 import shutil
 import signal
-import socket
 import subprocess
 import sys
 import time
@@ -622,7 +621,7 @@ def cmd_start(args: argparse.Namespace) -> int:
     pid = _spawn_detached_supervisor(mode)
     _print_ok(f"supervisor launched, pid {pid}, mode={mode}")
     _print_ok(f"logs:   {LOG_FILE}")
-    _print_ok(f"status: python pharos_edge.py status")
+    _print_ok("status: python pharos_edge.py status")
     return 0
 
 
@@ -731,20 +730,22 @@ def cmd_doctor(args: argparse.Namespace) -> int:
         "javascript": ("x.js", "function f() {}\n"),
         "c": ("x.c", "int f() { return 0; }\n"),
         "cpp": ("x.cpp", "int f() { return 0; }\n"),
+        "java": ("X.java", "class X { void f() {} }\n"),
     }
     try:
-        from pathlib import Path as _Path
-        from app.modules.ingestion.language_parser import LanguageParser
+        from app.codeintel.parsers import parse_file
         for lang_name, (fname, src) in _AST_PROBES.items():
             try:
-                parser = LanguageParser.for_path(_Path(fname))
-                syms = parser.extract(src, "probe") if parser else []
-                got = any(s.node_type == "function" for s in syms)
-                _check(lang_name, got, "" if got else "grammar/API failure -> line-chunk fallback")
+                result = parse_file(fname, src)
+                got = result is not None and result.parser == "tree-sitter" and any(
+                    s.kind in ("function", "method") for s in result.symbols
+                )
+                reason = "" if got else f"line-chunk fallback ({result.fallback_reason if result else 'no result'})"
+                _check(lang_name, got, reason)
             except Exception as e:
                 _check(lang_name, False, f"({e.__class__.__name__}: {e})")
     except Exception as e:
-        _check("language_parser import", False, str(e))
+        _check("app.codeintel.parsers import", False, str(e))
 
     console.rule("Network")
     hb = _query_cloud_heartbeat(env)

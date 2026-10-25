@@ -11,7 +11,6 @@ Each test guards a specific failure this codebase has actually suffered:
 Run just this suite:  pytest tests/smoke -q
 """
 
-import os
 import sys
 from pathlib import Path
 
@@ -231,12 +230,12 @@ def test_polyglot_ast_extracts_symbols(filename, source):
     """Non-Python languages must parse via tree-sitter, not fall back to
     line-chunking. Guards both missing grammar packages and tree-sitter API
     drift (Language.query() removed in 0.25+)."""
-    from app.modules.ingestion.language_parser import LanguageParser
+    from app.codeintel.parsers import parse_file
 
-    parser = LanguageParser.for_path(Path(filename))
-    assert parser is not None, f"no parser for {filename}"
-    symbols = parser.extract(source, "probe")
-    names = {s.name for s in symbols}
-    assert "hello" in {n.lower() for n in names} or "Hello" in names, (
+    result = parse_file(filename, source)
+    assert result is not None, f"no AST parse for {filename} (unsupported or syntax error)"
+    assert result.parser == "tree-sitter" and result.fallback_reason is None, result.fallback_reason
+    names = {s.name for s in result.symbols if s.kind != "module"}
+    assert "hello" in {n.lower() for n in names}, (
         f"{filename} produced no function symbol (line-chunk fallback?): {names}"
     )

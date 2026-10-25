@@ -395,21 +395,10 @@ def test_user(db_session: Session):
 
 
 @pytest.fixture(scope="function")
-def auth_token(test_user) -> str:
-    """
-    Generate a valid JWT access token for the test user.
-
-    Returns:
-        Valid JWT token string that can be used in Authorization headers
-    """
-    from app.shared.security import create_access_token
-
-    token = create_access_token(
-        data={
-            "username": test_user.username,
-            "user_id": str(test_user.id),
-        }
-    )
+def auth_token(monkeypatch) -> str:
+    """The admin bearer token (JWT auth was removed; Pharos uses static M2M tokens)."""
+    token = "test-admin-token-" + "x" * 32
+    monkeypatch.setenv("PHAROS_ADMIN_TOKEN", token)
     return token
 
 
@@ -447,10 +436,10 @@ def bypass_auth(db_session: Session, test_user) -> TestClient:
     - Overrides module-specific auth dependencies (_get_current_user_id)
     - Returns a TestClient ready for use in tests
     """
-    from app.shared.security import get_current_user, TokenData
     from app.shared.database import get_sync_db, get_db
 
-    # Create app instance for testing
+    # Authentication is bypassed server-side by TEST_AUTH_BYPASS (set at the
+    # top of this file; refused in production).
     app = create_app()
 
     def override_get_sync_db():
@@ -465,36 +454,8 @@ def bypass_auth(db_session: Session, test_user) -> TestClient:
         finally:
             pass
 
-    async def mock_get_current_user(token: str = None) -> TokenData:
-        """Mock get_current_user that returns test user without token validation."""
-        return TokenData(
-            user_id=str(test_user.id),
-            username=test_user.username,
-            scopes=[],
-            tier="free",
-        )
-
-    # Override dependencies
     app.dependency_overrides[get_sync_db] = override_get_sync_db
     app.dependency_overrides[get_db] = override_get_async_db
-    app.dependency_overrides[get_current_user] = mock_get_current_user
-
-    # Also override module-specific auth dependencies
-    try:
-        from app.modules.recommendations.router import _get_current_user_id
-
-        app.dependency_overrides[_get_current_user_id] = lambda db=None: test_user.id
-    except ImportError:
-        pass
-
-    try:
-        from app.modules.annotations.router import (
-            _get_current_user_id as annotations_get_user,
-        )
-
-        app.dependency_overrides[annotations_get_user] = lambda: str(test_user.id)
-    except ImportError:
-        pass
 
     # Create and return the test client
     # Pass X-Test-Auth-Bypass header so the auth middleware allows the request

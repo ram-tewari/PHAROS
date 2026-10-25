@@ -68,3 +68,6 @@ frontend/.vite/
 *.log
 .DS_Store
 Thumbs.db
+
+# Redis snapshots from local dev servers
+*.rdb
