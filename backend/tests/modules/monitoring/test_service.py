@@ -291,39 +291,37 @@ class TestEventHistory:
             assert "error" in result
 
 
-@pytest.mark.skipif(
-    __import__("importlib").util.find_spec("celery") is None,
-    reason="celery not installed; worker-status tests require celery",
-)
 class TestWorkerStatus:
-    """Tests for worker status retrieval."""
+    """Worker status comes from the durable ingestion job table."""
 
     @pytest.mark.asyncio
-    async def test_get_worker_status_success(self, monitoring_service):
-        """Test successful worker status retrieval."""
-        with patch("app.tasks.celery_app.celery_app") as mock_celery:
-            mock_inspect = Mock()
-            mock_inspect.active.return_value = {"worker1": []}
-            mock_inspect.scheduled.return_value = {"worker1": []}
-            mock_inspect.stats.return_value = {"worker1": {"total": 100}}
-            mock_celery.control.inspect.return_value = mock_inspect
+    async def test_get_worker_status_reports_queue(self, monitoring_service, db_session):
+        from datetime import datetime, timedelta, timezone
 
-            result = await monitoring_service.get_worker_status()
+        from app.database.models import IngestionJob
 
-            assert result["status"] == "ok"
-            assert "workers" in result
-            assert result["workers"]["worker_count"] == 1
+        now = datetime.now(timezone.utc)
+        db_session.add_all([
+            IngestionJob(repo_url="https://github.com/a/q", branch_key="", status="queued", attempts=0,
+                         max_attempts=3, created_at=now),
+            IngestionJob(repo_url="https://github.com/a/r", branch_key="", status="running", attempts=1,
+                         max_attempts=3, heartbeat_at=now - timedelta(hours=1)),
+        ])
+        db_session.commit()
+
+        result = await monitoring_service.get_worker_status(db_session)
+
+        assert result["status"] == "degraded"  # the running job stopped heartbeating
+        workers = result["workers"]
+        assert (workers["queued"], workers["running"], workers["stale_running"]) == (1, 1, 1)
 
     @pytest.mark.asyncio
-    async def test_get_worker_status_error(self, monitoring_service):
-        """Test worker status retrieval with error."""
-        with patch("app.tasks.celery_app.celery_app") as mock_celery:
-            mock_celery.control.inspect.side_effect = Exception("Celery error")
+    async def test_get_worker_status_error(self, monitoring_service, mock_db):
+        mock_db.execute.side_effect = Exception("database gone")
 
-            result = await monitoring_service.get_worker_status()
+        result = await monitoring_service.get_worker_status(mock_db)
 
-            assert result["status"] == "error"
-            assert "error" in result
+        assert result["status"] == "error" and "database gone" in result["error"]
 
 
 

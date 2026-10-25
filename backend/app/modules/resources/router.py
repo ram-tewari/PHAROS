@@ -905,16 +905,15 @@ async def ingest_repository(
     req: Request,
     db: Session = Depends(get_sync_db),
 ):
-    """DEPRECATED (Phase 2, 2026-07): the Celery-backed repo-ingestion path was
-    removed with Celery. Repository ingestion now goes through the ingestion
-    router (`POST /api/v1/ingestion/ingest/...`), which enqueues onto
-    `ingest_queue` for `main_worker.py`. This endpoint returns 410 Gone."""
+    """Removed (the Celery-backed repo-ingestion path went with Celery).
+    Repository indexing is ``POST /api/v1/repositories``, a durable job run by
+    the worker; this endpoint returns 410 Gone with that pointer."""
     raise HTTPException(
         status_code=status.HTTP_410_GONE,
         detail=(
-            "The Celery repo-ingestion path was removed. Use the ingestion "
-            "router (/api/v1/ingestion/ingest/{repo}) which enqueues to the "
-            "edge worker via ingest_queue."
+            "Repository ingestion moved to POST /api/v1/repositories "
+            '(body: {"repository": "https://github.com/owner/repo"}); '
+            "track it with GET /api/v1/ingestion/jobs/{job_id}."
         ),
     )
 
@@ -929,7 +928,7 @@ async def get_ingestion_status(
     410 Gone."""
     raise HTTPException(
         status_code=status.HTTP_410_GONE,
-        detail="Celery task status was removed. See the ingestion router for job status.",
+        detail="Ingestion job status moved to GET /api/v1/ingestion/jobs/{job_id}.",
     )
 
 
@@ -947,7 +946,15 @@ class AutoLinkResponse(BaseModel):
     message: str
 
 
-@router.post("/resources/{resource_id}/auto-link", response_model=AutoLinkResponse)
+@router.post("/{resource_id}/auto-link", response_model=AutoLinkResponse)
+# The original path repeated the router prefix (/api/resources/resources/...);
+# kept as a hidden alias so existing callers keep working.
+@router.post(
+    "/resources/{resource_id}/auto-link",
+    response_model=AutoLinkResponse,
+    include_in_schema=False,
+    deprecated=True,
+)
 async def auto_link_resource(
     resource_id: uuid.UUID,
     similarity_threshold: Optional[float] = 0.7,

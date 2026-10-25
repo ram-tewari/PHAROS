@@ -110,7 +110,10 @@ def trigger_remote_ingestion(repo_url: str, db: Session = Depends(get_sync_db), 
         ref = parse_repo_spec(repo_url, allowed_hosts=settings.CODEINTEL_ALLOWED_GIT_HOSTS)
     except RepoSpecError as exc:
         raise HTTPException(status_code=400, detail=f"Invalid repository URL: {exc}") from exc
-    submission = jobs.submit(db, ref)
+    try:
+        submission = jobs.submit(db, ref, max_queued=settings.QUEUE_SIZE)
+    except jobs.QueueFull as exc:
+        raise HTTPException(status_code=429, detail=str(exc), headers={"Retry-After": "60"}) from exc
     notified = get_notifier(settings).notify(str(submission.job.id)) if submission.created else False
     return LegacyIngestResponse(
         status="queued" if submission.created else "already_active",

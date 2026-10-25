@@ -88,6 +88,19 @@ def test_submission_dedupes_and_job_is_readable(api):
     assert api.post(f"/api/v1/ingestion/jobs/{job_id}/cancel", headers=auth()).status_code == 409
 
 
+
+def test_queue_cap_returns_429_but_resubmission_still_dedupes(api, codeintel_settings, monkeypatch):
+    monkeypatch.setattr(codeintel_settings, "QUEUE_SIZE", 2)
+    for name in ("a/one", "a/two"):
+        assert api.post("/api/v1/repositories", json={"repository": name}, headers=auth()).status_code == 202
+    full = api.post("/api/v1/repositories", json={"repository": "a/three"}, headers=auth())
+    assert full.status_code == 429 and full.headers["retry-after"] == "60"
+    assert full.json()["detail"]["error"] == "queue_full" and full.json()["detail"]["limit"] == 2
+    again = api.post("/api/v1/repositories", json={"repository": "a/one"}, headers=auth())
+    assert again.status_code == 202 and again.json()["created"] is False
+    legacy = api.post("/api/v1/ingestion/ingest/github.com/a/four", headers=auth())
+    assert legacy.status_code == 429
+
 def test_unknown_ids_are_404(api):
     import uuid
 

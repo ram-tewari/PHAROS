@@ -142,7 +142,6 @@ def mock_user():
 class TestLearnEndpoint:
     """Test /api/patterns/learn endpoint."""
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_success(self, client, sample_repo):
         """Test successful pattern learning."""
         response = client.post(
@@ -159,7 +158,6 @@ class TestLearnEndpoint:
         assert "profile" in data
         assert data["profile"]["total_files_analyzed"] > 0
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_invalid_repo(self, client):
         """Test pattern learning with invalid repository."""
         response = client.post(
@@ -173,7 +171,6 @@ class TestLearnEndpoint:
         assert response.status_code == 400
         assert "Cannot resolve repository URI" in response.json()["detail"]
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_missing_fields(self, client):
         """Test pattern learning with missing required fields."""
         response = client.post(
@@ -183,7 +180,6 @@ class TestLearnEndpoint:
         
         assert response.status_code == 422  # Validation error
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_invalid_max_commits(self, client, sample_repo):
         """Test pattern learning with invalid max_commits."""
         response = client.post(
@@ -196,7 +192,6 @@ class TestLearnEndpoint:
         
         assert response.status_code == 422  # Validation error
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_with_branch(self, client, sample_repo):
         """Test pattern learning with specific branch."""
         response = client.post(
@@ -211,7 +206,6 @@ class TestLearnEndpoint:
         # Should succeed or return appropriate error if branch doesn't exist
         assert response.status_code in [200, 400]
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_returns_warnings(self, client, tmp_path):
         """Test that warnings are returned for edge cases."""
         # Create empty repo
@@ -231,7 +225,6 @@ class TestLearnEndpoint:
         assert len(data["warnings"]) > 0
         assert any("No Python files found" in w for w in data["warnings"])
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_profile_structure(self, client, sample_repo):
         """Test that returned profile has correct structure."""
         response = client.post(
@@ -258,7 +251,6 @@ class TestLearnEndpoint:
         assert "style" in profile
         assert "summary" in profile
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_architecture_profile(self, client, sample_repo):
         """Test that architecture profile is populated."""
         response = client.post(
@@ -279,7 +271,6 @@ class TestLearnEndpoint:
         assert "framework" in arch
         assert "detected_patterns" in arch
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_endpoint_style_profile(self, client, sample_repo):
         """Test that style profile is populated."""
         response = client.post(
@@ -381,7 +372,6 @@ class TestProfileManagementEndpoints:
 class TestPatternLearningEndToEnd:
     """End-to-end integration tests."""
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_and_verify_fastapi_detection(self, client, tmp_path):
         """Test complete flow: learn patterns and verify FastAPI detection."""
         # Create a FastAPI project
@@ -421,7 +411,6 @@ def get_db():
         assert data["profile"]["architecture"]["dependency_injection"]["uses_di"] is True
         assert data["profile"]["style"]["async_patterns"]["async_function_count"] > 0
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_and_verify_orm_detection(self, client, tmp_path):
         """Test complete flow: learn patterns and verify ORM detection."""
         # Create a SQLAlchemy project
@@ -459,7 +448,6 @@ class User(Base):
         # Verify ORM detection
         assert data["profile"]["architecture"]["orm"]["orm_detected"] == "sqlalchemy"
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_and_verify_error_handling_detection(self, client, tmp_path):
         """Test complete flow: learn patterns and verify error handling detection."""
         # Create a project with error handling
@@ -513,7 +501,6 @@ def transform(data):
 class TestPatternLearningPerformance:
     """Test performance characteristics."""
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_large_repo_respects_timeout(self, client, tmp_path):
         """Test that learning doesn't hang on large repositories."""
         # Create a repo with many files
@@ -535,7 +522,6 @@ class TestPatternLearningPerformance:
         
         assert response.status_code == 200
     
-    @pytest.mark.skip(reason="Endpoint requires proper app initialization with auth middleware")
     def test_learn_respects_max_commits_limit(self, client, tmp_path):
         """Test that max_commits limit prevents excessive processing."""
         repo = tmp_path / "many_commits"

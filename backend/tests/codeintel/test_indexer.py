@@ -203,3 +203,22 @@ def test_interrupted_run_converges_on_retry(session, fixture_repo, embedder, mon
         .group_by(Resource.identifier).having(func.count() > 1)
     ).all()
     assert dupes == []
+
+
+def test_indexing_never_executes_repository_code(session, fixture_repo, embedder, tmp_path):
+    """Parsing is ast/tree-sitter only: hostile files are read, never run or imported."""
+    marker = tmp_path / "pwned"
+    payload = f"open({str(marker)!r}, 'w').write('x')\n"
+    fixture_repo.write("setup.py", f"import os\n{payload}def setup():\n    pass\n")
+    fixture_repo.write("conftest.py", payload)
+    fixture_repo.write("pkg/__init__.py", payload)
+    fixture_repo.write("hooks/run.js", f"require('fs').writeFileSync({str(marker)!r}, 'x');\nfunction run() {{}}\n")
+    fixture_repo.write("Makefile", f"all:\n\ttouch {marker}\n")
+    fixture_repo.commit("hostile files")
+
+    stats = CodeIndexer(session, embedder).index(_ref(fixture_repo))
+
+    assert stats.outcome == "indexed" and stats.files_failed == 0
+    assert not marker.exists(), "indexing must not execute repository code"
+    paths = set(session.execute(select(Resource.identifier).where(Resource.repository_id.isnot(None))).scalars())
+    assert {"setup.py", "conftest.py", "pkg/__init__.py", "hooks/run.js"} <= paths  # indexed as text, not run

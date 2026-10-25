@@ -27,6 +27,20 @@ def test_duplicate_submission_returns_active_job(session, ref):
     assert first.job.id == second.job.id
 
 
+
+def test_queue_cap_counts_only_queued_jobs(session, ref):
+    other = parse_repo_spec("github.com/a/other", allowed_hosts=["github.com"])
+    third = parse_repo_spec("github.com/a/third", allowed_hosts=["github.com"])
+    first = jobs.submit(session, ref, max_queued=1).job
+    with pytest.raises(jobs.QueueFull) as exc:
+        jobs.submit(session, other, max_queued=1)
+    assert (exc.value.queued, exc.value.limit) == (1, 1)
+    assert jobs.submit(session, ref, max_queued=1).created is False  # dedupe is never refused
+    jobs.claim(session, first.id, "w")  # running jobs no longer occupy the queue
+    assert jobs.submit(session, other, max_queued=1).created is True
+    with pytest.raises(jobs.QueueFull):
+        jobs.submit(session, third, max_queued=1)
+
 def test_claim_is_atomic(session, ref):
     job = jobs.submit(session, ref).job
     assert jobs.claim(session, job.id, "w1") is not None

@@ -230,16 +230,30 @@ def test_hover_on_javascript_function(client, db_session, sample_javascript_code
     assert "Calculate the sum" in data["documentation"]
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="related_chunks is not implemented for non-indexed (legacy) resources; files indexed by "
+    "app.codeintel return callers/callees (tests/codeintel/test_api.py::test_hover_on_indexed_code)",
+)
 def test_hover_with_related_chunks(client, db_session, sample_python_code):
-    """
-    Test that related chunks are included in hover response.
+    """Related Document_Chunk records are included in the hover response (Requirement 1.3)."""
+    resource = Resource(id=uuid4(), title="test.py", type="code")
+    db_session.add(resource)
+    db_session.flush()
+    for i, (start, end) in enumerate([(1, 20), (21, 40)]):
+        db_session.add(DocumentChunk(
+            id=uuid4(), resource_id=resource.id, content=sample_python_code, chunk_index=i,
+            chunk_metadata={"start_line": start, "end_line": end, "language": "python"},
+        ))
+    db_session.commit()
 
-    Validates Requirement 1.3: Related Document_Chunk records included.
+    response = client.get(
+        "/api/graph/code/hover",
+        params={"file_path": "test.py", "line": 1, "column": 4, "resource_id": str(resource.id)},
+    )
 
-    Note: Currently skipped as DocumentChunk model doesn't store embeddings directly.
-    Related chunks feature requires separate embedding lookup implementation.
-    """
-    pytest.skip("Related chunks feature requires embedding infrastructure")
+    assert response.status_code == 200
+    assert response.json()["related_chunks"], "expected related chunks for the hovered symbol"
 
 
 def test_hover_performance_target(client, db_session, sample_python_code):

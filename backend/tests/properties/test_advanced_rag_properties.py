@@ -623,6 +623,7 @@ def test_property_parent_child_retrieval_consistency(
     db_session.commit()
 
 
+@pytest.mark.xfail(strict=True, reason="parent-child search is PostgreSQL + pgvector SQL and this suite runs on in-memory SQLite; covered on PostgreSQL by tests/codeintel/test_legacy_search_pg.py")
 def test_property_parent_child_retrieval_deduplication(db_session: Session):
     """
     **Feature: phase17-5-advanced-rag-architecture, Property 7: Parent-Child Retrieval Consistency**
@@ -698,6 +699,7 @@ def test_property_parent_child_retrieval_deduplication(db_session: Session):
     db_session.commit()
 
 
+@pytest.mark.xfail(strict=True, reason="parent-child search is PostgreSQL + pgvector SQL and this suite runs on in-memory SQLite; covered on PostgreSQL by tests/codeintel/test_legacy_search_pg.py")
 def test_property_parent_child_context_window(db_session: Session):
     """
     **Feature: phase17-5-advanced-rag-architecture, Property 7: Parent-Child Retrieval Consistency**

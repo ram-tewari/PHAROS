@@ -770,68 +770,6 @@ def create_test_resource(db_session: Session):
 
 
 @pytest.fixture(scope="function")
-def create_test_category(db_session: Session):
-    """
-    Factory fixture for creating test taxonomy categories.
-
-    Returns a function that creates and returns a TaxonomyNode instance.
-    """
-
-    def _create_category(name: str = "Test Category", parent_id=None, **kwargs):
-        defaults = {
-            "name": name,
-            "slug": name.lower().replace(" ", "-"),
-            "parent_id": parent_id,
-            "level": 0,
-            "path": f"/{name.lower().replace(' ', '-')}",
-            "is_leaf": True,
-            "allow_resources": True,
-        }
-        defaults.update(kwargs)
-
-        category = TaxonomyNode(**defaults)
-        db_session.add(category)
-        db_session.commit()
-        db_session.refresh(category)
-
-        return category
-
-    return _create_category
-
-
-@pytest.fixture(scope="function")
-def create_test_collection(db_session: Session):
-    """
-    Factory fixture for creating test collections.
-
-    Returns a function that creates and returns a Collection instance.
-    """
-
-    def _create_collection(
-        name: str = "Test Collection",
-        description: str = None,
-        owner_id: str = "test_user",
-        **kwargs,
-    ):
-        defaults = {
-            "name": name,
-            "description": description,
-            "owner_id": owner_id,
-            "visibility": "private",
-        }
-        defaults.update(kwargs)
-
-        collection = Collection(**defaults)
-        db_session.add(collection)
-        db_session.commit()
-        db_session.refresh(collection)
-
-        return collection
-
-    return _create_collection
-
-
-@pytest.fixture(scope="function")
 def create_test_annotation(db_session: Session, create_test_resource):
     """
     Factory fixture for creating test annotations.

@@ -11,15 +11,16 @@ Validates: Requirements 10.1, 10.2, 10.5
 
 import pytest
 import time
-import torch
-import os
-from unittest.mock import Mock, patch
-from fastapi.testclient import TestClient
-from upstash_redis import Redis
+torch = pytest.importorskip("torch", reason="GNN benchmarks are edge-only (requirements-edge.txt)")
+pytest.importorskip("torch_geometric", reason="GNN benchmarks are edge-only (requirements-edge.txt)")
+import os  # noqa: E402
+from unittest.mock import Mock, patch  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
+from upstash_redis import Redis  # noqa: E402
 
 # Import services
-from app.modules.graph.neural_service import NeuralGraphService
-from app.utils.repo_parser import DependencyGraph
+from app.modules.graph.neural_service import NeuralGraphService  # noqa: E402
+from app.utils.repo_parser import DependencyGraph  # noqa: E402
 
 
 # ============================================================================

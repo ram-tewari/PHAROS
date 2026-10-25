@@ -5,9 +5,9 @@ These tests verify universal properties that should hold for all valid inputs.
 """
 
 import pytest
-import torch
-from hypothesis import given, strategies as st, settings
-from unittest.mock import Mock, patch, MagicMock
+torch = pytest.importorskip("torch", reason="neural graph service is edge-only (requirements-edge.txt)")
+from hypothesis import given, strategies as st, settings  # noqa: E402
+from unittest.mock import Mock, patch, MagicMock  # noqa: E402
 
 # Skip tests if torch_geometric or required dependencies are not installed
 try:

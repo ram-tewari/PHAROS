@@ -145,7 +145,9 @@ class MCPServer:
 
             # Invoke handler
             handler = tool["handler"]
-            result = await handler(arguments, context)
+            # Handlers use this request's session (see tools._acquire_db);
+            # the stored session context itself is not modified.
+            result = await handler(arguments, {**(context or {}), "_db": self.db})
 
             # Update session if session_id provided
             if session_id:

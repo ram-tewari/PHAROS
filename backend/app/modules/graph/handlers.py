@@ -174,7 +174,9 @@ def handle_resource_chunked(event: Event) -> None:
 
         try:
             # Initialize graph extraction service
-            graph_service = GraphExtractionService(db=db)
+            graph_service = GraphExtractionService(
+                db=db, extraction_method=settings.GRAPH_EXTRACTION_METHOD
+            )
 
             # Get all chunks for this resource
             chunks = (
@@ -186,6 +188,26 @@ def handle_resource_chunked(event: Event) -> None:
             if not chunks:
                 logger.warning(
                     f"No chunks found for resource {resource_id}, skipping graph extraction"
+                )
+                return
+
+            if not graph_service.extractor_available:
+                logger.warning(
+                    "Graph extraction for resource %s skipped: no entity extractor is available "
+                    "(GRAPH_EXTRACTION_METHOD=%s needs an AI service or spaCy + en_core_web_sm)",
+                    resource_id,
+                    graph_service.extraction_method,
+                )
+                event_bus.emit(
+                    "graph.extraction_complete",
+                    {
+                        "resource_id": resource_id,
+                        "chunk_count": len(chunks),
+                        "entity_count": 0,
+                        "relationship_count": 0,
+                        "status": "unavailable",
+                    },
+                    priority=EventPriority.NORMAL,
                 )
                 return
 
@@ -232,6 +254,7 @@ def handle_resource_chunked(event: Event) -> None:
                     "chunk_count": len(chunks),
                     "entity_count": total_entities,
                     "relationship_count": total_relationships,
+                    "status": "completed",
                 },
                 priority=EventPriority.NORMAL,
             )

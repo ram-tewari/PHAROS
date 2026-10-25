@@ -27,6 +27,9 @@ from app.modules.graph.service import (
 from app.modules.graph.embeddings import GraphEmbeddingsService
 from app.config.settings import get_settings
 from app.shared.event_bus import event_bus
+# Imported at module load: it pulls in redis (~100 ms), which would otherwise
+# land on the first hover/graph request of every process.
+from app.shared.cache import CacheService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/graph", tags=["graph"])
@@ -1485,7 +1488,6 @@ def _get_hover_information_impl(
     )
     from app.modules.graph.logic.static_analysis import StaticAnalysisService
     from app.database.models import Resource, DocumentChunk
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 
@@ -1759,7 +1761,6 @@ async def get_centrality_metrics(
     from app.modules.graph.schema import CentralityMetrics, CentralityResponse
     from app.modules.graph.service import GraphService
     from app.database.models import GraphCentralityCache
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 
@@ -1979,7 +1980,6 @@ async def detect_communities(
     )
     from app.modules.graph.service import CommunityDetectionService
     from app.database.models import CommunityAssignment
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 
@@ -2193,7 +2193,6 @@ async def compute_graph_layout(
     import time
     from app.modules.graph.schema import GraphLayoutResponse
     from app.modules.graph.service import GraphVisualizationService
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 

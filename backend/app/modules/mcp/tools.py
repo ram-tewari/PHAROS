@@ -196,6 +196,18 @@ TOOL_SCHEMAS = {
 }
 
 
+def _acquire_db(context: Dict[str, Any]):
+    """The invoking MCPServer's session (``context["_db"]``) when there is one,
+    so tool calls share the request's session; otherwise a new session that
+    the handler closes. Returns ``(session, owned)``."""
+    db = (context or {}).get("_db")
+    if db is not None:
+        return db, False
+    from ...shared.database import get_sync_db
+
+    return next(get_sync_db()), True
+
+
 # Tool handlers
 async def search_resources_handler(
     arguments: Dict[str, Any], context: Dict[str, Any]
@@ -203,9 +215,8 @@ async def search_resources_handler(
     """Handler for search_resources tool"""
     from ..search.schema import SearchQuery
     from ..search.service import SearchService
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         query = SearchQuery(
             text=arguments["query"],
@@ -227,7 +238,8 @@ async def search_resources_handler(
         ]
         return {"results": results, "total": total}
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def get_hover_info_handler(
@@ -237,9 +249,8 @@ async def get_hover_info_handler(
     from uuid import UUID
 
     from ..graph.router import get_hover_information
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         # Synchronous route function; returns a plain dict.
         return get_hover_information(
@@ -250,7 +261,8 @@ async def get_hover_info_handler(
             db=db,
         )
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def compute_graph_metrics_handler(
@@ -258,15 +270,15 @@ async def compute_graph_metrics_handler(
 ) -> Any:
     """Handler for compute_graph_metrics tool"""
     from ..graph.service import GraphService
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         service = GraphService(db)
         metrics = await service.compute_degree_centrality(arguments["resource_ids"])
         return {"metrics": {str(k): v for k, v in metrics.items()}}
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def detect_communities_handler(
@@ -274,9 +286,8 @@ async def detect_communities_handler(
 ) -> Any:
     """Handler for detect_communities tool"""
     from ..graph.service import CommunityDetectionService
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         service = CommunityDetectionService(db)
         result = await service.detect_communities(
@@ -285,7 +296,8 @@ async def detect_communities_handler(
         )
         return result
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def generate_plan_handler(
@@ -293,9 +305,8 @@ async def generate_plan_handler(
 ) -> Any:
     """Handler for generate_plan tool"""
     from ..planning.service import MultiHopAgent
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         # Note: LLM client would need to be initialized
         agent = MultiHopAgent(db, llm_client=None)
@@ -305,7 +316,8 @@ async def generate_plan_handler(
         )
         return result.dict()
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def parse_architecture_handler(
@@ -313,9 +325,8 @@ async def parse_architecture_handler(
 ) -> Any:
     """Handler for parse_architecture tool"""
     from ..planning.service import ArchitectureParser
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         # Note: LLM client would need to be initialized
         parser = ArchitectureParser(db, llm_client=None)
@@ -324,7 +335,8 @@ async def parse_architecture_handler(
         )
         return result.dict()
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def link_pdf_to_code_handler(
@@ -333,9 +345,8 @@ async def link_pdf_to_code_handler(
     """Handler for link_pdf_to_code tool"""
     from ..resources.service import AutoLinkingService
     from ...shared.embeddings import EmbeddingGenerator
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         embedding_generator = EmbeddingGenerator()
         service = AutoLinkingService(db, embedding_generator)
@@ -345,7 +356,8 @@ async def link_pdf_to_code_handler(
         )
         return {"links_created": len(links), "links": [link.dict() for link in links]}
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 # Tool handler mapping

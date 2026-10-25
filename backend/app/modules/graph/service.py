@@ -1366,18 +1366,10 @@ class CommunityDetectionService:
                 "community_sizes": {community_id: size, ...}
             }
         """
-        try:
-            import networkx as nx
-            import community as community_louvain
-        except ImportError as e:
-            logger.error(f"Required library not installed: {e}")
-            logger.error("Install with: pip install python-louvain")
-            return {
-                "communities": {},
-                "modularity": 0.0,
-                "num_communities": 0,
-                "community_sizes": {},
-            }
+        # Louvain ships with networkx >= 2.8 (nx.community.louvain_communities);
+        # the separate python-louvain package was never a declared dependency,
+        # so this used to return an empty result on every install.
+        import networkx as nx
 
         # Build a fresh graph with only the requested resources
         # This avoids cache issues and ensures we have the latest data
@@ -1487,13 +1479,14 @@ class CommunityDetectionService:
 
         # Run Louvain community detection
         try:
-            partition = community_louvain.best_partition(
-                simple_graph, weight="weight", resolution=resolution
+            # Fixed seed: the same graph yields the same partition.
+            groups = nx.community.louvain_communities(
+                simple_graph, weight="weight", resolution=resolution, seed=42
             )
-
-            # Compute modularity
-            modularity = community_louvain.modularity(
-                partition, simple_graph, weight="weight"
+            groups = sorted(groups, key=lambda g: (-len(g), min(g)))
+            partition = {node: cid for cid, group in enumerate(groups) for node in group}
+            modularity = nx.community.modularity(
+                simple_graph, groups, weight="weight", resolution=resolution
             )
         except Exception as e:
             logger.error(f"Error in Louvain algorithm: {e}")
@@ -1564,6 +1557,27 @@ class GraphExtractionService:
         logger.info(
             f"GraphExtractionService initialized with method: {extraction_method}"
         )
+
+    @property
+    def extractor_available(self) -> bool:
+        """Whether the configured method can extract anything at all.
+
+        "llm" only runs with an ``ai_service`` (and is currently a
+        capitalised-phrase heuristic, not an LLM call); "spacy" needs spaCy
+        and the en_core_web_sm model. Without either, extraction yields no
+        entities -- callers should report that rather than claim success.
+        """
+        import importlib.util
+
+        llm_ok = self.ai_service is not None
+        spacy_ok = importlib.util.find_spec("spacy") is not None
+        if self.extraction_method == "llm":
+            return llm_ok
+        if self.extraction_method == "spacy":
+            return spacy_ok
+        if self.extraction_method == "hybrid":
+            return llm_ok or spacy_ok
+        return False
 
     def extract_entities(self, chunk_content: str) -> List[dict]:
         """

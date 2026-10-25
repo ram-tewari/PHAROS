@@ -104,7 +104,14 @@ def submit_repository(body: RepositorySubmit, db: Session = Depends(get_sync_db)
         branch = validate_ref(body.branch)
     except RepoSpecError as exc:
         raise HTTPException(status_code=400, detail={"error": "invalid_repository", "detail": str(exc)}) from exc
-    submission = jobs.submit(db, ref, branch, force=body.force)
+    try:
+        submission = jobs.submit(db, ref, branch, force=body.force, max_queued=settings.QUEUE_SIZE)
+    except jobs.QueueFull as exc:
+        raise HTTPException(
+            status_code=429,
+            detail={"error": "queue_full", "detail": str(exc), "queued": exc.queued, "limit": exc.limit},
+            headers={"Retry-After": "60"},
+        ) from exc
     notified = get_notifier(settings).notify(str(submission.job.id)) if submission.created else False
     return JobSubmitted(job=job_out(submission.job), created=submission.created, notified=notified)
 

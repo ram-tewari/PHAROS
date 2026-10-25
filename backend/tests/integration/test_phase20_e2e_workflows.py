@@ -40,7 +40,6 @@ class TestCodeIntelligenceWorkflow:
         # Step 1: Create a code resource
         from app.database.models import Resource, DocumentChunk
         import uuid
-        from datetime import datetime
 
         resource_id = uuid.uuid4()
         resource = Resource(
@@ -136,9 +135,9 @@ class TestCodeIntelligenceWorkflow:
 
         print("\n✅ Complete code intelligence workflow test passed!")
         print(f"   - Created code resource with {len(chunks)} chunks")
-        print(f"   - Retrieved hover information")
-        print(f"   - Verified chunk linking")
-        print(f"   - Verified caching performance")
+        print("   - Retrieved hover information")
+        print("   - Verified chunk linking")
+        print("   - Verified caching performance")
 
         return True
 
@@ -158,7 +157,6 @@ class TestDocumentIntelligenceWorkflow:
         # Step 1: Create a PDF resource with metadata in specific fields
         from app.database.models import Resource, DocumentChunk
         import uuid
-        from datetime import datetime
 
         pdf_resource_id = uuid.uuid4()
         pdf_resource = Resource(
@@ -246,10 +244,10 @@ class TestDocumentIntelligenceWorkflow:
         print(f"✓ Step 5: Verified {total_links} bidirectional links")
 
         print("\n✅ Complete document intelligence workflow test passed!")
-        print(f"   - Created PDF resource with metadata")
-        print(f"   - Verified metadata extraction")
-        print(f"   - Auto-linked to code resource")
-        print(f"   - Verified bidirectional links")
+        print("   - Created PDF resource with metadata")
+        print("   - Verified metadata extraction")
+        print("   - Auto-linked to code resource")
+        print("   - Verified bidirectional links")
 
         return True
 
@@ -269,7 +267,6 @@ class TestGraphIntelligenceWorkflow:
         # Step 1: Create resources with citations
         from app.database.models import Resource, Citation
         import uuid
-        from datetime import datetime
 
         resources = []
         for i in range(5):
@@ -336,7 +333,7 @@ class TestGraphIntelligenceWorkflow:
                 assert "resource_id" in metric or "id" in metric
         else:
             assert "metrics" in centrality_data
-        print(f"✓ Step 3: Computed centrality metrics")
+        print("✓ Step 3: Computed centrality metrics")
 
         # Step 4: Detect communities
         response = client.post(
@@ -351,7 +348,7 @@ class TestGraphIntelligenceWorkflow:
             or "communities" in community_data
             or "assignments" in community_data
         )
-        print(f"✓ Step 4: Detected communities")
+        print("✓ Step 4: Detected communities")
 
         # Step 5: Generate visualization layout
         response = client.post(
@@ -401,10 +398,10 @@ class TestGraphIntelligenceWorkflow:
 
         print("\n✅ Complete graph intelligence workflow test passed!")
         print(f"   - Built citation graph with {len(citations)} citations")
-        print(f"   - Computed centrality metrics")
-        print(f"   - Detected communities")
-        print(f"   - Generated visualization layout")
-        print(f"   - Verified consistency")
+        print("   - Computed centrality metrics")
+        print("   - Detected communities")
+        print("   - Generated visualization layout")
+        print("   - Verified consistency")
 
         return True
 
@@ -430,44 +427,23 @@ class TestAIPlanningWorkflow:
             },
         }
 
-        with patch("app.modules.planning.service.MultiHopAgent") as mock_agent:
-            # Mock the agent to return a structured plan
-            mock_instance = MagicMock()
-            mock_instance.generate_plan.return_value = {
-                "steps": [
-                    {
-                        "step_number": 1,
-                        "description": "Design semantic search architecture",
-                        "dependencies": [],
-                    },
-                    {
-                        "step_number": 2,
-                        "description": "Implement embedding generation",
-                        "dependencies": [1],
-                    },
-                    {
-                        "step_number": 3,
-                        "description": "Create search endpoint",
-                        "dependencies": [2],
-                    },
-                ],
-                "estimated_complexity": "medium",
-            }
-            mock_agent.return_value = mock_instance
-
-            response = client.post("/planning/generate", json=planning_request)
-            assert response.status_code in [200, 201]
-            plan_data = response.json()
-            assert "id" in plan_data or "plan_id" in plan_data
-            plan_id = plan_data.get("id") or plan_data.get("plan_id")
-            print(f"✓ Step 1: Submitted planning request, got plan {plan_id}")
+        # MultiHopAgent currently returns a fixed five-step template plan (its
+        # LLM decomposition is a TODO), so this asserts that real behaviour
+        # rather than mocking an LLM the endpoint does not call.
+        response = client.post("/api/v1/ai-planning/generate", json=planning_request)
+        assert response.status_code in [200, 201]
+        plan_data = response.json()
+        assert "id" in plan_data or "plan_id" in plan_data
+        plan_id = plan_data.get("id") or plan_data.get("plan_id")
+        assert planning_request["task_description"] in plan_data["steps"][0]["description"]
+        print(f"✓ Step 1: Submitted planning request, got plan {plan_id}")
 
         # Step 2: Retrieve generated plan
-        response = client.get(f"/planning/{plan_id}")
+        response = client.get(f"/api/v1/ai-planning/{plan_id}")
         assert response.status_code == 200
         plan = response.json()
         assert "steps" in plan
-        assert len(plan["steps"]) == 3
+        assert len(plan["steps"]) == 5  # template plan
         print(f"✓ Step 2: Retrieved plan with {len(plan['steps'])} steps")
 
         # Step 3: Refine plan with feedback
@@ -476,58 +452,29 @@ class TestAIPlanningWorkflow:
             "step_to_modify": 3,
         }
 
-        with patch("app.modules.planning.service.MultiHopAgent") as mock_agent:
-            mock_instance = MagicMock()
-            mock_instance.refine_plan.return_value = {
-                "steps": [
-                    {
-                        "step_number": 1,
-                        "description": "Design semantic search architecture",
-                        "dependencies": [],
-                    },
-                    {
-                        "step_number": 2,
-                        "description": "Implement embedding generation",
-                        "dependencies": [1],
-                    },
-                    {
-                        "step_number": 3,
-                        "description": "Create search endpoint",
-                        "dependencies": [2],
-                    },
-                    {
-                        "step_number": 4,
-                        "description": "Write tests for search feature",
-                        "dependencies": [3],
-                    },
-                ],
-                "estimated_complexity": "medium",
-            }
-            mock_agent.return_value = mock_instance
-
-            response = client.put(
-                f"/planning/{plan_id}/refine", json=refinement_request
-            )
-            assert response.status_code == 200
-            refined_plan = response.json()
-            assert len(refined_plan["steps"]) == 4
-            print(f"✓ Step 3: Refined plan, now has {len(refined_plan['steps'])} steps")
+        # Refinement appends an "Address feedback: ..." step to the stored plan.
+        response = client.put(
+            f"/api/v1/ai-planning/{plan_id}/refine", json=refinement_request
+        )
+        assert response.status_code == 200
+        refined_plan = response.json()
+        assert len(refined_plan["steps"]) == 6
+        assert refinement_request["feedback"] in refined_plan["steps"][-1]["description"]
+        print(f"✓ Step 3: Refined plan, now has {len(refined_plan['steps'])} steps")
 
         # Step 4: Verify dependencies form a valid DAG
-        steps = refined_plan["steps"]
-        for step in steps:
-            step_num = step["step_number"]
-            dependencies = step.get("dependencies", [])
-            # All dependencies should reference earlier steps
-            for dep in dependencies:
-                assert dep < step_num, f"Step {step_num} depends on later step {dep}"
+        # dependencies are plan-level (step_id, depends_on_step_id) pairs
+        step_ids = {step["step_id"] for step in refined_plan["steps"]}
+        for step_id, depends_on in refined_plan["dependencies"]:
+            assert {step_id, depends_on} <= step_ids, f"dependency ({step_id}, {depends_on}) names an unknown step"
+            assert depends_on < step_id, f"Step {step_id} depends on later step {depends_on}"
         print("✓ Step 4: Verified dependencies form a valid DAG")
 
         print("\n✅ Complete AI planning workflow test passed!")
-        print(f"   - Submitted planning request")
-        print(f"   - Generated multi-step plan")
-        print(f"   - Refined plan with feedback")
-        print(f"   - Verified dependency DAG")
+        print("   - Submitted planning request")
+        print("   - Generated multi-step plan")
+        print("   - Refined plan with feedback")
+        print("   - Verified dependency DAG")
 
         return True
 
@@ -550,7 +497,7 @@ class TestMCPWorkflow:
             }
         }
 
-        response = client.post("/mcp/sessions", json=session_request)
+        response = client.post("/api/v1/mcp/sessions", json=session_request)
         assert response.status_code in [200, 201]
         session_data = response.json()
         assert "session_id" in session_data or "id" in session_data
@@ -558,9 +505,9 @@ class TestMCPWorkflow:
         print(f"✓ Step 1: Started MCP session {session_id}")
 
         # Step 2: List available tools
-        response = client.get("/mcp/tools")
+        response = client.get("/api/v1/mcp/tools")
         assert response.status_code == 200
-        tools = response.json()
+        tools = response.json()["tools"]  # ListToolsResponse: {"tools": [...], "total": n}
         assert len(tools) > 0
         assert any(tool["name"] == "search_resources" for tool in tools)
         print(f"✓ Step 2: Listed {len(tools)} available tools")
@@ -578,7 +525,6 @@ class TestMCPWorkflow:
         # Create some test resources first
         from app.database.models import Resource
         import uuid
-        from datetime import datetime
 
         for i in range(3):
             resource = Resource(
@@ -591,13 +537,18 @@ class TestMCPWorkflow:
             db_session.add(resource)
         db_session.commit()
 
-        response = client.post("/mcp/invoke", json=search_invocation)
+        response = client.post("/api/v1/mcp/invoke", json=search_invocation)
         assert response.status_code == 200
         search_result = response.json()
         assert "result" in search_result
-        print(f"✓ Step 3: Invoked search_resources tool")
+        print("✓ Step 3: Invoked search_resources tool")
 
         # Step 4: Invoke another tool (get_hover_info) with context
+        from app.database.models import Resource
+
+        hover_resource = Resource(id=uuid.uuid4(), title="sample.py", type="code")
+        db_session.add(hover_resource)
+        db_session.commit()
         hover_invocation = {
             "session_id": session_id,
             "tool_name": "get_hover_info",
@@ -605,13 +556,14 @@ class TestMCPWorkflow:
                 "file_path": "sample.py",
                 "line": 1,
                 "column": 5,
+                "resource_id": str(hover_resource.id),
             },
         }
 
-        response = client.post("/mcp/invoke", json=hover_invocation)
-        # May return 200 or 400 depending on whether resource exists
-        assert response.status_code in [200, 400]
-        print(f"✓ Step 4: Invoked get_hover_info tool")
+        response = client.post("/api/v1/mcp/invoke", json=hover_invocation)
+        assert response.status_code == 200
+        assert response.json()["success"] is True, response.json()
+        print("✓ Step 4: Invoked get_hover_info tool")
 
         # Step 5: Verify context preservation
         # Retrieve session and check that context is maintained
@@ -630,7 +582,7 @@ class TestMCPWorkflow:
         )
 
         # Step 6: Close session
-        response = client.delete(f"/mcp/sessions/{session_id}")
+        response = client.delete(f"/api/v1/mcp/sessions/{session_id}")
         assert response.status_code in [200, 204]
         print(f"✓ Step 6: Closed MCP session {session_id}")
 
@@ -641,10 +593,10 @@ class TestMCPWorkflow:
         assert session.status == "closed"
 
         print("\n✅ Complete MCP workflow test passed!")
-        print(f"   - Started MCP session")
-        print(f"   - Listed available tools")
-        print(f"   - Invoked multiple tools")
-        print(f"   - Verified context preservation")
-        print(f"   - Closed session")
+        print("   - Started MCP session")
+        print("   - Listed available tools")
+        print("   - Invoked multiple tools")
+        print("   - Verified context preservation")
+        print("   - Closed session")
 
         return True

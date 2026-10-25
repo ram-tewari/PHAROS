@@ -310,50 +310,30 @@ class MonitoringService:
                 "timestamp": datetime.utcnow().isoformat(),
             }
 
-    async def get_worker_status(self) -> Dict[str, Any]:
+    async def get_worker_status(self, db: Session) -> Dict[str, Any]:
         """
-        Get Celery worker status.
+        Ingestion worker status from the durable job table (Celery was removed;
+        workers claim jobs from ``ingestion_jobs``).
 
         Returns:
-            Dictionary with worker information
+            Dictionary with queue counts and a healthy/degraded verdict
         """
+        from ...codeintel.jobs import queue_summary
+        from ...config.settings import get_settings
+
         try:
-            from ...tasks.celery_app import celery_app
-
-            # Get Celery inspector
-            inspect = celery_app.control.inspect()
-
-            # Get worker information
-            active_tasks = inspect.active() or {}
-            scheduled_tasks = inspect.scheduled() or {}
-            worker_stats = inspect.stats() or {}
-
-            # Count active workers
-            worker_count = len(worker_stats)
-
-            # Count total active and scheduled tasks
-            total_active = sum(len(tasks) for tasks in active_tasks.values())
-            total_scheduled = sum(len(tasks) for tasks in scheduled_tasks.values())
-
+            summary = queue_summary(db, get_settings().INGESTION_JOB_STALE_SECONDS)
             return {
-                "status": "ok",
+                "status": "ok" if summary["status"] == "healthy" else "degraded",
                 "timestamp": datetime.utcnow().isoformat(),
-                "workers": {
-                    "worker_count": worker_count,
-                    "total_active_tasks": total_active,
-                    "total_scheduled_tasks": total_scheduled,
-                    "active_tasks": active_tasks,
-                    "scheduled_tasks": scheduled_tasks,
-                    "stats": worker_stats,
-                },
+                "workers": summary,
             }
-
         except Exception as e:
             logger.error(f"Error getting worker status: {str(e)}", exc_info=True)
             return {
                 "status": "error",
                 "error": str(e),
-                "message": "Could not connect to Celery workers. Ensure Redis and workers are running.",
+                "message": "Could not read the ingestion job table.",
                 "timestamp": datetime.utcnow().isoformat(),
             }
 
@@ -400,29 +380,22 @@ class MonitoringService:
                 logger.warning(f"Redis health check failed: {str(e)}")
                 redis_message = f"Connection failed: {str(e)}"
 
-            # Check Celery worker status (NON-CRITICAL)
-            celery_healthy = False
-            celery_message = ""
-            worker_count = 0
+            # Ingestion workers (NON-CRITICAL): judged from the durable job
+            # table -- stuck or unclaimed jobs mean no worker is making progress.
+            ingestion: Dict[str, Any]
             try:
-                from ...tasks.celery_app import celery_app
+                from ...codeintel.jobs import queue_summary
+                from ...config.settings import get_settings
 
-                # Get Celery inspector
-                inspect = celery_app.control.inspect(timeout=2.0)
-
-                # Get worker stats
-                worker_stats = inspect.stats() or {}
-                worker_count = len(worker_stats)
-
-                if worker_count > 0:
-                    celery_healthy = True
-                    celery_message = f"{worker_count} worker(s) active"
-                else:
-                    celery_message = "No workers available"
-
+                ingestion = queue_summary(db, get_settings().INGESTION_JOB_STALE_SECONDS)
+                ingestion["message"] = (
+                    f"{ingestion['queued']} queued, {ingestion['running']} running, "
+                    f"{ingestion['stale_running']} stale"
+                )
             except Exception as e:
-                logger.warning(f"Celery health check failed: {str(e)}")
-                celery_message = f"Cannot connect to workers: {str(e)}"
+                logger.warning(f"Ingestion queue health check failed: {str(e)}")
+                ingestion = {"status": "unknown", "message": f"Check failed: {e}"}
+            ingestion_healthy = ingestion["status"] == "healthy"
 
             # NCF model removed (single-tenant optimization)
             model_available = False
@@ -447,17 +420,17 @@ class MonitoringService:
 
             # Determine overall status
             # Database is CRITICAL - if it's down, system is unhealthy
-            # Redis and Celery are NON-CRITICAL - system can operate in degraded mode
+            # Redis and ingestion workers are NON-CRITICAL - system can operate in degraded mode
             if not db_healthy:
                 status = "unhealthy"
                 message = "Database connection failed - system unavailable"
-            elif not redis_healthy or not celery_healthy or unhealthy_modules:
+            elif not redis_healthy or not ingestion_healthy or unhealthy_modules:
                 status = "degraded"
                 issues = []
                 if not redis_healthy:
                     issues.append("Redis unavailable")
-                if not celery_healthy:
-                    issues.append("Celery workers unavailable")
+                if not ingestion_healthy:
+                    issues.append("ingestion jobs are stuck or unclaimed (no worker progress)")
                 if unhealthy_modules:
                     issues.append(f"modules unhealthy: {', '.join(unhealthy_modules)}")
                 message = f"System operational with degraded functionality: {'; '.join(issues)}"
@@ -478,11 +451,7 @@ class MonitoringService:
                         "status": "healthy" if redis_healthy else "unhealthy",
                         "message": redis_message,
                     },
-                    "celery": {
-                        "status": "healthy" if celery_healthy else "unhealthy",
-                        "message": celery_message,
-                        "worker_count": worker_count,
-                    },
+                    "ingestion": ingestion,
                     "ncf_model": {
                         "status": "not_applicable",
                         "message": "NCF model removed (single-tenant optimization)",
@@ -506,7 +475,7 @@ class MonitoringService:
                 "components": {
                     "database": {"status": "unknown", "message": "Check failed"},
                     "redis": {"status": "unknown", "message": "Check failed"},
-                    "celery": {"status": "unknown", "message": "Check failed"},
+                    "ingestion": {"status": "unknown", "message": "Check failed"},
                     "api": {"status": "healthy", "message": "API responding"},
                 },
             }

@@ -25,7 +25,7 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import or_, select, update
+from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -54,14 +54,35 @@ class Submission:
     created: bool
 
 
+class QueueFull(Exception):
+    """Too many queued jobs; the caller should retry later (HTTP 429)."""
+
+    def __init__(self, queued: int, limit: int) -> None:
+        super().__init__(f"{queued} ingestion jobs are already queued (limit {limit})")
+        self.queued = queued
+        self.limit = limit
+
+
 def submit(db: Session, ref: RepoRef, branch: str | None = None, *, force: bool = False,
-           max_attempts: int = 3) -> Submission:
-    """Queue an ingestion job, or return the repository's active job."""
+           max_attempts: int = 3, max_queued: int | None = None) -> Submission:
+    """Queue an ingestion job, or return the repository's active job.
+
+    ``max_queued`` caps how many jobs may wait in ``queued`` (the API passes
+    ``QUEUE_SIZE``); resubmitting a repository that already has an active job
+    is never refused. The cap is checked before the insert, so concurrent
+    submissions can overshoot it slightly (a soft cap).
+    """
     existing = db.execute(
         select(IngestionJob).where(IngestionJob.repo_url == ref.canonical_url, IngestionJob.status.in_(ACTIVE))
     ).scalar_one_or_none()
     if existing is not None:
         return Submission(existing, created=False)
+    if max_queued is not None:
+        queued = db.execute(
+            select(func.count()).select_from(IngestionJob).where(IngestionJob.status == "queued")
+        ).scalar_one()
+        if queued >= max_queued:
+            raise QueueFull(queued, max_queued)
     repo = db.execute(select(Repository).where(Repository.url == ref.canonical_url)).scalar_one_or_none()
     job = IngestionJob(
         repository_id=repo.id if repo else None,
@@ -148,6 +169,37 @@ def cancel(db: Session, job_id: uuid.UUID) -> bool:
     )
     db.commit()
     return result.rowcount == 1
+
+
+def queue_summary(db: Session, stale_after_seconds: int) -> dict:
+    """Worker health as seen from the durable job table.
+
+    ``degraded`` when a running job stopped heartbeating, or a queued job has
+    waited longer than ``stale_after_seconds`` (no worker is picking jobs up).
+    """
+    now = utcnow()
+    cutoff = now - timedelta(seconds=stale_after_seconds)
+
+    def count(*where) -> int:
+        return db.execute(select(func.count()).select_from(IngestionJob).where(*where)).scalar_one()
+
+    oldest = db.execute(
+        select(func.min(IngestionJob.created_at)).where(IngestionJob.status == "queued")
+    ).scalar_one()
+    if oldest is not None and oldest.tzinfo is None:
+        oldest = oldest.replace(tzinfo=now.tzinfo)
+    summary = {
+        "queued": count(IngestionJob.status == "queued"),
+        "running": count(IngestionJob.status == "running"),
+        "stale_running": count(IngestionJob.status == "running", IngestionJob.heartbeat_at < cutoff),
+        "failed_last_24h": count(IngestionJob.status == "failed", IngestionJob.finished_at >= now - timedelta(days=1)),
+        "oldest_queued_seconds": (now - oldest).total_seconds() if oldest is not None else None,
+    }
+    stuck = summary["stale_running"] > 0 or (
+        summary["oldest_queued_seconds"] is not None and summary["oldest_queued_seconds"] > stale_after_seconds
+    )
+    summary["status"] = "degraded" if stuck else "healthy"
+    return summary
 
 
 def recover_stale(db: Session, stale_after_seconds: int) -> list[uuid.UUID]:

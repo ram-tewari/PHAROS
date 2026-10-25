@@ -130,37 +130,6 @@ class TestChunkingPipelineIntegration:
         db_session.delete(resource)
         db_session.commit()
 
-    def test_async_chunking_via_celery(self, db_session):
-        """
-        Test async chunking via Celery task.
-
-        Validates: Requirements 6.6, 12.7
-
-        Large documents should be chunked asynchronously via Celery.
-        """
-        # Create a resource with large content
-        resource = Resource(
-            title="Large Document for Async Chunking",
-            description="Test resource",
-            type="article",
-        )
-        db_session.add(resource)
-        db_session.commit()
-
-        # Mock the Celery task
-        with patch("app.tasks.celery_tasks.chunk_resource_task") as mock_task:
-            mock_task.delay = Mock(return_value=Mock(id="test-task-id"))
-
-            # Trigger async chunking
-            task = mock_task.delay(str(resource.id), strategy="semantic")
-
-            # Verify task was queued
-            assert mock_task.delay.called, "Celery task should be queued"
-            assert task.id == "test-task-id", "Task ID should be returned"
-
-        # Cleanup
-        db_session.delete(resource)
-        db_session.commit()
 
     def test_chunking_error_handling(self, db_session):
         """
@@ -216,37 +185,6 @@ class TestChunkingPipelineIntegration:
         db_session.delete(resource)
         db_session.commit()
 
-    def test_chunking_retry_logic(self, db_session):
-        """
-        Test retry logic for transient errors.
-
-        Validates: Requirements 12.7
-
-        Transient errors should trigger retry with exponential backoff.
-        """
-        # Create a resource
-        resource = Resource(
-            title="Test Resource Retry Logic",
-            description="Test resource",
-            type="article",
-        )
-        db_session.add(resource)
-        db_session.commit()
-
-        # Mock the Celery task with retry logic
-        with patch("app.tasks.celery_tasks.chunk_resource_task") as mock_task:
-            # Simulate transient error on first call, success on retry
-            mock_task.retry = Mock(side_effect=Exception("Retry triggered"))
-            mock_task.delay = Mock(return_value=Mock(id="test-task-id"))
-
-            # The actual retry logic is in the Celery task decorator
-            # We're just verifying the task can be retried
-            task = mock_task.delay(str(resource.id))
-            assert task.id == "test-task-id", "Task should be queued"
-
-        # Cleanup
-        db_session.delete(resource)
-        db_session.commit()
 
     def test_chunking_configuration_toggle(self, db_session):
         """
@@ -626,43 +564,3 @@ class TestChunkingPipelinePerformance:
         db_session.delete(resource)
         db_session.commit()
 
-    def test_async_chunking_for_very_large_documents(self, db_session):
-        """
-        Test that very large documents use async chunking.
-
-        Validates: Requirements 12.7
-
-        Documents >10,000 words should be chunked asynchronously.
-        """
-        # Create a resource
-        resource = Resource(
-            title="Very Large Document Async Test",
-            description="Test resource",
-            type="article",
-        )
-        db_session.add(resource)
-        db_session.commit()
-
-        # Create very large content (>10,000 words)
-        large_content = (
-            "This is a test sentence with multiple words. " * 2500
-        )  # ~12,500 words
-
-        # Mock the Celery task
-        with patch("app.tasks.celery_tasks.chunk_resource_task") as mock_task:
-            mock_task.delay = Mock(return_value=Mock(id="test-task-id"))
-
-            # Simulate async chunking decision
-            word_count = len(large_content.split())
-            if word_count > 10000:
-                # Trigger async chunking
-                task = mock_task.delay(str(resource.id), strategy="semantic")
-                assert task.id == "test-task-id", (
-                    "Async task should be queued for large documents"
-                )
-            else:
-                pytest.fail("Document should be large enough to trigger async chunking")
-
-        # Cleanup
-        db_session.delete(resource)
-        db_session.commit()

@@ -7,6 +7,8 @@ and error handling for connection failures.
 Requirements: 2.1, 2.4, 8.1
 """
 
+import os
+
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -89,26 +91,20 @@ class TestPostgreSQLConnection:
         assert get_database_type(database_url) == "postgresql"
 
     @pytest.mark.skipif(
-        True,  # Skip by default - requires actual PostgreSQL instance
-        reason="Requires PostgreSQL instance - run manually with real database",
+        not os.getenv("PHAROS_TEST_DATABASE_URL"),
+        reason="set PHAROS_TEST_DATABASE_URL to a PostgreSQL database to run",
     )
     def test_postgresql_connection_real(self):
-        """Test actual PostgreSQL connection (manual test only)."""
-        # This test requires a real PostgreSQL instance
-        # Set environment variables before running:
-        # POSTGRES_SERVER=localhost
-        # POSTGRES_USER=neo_user
-        # POSTGRES_PASSWORD=neo_password
-        # POSTGRES_DB=neo_alexandria
+        """init_database() connects to a real PostgreSQL server and runs a query."""
+        from sqlalchemy import text
 
-        settings = Settings(DATABASE_URL="postgresql://placeholder")
-        database_url = settings.get_database_url()
+        from app.shared import database
 
-        # Initialize database
-        init_database(database_url, env="dev")
-
-        # Verify database type
+        database_url = os.environ["PHAROS_TEST_DATABASE_URL"]
         assert get_database_type(database_url) == "postgresql"
+        init_database(database_url, env="dev")
+        with database.sync_engine.connect() as conn:
+            assert conn.execute(text("SELECT 1")).scalar_one() == 1
 
 
 class TestDatabaseConnectionErrors:

@@ -22,7 +22,6 @@ import time
 from datetime import datetime
 from uuid import uuid4
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
@@ -458,7 +457,6 @@ class TestLBDService:
 class TestLBDEndpoints:
     """Test suite for LBD API endpoints (subtask 12.7)."""
 
-    @pytest.mark.skip(reason="Client fixture uses app database, not test database")
     def test_discover_endpoint(self, client: TestClient, db_session: Session):
         """Test POST /graph/discover endpoint."""
         # Create test data with concepts in title/description for discovery
@@ -512,7 +510,6 @@ class TestLBDEndpoints:
             assert isinstance(data["hypotheses"], list)
             assert data["execution_time"] < 5.0  # Performance target
 
-    @pytest.mark.skip(reason="Client fixture uses app database, not test database")
     def test_discover_endpoint_with_time_slice(
         self, client: TestClient, db_session: Session
     ):
