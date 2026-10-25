@@ -7,9 +7,6 @@ Tests the full vertical slice:
 3. Context Assembly: profile_id swaps the rule set injected into context
 """
 
-import time
-from unittest.mock import MagicMock
-
 import pytest
 from sqlalchemy.orm import Session
 from fastapi.testclient import TestClient
@@ -193,130 +190,77 @@ class TestCodingProfileAPI:
 # ============================================================================
 
 
+def _profile_with_rule(db, pid, rule_name, desc, *, example=None, repository="test/repo"):
+    db.add(CodingProfile(id=pid, name=f"{pid} name", description=f"{pid} desc.",
+                         best_suited_for={"languages": [], "tasks": []}))
+    db.commit()
+    schema = {"pattern_type": "architecture"}
+    if example:
+        schema["example_code"] = example
+    db.add(ProposedRule(
+        repository=repository, commit_sha="abc1234", file_path="x", diff_payload="diff",
+        rule_name=rule_name, rule_description=desc, rule_schema=schema, confidence=0.9,
+        status=RuleStatus.ACTIVE.value, profile_id=pid,
+    ))
+    db.commit()
+
+
 class TestContextSwapping:
-    def test_profile_id_returns_profile_rules(self, db: Session):
-        """
-        Passing profile_id='sys_hacker' should return rules from that
-        profile, not the personal baseline.
-        """
-        from app.modules.mcp.context_service import ContextAssemblyService
+    """profile_id swaps the rule set (app.codeintel.context.select_rules)."""
 
-        profile = CodingProfile(
-            id="sys_hacker",
-            name="The Systems Hacker",
-            description="Low-level C mastery.",
-            best_suited_for={"languages": ["C"], "tasks": ["systems"]},
-        )
-        db.add(profile)
+    def test_profile_id_returns_only_that_profiles_active_rules(self, db: Session):
+        from app.codeintel.context import select_rules
+
+        _profile_with_rule(db, "sys_hacker", "UseCustomAllocator", "Always use zmalloc.", example="zmalloc(sz);")
+        db.add_all([
+            ProposedRule(  # personal baseline rule: not part of the profile
+                repository="my/repo", commit_sha="zzz9999", file_path="app.py", diff_payload="d",
+                rule_name="PersonalRule", rule_description="My personal style.",
+                rule_schema={"pattern_type": "naming"}, confidence=0.7,
+                status=RuleStatus.ACTIVE.value, profile_id=None,
+            ),
+            ProposedRule(  # same profile but still pending review
+                repository="redis/redis", commit_sha="abc1235", file_path="x.c", diff_payload="d",
+                rule_name="Pending", rule_description="Not yet approved.",
+                rule_schema={}, confidence=0.99, status=RuleStatus.PENDING_REVIEW.value,
+                profile_id="sys_hacker",
+            ),
+        ])
         db.commit()
 
-        rule = ProposedRule(
-            repository="redis/redis",
-            commit_sha="abc1234",
-            file_path="src/server.c",
-            diff_payload="zmalloc diff",
-            rule_name="UseCustomAllocator",
-            rule_description="Always use zmalloc.",
-            rule_schema={
-                "pattern_type": "performance",
-                "example_code": "zmalloc(sz);",
-            },
-            confidence=0.95,
-            status=RuleStatus.ACTIVE.value,
-            profile_id="sys_hacker",
-        )
-        personal = ProposedRule(
-            repository="my/repo",
-            commit_sha="zzz9999",
-            file_path="app.py",
-            diff_payload="personal diff",
-            rule_name="PersonalRule",
-            rule_description="My personal style.",
-            rule_schema={"pattern_type": "naming"},
-            confidence=0.7,
-            status=RuleStatus.ACTIVE.value,
-            profile_id=None,
-        )
-        db.add_all([rule, personal])
-        db.commit()
+        rules = select_rules(db, profile_id="sys_hacker")
 
-        mock_embedding = MagicMock()
-        service = ContextAssemblyService(db, None, mock_embedding)
-
-        patterns, elapsed = service._fetch_profile_rules("sys_hacker", time.time())
-
-        assert len(patterns) == 1
-        assert patterns[0].description == "Always use zmalloc."
-        assert patterns[0].frequency == 0.95
+        assert [r["name"] for r in rules] == ["UseCustomAllocator"]
+        assert rules[0]["description"] == "Always use zmalloc."
+        assert rules[0]["confidence"] == 0.9 and rules[0]["example"] == "zmalloc(sz);"
 
     def test_nonexistent_profile_returns_empty(self, db: Session):
-        """A nonexistent profile_id should return zero patterns."""
-        from app.modules.mcp.context_service import ContextAssemblyService
+        from app.codeintel.context import select_rules
 
-        mock_embedding = MagicMock()
-        service = ContextAssemblyService(db, None, mock_embedding)
-
-        patterns, elapsed = service._fetch_profile_rules(
-            "nonexistent_profile", time.time()
-        )
-        assert len(patterns) == 0
+        assert select_rules(db, profile_id="nonexistent_profile") == []
 
     def test_different_profiles_return_different_rules(self, db: Session):
-        """
-        Switching between profile_id='sys_hacker' and profile_id='pythonic_arch'
-        should return completely different rule sets.
-        """
-        from app.modules.mcp.context_service import ContextAssemblyService
+        from app.codeintel.context import select_rules
 
-        for pid, name, rule_name, desc in [
-            (
-                "sys_hacker",
-                "The Systems Hacker",
-                "UseZmalloc",
-                "Use zmalloc for allocation.",
-            ),
-            (
-                "pythonic_arch",
-                "The Pythonic Architect",
-                "UseDataclasses",
-                "Prefer dataclasses over dicts.",
-            ),
-        ]:
-            profile = CodingProfile(
-                id=pid,
-                name=name,
-                description=f"{name} desc.",
-                best_suited_for={"languages": [], "tasks": []},
-            )
-            db.add(profile)
-            db.commit()
+        _profile_with_rule(db, "sys_hacker", "UseZmalloc", "Use zmalloc for allocation.")
+        _profile_with_rule(db, "pythonic_arch", "UseDataclasses", "Prefer dataclasses over dicts.")
 
-            rule = ProposedRule(
-                repository="test/repo",
-                commit_sha="abc1234",
-                file_path="test.py",
-                diff_payload="diff",
-                rule_name=rule_name,
-                rule_description=desc,
-                rule_schema={"pattern_type": "architecture"},
-                confidence=0.9,
-                status=RuleStatus.ACTIVE.value,
-                profile_id=pid,
-            )
-            db.add(rule)
-            db.commit()
+        sys_rules = select_rules(db, profile_id="sys_hacker")
+        py_rules = select_rules(db, profile_id="pythonic_arch")
 
-        mock_embedding = MagicMock()
-        service = ContextAssemblyService(db, None, mock_embedding)
+        assert [r["description"] for r in sys_rules] == ["Use zmalloc for allocation."]
+        assert [r["description"] for r in py_rules] == ["Prefer dataclasses over dicts."]
 
-        sys_patterns, _ = service._fetch_profile_rules(
-            "sys_hacker", time.time()
-        )
-        py_patterns, _ = service._fetch_profile_rules(
-            "pythonic_arch", time.time()
-        )
+    def test_assembled_context_uses_profile_rules(self, db: Session):
+        """End to end: the profile's rules land in the context, an unknown profile warns."""
+        from app.codeintel.context import ContextRequest, assemble_context
+        from app.codeintel.embeddings import HashEmbedder
 
-        assert len(sys_patterns) == 1
-        assert len(py_patterns) == 1
-        assert sys_patterns[0].description == "Use zmalloc for allocation."
-        assert py_patterns[0].description == "Prefer dataclasses over dicts."
+        _profile_with_rule(db, "sys_hacker", "UseZmalloc", "Use zmalloc for allocation.")
+
+        out = assemble_context(db, HashEmbedder(), ContextRequest(query="allocate memory", profile_id="sys_hacker"))
+        assert [r["name"] for r in out["rules"]] == ["UseZmalloc"]
+        assert "Coding rules (profile sys_hacker)" in out["context_text"]
+
+        missing = assemble_context(db, HashEmbedder(), ContextRequest(query="x", profile_id="nope"))
+        assert missing["rules"] == [] and any("unknown coding profile" in w for w in missing["warnings"])

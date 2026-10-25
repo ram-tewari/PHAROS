@@ -27,6 +27,9 @@ from app.modules.graph.service import (
 from app.modules.graph.embeddings import GraphEmbeddingsService
 from app.config.settings import get_settings
 from app.shared.event_bus import event_bus
+# Imported at module load: it pulls in redis (~100 ms), which would otherwise
+# land on the first hover/graph request of every process.
+from app.shared.cache import CacheService
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/graph", tags=["graph"])
@@ -1485,7 +1488,6 @@ def _get_hover_information_impl(
     )
     from app.modules.graph.logic.static_analysis import StaticAnalysisService
     from app.database.models import Resource, DocumentChunk
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 
@@ -1506,6 +1508,20 @@ def _get_hover_information_impl(
             raise HTTPException(
                 status_code=404, detail=f"Resource with ID {resource_id} not found"
             )
+
+        if resource.repository_id is not None:
+            # A file from the code-intelligence index: chunks hold no source
+            # (content is NULL) and carry their spans in columns, so the
+            # legacy path below cannot see them.
+            from app.codeintel.runtime import secret
+            from app.codeintel.symbols import hover
+            from app.config.settings import get_settings
+
+            result = HoverInformationResponse(
+                **hover(db, resource, line, fetch_token=secret(get_settings().GIT_CLONE_TOKEN))
+            ).model_dump()
+            cache_service.set(cache_key, result, ttl=300)
+            return result
 
         # Get resource metadata to determine language
         language = resource.language
@@ -1745,7 +1761,6 @@ async def get_centrality_metrics(
     from app.modules.graph.schema import CentralityMetrics, CentralityResponse
     from app.modules.graph.service import GraphService
     from app.database.models import GraphCentralityCache
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 
@@ -1965,7 +1980,6 @@ async def detect_communities(
     )
     from app.modules.graph.service import CommunityDetectionService
     from app.database.models import CommunityAssignment
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 
@@ -2179,7 +2193,6 @@ async def compute_graph_layout(
     import time
     from app.modules.graph.schema import GraphLayoutResponse
     from app.modules.graph.service import GraphVisualizationService
-    from app.shared.cache import CacheService
 
     start_time = time.time()
 

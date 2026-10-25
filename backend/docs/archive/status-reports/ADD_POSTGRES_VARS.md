@@ -40,7 +40,7 @@ Value: neondb_owner
 #### 3. POSTGRES_PASSWORD
 ```
 Key: POSTGRES_PASSWORD
-Value: npg_2Lv8pxVJzgyd
+Value: <REDACTED-NEON_PASSWORD-rotate>
 ```
 
 #### 4. POSTGRES_DB
@@ -69,7 +69,7 @@ The validation logic checks for these individual components when it detects Post
 
 These values are extracted from your NeonDB connection string:
 ```
-postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb
+postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb
                      └─────┬─────┘ └──────┬──────┘ └────────────────────────┬────────────────────────┘ └──┬──┘
                         USER         PASSWORD                            SERVER                          DB
 ```

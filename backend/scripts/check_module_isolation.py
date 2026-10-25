@@ -28,22 +28,52 @@ import argparse
 
 
 class ImportVisitor(ast.NodeVisitor):
-    """AST visitor to extract import statements from Python files."""
+    """Collect absolute import paths, resolving relative imports.
 
-    def __init__(self):
+    ``package`` is the dotted package of the file being visited (for
+    ``app/modules/mcp/router.py`` that is ``app.modules.mcp``). Resolving
+    ``from ..graph.service import X`` to ``app.modules.graph.service`` matters:
+    the previous version ignored relative imports entirely, so cross-module
+    imports written relatively were never reported.
+    """
+
+    def __init__(self, package: str = ""):
+        self.package = package
         self.imports: List[str] = []
 
     def visit_Import(self, node: ast.Import):
-        """Visit regular import statements (import x)."""
         for alias in node.names:
             self.imports.append(alias.name)
         self.generic_visit(node)
 
     def visit_ImportFrom(self, node: ast.ImportFrom):
-        """Visit from-import statements (from x import y)."""
-        if node.module:
+        if node.level:
+            base = self.package.split(".") if self.package else []
+            if node.level > 1:
+                base = base[: len(base) - (node.level - 1)]
+            target = ".".join(base + ([node.module] if node.module else []))
+            if node.module is None:
+                # "from .. import a, b": each name may be a module.
+                self.imports.extend(f"{target}.{a.name}" for a in node.names)
+            else:
+                self.imports.append(target)
+        elif node.module:
             self.imports.append(node.module)
         self.generic_visit(node)
+
+
+# Cross-module imports that existed when relative imports started being
+# checked (2026-10). They are reported but do not fail the check; any NEW
+# cross-module import does. An entry that no longer occurs also fails, so
+# this list can only shrink. Remove entries as the coupling is untangled.
+KNOWN_VIOLATIONS: Dict[Tuple[str, str], str] = {
+    ("mcp", "search"): "legacy REST tool registry (mcp/tools.py) wraps search handlers",
+    ("mcp", "graph"): "legacy REST tool registry (mcp/tools.py) wraps graph handlers",
+    ("mcp", "planning"): "legacy REST tool registry (mcp/tools.py) wraps planning handlers",
+    ("mcp", "resources"): "legacy REST tool registry (mcp/tools.py) wraps resource handlers",
+    ("resources", "search"): "legacy URL-ingestion pipeline calls search indexing helpers",
+    ("search", "resources"): "legacy search router/schemas reuse resource schemas (cycle)",
+}
 
 
 class ModuleIsolationChecker:
@@ -52,9 +82,9 @@ class ModuleIsolationChecker:
     # Expected modules in the system
     EXPECTED_MODULES = {
         "admin",
+        "code",
         "github",
         "graph",
-        "ingestion",
         "mcp",
         "monitoring",
         "patterns",
@@ -122,7 +152,9 @@ class ModuleIsolationChecker:
 
     def is_shared_import(self, import_path: str) -> bool:
         """Check if an import is from the shared kernel."""
-        return import_path.startswith("app.shared") or import_path.startswith("shared.")
+        # app.codeintel is a framework-free library consumed by modules, like
+        # the shared kernel.
+        return import_path.startswith(("app.shared", "shared.", "app.codeintel"))
 
     def extract_imports(self, file_path: Path) -> List[str]:
         """Extract all imports from a Python file."""
@@ -131,7 +163,10 @@ class ModuleIsolationChecker:
                 content = f.read()
 
             tree = ast.parse(content, filename=str(file_path))
-            visitor = ImportVisitor()
+            rel = file_path.relative_to(self.app_root.parent).with_suffix("")
+            parts = list(rel.parts)
+            package_parts = parts[:-1] if parts[-1] != "__init__" else parts[:-1]
+            visitor = ImportVisitor(".".join(package_parts))
             visitor.visit(tree)
             return visitor.imports
         except SyntaxError as e:
@@ -234,32 +269,28 @@ class ModuleIsolationChecker:
             self.check_file(file_path)
 
     def detect_circular_dependencies(self):
-        """Detect circular dependencies using DFS."""
-        visited = set()
-        rec_stack = set()
+        """Find cycles in the module dependency graph (three-colour DFS)."""
+        WHITE, GRAY, BLACK = 0, 1, 2
+        colour: Dict[str, int] = defaultdict(int)
+        seen_cycles: Set[Tuple[str, ...]] = set()
 
-        def dfs(node: str, path: List[str]) -> bool:
-            """DFS to detect cycles."""
-            visited.add(node)
-            rec_stack.add(node)
+        def dfs(node: str, path: List[str]) -> None:
+            colour[node] = GRAY
             path.append(node)
+            for neighbor in sorted(self.dependencies.get(node, ())):
+                if colour[neighbor] == GRAY:
+                    cycle = path[path.index(neighbor):] + [neighbor]
+                    key = tuple(sorted(set(cycle)))
+                    if key not in seen_cycles:
+                        seen_cycles.add(key)
+                        self.circular_deps.append(cycle)
+                elif colour[neighbor] == WHITE:
+                    dfs(neighbor, path)
+            path.pop()
+            colour[node] = BLACK
 
-            for neighbor in self.dependencies.get(node, []):
-                if neighbor not in visited:
-                    if dfs(neighbor, path.copy()):
-                        return True
-                elif neighbor in rec_stack:
-                    # Found a cycle
-                    cycle_start = path.index(neighbor)
-                    cycle = path[cycle_start:] + [neighbor]
-                    self.circular_deps.append(cycle)
-                    return True
-
-            rec_stack.remove(node)
-            return False
-
-        for module in self.dependencies.keys():
-            if module not in visited:
+        for module in sorted(self.dependencies):
+            if colour[module] == WHITE:
                 dfs(module, [])
 
     def generate_dependency_graph(self) -> str:
@@ -410,10 +441,27 @@ class ModuleIsolationChecker:
         print(f"Legacy imports: {len(self.non_shared_imports)}")
         print(f"Circular dependencies: {len(self.circular_deps)}")
 
-        total_violations = len(self.direct_imports) + len(self.circular_deps)
+        new_violations = [v for v in self.direct_imports if (v[0], v[1]) not in KNOWN_VIOLATIONS]
+        seen_pairs = {(v[0], v[1]) for v in self.direct_imports}
+        stale = sorted(set(KNOWN_VIOLATIONS) - seen_pairs)
+        new_cycles = [
+            c for c in self.circular_deps
+            if not all((a, b) in KNOWN_VIOLATIONS for a, b in zip(c, c[1:]))
+        ]
+        if self.direct_imports:
+            print(f"Known (allowlisted) cross-module imports: {len(self.direct_imports) - len(new_violations)}")
+        if stale:
+            print("\n❌ STALE ALLOWLIST ENTRIES (remove from KNOWN_VIOLATIONS):")
+            for a, b in stale:
+                print(f"  {a} → {b}")
+        total_violations = len(new_violations) + len(new_cycles) + len(stale)
 
         if total_violations == 0 and not missing_modules:
-            print("\n✅ ALL CHECKS PASSED - Modules are properly isolated!")
+            known = len(self.direct_imports)
+            if known:
+                print(f"\n✅ NO NEW VIOLATIONS ({known} known cross-module imports allowlisted in KNOWN_VIOLATIONS)")
+            else:
+                print("\n✅ ALL CHECKS PASSED - Modules are properly isolated!")
             if self.non_shared_imports:
                 print("⚠ Note: Legacy imports detected but not blocking")
             return 0

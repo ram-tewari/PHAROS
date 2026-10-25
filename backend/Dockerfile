@@ -1,7 +1,7 @@
 # ============================================================================
-# Pharos Backend - Production Dockerfile for Koyeb Free Tier
+# PHAROS backend - API / worker image (CPU only, no ML frameworks)
 # ============================================================================
-# Optimized for Koyeb's 512MB RAM "nano" instance with 24/7 serverless hosting
+# Dependencies come from the hash-pinned lock requirements-cloud.txt.
 #
 # Architecture:
 # - Multi-stage build to minimize final image size
@@ -32,14 +32,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements files
-COPY config/requirements-cloud.txt config/requirements-base.txt ./
+# Hash-pinned lock (regenerate with `make lock`)
+COPY requirements-cloud.txt ./
 
 # Install Python dependencies to /install directory
 # --prefix=/install: Install to custom location for copying to final stage
 # --no-cache-dir: Don't cache packages (reduces image size)
 # --no-warn-script-location: Suppress pip warnings about script locations
-RUN pip install --no-cache-dir --prefix=/install \
+RUN pip install --no-cache-dir --require-hashes --prefix=/install \
     -r requirements-cloud.txt
 
 # ============================================================================
@@ -56,13 +56,14 @@ ENV PYTHONUNBUFFERED=1 \
 # Install runtime dependencies only
 # - libpq5: PostgreSQL client library (runtime, not dev headers)
 # - curl: Health checks
+# - git: the ingestion worker clones repositories (never runs their code)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
-# Koyeb runs containers as non-root by default
 RUN useradd -m -u 1000 -s /bin/bash pharos
 
 # Set working directory
@@ -81,13 +82,13 @@ RUN chmod +x /app/entrypoint.sh
 # Switch to non-root user
 USER pharos
 
-# Expose port (Koyeb injects $PORT, defaults to 8000)
+# Expose port (platforms inject $PORT, defaults to 8000)
 EXPOSE 8000
 
 # Health check endpoint
-# Koyeb will use this to determine if the service is healthy
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:${PORT}/health || exit 1
 
-# Entrypoint: Run migrations then start server
+# Entrypoint: migrations (unless RUN_MIGRATIONS=0) then the API server.
+# The ingestion worker uses the same image: python -m app.workers.ingest_worker
 ENTRYPOINT ["/app/entrypoint.sh"]

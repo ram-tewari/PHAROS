@@ -7,7 +7,6 @@ Tests health check aggregation, metrics collection, and performance monitoring.
 
 import pytest
 from unittest.mock import Mock, patch
-from datetime import datetime
 from sqlalchemy.orm import Session
 
 from app.modules.monitoring.service import (
@@ -260,34 +259,6 @@ class TestModuleHealth:
         assert "no health check registered" in result["health"]["message"].lower()
 
 
-class TestModelHealth:
-    """Tests for ML model health checks."""
-
-    @pytest.mark.asyncio
-    async def test_get_model_health_not_available(self, monitoring_service):
-        """Test model health when model is not available."""
-        with patch("os.path.exists") as mock_exists:
-            mock_exists.return_value = False
-
-            result = await monitoring_service.get_model_health()
-
-            assert result["status"] == "warning"
-            assert result["model"]["available"] is False
-
-    @pytest.mark.asyncio
-    async def test_get_model_health_load_error(self, monitoring_service):
-        """Test model health when model exists but can't be loaded."""
-        with patch("os.path.exists") as mock_exists, patch("os.stat") as mock_stat:
-            mock_exists.return_value = True
-            mock_stat.return_value = Mock(
-                st_size=1024 * 1024, st_mtime=datetime.now().timestamp()
-            )
-
-            result = await monitoring_service.get_model_health()
-
-            # Should return warning status if torch can't load the model
-            assert result["status"] in ["ok", "warning"]
-            assert result["model"]["available"] is True
 
 
 class TestEventHistory:
@@ -320,87 +291,43 @@ class TestEventHistory:
             assert "error" in result
 
 
-@pytest.mark.skipif(
-    __import__("importlib").util.find_spec("celery") is None,
-    reason="celery not installed; worker-status tests require celery",
-)
 class TestWorkerStatus:
-    """Tests for worker status retrieval."""
+    """Worker status comes from the durable ingestion job table."""
 
     @pytest.mark.asyncio
-    async def test_get_worker_status_success(self, monitoring_service):
-        """Test successful worker status retrieval."""
-        with patch("app.tasks.celery_app.celery_app") as mock_celery:
-            mock_inspect = Mock()
-            mock_inspect.active.return_value = {"worker1": []}
-            mock_inspect.scheduled.return_value = {"worker1": []}
-            mock_inspect.stats.return_value = {"worker1": {"total": 100}}
-            mock_celery.control.inspect.return_value = mock_inspect
+    async def test_get_worker_status_reports_queue(self, monitoring_service, db_session):
+        from datetime import datetime, timedelta, timezone
 
-            result = await monitoring_service.get_worker_status()
+        from app.database.models import IngestionJob
 
-            assert result["status"] == "ok"
-            assert "workers" in result
-            assert result["workers"]["worker_count"] == 1
+        now = datetime.now(timezone.utc)
+        db_session.add_all([
+            IngestionJob(repo_url="https://github.com/a/q", branch_key="", status="queued", attempts=0,
+                         max_attempts=3, created_at=now),
+            IngestionJob(repo_url="https://github.com/a/r", branch_key="", status="running", attempts=1,
+                         max_attempts=3, heartbeat_at=now - timedelta(hours=1)),
+        ])
+        db_session.commit()
 
-    @pytest.mark.asyncio
-    async def test_get_worker_status_error(self, monitoring_service):
-        """Test worker status retrieval with error."""
-        with patch("app.tasks.celery_app.celery_app") as mock_celery:
-            mock_celery.control.inspect.side_effect = Exception("Celery error")
+        result = await monitoring_service.get_worker_status(db_session)
 
-            result = await monitoring_service.get_worker_status()
-
-            assert result["status"] == "error"
-            assert "error" in result
-
-
-class TestRecommendationQualityMetrics:
-    """Tests for recommendation quality metrics."""
+        assert result["status"] == "degraded"  # the running job stopped heartbeating
+        workers = result["workers"]
+        assert (workers["queued"], workers["running"], workers["stale_running"]) == (1, 1, 1)
 
     @pytest.mark.asyncio
-    async def test_get_recommendation_quality_metrics_error(
-        self, monitoring_service, mock_db
-    ):
-        """Test recommendation quality metrics when the feedback query fails.
+    async def test_get_worker_status_error(self, monitoring_service, mock_db):
+        mock_db.execute.side_effect = Exception("database gone")
 
-        The inner try/except catches the exception and falls back to the
-        empty-data path, so status is "ok" with zero metrics.
-        """
-        mock_db.query.side_effect = Exception("Database error")
+        result = await monitoring_service.get_worker_status(mock_db)
 
-        result = await monitoring_service.get_recommendation_quality_metrics(mock_db, 7)
-
-        assert result["status"] == "ok"
-        assert result["metrics"]["total_recommendations"] == 0
+        assert result["status"] == "error" and "database gone" in result["error"]
 
 
-class TestUserEngagementMetrics:
-    """Tests for user engagement metrics."""
-
-    @pytest.mark.asyncio
-    async def test_get_user_engagement_metrics_error(self, monitoring_service, mock_db):
-        """Test user engagement metrics with error."""
-        mock_db.query.side_effect = Exception("Database error")
-
-        result = await monitoring_service.get_user_engagement_metrics(mock_db, 7)
-
-        assert result["status"] == "error"
-        assert "error" in result
 
 
-class TestMLModelHealthCheck:
-    """Tests for ML classification model health check."""
 
-    @pytest.mark.asyncio
-    async def test_ml_model_health_check_exception(self, monitoring_service):
-        """Test ML model health check with general exception."""
-        # Test the outer exception handler
-        result = await monitoring_service.ml_model_health_check()
 
-        # Should return error status if service can't be imported
-        assert result["status"] in ["healthy", "unhealthy", "error"]
-        assert "timestamp" in result
 
 
 class TestDatabasePoolStatus:
@@ -554,24 +481,6 @@ class TestDatabasePoolStatusCalculations:
             assert result["pool"]["utilization_percent"] > 0
 
 
-class TestModelHealthEdgeCases:
-    """Tests for model health edge cases."""
-
-    @pytest.mark.asyncio
-    async def test_get_model_health_file_exists_but_load_fails(
-        self, monitoring_service
-    ):
-        """Test model health when file exists but can't be loaded."""
-        with patch("os.path.exists") as mock_exists, patch("os.stat") as mock_stat:
-            mock_exists.return_value = True
-            mock_stat.return_value = Mock(st_size=1024 * 1024, st_mtime=1234567890.0)
-
-            result = await monitoring_service.get_model_health()
-
-            # Should return warning status since torch import will fail
-            assert result["status"] in ["ok", "warning"]
-            assert result["model"]["available"] is True
-            assert "size_mb" in result["model"]
 
 
 class TestHealthCheckExceptionHandling:
@@ -607,3 +516,30 @@ class TestModuleHealthEdgeCases:
         # Should return error status
         assert result["status"] == "error"
         assert "error" in result
+
+
+class TestRemovedFeatureStubs:
+    """Metrics for features removed in the single-tenant cleanup (NCF
+    recommender, user engagement, ML classification) return an explicit
+    ``not_applicable`` stub rather than fake data or an error, and never
+    touch the database."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "call",
+        [
+            lambda s, db: s.get_recommendation_quality_metrics(db, 7),
+            lambda s, db: s.get_user_engagement_metrics(db, 7),
+            lambda s, db: s.get_model_health(),
+            lambda s, db: s.ml_model_health_check(),
+        ],
+        ids=["recommendation_quality", "user_engagement", "model_health", "ml_model_health"],
+    )
+    async def test_stub_contract(self, monitoring_service, mock_db, call):
+        mock_db.query.side_effect = AssertionError("removed features must not query the database")
+
+        result = await call(monitoring_service, mock_db)
+
+        assert result["status"] == "not_applicable"
+        assert "removed" in result["message"]
+        assert "timestamp" in result

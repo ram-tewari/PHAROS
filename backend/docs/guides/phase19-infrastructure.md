@@ -49,7 +49,7 @@ Neon provides serverless PostgreSQL with a generous free tier (0.5GB storage, 1 
 
 **Example:**
 ```
-postgresql://neondb_owner:AbCdEf123456@ep-cool-name-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+postgresql://neondb_owner:<REDACTED-rotate>@ep-cool-name-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
 ```
 
 ### Step 4: Configure Database
@@ -106,7 +106,7 @@ Qdrant provides vector database hosting with a free tier (1GB storage, 1M vector
 **Example:**
 ```
 QDRANT_URL=https://abc123-def456.us-east-1.aws.cloud.qdrant.io
-QDRANT_API_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+QDRANT_API_KEY=<REDACTED-rotate>
 ```
 
 ### Step 4: Create Collections (Optional)

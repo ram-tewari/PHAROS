@@ -30,7 +30,7 @@ Go to your Render dashboard and add these variables:
 ```bash
 MODE=CLOUD
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 ```
 
 **How to do this**:
@@ -60,8 +60,8 @@ Create `.env` file in `backend/` directory:
 ```bash
 MODE=EDGE
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
+DATABASE_URL=postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
 EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
 WORKER_POLL_INTERVAL=2
 ```
@@ -100,7 +100,7 @@ Upload a test resource:
 ```bash
 curl -X POST https://pharos-cloud-api.onrender.com/api/resources \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \
+  -H "X-API-Key: <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \
   -d '{
     "title": "Test Resource",
     "description": "Testing edge worker integration",
@@ -130,10 +130,10 @@ Task completed (total: 1 processed, 0 failed)
 ```bash
 MODE=CLOUD  # ← CRITICAL: Queue tasks, don't load models
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
-PHAROS_ADMIN_TOKEN=4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74
-JWT_SECRET_KEY=11a7da6fb545fc0d8d2ddd0ee03be15672799fa57128e0e55328d8750483bd79
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
+DATABASE_URL=postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+PHAROS_ADMIN_TOKEN=<REDACTED-PHAROS_ADMIN_TOKEN-rotate>
+JWT_SECRET_KEY=<REDACTED-rotate>
 EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
 GRAPH_EXTRACTION_ENABLED=true
 SYNTHETIC_QUESTIONS_ENABLED=false
@@ -150,8 +150,8 @@ ALLOWED_REDIRECT_URLS='["https://pharos-cloud-api.onrender.com"]'
 ```bash
 MODE=EDGE  # ← CRITICAL: Load models locally
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
+DATABASE_URL=postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require
 EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
 WORKER_POLL_INTERVAL=2
 ```

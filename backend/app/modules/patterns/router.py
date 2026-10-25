@@ -31,6 +31,12 @@ from .schema import (
 )
 from .service import learn_patterns, persist_profile
 
+
+def _state_user_id(request: Request) -> UUID:
+    """The authenticated principal's UUID (``request.state.user`` is a dict)."""
+    user = request.state.user
+    return UUID(str(user["user_id"] if isinstance(user, dict) else user.user_id))
+
 logger = logging.getLogger(__name__)
 
 patterns_router = APIRouter(prefix="/api/patterns", tags=["patterns"])
@@ -57,7 +63,7 @@ async def learn_endpoint(
     # Persist to database if user is authenticated
     if hasattr(request.state, "user") and request.state.user:
         try:
-            user_id = UUID(request.state.user.user_id)
+            user_id = _state_user_id(request)
             persist_profile(db, user_id, response)
             logger.info(
                 "Profile persisted for user %s, repo %s",
@@ -84,7 +90,7 @@ async def list_profiles(
     if not hasattr(request.state, "user") or not request.state.user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    user_id = UUID(request.state.user.user_id)
+    user_id = _state_user_id(request)
     records = (
         db.query(DeveloperProfileRecord)
         .filter(DeveloperProfileRecord.user_id == user_id)
@@ -208,7 +214,7 @@ async def get_profile(
     if not hasattr(request.state, "user") or not request.state.user:
         raise HTTPException(status_code=401, detail="Not authenticated")
 
-    user_id = UUID(request.state.user.user_id)
+    user_id = _state_user_id(request)
     record = (
         db.query(DeveloperProfileRecord)
         .filter(

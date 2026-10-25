@@ -197,7 +197,7 @@ envVars:
 ```bash
 MODE=CLOUD
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 DATABASE_URL=postgresql+asyncpg://...
 ```
 
@@ -206,7 +206,7 @@ DATABASE_URL=postgresql+asyncpg://...
 ```bash
 MODE=EDGE
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 DATABASE_URL=postgresql+asyncpg://...
 EMBEDDING_MODEL_NAME=nomic-ai/nomic-embed-text-v1
 WORKER_POLL_INTERVAL=2
@@ -233,7 +233,7 @@ grep "Edge worker ready" edge_worker.log
 
 ```bash
 curl https://living-sculpin-96916.upstash.io/llen/embedding_tasks \
-  -H "Authorization: Bearer gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTYUPSTASH_REDIS_REST_TOKEN"
+  -H "Authorization: Bearer <REDACTED-UPSTASH_TOKEN-rotate>"
 # Should return: 0 (if no pending tasks)
 ```
 

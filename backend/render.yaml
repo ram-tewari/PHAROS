@@ -31,7 +31,11 @@ services:
     plan: starter  # $7/mo - 512MB RAM, 0.5 CPU
     
     # Build Configuration
-    buildCommand: pip install -r requirements-cloud.txt && alembic upgrade heads
+    buildCommand: pip install --require-hashes -r requirements-cloud.txt
+    # Migrations run before each deploy; a failure keeps the previous deploy live.
+    # A database created before the 2026-10 migration squash needs the one-time
+    # procedure in docs/operations/database-migrations.md first.
+    preDeployCommand: alembic -c config/alembic.ini upgrade head
     startCommand: gunicorn -c gunicorn_conf.py app.main:app
     
     # Auto-deploy on push to main branch
@@ -46,7 +50,7 @@ services:
     # - REDIS_URL: Upstash rediss:// URL
     # - UPSTASH_REDIS_REST_URL: Upstash REST API URL (REQUIRED for task queue)
     # - UPSTASH_REDIS_REST_TOKEN: Upstash REST API token (REQUIRED for task queue)
-    # - PHAROS_API_KEY: M2M authentication key for Ronin
+    # - PHAROS_ADMIN_TOKEN / PHAROS_READ_TOKEN: M2M bearer tokens
     envVars:
       # Application
       - key: ENVIRONMENT
@@ -90,12 +94,16 @@ services:
       - key: UPSTASH_REDIS_REST_TOKEN
         sync: false  # REQUIRED: Upstash REST API token for task queue
       
-      # Authentication (set in dashboard)
-      - key: PHAROS_API_KEY
-        sync: false  # M2M API key for Ronin integration
-      
-      - key: SECRET_KEY
-        generateValue: true  # Auto-generate secure secret
+      # Authentication (set in dashboard). PHAROS_API_KEY is no longer read:
+      # admin token = indexing/deletes, read token = search/context/MCP.
+      - key: PHAROS_ADMIN_TOKEN
+        sync: false
+      - key: PHAROS_READ_TOKEN
+        sync: false
+
+      # Hostnames clients use for /mcp (DNS-rebinding protection)
+      - key: MCP_ALLOWED_HOSTS
+        value: '["pharos.onrender.com"]'
       
       # Deployment Mode (CLOUD = queue tasks to edge worker)
       # CRITICAL: Set to CLOUD to avoid loading ML models on Render
@@ -107,7 +115,11 @@ services:
       # Edge Embedding Service (Tailscale Funnel URL)
       # REQUIRED in CLOUD mode for query embedding generation
       - key: EDGE_EMBEDDING_URL
-        sync: false  # Set manually in dashboard: https://pc.tailf7b210.ts.net
+        sync: false  # Set in dashboard (the edge worker's embedding server URL)
+      - key: EDGE_EMBED_TOKEN
+        sync: false  # Shared secret the edge embedding server requires
+      - key: EMBEDDING_BACKEND
+        value: auto  # http when EDGE_EMBEDDING_URL is set, else keyword-only
       
       # Embeddings (handled by edge worker, not loaded in cloud)
       - key: EMBEDDING_MODEL_NAME

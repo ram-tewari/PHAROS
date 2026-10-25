@@ -310,6 +310,15 @@ def test_property_hover_response_time(
     if target_line > total_lines:
         target_line = config["function_line"]
 
+    # Warm-up at a different position (so the measured request is not a
+    # cache hit): the first request through a fresh app/TestClient pays
+    # one-off costs (ASGI stack, SQLAlchemy statement compilation) that are
+    # not part of the per-request <100ms target.
+    client.get(
+        "/api/graph/code/hover",
+        params={"file_path": file_name, "line": 1, "column": 0, "resource_id": str(resource.id)},
+    )
+
     # Measure response time
     start_time = time.time()
 
@@ -408,6 +417,15 @@ def test_property_hover_response_time_random_positions(
 
     # Constrain line to be within the actual code bounds
     target_line = min(line, total_lines)
+
+    # Warm-up at a different column (a different cache key, so the measured
+    # request is not a cache hit): the first request through a fresh
+    # app/TestClient pays one-off costs that are not part of the target.
+    client.get(
+        "/api/graph/code/hover",
+        params={"file_path": file_name, "line": target_line, "column": column + 1,
+                "resource_id": str(resource.id)},
+    )
 
     # Measure response time
     start_time = time.time()

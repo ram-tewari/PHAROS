@@ -113,7 +113,7 @@ Resource.ingestion_status = "completed"
 - Repo worker is in `backend/app/workers/repo.py` (fully functional)
 - Uses Tree-Sitter for AST parsing (Python fully supported, JS/TS partial)
 - Batch commits every 50 chunks for performance
-- No raw code stored (17x storage reduction achieved)
+- No raw code stored (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - Code fetched on-demand via `/api/github/fetch` endpoint
 
 ---

@@ -109,16 +109,14 @@ def test_property_5_repository_processing_completeness(
                 )
 
         # Property 3: Edge index should have correct shape
-        assert graph.edge_index.shape[0] == 2, (
-            f"Edge index should have 2 rows, got {graph.edge_index.shape[0]}"
-        )
+        assert all(len(edge) == 2 for edge in graph.edges), "every edge is a [src, dst] pair"
 
         # Property 4: Edge index should have at least one edge (self-loops if nothing else)
-        assert graph.edge_index.shape[1] > 0, "Edge index should have at least one edge"
+        assert len(graph.edges) > 0, "Edge list should have at least one edge"
 
         # Property 5: All edge indices should be valid node indices
         max_node_idx = graph.num_nodes - 1
-        for edge_idx in graph.edge_index.flatten():
+        for edge_idx in (i for edge in graph.edges for i in edge):
             assert 0 <= edge_idx <= max_node_idx, (
                 f"Edge index {edge_idx} is out of bounds [0, {max_node_idx}]"
             )
@@ -235,8 +233,8 @@ def test_property_empty_repository_handling(dummy):
         )
 
         # Should have exactly 1 edge (self-loop)
-        assert graph.edge_index.shape[1] == 1, (
-            f"Empty repository should have 1 edge, got {graph.edge_index.shape[1]}"
+        assert graph.edges == [[0, 0]], (
+            f"Empty repository should have 1 self-loop edge, got {graph.edges}"
         )
 
         # File paths should contain empty placeholder

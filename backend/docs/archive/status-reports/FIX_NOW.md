@@ -31,7 +31,7 @@ Change to: prod
 ### 5. Verify JWT_SECRET_KEY (DONE ✅)
 ```
 Find: JWT_SECRET_KEY
-Value: 11a7da6fb545fc0d8d2ddd0ee03be15672799fa57128e0e55328d8750483bd79
+Value: <REDACTED-JWT_SECRET_KEY-rotate>
 Status: ✅ Correct (64 characters)
 ```
 

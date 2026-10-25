@@ -46,7 +46,7 @@ In another terminal, create a test resource:
 
 ```powershell
 curl -X POST https://pharos-cloud-api.onrender.com/api/resources `
-  -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" `
+  -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" `
   -H "Content-Type: application/json" `
   -d '{"url": "https://github.com/user/repo", "title": "Test Repo"}'
 ```
@@ -89,8 +89,8 @@ pip install sentence-transformers>=2.3.0 einops
 
 Check your `.env.edge` file has the correct values:
 - `UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io`
-- `UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY`
-- `DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require`
+- `UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>`
+- `DATABASE_URL=postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require`
 
 ## Stop the Worker
 

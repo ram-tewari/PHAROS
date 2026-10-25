@@ -250,23 +250,17 @@ async def get_cache_stats() -> Dict[str, Any]:
 
 
 @router.get("/workers/status", response_model=WorkerStatus)
-async def get_worker_status() -> Dict[str, Any]:
+async def get_worker_status(db: Session = Depends(get_sync_db)) -> Dict[str, Any]:
     """
-    Get Celery worker status and task information.
-
-    Returns information about active Celery workers, their current tasks,
-    scheduled tasks, and worker statistics. Useful for monitoring
-    distributed task processing and worker health.
+    Ingestion worker status, from the durable job table.
 
     Returns:
-        Dictionary with worker information including:
-        - active: Currently executing tasks by worker
-        - scheduled: Tasks scheduled for future execution
-        - stats: Worker statistics (processed tasks, etc.)
-        - worker_count: Number of active workers
+        ``workers``: queued / running / stale_running / failed_last_24h counts,
+        the age of the oldest queued job, and a healthy/degraded verdict
+        (degraded = jobs are stuck or nobody is claiming them).
     """
     service = MonitoringService()
-    return await service.get_worker_status()
+    return await service.get_worker_status(db)
 
 
 @router.get("/health", response_model=HealthCheckResponse)

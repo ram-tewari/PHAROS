@@ -4,7 +4,7 @@
 
 Your `REDIS_URL` contains the entire CLI command:
 ```bash
-REDIS_URL="redis-cli --tls -u redis://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379"
+REDIS_URL="redis-cli --tls -u redis://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379"
 ```
 
 This is **WRONG**. The app expects just the connection URL, not the CLI command.
@@ -16,7 +16,7 @@ This is **WRONG**. The app expects just the connection URL, not the CLI command.
 Based on your current value, the correct `REDIS_URL` should be:
 
 ```bash
-REDIS_URL=rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379
+REDIS_URL=rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379
 ```
 
 **Key changes**:
@@ -35,7 +35,7 @@ REDIS_URL=rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhM
 3. Click **Edit**
 4. Replace with:
    ```
-   rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379
+   rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379
    ```
 5. Click **Save Changes**
 
@@ -64,13 +64,13 @@ REDIS_URL=rediss://default:PASSWORD@host:6379
 
 ```bash
 # ✅ CORRECT - Connection string for app
-REDIS_URL=rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379
+REDIS_URL=rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379
 
 # ✅ CORRECT - REST API URL (already correct)
 UPSTASH_REDIS_REST_URL=https://living-sculpin-96916.upstash.io
 
 # ✅ CORRECT - REST API token (already correct)
-UPSTASH_REDIS_REST_TOKEN=gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-rotate>
 ```
 
 ---
@@ -105,12 +105,12 @@ MAX_WORKERS=2  # ⚠️ This might conflict with WEB_CONCURRENCY=1
 ### Change 1: Fix REDIS_URL
 **From**:
 ```bash
-REDIS_URL="redis-cli --tls -u redis://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379"
+REDIS_URL="redis-cli --tls -u redis://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379"
 ```
 
 **To**:
 ```bash
-REDIS_URL=rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379
+REDIS_URL=rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379
 ```
 
 ### Change 2: Remove MAX_WORKERS (Optional but Recommended)

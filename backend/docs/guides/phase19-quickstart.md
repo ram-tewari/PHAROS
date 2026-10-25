@@ -61,7 +61,7 @@ PHAROS_ADMIN_TOKEN=your-secure-token-here
      ```
      MODE=CLOUD
      UPSTASH_REDIS_REST_URL=https://lucky-pug-47555.upstash.io
-     UPSTASH_REDIS_REST_TOKEN=AbnDAAIncDFiZDgzMDAwZDNkNWU0YjFlYWFkZDc1ZTZhMjAxYmQyY3AxNDc1NTU
+     UPSTASH_REDIS_REST_TOKEN=<REDACTED-UPSTASH_TOKEN-rotate>
      DATABASE_URL=your-neon-connection-string
      QDRANT_URL=your-qdrant-url
      QDRANT_API_KEY=your-qdrant-key
@@ -127,7 +127,7 @@ Add:
 ```bash
 MODE=EDGE
 UPSTASH_REDIS_REST_URL=https://lucky-pug-47555.upstash.io
-UPSTASH_REDIS_REST_TOKEN=AbnDAAIncDFiZDgzMDAwZDNkNWU0YjFlYWFkZDc1ZTZhMjAxYmQyY3AxNDc1NTU
+UPSTASH_REDIS_REST_TOKEN=<REDACTED-UPSTASH_TOKEN-rotate>
 QDRANT_URL=your-qdrant-url
 QDRANT_API_KEY=your-qdrant-key
 WORKER_POLL_INTERVAL=2

@@ -10,8 +10,7 @@ must use get_settings() instead of Settings() directly.
 """
 
 import pytest
-import os
-from pydantic import SecretStr, ValidationError
+from pydantic import ValidationError
 from unittest.mock import patch
 
 from app.config.settings import Settings, get_settings
@@ -105,174 +104,33 @@ class TestDatabaseURLConstruction:
         settings = make_settings()
         assert settings.get_database_url() == "sqlite:///:memory:"
 
-    def test_postgresql_url_construction(self, monkeypatch):
-        """PostgreSQL URLs should be constructed from components."""
-        monkeypatch.setenv("DATABASE_URL", "postgresql://placeholder")
-        monkeypatch.setenv("POSTGRES_SERVER", "testhost")
-        monkeypatch.setenv("POSTGRES_USER", "testuser")
-        monkeypatch.setenv("POSTGRES_PASSWORD", "testpass")
-        monkeypatch.setenv("POSTGRES_DB", "testdb")
-        monkeypatch.setenv("POSTGRES_PORT", "5432")
+    def test_postgresql_database_url_is_returned_as_is(self, monkeypatch):
+        """A PostgreSQL DATABASE_URL wins over POSTGRES_* parts (it used to be
+        silently replaced by them, pointing Alembic at localhost)."""
+        url = "postgresql://neon_user:secret@ep-x.neon.tech/db?sslmode=require"
+        monkeypatch.setenv("DATABASE_URL", url)
+        monkeypatch.setenv("POSTGRES_SERVER", "somewhere-else")
+        monkeypatch.setenv("POSTGRES_PASSWORD", "other")
+        assert make_settings().get_database_url() == url
 
-        settings = make_settings()
-        expected = "postgresql+asyncpg://testuser:testpass@testhost:5432/testdb"
-        assert settings.get_database_url() == expected
-
-    def test_postgresql_url_with_custom_port(self, monkeypatch):
-        """PostgreSQL URLs should support custom ports."""
-        monkeypatch.setenv("DATABASE_URL", "postgresql://placeholder")
+    def test_postgresql_url_built_from_parts_when_database_url_unset(self, monkeypatch):
+        monkeypatch.delenv("DATABASE_URL", raising=False)
         monkeypatch.setenv("POSTGRES_SERVER", "prodhost")
         monkeypatch.setenv("POSTGRES_USER", "admin")
-        monkeypatch.setenv("POSTGRES_PASSWORD", "secret")
+        monkeypatch.setenv("POSTGRES_PASSWORD", "p@ss:word!")
         monkeypatch.setenv("POSTGRES_DB", "proddb")
         monkeypatch.setenv("POSTGRES_PORT", "5433")
+        assert make_settings().get_database_url() == "postgresql://admin:p%40ss%3Aword%21@prodhost:5433/proddb"
 
-        settings = make_settings()
-        expected = "postgresql+asyncpg://admin:secret@prodhost:5433/proddb"
-        assert settings.get_database_url() == expected
+    def test_postgresql_does_not_require_postgres_password(self, monkeypatch):
+        from app.config.settings import Settings, get_settings
 
-    def test_postgresql_url_with_special_characters_in_password(self, monkeypatch):
-        """PostgreSQL URLs should URL-encode special characters in password."""
-        monkeypatch.setenv("DATABASE_URL", "postgresql://placeholder")
-        monkeypatch.setenv("POSTGRES_SERVER", "host")
-        monkeypatch.setenv("POSTGRES_USER", "user")
-        monkeypatch.setenv("POSTGRES_PASSWORD", "p@ss:word!")
-        monkeypatch.setenv("POSTGRES_DB", "db")
-        monkeypatch.setenv("POSTGRES_PORT", "5432")
-
-        settings = make_settings()
-        # Special characters should be URL-encoded
-        expected = "postgresql+asyncpg://user:p%40ss%3Aword%21@host:5432/db"
-        assert settings.get_database_url() == expected
+        monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@h/db")
+        monkeypatch.delenv("POSTGRES_PASSWORD", raising=False)
+        get_settings.cache_clear() if hasattr(get_settings, "cache_clear") else None
+        assert isinstance(Settings(), Settings)
 
 
-# ============================================================================
-# JWT Configuration Tests
-# ============================================================================
-
-
-class TestJWTConfiguration:
-    """Test JWT configuration."""
-
-    def test_jwt_secret_key_has_default(self):
-        """JWT secret key has a default value for development."""
-        settings = make_settings()
-        secret = settings.JWT_SECRET_KEY.get_secret_value()
-        assert "change-this-secret-key" in secret
-        assert len(secret) >= 32  # Default is now 32+ chars
-
-    def test_jwt_secret_key_minimum_length(self, monkeypatch):
-        """JWT secret key must be at least 32 characters."""
-        # Too short - should fail
-        with pytest.raises(ValidationError, match="at least 32 characters"):
-            make_settings(JWT_SECRET_KEY=SecretStr("short"))
-
-    def test_jwt_secret_key_default_rejected_in_production(self, monkeypatch):
-        """Default JWT secret key is rejected in production mode."""
-        monkeypatch.setenv("ENV", "prod")
-        # Default value is used, but production mode should reject it
-        with pytest.raises(ValidationError, match="default"):
-            make_settings()
-
-    def test_jwt_algorithm_default(self):
-        """JWT algorithm should default to HS256."""
-        settings = make_settings()
-        assert settings.JWT_ALGORITHM == "HS256"
-
-    def test_jwt_access_token_expire_minutes_default(self):
-        """Access token expiration should default to 30 minutes."""
-        settings = make_settings()
-        assert settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES == 30
-
-    def test_jwt_refresh_token_expire_days_default(self):
-        """Refresh token expiration should default to 7 days."""
-        settings = make_settings()
-        assert settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS == 7
-
-    def test_jwt_secret_key_from_env(self, monkeypatch):
-        """JWT secret key should be loadable from environment."""
-        monkeypatch.setenv(
-            "JWT_SECRET_KEY", "my-super-secret-key-min-32-chars-long-here"
-        )
-        settings = make_settings()
-        assert (
-            settings.JWT_SECRET_KEY.get_secret_value()
-            == "my-super-secret-key-min-32-chars-long-here"
-        )
-
-    def test_jwt_algorithm_from_env(self, monkeypatch):
-        """JWT algorithm should be loadable from environment."""
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)
-        monkeypatch.setenv("JWT_ALGORITHM", "RS256")
-        settings = make_settings()
-        assert settings.JWT_ALGORITHM == "RS256"
-
-
-# ============================================================================
-# OAuth2 Configuration Tests
-# ============================================================================
-
-
-class TestOAuth2Configuration:
-    """Test OAuth2 configuration."""
-
-    def test_google_oauth_defaults(self):
-        """Google OAuth should default to None."""
-        settings = make_settings()
-        assert settings.GOOGLE_CLIENT_ID is None
-        assert settings.GOOGLE_CLIENT_SECRET is None
-
-    def test_github_oauth_defaults(self):
-        """GitHub OAuth should default to None."""
-        settings = make_settings()
-        assert settings.GITHUB_CLIENT_ID is None
-        assert settings.GITHUB_CLIENT_SECRET is None
-
-    def test_google_oauth_from_env(self, monkeypatch):
-        """Google OAuth should be loadable from environment."""
-        monkeypatch.setenv("GOOGLE_CLIENT_ID", "google-client-123")
-        monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "google-secret-456")
-        settings = make_settings()
-        assert settings.GOOGLE_CLIENT_ID == "google-client-123"
-        assert settings.GOOGLE_CLIENT_SECRET.get_secret_value() == "google-secret-456"
-
-    def test_github_oauth_from_env(self, monkeypatch):
-        """GitHub OAuth should be loadable from environment."""
-        monkeypatch.setenv("GITHUB_CLIENT_ID", "github-client-789")
-        monkeypatch.setenv("GITHUB_CLIENT_SECRET", "github-secret-012")
-        settings = make_settings()
-        assert settings.GITHUB_CLIENT_ID == "github-client-789"
-        assert settings.GITHUB_CLIENT_SECRET.get_secret_value() == "github-secret-012"
-
-
-# ============================================================================
-# Rate Limiting Configuration Tests
-# ============================================================================
-
-
-class TestRateLimitingConfiguration:
-    """Test rate limiting configuration."""
-
-    def test_rate_limit_defaults(self):
-        """Rate limits should have default values."""
-        settings = make_settings()
-        assert settings.RATE_LIMIT_FREE_TIER == 100
-        assert settings.RATE_LIMIT_PREMIUM_TIER == 1000
-        assert settings.RATE_LIMIT_ADMIN_TIER == 10000  # Default admin tier limit
-
-    def test_rate_limit_from_env(self, monkeypatch):
-        """Rate limits should be loadable from environment."""
-        monkeypatch.setenv("RATE_LIMIT_FREE_TIER", "50")
-        monkeypatch.setenv("RATE_LIMIT_PREMIUM_TIER", "500")
-        monkeypatch.setenv("RATE_LIMIT_ADMIN_TIER", "5000")
-        settings = make_settings()
-        assert settings.RATE_LIMIT_FREE_TIER == 50
-        assert settings.RATE_LIMIT_PREMIUM_TIER == 500
-        assert settings.RATE_LIMIT_ADMIN_TIER == 5000
-
-
-# ============================================================================
-# Test Mode Configuration Tests
 # ============================================================================
 
 
@@ -302,27 +160,6 @@ class TestTestModeConfiguration:
 # ============================================================================
 
 
-class TestSecretStrMasking:
-    """Test that SecretStr fields are properly masked."""
-
-    def test_jwt_secret_key_accessible_via_get_secret_value(self, monkeypatch):
-        """JWT secret should be accessible via get_secret_value()."""
-        monkeypatch.setenv("JWT_SECRET_KEY", "super-secret-key-min-32-chars-long-here")
-        settings = make_settings()
-        assert (
-            settings.JWT_SECRET_KEY.get_secret_value()
-            == "super-secret-key-min-32-chars-long-here"
-        )
-
-    def test_oauth_secrets_accessible_via_get_secret_value(self, monkeypatch):
-        """OAuth secrets should be accessible via get_secret_value()."""
-        monkeypatch.setenv("GOOGLE_CLIENT_SECRET", "google-secret")
-        monkeypatch.setenv("GITHUB_CLIENT_SECRET", "github-secret")
-        settings = make_settings()
-        assert settings.GOOGLE_CLIENT_SECRET.get_secret_value() == "google-secret"
-        assert settings.GITHUB_CLIENT_SECRET.get_secret_value() == "github-secret"
-
-
 # ============================================================================
 # Configuration Validation Tests
 # ============================================================================
@@ -334,18 +171,6 @@ class TestConfigurationValidation:
     def test_invalid_postgres_port_type(self, monkeypatch):
         """Invalid PostgreSQL port should raise ValidationError."""
         monkeypatch.setenv("POSTGRES_PORT", "not-a-number")
-        with pytest.raises(ValidationError):
-            make_settings()
-
-    def test_invalid_rate_limit_type(self, monkeypatch):
-        """Invalid rate limit should raise ValidationError."""
-        monkeypatch.setenv("RATE_LIMIT_FREE_TIER", "not-a-number")
-        with pytest.raises(ValidationError):
-            make_settings()
-
-    def test_invalid_jwt_expire_minutes_type(self, monkeypatch):
-        """Invalid JWT expiration should raise ValidationError."""
-        monkeypatch.setenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "not-a-number")
         with pytest.raises(ValidationError):
             make_settings()
 
@@ -388,36 +213,6 @@ class TestConfigurationValidationErrors:
         with pytest.raises(ValueError, match="must sum to 1.0"):
             self._get_settings_no_env()
 
-    def test_jwt_access_token_expire_minutes_must_be_positive(self, monkeypatch):
-        """JWT access token expiration must be positive."""
-        monkeypatch.setenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", "-1")
-        with pytest.raises(ValueError, match="must be positive"):
-            self._get_settings_no_env()
-
-    def test_jwt_refresh_token_expire_days_must_be_positive(self, monkeypatch):
-        """JWT refresh token expiration must be positive."""
-        monkeypatch.setenv("JWT_REFRESH_TOKEN_EXPIRE_DAYS", "0")
-        with pytest.raises(ValueError, match="must be positive"):
-            self._get_settings_no_env()
-
-    def test_rate_limit_free_tier_must_be_non_negative(self, monkeypatch):
-        """Rate limit free tier must be non-negative."""
-        monkeypatch.setenv("RATE_LIMIT_FREE_TIER", "-1")
-        with pytest.raises(ValueError, match="must be non-negative"):
-            self._get_settings_no_env()
-
-    def test_rate_limit_premium_tier_must_be_non_negative(self, monkeypatch):
-        """Rate limit premium tier must be non-negative."""
-        monkeypatch.setenv("RATE_LIMIT_PREMIUM_TIER", "-1")
-        with pytest.raises(ValueError, match="must be non-negative"):
-            self._get_settings_no_env()
-
-    def test_rate_limit_admin_tier_must_be_non_negative(self, monkeypatch):
-        """Rate limit admin tier must be non-negative."""
-        monkeypatch.setenv("RATE_LIMIT_ADMIN_TIER", "-1")
-        with pytest.raises(ValueError, match="must be non-negative"):
-            self._get_settings_no_env()
-
     def test_redis_port_must_be_valid_range(self, monkeypatch):
         """Redis port must be in valid range."""
         monkeypatch.setenv("REDIS_PORT", "70000")
@@ -450,15 +245,24 @@ class TestDefaultValues:
         settings = make_settings()
         assert settings.ENV in ["dev", "staging", "prod"]
         assert settings.DATABASE_URL is not None
-        assert settings.JWT_SECRET_KEY is not None
-        assert settings.JWT_ALGORITHM == "HS256"
-        assert settings.RATE_LIMIT_FREE_TIER == 100
+        assert settings.EMBEDDING_BACKEND == "auto"
+        assert settings.INGESTION_NOTIFY_KEY == "ingest_queue"
+        assert "github.com" in settings.CODEINTEL_ALLOWED_GIT_HOSTS
 
-    def test_optional_fields_can_be_none(self):
-        """Optional fields should be None by default."""
+    def test_optional_fields_can_be_none(self, monkeypatch):
+        """Optional credentials are unset by default (auth fails closed)."""
+        for var in ("PHAROS_ADMIN_TOKEN", "PHAROS_READ_TOKEN", "EDGE_EMBEDDING_URL", "GIT_CLONE_TOKEN"):
+            monkeypatch.delenv(var, raising=False)
         settings = make_settings()
-        assert settings.GOOGLE_CLIENT_ID is None
-        assert settings.GITHUB_CLIENT_ID is None
+        assert settings.PHAROS_READ_TOKEN is None
+        assert settings.EDGE_EMBEDDING_URL is None
+        assert settings.GIT_CLONE_TOKEN is None
+
+    def test_removed_saas_auth_settings_are_gone(self):
+        """JWT/OAuth/rate-limit settings were removed with the SaaS auth stack."""
+        settings = make_settings()
+        for name in ("JWT_SECRET_KEY", "GOOGLE_CLIENT_ID", "GITHUB_CLIENT_ID", "RATE_LIMIT_FREE_TIER"):
+            assert not hasattr(settings, name)
 
 
 # ============================================================================
@@ -671,17 +475,14 @@ class TestEnvironmentVariableLoading:
 
     def test_multiple_env_vars_loaded(self, monkeypatch):
         """Multiple environment variables should be loaded together."""
-        monkeypatch.setenv("JWT_SECRET_KEY", "env-secret-min-32-chars-long-here")
-        monkeypatch.setenv("JWT_ALGORITHM", "RS256")
-        monkeypatch.setenv("RATE_LIMIT_FREE_TIER", "200")
+        monkeypatch.setenv("EMBEDDING_BACKEND", "hash")
+        monkeypatch.setenv("CODEINTEL_MAX_FILES", "123")
+        monkeypatch.setenv("MCP_ALLOWED_HOSTS", '["pharos.example.com"]')
         monkeypatch.setenv("TEST_MODE", "true")
         settings = make_settings()
-        assert (
-            settings.JWT_SECRET_KEY.get_secret_value()
-            == "env-secret-min-32-chars-long-here"
-        )
-        assert settings.JWT_ALGORITHM == "RS256"
-        assert settings.RATE_LIMIT_FREE_TIER == 200
+        assert settings.EMBEDDING_BACKEND == "hash"
+        assert settings.CODEINTEL_MAX_FILES == 123
+        assert settings.MCP_ALLOWED_HOSTS == ["pharos.example.com"]
         assert settings.TEST_MODE is True
 
 
@@ -691,111 +492,40 @@ class TestEnvironmentVariableLoading:
 
 
 class TestProductionEnvironmentValidation:
-    """Test that production environment has proper security requirements."""
+    """Production refuses the test-only switches that disable authentication."""
 
-    def test_jwt_secret_key_required_in_production(self, monkeypatch):
-        """JWT secret key must be set in production mode."""
+    @pytest.fixture(autouse=True)
+    def _clean_test_switches(self, monkeypatch):
+        # The global test conftest sets these; production must see them unset.
+        for var in ("TEST_AUTH_BYPASS", "TESTING", "TEST_MODE"):
+            monkeypatch.delenv(var, raising=False)
         monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        # Should not raise - valid secret provided
-        settings = make_settings()
-        assert settings.ENV == "prod"
 
-    def test_jwt_secret_key_too_short_in_production(self, monkeypatch):
-        """JWT secret key must be at least 32 chars in production."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "short")
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        with pytest.raises(ValidationError, match="at least 32 characters"):
-            make_settings()
-
-    def test_jwt_secret_key_default_rejected_in_production(self, monkeypatch):
-        """Default JWT secret key is rejected in production."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        # Don't set JWT_SECRET_KEY - use default
-        with pytest.raises(ValidationError, match="default"):
-            make_settings()
-
-    def test_dev_mode_allows_default_secret(self, monkeypatch):
-        """Dev mode allows the default secret for development convenience."""
-        monkeypatch.setenv("ENV", "dev")
-        # Don't set JWT_SECRET_KEY - use default
-        settings = make_settings()
-        assert settings.ENV == "dev"
-        assert "change-this-secret-key" in settings.JWT_SECRET_KEY.get_secret_value()
-
-    def test_production_mode_requires_strong_secret(self, monkeypatch):
-        """Production mode requires a strong JWT secret."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # Exactly 32 chars - minimum
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        settings = make_settings()
-        assert settings.ENV == "prod"
-        assert len(settings.JWT_SECRET_KEY.get_secret_value()) == 32
-
-    def test_production_mode_rejects_weak_secret(self, monkeypatch):
-        """Production mode rejects weak JWT secrets."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "weak")  # Too short
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        with pytest.raises(ValidationError):
-            make_settings()
-
-    def test_test_mode_setting_rejected_in_production(self, monkeypatch):
-        """TEST_MODE=True is rejected in production mode."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # Valid secret
-        monkeypatch.setenv("TEST_MODE", "true")
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        with pytest.raises(
-            ValidationError, match="TEST_MODE must be False in production"
-        ):
-            make_settings()
-
-    def test_testing_env_var_rejected_in_production(self, monkeypatch):
-        """TESTING=true environment variable is rejected in production mode."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # Valid secret
-        monkeypatch.setenv("TESTING", "true")
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        with pytest.raises(
-            ValidationError, match="TESTING environment variable must not be set"
-        ):
-            make_settings()
-
-    def test_testing_env_var_variants_rejected_in_production(self, monkeypatch):
-        """TESTING=1 and TESTING=yes are rejected in production mode."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # Valid secret
-        monkeypatch.setenv("TESTING", "1")
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        with pytest.raises(
-            ValidationError, match="TESTING environment variable must not be set"
-        ):
-            make_settings()
-
-    def test_testing_env_var_yes_rejected_in_production(self, monkeypatch):
-        """TESTING=yes is rejected in production mode."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # Valid secret
-        monkeypatch.setenv("TESTING", "yes")
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        with pytest.raises(
-            ValidationError, match="TESTING environment variable must not be set"
-        ):
-            make_settings()
-
-    def test_production_allows_test_mode_disabled(self, monkeypatch):
-        """Production mode allows TEST_MODE=False and TESTING not set."""
-        monkeypatch.setenv("ENV", "prod")
-        monkeypatch.setenv("JWT_SECRET_KEY", "a" * 32)  # Valid secret
-        monkeypatch.setenv("ALLOWED_REDIRECT_URLS", '["https://example.com"]')
-        # Don't set TEST_MODE or TESTING - they default to False
+    def test_production_allows_clean_configuration(self):
         settings = make_settings()
         assert settings.ENV == "prod"
         assert settings.TEST_MODE is False
+
+    def test_test_mode_setting_rejected_in_production(self, monkeypatch):
+        monkeypatch.setenv("TEST_MODE", "true")
+        with pytest.raises(ValidationError, match="TEST_MODE must be False in production"):
+            make_settings()
+
+    @pytest.mark.parametrize("value", ["true", "1", "yes", "TRUE"])
+    def test_testing_env_var_rejected_in_production(self, monkeypatch, value):
+        monkeypatch.setenv("TESTING", value)
+        with pytest.raises(ValidationError, match="TESTING must not be set in production"):
+            make_settings()
+
+    def test_auth_bypass_rejected_in_production(self, monkeypatch):
+        monkeypatch.setenv("TEST_AUTH_BYPASS", "true")
+        with pytest.raises(ValidationError, match="TEST_AUTH_BYPASS must not be set in production"):
+            make_settings()
+
+    def test_dev_mode_tolerates_test_switches(self, monkeypatch):
+        monkeypatch.setenv("ENV", "dev")
+        monkeypatch.setenv("TEST_AUTH_BYPASS", "true")
+        assert make_settings().ENV == "dev"
 
 
 # ============================================================================

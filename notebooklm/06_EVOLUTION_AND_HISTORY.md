@@ -14,7 +14,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
 |--------|----------------------|----------------------|
 | **Primary Use Case** | Research papers | Code repositories |
 | **Target Users** | Researchers | Solo developer + Ronin (LLM) |
-| **Storage Model** | Full content local | Metadata only (17x reduction) |
+| **Storage Model** | Full content local | Metadata only (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md) |
 | **Cost Target** | Not specified | $7/mo (achieved) |
 | **Retrieval Time** | Not specified | <800ms (achieved) |
 | **Scale Target** | 10K papers | 1000+ repos |
@@ -156,7 +156,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
 
 #### Phase 5: Hybrid GitHub Storage ✅ **COMPLETE** (April 2026)
 - Store metadata only, fetch code on-demand
-- 17x storage reduction (100GB → 6GB for 1000 repos)
+- storage reduction claimed as 17× (100GB → 6GB for 1000 repos); measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md
 - `github_uri` + `branch_reference` fields in DocumentChunk
 - Redis caching (1-hour TTL)
 - `/api/github/fetch` and `/api/github/fetch-batch` endpoints
@@ -253,7 +253,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
 
 ### **Code Intelligence** (Phases 18, 5, 6, 8):
 - ✅ AST-based parsing (Tree-Sitter)
-- ✅ Hybrid GitHub storage (17x reduction)
+- ✅ Hybrid GitHub storage (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - ✅ Pattern learning engine (learns YOUR style)
 - ✅ Self-improving loop (learns from mistakes)
 - ✅ Dependency graph extraction (IMPORTS/DEFINES/CALLS)
@@ -334,7 +334,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
    - Target latency: <2s
 
 **Key Features**:
-- Hybrid GitHub storage (17x reduction: 100GB → 6GB)
+- Hybrid GitHub storage (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - Pattern learning engine (learns YOUR style from AST + Git history)
 - Self-improving loop (learns from mistakes via LLM extraction)
 - Code-first (papers are secondary)
@@ -406,7 +406,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
    - PostgreSQL + pgvector on NeonDB
 
 2. **Hybrid GitHub Storage (Phase 5)**
-   - 17x storage reduction (100GB → 6GB)
+   - storage reduction claimed as 17× (100GB → 6GB); measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md
    - `github_uri` + `branch_reference` fields
    - On-demand code fetching (<100ms cached, ~200ms uncached)
    - Redis caching (1-hour TTL)
@@ -496,7 +496,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
 | Pattern learning time | <2s | ~1-2s | ✅ |
 | Code fetch (cached) | <100ms | ~50ms | ✅ |
 | Code fetch (uncached) | <500ms | ~200ms | ✅ |
-| Storage reduction | 17x | 17x | ✅ |
+| Storage reduction | 17x | 1.05× measured (2026-10) | ❌ |
 | Cost (100 repos) | <$10/mo | $7/mo | ✅ |
 | Cost (1000 repos) | <$30/mo | TBD | 📊 |
 | Self-improving loop | Working | Working | ✅ |
@@ -521,7 +521,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
    - Clear separation of concerns
 
 3. **Hybrid Storage** (Phase 5)
-   - 17x cost reduction (100GB → 6GB)
+   - storage reduction claimed as 17× (100GB → 6GB); measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md
    - Scales to 1000+ repos without storage explosion
    - On-demand fetching fast enough (<200ms uncached)
 
@@ -560,7 +560,7 @@ Pharos has undergone a remarkable transformation from a **general-purpose resear
    - Clear use case: LLM memory layer for coding
 
 2. **Full Storage → Hybrid** (Phase 5)
-   - 17x cost reduction
+   - cost reduction claimed as 17× (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
    - Enabled scaling to 1000+ repos
 
 3. **Monolithic → Edge-Cloud** (Phase 19)
@@ -645,7 +645,7 @@ Pharos has evolved from a **general-purpose research management system** (Neo Al
 - **21+ phases** of development over ~18 months
 - **3 major pivots**: papers → code, full storage → hybrid, monolithic → edge-cloud
 - **14 self-contained modules** with zero circular dependencies
-- **17x storage reduction** through hybrid GitHub storage
+- hybrid GitHub storage (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - **$7/mo production cost** through edge-cloud architecture
 
 **What survived**: Core infrastructure, search & retrieval, knowledge graph (evolved to code dependencies), quality assessment, content-based recommendations (Collections module)
@@ -722,7 +722,7 @@ Pharos has evolved from a **general-purpose research management system** (Neo Al
 **The core objective evolved** from "second brain for researchers" to "memory layer for LLM coding assistants" - a much more focused, achievable, and valuable use case.
 
 **Current status**: Backend is production-ready and operational. All core features implemented:
-- ✅ Hybrid GitHub storage (17x reduction)
+- ✅ Hybrid GitHub storage (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - ✅ Pattern learning engine (learns YOUR style)
 - ✅ Self-improving loop (learns from mistakes)
 - ✅ Context retrieval API (<800ms)

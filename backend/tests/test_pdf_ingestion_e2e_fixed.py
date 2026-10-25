@@ -25,6 +25,16 @@ except ImportError:
     HAS_REPORTLAB = False
 
 
+@pytest.fixture(autouse=True)
+def edge_mode(request, monkeypatch):
+    """PDF ingestion runs in EDGE mode (it embeds locally); the suite default is CLOUD.
+    EDGE mode needs torch at startup, so these tests only run on an edge install."""
+    if "cloud_mode" in request.node.name:
+        return
+    pytest.importorskip("torch", reason="PDF ingestion is EDGE-only (requirements-edge.txt)")
+    monkeypatch.setenv("MODE", "EDGE")
+
+
 @pytest.fixture
 def mock_oauth_pdf() -> io.BytesIO:
     """
@@ -228,6 +238,18 @@ async def test_error_handling_missing_chunk(async_client):
     response = await async_client.post("/api/resources/pdf/annotate", json=annotation_data)
     
     assert response.status_code in [404, 500]  # Either not found or internal error
+
+
+@pytest.mark.asyncio
+async def test_cloud_mode_reports_pdf_ingestion_unavailable(async_client, monkeypatch):
+    """In CLOUD mode the endpoint is explicitly unavailable (503 with a reason), not silently degraded."""
+    monkeypatch.setenv("MODE", "CLOUD")
+    files = {"file": ("doc.pdf", io.BytesIO(b"%PDF-1.4"), "application/pdf")}
+
+    response = await async_client.post("/api/resources/pdf/ingest", files=files, data={"title": "x"})
+
+    assert response.status_code == 503
+    assert "EDGE mode" in response.json()["detail"]
 
 
 if __name__ == "__main__":

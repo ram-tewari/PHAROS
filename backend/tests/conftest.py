@@ -332,6 +332,9 @@ def override_get_settings(test_settings):
     import app.config.settings as settings_module
 
     original_cached = settings_module.get_settings
+    # Tests that need the real (cached, validating) function can restore it.
+    if not hasattr(settings_module, "_real_get_settings"):
+        settings_module._real_get_settings = original_cached
 
     # Replace with our test version
     settings_module.get_settings = _get_test_settings
@@ -395,21 +398,10 @@ def test_user(db_session: Session):
 
 
 @pytest.fixture(scope="function")
-def auth_token(test_user) -> str:
-    """
-    Generate a valid JWT access token for the test user.
-
-    Returns:
-        Valid JWT token string that can be used in Authorization headers
-    """
-    from app.shared.security import create_access_token
-
-    token = create_access_token(
-        data={
-            "username": test_user.username,
-            "user_id": str(test_user.id),
-        }
-    )
+def auth_token(monkeypatch) -> str:
+    """The admin bearer token (JWT auth was removed; Pharos uses static M2M tokens)."""
+    token = "test-admin-token-" + "x" * 32
+    monkeypatch.setenv("PHAROS_ADMIN_TOKEN", token)
     return token
 
 
@@ -447,10 +439,10 @@ def bypass_auth(db_session: Session, test_user) -> TestClient:
     - Overrides module-specific auth dependencies (_get_current_user_id)
     - Returns a TestClient ready for use in tests
     """
-    from app.shared.security import get_current_user, TokenData
     from app.shared.database import get_sync_db, get_db
 
-    # Create app instance for testing
+    # Authentication is bypassed server-side by TEST_AUTH_BYPASS (set at the
+    # top of this file; refused in production).
     app = create_app()
 
     def override_get_sync_db():
@@ -465,36 +457,8 @@ def bypass_auth(db_session: Session, test_user) -> TestClient:
         finally:
             pass
 
-    async def mock_get_current_user(token: str = None) -> TokenData:
-        """Mock get_current_user that returns test user without token validation."""
-        return TokenData(
-            user_id=str(test_user.id),
-            username=test_user.username,
-            scopes=[],
-            tier="free",
-        )
-
-    # Override dependencies
     app.dependency_overrides[get_sync_db] = override_get_sync_db
     app.dependency_overrides[get_db] = override_get_async_db
-    app.dependency_overrides[get_current_user] = mock_get_current_user
-
-    # Also override module-specific auth dependencies
-    try:
-        from app.modules.recommendations.router import _get_current_user_id
-
-        app.dependency_overrides[_get_current_user_id] = lambda db=None: test_user.id
-    except ImportError:
-        pass
-
-    try:
-        from app.modules.annotations.router import (
-            _get_current_user_id as annotations_get_user,
-        )
-
-        app.dependency_overrides[annotations_get_user] = lambda: str(test_user.id)
-    except ImportError:
-        pass
 
     # Create and return the test client
     # Pass X-Test-Auth-Bypass header so the auth middleware allows the request
@@ -809,68 +773,6 @@ def create_test_resource(db_session: Session):
 
 
 @pytest.fixture(scope="function")
-def create_test_category(db_session: Session):
-    """
-    Factory fixture for creating test taxonomy categories.
-
-    Returns a function that creates and returns a TaxonomyNode instance.
-    """
-
-    def _create_category(name: str = "Test Category", parent_id=None, **kwargs):
-        defaults = {
-            "name": name,
-            "slug": name.lower().replace(" ", "-"),
-            "parent_id": parent_id,
-            "level": 0,
-            "path": f"/{name.lower().replace(' ', '-')}",
-            "is_leaf": True,
-            "allow_resources": True,
-        }
-        defaults.update(kwargs)
-
-        category = TaxonomyNode(**defaults)
-        db_session.add(category)
-        db_session.commit()
-        db_session.refresh(category)
-
-        return category
-
-    return _create_category
-
-
-@pytest.fixture(scope="function")
-def create_test_collection(db_session: Session):
-    """
-    Factory fixture for creating test collections.
-
-    Returns a function that creates and returns a Collection instance.
-    """
-
-    def _create_collection(
-        name: str = "Test Collection",
-        description: str = None,
-        owner_id: str = "test_user",
-        **kwargs,
-    ):
-        defaults = {
-            "name": name,
-            "description": description,
-            "owner_id": owner_id,
-            "visibility": "private",
-        }
-        defaults.update(kwargs)
-
-        collection = Collection(**defaults)
-        db_session.add(collection)
-        db_session.commit()
-        db_session.refresh(collection)
-
-        return collection
-
-    return _create_collection
-
-
-@pytest.fixture(scope="function")
 def create_test_annotation(db_session: Session, create_test_resource):
     """
     Factory fixture for creating test annotations.
@@ -973,3 +875,13 @@ def celery_eager_mode():
     celery_app.conf.task_always_eager = original_always_eager
     celery_app.conf.task_eager_propagates = original_eager_propagates
     celery_app.conf.result_backend = original_result_backend
+
+
+def pytest_collection_modifyitems(config, items):
+    """Tests marked ``network`` reach the internet: opt in with PHAROS_NETWORK_TESTS=1."""
+    if os.getenv("PHAROS_NETWORK_TESTS", "").lower() in ("1", "true", "yes"):
+        return
+    skip = pytest.mark.skip(reason="needs internet; set PHAROS_NETWORK_TESTS=1 to run")
+    for item in items:
+        if "network" in item.keywords:
+            item.add_marker(skip)

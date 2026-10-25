@@ -151,7 +151,7 @@ Seconds Ago: <60s
 
 ### 2. Test Ingestion Endpoint (1 minute)
 ```powershell
-$token = '4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74'
+$token = '<REDACTED-PHAROS_ADMIN_TOKEN-rotate>'
 Invoke-WebRequest -Uri "https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/fatih/color" `
   -Method POST `
   -Headers @{ "Authorization" = "Bearer $token" } `
@@ -190,7 +190,7 @@ Once worker is online:
 
 ### 1. Ingest Go Repository
 ```powershell
-$token = '4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74'
+$token = '<REDACTED-PHAROS_ADMIN_TOKEN-rotate>'
 
 # Ingest fatih/color (Go repo, ~15 files)
 Invoke-WebRequest -Uri "https://pharos-cloud-api.onrender.com/api/v1/ingestion/ingest/github.com/fatih/color" `

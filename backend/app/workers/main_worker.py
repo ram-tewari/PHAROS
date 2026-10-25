@@ -46,6 +46,9 @@ DLQ_KEY = "pharos:dlq"
 DLQ_AGE_THRESHOLD_SECONDS = 4 * 60 * 60  # 4 hours
 DLQ_DRAIN_BATCH = 100  # cap LRANGE size on startup so we don't OOM
 HEARTBEAT_INTERVAL_SECONDS = 60
+# How often an idle worker checks the ingestion_jobs table for due jobs and
+# stale heartbeats. Long by default so serverless Postgres can auto-suspend.
+DB_SWEEP_SECONDS = int(os.getenv("INGESTION_DB_SWEEP_SECONDS", "1800"))
 WORKER_VERSION = "1.0.0"
 
 # Dedicated executor for long-running ingestion work. The default asyncio /
@@ -254,102 +257,132 @@ async def handle_embedding_task(task: Dict[str, Any], embedding_service) -> bool
 # ---------------------------------------------------------------------------
 
 class RepositoryIngestor:
-    """Thin worker-side wrapper around HybridIngestionPipeline.
+    """Runs durable ingestion jobs (``app.codeintel.jobs``) on the edge worker.
 
-    The pipeline does the actual work (multi-language clone + chunk + embed +
-    persist with proper vector CAST). We just hand it the worker's GPU-loaded
-    EmbeddingService so we don't load a second model.
+    ``ingest_queue`` carries ``{"job_id": ...}`` wake-ups pushed by the API.
+    Older producers pushed ``{"repo_url": ...}``; those are turned into a job
+    first so that every ingestion has a database record and a terminal state.
+    The worker's GPU-loaded model is reused through ``get_embedder()``
+    (``EMBEDDING_BACKEND=sentence-transformers`` in EDGE mode).
     """
 
-    # Languages we walk into. Linux is C/C++/headers; the rest cover the
-    # common cases the search backend already knows how to render.
-    _DEFAULT_EXTENSIONS: tuple[str, ...] = (
-        ".py", ".js", ".jsx", ".ts", ".tsx",
-        ".go", ".rs", ".java", ".kt", ".scala",
-        ".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx",
-        ".rb", ".php", ".swift",
-    )
-
-    def __init__(self, embedding_service):
+    def __init__(self, embedding_service=None):
         self.embedding_service = embedding_service
 
-    async def ingest(self, task: Dict[str, Any]) -> bool:
-        repo_url = task.get("repo_url") or task.get("payload")
-        if not repo_url:
-            logger.error(f"[REPO] task missing repo_url: {task}")
-            return False
+    def _run_sync(self, task: Dict[str, Any]) -> bool:
+        import uuid as _uuid
 
-        # Pipeline requires an https:// clone URL; normalize bare github.com/x/y.
-        if not repo_url.startswith(("http://", "https://")):
-            repo_url = f"https://{repo_url}"
+        from app.codeintel import jobs
+        from app.codeintel.embeddings import get_embedder
+        from app.codeintel.runtime import job_ref, session_scope
+        from app.workers.ingest_worker import process_job
 
-        # Branch is optional — when absent we let git pick the default
-        # (Linux uses `master`, modern repos use `main`).
-        branch = task.get("branch") or None
-        extensions = tuple(task.get("file_extensions") or self._DEFAULT_EXTENSIONS)
-
-        started = datetime.now()
-        logger.info(f"[REPO] ingest {repo_url} (branch={branch or 'default'})")
-
-        from app.modules.ingestion.ast_pipeline import HybridIngestionPipeline
-        from app.shared.database import get_db
-
+        job_id = task.get("job_id")
+        if not job_id:
+            repo_url = task.get("repo_url") or task.get("payload")
+            if not repo_url:
+                logger.error(f"[REPO] task has neither job_id nor repo_url: {task}")
+                return False
+            with session_scope() as db:
+                submission = jobs.submit(db, job_ref(str(repo_url)), task.get("branch"))
+                job_id = str(submission.job.id)
+            logger.info(f"[REPO] legacy payload for {repo_url} -> job {job_id}")
         try:
-            async for session in get_db():
-                pipeline = HybridIngestionPipeline(
-                    db=session,
-                    embedding_service=self.embedding_service,
-                )
-                result = await pipeline.ingest_github_repo(
-                    git_url=repo_url,
-                    branch=branch,
-                    file_extensions=extensions,
-                )
-                duration = (datetime.now() - started).total_seconds()
-                logger.info(
-                    f"[REPO] {repo_url} done | "
-                    f"resources={result.resources_created} "
-                    f"chunks={result.chunks_created} "
-                    f"failed={result.files_failed} "
-                    f"duration={duration:.1f}s"
-                )
-                return result.resources_created > 0
-            return False
+            status = process_job(_uuid.UUID(str(job_id)), _worker_id(), get_embedder())
         except Exception as exc:
-            logger.error(f"[REPO] {repo_url} failed: {exc}", exc_info=True)
+            logger.error(f"[REPO] job {job_id} crashed: {exc}", exc_info=True)
             return False
+        if status is None:
+            logger.info(f"[REPO] job {job_id} already claimed elsewhere or not due")
+            return True
+        return status == "succeeded"
+
+    async def ingest(self, task: Dict[str, Any]) -> bool:
+        return await asyncio.get_event_loop().run_in_executor(
+            get_ingestion_executor(), self._run_sync, task
+        )
+
+def _sweep_jobs() -> None:
+    """Recover stale jobs and run any that are due (blocking)."""
+    try:
+        from app.workers.ingest_worker import Worker
+
+        worker = Worker()
+        worker._recover()
+        worker.drain()
+    except Exception as exc:
+        logger.error(f"[REPO] job sweep failed: {exc}", exc_info=True)
+
 
 # ---------------------------------------------------------------------------
 # FastAPI /embed server (kept from edge.py)
 # ---------------------------------------------------------------------------
 
 async def run_embed_server(embedding_service) -> None:
+    """HTTP embedding endpoint for the cloud API (reached over Tailscale).
+
+    Serves the same model the worker indexes with (``get_embedder()``), so
+    query and document vectors always come from one model. Texts are
+    embedded exactly as received: ``HttpEmbedder`` clients add any task
+    prefixes. Set ``EDGE_EMBED_TOKEN`` whenever the port is reachable from
+    outside the machine (e.g. Tailscale Funnel); requests then need
+    ``Authorization: Bearer <token>``.
+    """
+    import hmac
+
     import uvicorn
-    from fastapi import FastAPI, HTTPException, Body
+    from fastapi import Body, FastAPI, Header, HTTPException
 
-    app = FastAPI(title="Pharos Edge Embed Server", docs_url=None, redoc_url=None)
+    from app.codeintel.embeddings import get_embedder
 
-    # Use Body() instead of a Pydantic model defined in this local scope.
-    # Locally-scoped Pydantic models break FastAPI's body-parameter inference
-    # and the parameter falls back to a query param — causing every Render
-    # call to /embed to 422 with `loc:["query","req"]`.
+    embedder = get_embedder()
+    token = os.getenv("EDGE_EMBED_TOKEN") or None
+    if token is None:
+        logger.warning("EDGE_EMBED_TOKEN unset: /embed accepts unauthenticated requests")
+
+    app = FastAPI(title="Pharos Edge Embed Server", docs_url=None, redoc_url=None, openapi_url=None)
+
+    def _check(authorization: str | None) -> None:
+        if token is None:
+            return
+        supplied = (authorization or "").removeprefix("Bearer ").strip()
+        if not hmac.compare_digest(supplied.encode(), token.encode()):
+            raise HTTPException(status_code=401, detail="invalid token")
+
+    def _encode(texts: list[str]) -> list[list[float]]:
+        if embedder is not None:
+            return embedder.encode_raw(texts)
+        return [embedding_service.generate_embedding(t) for t in texts]
+
+    # Body(..., embed=True) rather than a locally scoped Pydantic model: local
+    # models break FastAPI's body inference (every call 422'd in the past).
     @app.post("/embed")
-    def embed(text: str = Body(..., embed=True)) -> dict:
+    def embed(text: str = Body(..., embed=True), authorization: str | None = Header(None)) -> dict:
+        _check(authorization)
         text = (text or "").strip()
         if not text:
             raise HTTPException(status_code=400, detail="text must be non-empty")
-        vec = embedding_service.generate_embedding(text)
+        vec = _encode([text])[0]
         if not vec:
             raise HTTPException(status_code=503, detail="model unavailable")
         return {"embedding": vec}
 
+    @app.post("/embed/batch")
+    def embed_batch(texts: list[str] = Body(..., embed=True), authorization: str | None = Header(None)) -> dict:
+        _check(authorization)
+        if not texts or len(texts) > 256 or any(not t.strip() for t in texts):
+            raise HTTPException(status_code=400, detail="1-256 non-empty texts required")
+        return {"embeddings": _encode(texts)}
+
     @app.get("/health")
     def health() -> dict:
-        return {"status": "ok", "model": embedding_service.embedding_generator.model_name}
+        model = embedder.model_id if embedder else embedding_service.embedding_generator.model_name
+        return {"status": "ok", "model": model}
 
+    host = os.getenv("EDGE_EMBED_HOST", "127.0.0.1")
     port = int(os.getenv("EDGE_EMBED_PORT", "8001"))
-    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="info", access_log=False)
-    logger.info(f"FastAPI /embed listening on 127.0.0.1:{port}")
+    config = uvicorn.Config(app, host=host, port=port, log_level="info", access_log=False)
+    logger.info(f"Embed server listening on {host}:{port} (auth={'on' if token else 'off'})")
     await uvicorn.Server(config).serve()
 
 
@@ -383,13 +416,14 @@ async def heartbeat_loop(
     """
     import httpx
 
-    cloud_url = (
-        os.getenv("PHAROS_CLOUD_URL")
-        or os.getenv("PHAROS_API_URL")
-        or "https://pharos-cloud-api.onrender.com"
-    ).rstrip("/")
+    # No default URL: falling back to the production API would send this
+    # machine's admin token to production from a dev box.
+    cloud_url = (os.getenv("PHAROS_CLOUD_URL") or os.getenv("PHAROS_API_URL") or "").rstrip("/")
     admin_token = os.getenv("PHAROS_ADMIN_TOKEN")
 
+    if not cloud_url:
+        logger.warning("PHAROS_CLOUD_URL unset — heartbeat disabled.")
+        return
     if not admin_token:
         logger.warning(
             "PHAROS_ADMIN_TOKEN unset — heartbeat disabled. "
@@ -551,6 +585,7 @@ async def poll_and_dispatch(redis_client, embedding_service) -> None:
     repo_ingestor = RepositoryIngestor(embedding_service)
     processed = 0
     failed = 0
+    last_sweep = 0.0
 
     logger.info(
         f"Polling {QUEUES} with BLPOP timeout={BLPOP_TIMEOUT_SECONDS}s "
@@ -563,6 +598,13 @@ async def poll_and_dispatch(redis_client, embedding_service) -> None:
                 QUEUES, timeout=BLPOP_TIMEOUT_SECONDS
             )
             if popped is None:
+                # Idle: occasionally sweep the job table so a lost or
+                # DLQ'd notification can never strand a durable job.
+                if time.monotonic() - last_sweep > DB_SWEEP_SECONDS:
+                    last_sweep = time.monotonic()
+                    await asyncio.get_event_loop().run_in_executor(
+                        get_ingestion_executor(), _sweep_jobs
+                    )
                 continue  # idle, just re-block
 
             queue_key, task = popped

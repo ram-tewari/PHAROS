@@ -147,6 +147,17 @@ class SearchService:
     # Parent-Child Retrieval
     # ========================================================================
 
+    def _supports_pgvector(self) -> bool:
+        """Parent-child search is PostgreSQL + pgvector SQL. Say so instead of
+        failing inside a swallowed SQL error on other databases."""
+        dialect = self.db.get_bind().dialect.name
+        if dialect != "postgresql":
+            logger.warning(
+                "parent-child search requires PostgreSQL + pgvector (database is %s): no results", dialect
+            )
+            return False
+        return True
+
     def parent_child_search(
         self,
         query: str,
@@ -173,6 +184,8 @@ class SearchService:
             query, top_k, context_window,
         )
 
+        if not self._supports_pgvector():
+            return []
         query_embedding = self._embed_query(query)
         if not query_embedding:
             return []
@@ -297,6 +310,8 @@ class SearchService:
         """
         from sqlalchemy import text as _sql
 
+        if not self._supports_pgvector():
+            return "[]"
         query_embedding = self._embed_query(query)
         if not query_embedding:
             return "[]"
@@ -730,6 +745,14 @@ class SearchService:
                         "parent_resource": chunk.resource,  # Will be converted by Pydantic
                         "surrounding_chunks": [],  # Not used in GraphRAG
                         "graph_path": graph_path,
+                        # The knowledge-graph entity that led to this chunk.
+                        "entities": [
+                            {
+                                "id": str(chunk_entities[chunk_id].id),
+                                "name": chunk_entities[chunk_id].name,
+                                "type": chunk_entities[chunk_id].type,
+                            }
+                        ],
                         "score": score,
                     }
                 )

@@ -2,9 +2,12 @@
 # ============================================================================
 # Pharos Backend - Container Entrypoint Script
 # ============================================================================
-# Handles startup sequence for Koyeb deployment:
-# 1. Run database migrations (Alembic)
+# 1. Run database migrations (Alembic), unless RUN_MIGRATIONS=0
 # 2. Start web server (Gunicorn + Uvicorn workers)
+#
+# Migrations on an existing database created before the 2026-10 migration
+# squash fail with "Can't locate revision" (nothing is changed): follow
+# docs/operations/database-migrations.md once, then deploy again.
 #
 # Exit codes:
 # - 0: Success
@@ -20,7 +23,7 @@ set -o pipefail  # Exit if any command in a pipeline fails
 # CONFIGURATION
 # ============================================================================
 
-# Port: Koyeb injects $PORT environment variable (defaults to 8000)
+# Port: the platform injects $PORT (defaults to 8000)
 PORT="${PORT:-8000}"
 
 # Worker count: Conservative for 512MB RAM (2 workers = ~400MB)
@@ -62,14 +65,16 @@ log_info "Log Level: $LOG_LEVEL"
 # Validate required environment variables
 if [ -z "${DATABASE_URL:-}" ]; then
     log_error "DATABASE_URL environment variable is not set"
-    log_error "Please configure DATABASE_URL in Koyeb Secrets"
     exit 1
 fi
 
-if [ -z "${REDIS_URL:-}" ]; then
-    log_error "REDIS_URL environment variable is not set"
-    log_error "Please configure REDIS_URL in Koyeb Secrets"
-    exit 1
+if [ -z "${REDIS_URL:-}" ] && [ -z "${UPSTASH_REDIS_REST_URL:-}" ]; then
+    # Optional: jobs are durable in PostgreSQL and workers poll for them.
+    log_info "No REDIS_URL/UPSTASH_REDIS_REST_URL: workers will pick up jobs by polling"
+fi
+
+if [ -z "${PHAROS_ADMIN_TOKEN:-}" ] && [ -z "${PHAROS_READ_TOKEN:-}" ]; then
+    log_error "Neither PHAROS_ADMIN_TOKEN nor PHAROS_READ_TOKEN is set: every protected endpoint will return 401"
 fi
 
 log_success "Environment validation passed"
@@ -78,19 +83,15 @@ log_success "Environment validation passed"
 # DATABASE MIGRATIONS
 # ============================================================================
 
-log_info "Running database migrations..."
-
-# Change to backend directory (where alembic.ini is located)
 cd /app
 
-# Run Alembic migrations
-# -c: Path to alembic.ini configuration file
-# upgrade head: Apply all pending migrations
-if alembic -c config/alembic.ini upgrade head; then
+if [ "${RUN_MIGRATIONS:-1}" = "0" ]; then
+    log_info "RUN_MIGRATIONS=0: skipping database migrations"
+elif log_info "Running database migrations..." && alembic -c config/alembic.ini upgrade head; then
     log_success "Database migrations completed successfully"
 else
     log_error "Database migrations failed"
-    log_error "Check DATABASE_URL and database connectivity"
+    log_error "Check DATABASE_URL and connectivity; for a pre-squash database see docs/operations/database-migrations.md"
     exit 1
 fi
 

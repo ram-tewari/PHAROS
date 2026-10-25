@@ -100,7 +100,7 @@ Expected response:
 
 Your current `REDIS_URL` is correct:
 ```bash
-rediss://default:gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY@living-sculpin-96916.upstash.io:6379
+rediss://default:<REDACTED-rotate>@living-sculpin-96916.upstash.io:6379
 ```
 
 ✅ Starts with `rediss://` (SSL enabled)  

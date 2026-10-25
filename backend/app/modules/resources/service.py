@@ -2118,7 +2118,7 @@ class AutoLinkingService:
             import uuid as uuid_module
 
             try:
-                resource_uuid = uuid_module.UUID(pdf_resource_id)
+                resource_uuid = uuid_module.UUID(str(pdf_resource_id))
             except (ValueError, TypeError):
                 raise ValueError(f"Invalid resource_id format: {pdf_resource_id}")
 

@@ -153,7 +153,7 @@ pharos/
   - Updated `ast_pipeline.py` to route Python through stdlib ast, other languages through Tree-sitter
   - Graceful fallback to line-chunking if Tree-sitter fails
   - Deployed to production, verified with Go repository ingestion (fatih/color: 4 resources, 112 chunks in 5.8s)
-- ✅ **Hybrid GitHub Storage (Phase 5)** - COMPLETE: 17x storage reduction, on-demand code fetching
+- ✅ **Hybrid GitHub Storage (Phase 5)** - COMPLETE: on-demand code fetching (measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md)
 - ✅ **Pattern Learning Engine (Phase 6)** - COMPLETE: Learns YOUR coding style from AST + Git history
 - ✅ **Self-Improving Loop (Phase 8)** - COMPLETE: Learns from mistakes via LLM extraction
 - ✅ **Staleness Tracking (2026-04-27)** - COMPLETE: Detects outdated code via `is_stale` flag, marks old resources stale on re-ingest
@@ -185,7 +185,7 @@ pharos/
 - **Neo Alexandria** — Original codename for Pharos. Still appears in docstrings.
 - **Edge worker** — Process running on Ram's local RTX 4070 that handles all GPU-bound work (embeddings, sparse embeddings, LLM extraction). Polls `pharos:tasks` from Upstash.
 - **Cloud API** — The FastAPI process on Render. Serves HTTP; never loads ML models (`MODE=CLOUD` skips torch imports).
-- **Hybrid storage** — ✅ IMPLEMENTED: Code files stay on GitHub, Pharos stores only `github_uri` + `branch_reference` + metadata. 17x storage reduction achieved.
+- **Hybrid storage** — ✅ IMPLEMENTED: Code files stay on GitHub, Pharos stores only `github_uri` + `branch_reference` + metadata. measured 2026-10: ~5% smaller than storing code, not 17× — see docs/benchmarks/retrieval-2026-10.md.
 - **Semantic summary** — A short, human-readable string like `"[python] def authenticate_user(username, password) -> User: 'Authenticate a user.' deps: [verify_password, db.query]"`. This is what gets embedded for code chunks — **not** the raw source.
 - **DocumentChunk** — A retrievable unit. For PDFs it's a page-ish slice with `content` populated. For code it's a function/class/method with `content=NULL` and a `github_uri` pointing at the source.
 - **Three-way hybrid search** — Search strategy combining keyword (FTS5/tsvector) + dense vector (pgvector) + sparse (SPLADE) results via Reciprocal Rank Fusion (RRF).

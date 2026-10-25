@@ -18,10 +18,15 @@ Configuration includes:
 """
 
 from functools import lru_cache
+from pathlib import Path
 from typing import Literal
 
 from pydantic import SecretStr, Field, field_validator, model_validator
 from pydantic_settings import BaseSettings
+
+
+_SQLITE_DEFAULT_URL = "sqlite:///./backend.db"
+_BACKEND_DIR = Path(__file__).resolve().parents[2]
 
 
 class Settings(BaseSettings):
@@ -32,23 +37,12 @@ class Settings(BaseSettings):
     sensible defaults for development and production environments.
     """
 
-    DATABASE_URL: str = "sqlite:///./backend.db"
+    DATABASE_URL: str = _SQLITE_DEFAULT_URL
     TEST_DATABASE_URL: str | None = None  # Optional test database URL
     ENV: Literal["dev", "staging", "prod"] = "dev"
 
-    # Frontend URL for OAuth redirects
-    FRONTEND_URL: str = "http://localhost:5173"
-
-    # Allowed redirect URLs for OAuth callbacks (prevent open redirect vulnerability)
-    # In production, all URLs must use HTTPS
-    ALLOWED_REDIRECT_URLS: list[str] = [
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:3000",  # Common dev server
-        "https://pharos.onrender.com",  # Production cloud
-    ]
-
-    # CSRF Protection: Allowed origins for cross-origin requests
-    # Used by CSRFMiddleware to validate Origin/Referer headers
+    # Browser origins allowed by CORS (API clients using bearer tokens don't
+    # need this; it matters only for a browser frontend).
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:5173",  # Vite dev server
         "http://localhost:3000",  # Common dev server
@@ -62,26 +56,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str = "neo_alexandria_dev"
     POSTGRES_PORT: int = 5432
 
-    # JWT Authentication
-    # Default value provided for development convenience, but MUST be changed in production
-    JWT_SECRET_KEY: SecretStr = SecretStr(
-        "change-this-secret-key-in-production-min-32-chars-long"
-    )
-    JWT_ALGORITHM: str = "HS256"
-    JWT_ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
-    JWT_REFRESH_TOKEN_EXPIRE_DAYS: int = 7
-
-    # OAuth2 Providers - Google
-    GOOGLE_CLIENT_ID: str | None = None
-    GOOGLE_CLIENT_SECRET: SecretStr | None = None
-    GOOGLE_REDIRECT_URI: str = "http://localhost:8000/auth/google/callback"
-
-    # OAuth2 Providers - GitHub
-    GITHUB_CLIENT_ID: str | None = None
-    GITHUB_CLIENT_SECRET: SecretStr | None = None
-    GITHUB_REDIRECT_URI: str = "http://localhost:8000/auth/github/callback"
-
-    # GitHub API token for code-intelligence reads (separate from OAuth).
+    # GitHub API token for code-intelligence reads.
     # Personal Access Token (classic) with repo:read scope.
     # Raises unauthenticated rate limit from 60 → 5,000 req/hr.
     GITHUB_API_TOKEN: SecretStr | None = None
@@ -91,11 +66,6 @@ class Settings(BaseSettings):
 
     # Redis URL shorthand (overrides REDIS_HOST/PORT when set)
     REDIS_URL: str | None = None  # e.g. "redis://localhost:6379/2"
-
-    # Rate Limiting
-    RATE_LIMIT_FREE_TIER: int = 100  # requests per minute
-    RATE_LIMIT_PREMIUM_TIER: int = 1000  # requests per minute
-    RATE_LIMIT_ADMIN_TIER: int = 10000  # 0 = unlimited
 
     # File Upload Validation
     ALLOWED_FILE_EXTENSIONS: set[str] = {
@@ -202,22 +172,6 @@ class Settings(BaseSettings):
     # Testing
     TEST_MODE: bool = Field(default=False)
 
-    @field_validator("JWT_SECRET_KEY")
-    @classmethod
-    def validate_jwt_secret(cls, v: SecretStr, info) -> SecretStr:
-        """Validate JWT secret key meets security requirements."""
-        secret = v.get_secret_value()
-        if len(secret) < 32:
-            raise ValueError(
-                f"JWT_SECRET_KEY must be at least 32 characters, got {len(secret)}"
-            )
-        # Only reject default value in production
-        if secret == "change-this-secret-key-in-production-min-32-chars-long":
-            # Check if we're in production mode (will be validated in model_validator)
-            # For now, just validate length - production check happens in model_validator
-            pass
-        return v
-
     @field_validator("MODE")
     @classmethod
     def validate_mode(cls, v: str) -> str:
@@ -231,80 +185,21 @@ class Settings(BaseSettings):
     def validate_queue_size(cls, v: int) -> int:
         """Validate QUEUE_SIZE is positive."""
         if v <= 0:
-            raise ValueError(f"QUEUE_SIZE must be positive, got: {v}")
-        return v
-
-    @field_validator("ALLOWED_REDIRECT_URLS")
-    @classmethod
-    def validate_redirect_urls(cls, v: list[str], info) -> list[str]:
-        """Validate redirect URLs meet security requirements.
-
-        In production, all redirect URLs must use HTTPS to prevent open redirect attacks.
-        HTTP URLs are only allowed for localhost in development mode.
-
-        This validator performs basic format validation. Full HTTPS enforcement
-        for production is done in model_validator.
-        """
-        import warnings
-
-        non_https_urls = []
-        for url in v:
-            if not url.startswith(("http://", "https://")):
-                raise ValueError(
-                    f"Redirect URL must start with http:// or https://: {url}"
-                )
-            if url.startswith("http://"):
-                non_https_urls.append(url)
-
-        # Warn about non-HTTPS URLs (will be enforced in model_validator for production)
-        if non_https_urls:
-            warnings.warn(
-                f"Non-HTTPS redirect URLs detected: {non_https_urls}. "
-                f"These will be rejected in production mode (ENV=prod). "
-                f"Use HTTPS URLs for production deployments.",
-                UserWarning,
-            )
-
+            raise ValueError(f"MAX_QUEUE_SIZE must be positive, got: {v}")
         return v
 
     @model_validator(mode="after")
     def validate_production_requirements(self):
-        """Validate production environment requirements."""
+        """Refuse test-only switches in production (they disable auth)."""
         import os
 
-        secret = self.JWT_SECRET_KEY.get_secret_value()
-
-        # In production, reject default value and require minimum length
         if self.ENV == "prod":
-            if len(secret) < 32:
-                raise ValueError(
-                    "JWT_SECRET_KEY must be at least 32 characters in production"
-                )
-            if secret == "change-this-secret-key-in-production-min-32-chars-long":
-                raise ValueError(
-                    "JWT_SECRET_KEY must be changed from default in production. "
-                    'Generate a secure secret: python -c "import secrets; print(secrets.token_hex(32))"'
-                )
-            # TEST_MODE must not be enabled in production (both setting and env var)
             if self.TEST_MODE:
-                raise ValueError(
-                    "TEST_MODE must be False in production. "
-                    "This is a security requirement to prevent authentication bypass."
-                )
-            # Also check TESTING environment variable (used by is_test_mode)
+                raise ValueError("TEST_MODE must be False in production.")
             if os.getenv("TESTING", "").lower() in ("true", "1", "yes"):
-                raise ValueError(
-                    "TESTING environment variable must not be set to 'true' in production. "
-                    "This is a security requirement to prevent authentication bypass."
-                )
-
-            # Validate redirect URLs use HTTPS in production (prevent open redirect)
-            for url in self.ALLOWED_REDIRECT_URLS:
-                if not url.startswith("https://"):
-                    raise ValueError(
-                        f"Production redirect URLs must use HTTPS: {url}. "
-                        f"HTTP URLs are only allowed for localhost in development mode."
-                    )
+                raise ValueError("TESTING must not be set in production.")
+            if os.getenv("TEST_AUTH_BYPASS"):
+                raise ValueError("TEST_AUTH_BYPASS must not be set in production.")
         return self
 
     @property
@@ -395,8 +290,45 @@ class Settings(BaseSettings):
     QDRANT_URL: str | None = None
     QDRANT_API_KEY: SecretStr | None = None
 
-    # API Authentication
-    PHAROS_ADMIN_TOKEN: SecretStr | None = None  # Bearer token for /ingest endpoint
+    # API Authentication (machine-to-machine bearer tokens; see SECURITY.md)
+    # Full access: ingestion, admin, everything.
+    PHAROS_ADMIN_TOKEN: SecretStr | None = None
+    # Optional read-only token for assistants: search, context, repository
+    # listing, MCP. Cannot trigger ingestion or admin operations.
+    PHAROS_READ_TOKEN: SecretStr | None = None
+
+    # Host headers the native MCP endpoint accepts (DNS-rebinding protection
+    # stays on). Localhost is always allowed; add your public hostname, e.g.
+    # ["pharos-cloud-api.onrender.com"], or MCP requests get HTTP 421.
+    MCP_ALLOWED_HOSTS: list[str] = []
+
+    # ── Embeddings (app/codeintel/embeddings.py) ───────────────────────────
+    # auto | none | hash | sentence-transformers | http | onnx
+    # auto = http in CLOUD mode when EDGE_EMBEDDING_URL is set, else none;
+    #        sentence-transformers in EDGE mode.
+    EMBEDDING_BACKEND: str = "auto"
+    EDGE_EMBEDDING_URL: str | None = None
+    # Bearer token the edge embed server requires (strongly recommended when
+    # the server is exposed through Tailscale Funnel or any public URL).
+    EDGE_EMBED_TOKEN: SecretStr | None = None
+    EMBEDDING_ONNX_DIR: str | None = None
+    EMBEDDING_MODEL_ID: str | None = None
+
+    # ── Code ingestion limits & safety (app/codeintel) ─────────────────────
+    # Remote hosts the API may ask the worker to clone from (https only).
+    CODEINTEL_ALLOWED_GIT_HOSTS: list[str] = ["github.com", "gitlab.com", "bitbucket.org"]
+    CODEINTEL_MAX_FILE_BYTES: int = 1_000_000
+    CODEINTEL_MAX_FILES: int = 20_000
+    CODEINTEL_CLONE_TIMEOUT_SECONDS: int = 600
+    # Token used for cloning private repositories on allowed hosts (sent as
+    # an HTTP header via git config, never placed in URLs or logs).
+    GIT_CLONE_TOKEN: SecretStr | None = None
+    # Ingestion jobs whose heartbeat is older than this are re-queued.
+    INGESTION_JOB_STALE_SECONDS: int = 900
+    # Redis key carrying job-id wake-up notifications (state lives in Postgres).
+    # Defaults to the queue main_worker.py already BLPOPs, so the edge worker
+    # picks up jobs without an extra Redis poll (Upstash quota).
+    INGESTION_NOTIFY_KEY: str = "ingest_queue"
 
     # Task Queue Configuration
     QUEUE_SIZE: int = Field(default=10, alias="MAX_QUEUE_SIZE")  # Maximum pending tasks
@@ -425,7 +357,9 @@ class Settings(BaseSettings):
     FEEDBACK_MIN_CONTROL_FLOW_NODES: int = 3
 
     class Config:
-        env_file = "config/.env"
+        # backend/.env, then backend/config/.env (later files win); resolved
+        # from this file so the API, CLI and worker agree whatever their cwd.
+        env_file = (str(_BACKEND_DIR / ".env"), str(_BACKEND_DIR / "config" / ".env"))
         env_file_encoding = "utf-8"
         extra = "ignore"  # Ignore extra fields in .env file
 
@@ -467,29 +401,27 @@ class Settings(BaseSettings):
 
     def get_database_url(self) -> str:
         """
-        Construct database URL based on configuration.
+        Return the configured database URL.
 
-        Returns SQLite URL if DATABASE_URL is set to SQLite,
-        otherwise constructs PostgreSQL async URL using asyncpg driver.
-        Handles special characters in passwords via URL encoding.
+        ``DATABASE_URL`` always wins when it is set, by environment, ``.env``
+        or keyword (this is how Neon, Docker Compose and CI provide the
+        database) -- even when it is set to the SQLite default. Only when it
+        is not set at all *and* ``POSTGRES_PASSWORD`` is set do we assemble a
+        URL from the individual ``POSTGRES_*`` settings. Driver selection
+        happens later, in ``app.shared.db_url.normalize_database_url``.
 
-        Returns:
-            str: Database connection URL (SQLite or PostgreSQL)
-
-        Examples:
-            SQLite: sqlite:///./backend.db
-            PostgreSQL: postgresql+asyncpg://user:pass@host:5432/db
+        (Previously any PostgreSQL ``DATABASE_URL`` was silently replaced by
+        one built from ``POSTGRES_*`` defaults, i.e. ``localhost`` — so
+        Alembic never connected to the database it was pointed at.)
         """
         from urllib.parse import quote
 
-        if "sqlite" in self.DATABASE_URL.lower():
+        if "DATABASE_URL" in self.model_fields_set or not self.POSTGRES_PASSWORD:
             return self.DATABASE_URL
 
-        # URL-encode special characters in password
-        encoded_password = quote(self.POSTGRES_PASSWORD or "", safe="")
-
+        encoded_password = quote(self.POSTGRES_PASSWORD, safe="")
         return (
-            f"postgresql+asyncpg://{self.POSTGRES_USER}:"
+            f"postgresql://{self.POSTGRES_USER}:"
             f"{encoded_password}@{self.POSTGRES_SERVER}:"
             f"{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
         )
@@ -527,76 +459,7 @@ def get_settings() -> Settings:
             f"Expected type: float (sum=1.0)"
         )
 
-    # Validate JWT configuration
-    if (
-        not settings.JWT_SECRET_KEY
-        or settings.JWT_SECRET_KEY.get_secret_value()
-        == "change-this-secret-key-in-production"
-    ):
-        if settings.ENV == "prod":
-            raise ValueError(
-                "Configuration validation failed: JWT_SECRET_KEY must be set to a secure value in production. "
-                "Expected type: SecretStr (non-default value)"
-            )
-
-    if settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES <= 0:
-        raise ValueError(
-            f"Configuration validation failed: JWT_ACCESS_TOKEN_EXPIRE_MINUTES must be positive, "
-            f"got {settings.JWT_ACCESS_TOKEN_EXPIRE_MINUTES}. Expected type: int (> 0)"
-        )
-
-    if settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS <= 0:
-        raise ValueError(
-            f"Configuration validation failed: JWT_REFRESH_TOKEN_EXPIRE_DAYS must be positive, "
-            f"got {settings.JWT_REFRESH_TOKEN_EXPIRE_DAYS}. Expected type: int (> 0)"
-        )
-
-    # Validate rate limiting configuration
-    if settings.RATE_LIMIT_FREE_TIER < 0:
-        raise ValueError(
-            f"Configuration validation failed: RATE_LIMIT_FREE_TIER must be non-negative, "
-            f"got {settings.RATE_LIMIT_FREE_TIER}. Expected type: int (>= 0)"
-        )
-
-    if settings.RATE_LIMIT_PREMIUM_TIER < 0:
-        raise ValueError(
-            f"Configuration validation failed: RATE_LIMIT_PREMIUM_TIER must be non-negative, "
-            f"got {settings.RATE_LIMIT_PREMIUM_TIER}. Expected type: int (>= 0)"
-        )
-
-    if settings.RATE_LIMIT_ADMIN_TIER < 0:
-        raise ValueError(
-            f"Configuration validation failed: RATE_LIMIT_ADMIN_TIER must be non-negative (0 = unlimited), "
-            f"got {settings.RATE_LIMIT_ADMIN_TIER}. Expected type: int (>= 0)"
-        )
-
-    # Validate PostgreSQL configuration when using PostgreSQL
-    if "postgresql" in settings.DATABASE_URL.lower():
-        if not settings.POSTGRES_SERVER:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_SERVER must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if not settings.POSTGRES_USER:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_USER must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if not settings.POSTGRES_PASSWORD:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_PASSWORD must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if not settings.POSTGRES_DB:
-            raise ValueError(
-                "Configuration validation failed: POSTGRES_DB must be set when using PostgreSQL. "
-                "Expected type: str (non-empty)"
-            )
-        if settings.POSTGRES_PORT <= 0 or settings.POSTGRES_PORT > 65535:
-            raise ValueError(
-                f"Configuration validation failed: POSTGRES_PORT must be between 1 and 65535, "
-                f"got {settings.POSTGRES_PORT}. Expected type: int (1-65535)"
-            )
+    # A PostgreSQL DATABASE_URL is self-contained; no POSTGRES_* checks needed.
 
     # Validate Redis configuration
     if settings.REDIS_PORT <= 0 or settings.REDIS_PORT > 65535:
@@ -721,13 +584,13 @@ def get_settings() -> Settings:
         # Validate queue configuration
         if settings.QUEUE_SIZE <= 0:
             raise ValueError(
-                f"Configuration validation failed: QUEUE_SIZE must be positive, "
+                f"Configuration validation failed: MAX_QUEUE_SIZE must be positive, "
                 f"got {settings.QUEUE_SIZE}. Expected type: int (> 0)"
             )
 
         if settings.TASK_TTL <= 0:
             raise ValueError(
-                f"Configuration validation failed: TASK_TTL must be positive, "
+                f"Configuration validation failed: TASK_TTL_SECONDS must be positive, "
                 f"got {settings.TASK_TTL}. Expected type: int (> 0)"
             )
 
@@ -781,67 +644,3 @@ def get_settings() -> Settings:
     return settings
 
 
-def validate_redirect_url(
-    redirect_url: str, settings: Settings | None = None
-) -> tuple[bool, str]:
-    """
-    Validate a redirect URL against the allowed list.
-
-    This function prevents open redirect vulnerabilities by ensuring:
-    1. The URL is in the allowed list
-    2. In production mode, the URL uses HTTPS
-
-    Args:
-        redirect_url: The redirect URL to validate
-        settings: Optional Settings instance (will use get_settings() if not provided)
-
-    Returns:
-        tuple: (is_valid: bool, error_message: str)
-
-    Examples:
-        >>> validate_redirect_url("https://example.com/callback")
-        (True, "")
-
-        >>> validate_redirect_url("http://evil.com", settings)
-        (False, "Redirect URL not in allowed list")
-
-        >>> validate_redirect_url("http://example.com", settings)  # In production
-        (False, "Redirect URL must use HTTPS in production")
-    """
-    from urllib.parse import urlparse
-
-    if settings is None:
-        settings = get_settings()
-
-    if not redirect_url:
-        return False, "Redirect URL cannot be empty"
-
-    # Parse the URL
-    try:
-        parsed = urlparse(redirect_url)
-    except Exception:
-        return False, "Invalid URL format"
-
-    # Build the base URL (scheme + netloc) for comparison
-    base_url = f"{parsed.scheme}://{parsed.netloc}"
-
-    # Check if the base URL is in the allowed list
-    is_allowed = False
-    for allowed_url in settings.ALLOWED_REDIRECT_URLS:
-        allowed_parsed = urlparse(allowed_url)
-        allowed_base = f"{allowed_parsed.scheme}://{allowed_parsed.netloc}"
-
-        # Exact match or prefix match (for paths)
-        if base_url == allowed_base or redirect_url.startswith(allowed_url):
-            is_allowed = True
-            break
-
-    if not is_allowed:
-        return False, f"Redirect URL not in allowed list: {base_url}"
-
-    # In production, enforce HTTPS
-    if settings.ENV == "prod":
-        if parsed.scheme != "https":
-            return False, f"Redirect URL must use HTTPS in production: {redirect_url}"
-
-    return True, ""

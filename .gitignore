@@ -1,48 +1,73 @@
-# Dependencies
-node_modules/
-frontend/node_modules/
-backend/node_modules/
-
-# Build outputs
-dist/
-build/
-*.log
-
-# Environment variables (exclude all except templates/examples)
+# ── Secrets & local configuration ─────────────────────────────────────────
+# Only *.example / *.template env files belong in git.
 .env
 .env.*
+*.env
 !.env.example
+!*.env.example
 !.env.*.template
 !.env.*.example
-*.env
-backend/config/.env
-backend/config/.env.*
+backend/config/.env*
 !backend/config/.env.example
 !backend/config/.env.*.template
-frontend/.env
 frontend/.env.*
 !frontend/.env.example
 
-# IDE
-.vscode/
+# Local agent / IDE state (may contain tokens in command history)
+.claude/settings.local.json
+.claude/*.lock
 .idea/
+.vscode/
 *.swp
 *.swo
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Vite
-frontend/.vite/
-frontend/dist/
-
-# Python
+# ── Python ────────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-backend/venv/
+.venv/
+venv/
+.wsl-venv/
 backend/.venv/
 backend/.wsl-venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
+
+# ── Local databases & runtime state ───────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+backend/.pharos_edge/
+backend/storage/
+.bench/
+pharos_ingest_*/
+
+# ── Model / benchmark artefacts (regenerate, don't commit) ────────────────
+*.safetensors
+*.onnx
+*.pt
+*.bin
+backend/ml_results/**/*.json
+backend/benchmarks/.cache/
+backend/benchmarks/results/*.raw.json
+
+# ── Node / frontend ───────────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+frontend/.vite/
+
+# ── Logs & OS cruft ───────────────────────────────────────────────────────
+*.log
+.DS_Store
+Thumbs.db
+
+# Redis snapshots from local dev servers
+*.rdb

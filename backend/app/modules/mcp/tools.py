@@ -50,7 +50,7 @@ TOOL_SCHEMAS = {
                 "file_path": {"type": "string", "description": "File path"},
                 "line": {"type": "integer", "description": "Line number"},
                 "column": {"type": "integer", "description": "Column number"},
-                "resource_id": {"type": "integer", "description": "Resource ID"},
+                "resource_id": {"type": "string", "format": "uuid", "description": "Resource UUID"},
             },
             "required": ["file_path", "line", "column", "resource_id"],
         },
@@ -73,7 +73,7 @@ TOOL_SCHEMAS = {
             "properties": {
                 "resource_ids": {
                     "type": "array",
-                    "items": {"type": "integer"},
+                    "items": {"type": "string", "format": "uuid"},
                     "description": "Resource IDs to compute metrics for",
                 },
             },
@@ -95,7 +95,7 @@ TOOL_SCHEMAS = {
             "properties": {
                 "resource_ids": {
                     "type": "array",
-                    "items": {"type": "integer"},
+                    "items": {"type": "string", "format": "uuid"},
                     "description": "Resource IDs to analyze",
                 },
                 "resolution": {
@@ -196,46 +196,73 @@ TOOL_SCHEMAS = {
 }
 
 
+def _acquire_db(context: Dict[str, Any]):
+    """The invoking MCPServer's session (``context["_db"]``) when there is one,
+    so tool calls share the request's session; otherwise a new session that
+    the handler closes. Returns ``(session, owned)``."""
+    db = (context or {}).get("_db")
+    if db is not None:
+        return db, False
+    from ...shared.database import get_sync_db
+
+    return next(get_sync_db()), True
+
+
 # Tool handlers
 async def search_resources_handler(
     arguments: Dict[str, Any], context: Dict[str, Any]
 ) -> Any:
     """Handler for search_resources tool"""
+    from ..search.schema import SearchQuery
     from ..search.service import SearchService
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
-        service = SearchService(db)
-        results = await service.hybrid_search(
-            query=arguments["query"],
+        query = SearchQuery(
+            text=arguments["query"],
             limit=arguments.get("limit", 10),
             offset=arguments.get("offset", 0),
         )
-        return {"results": results, "total": len(results)}
+        # hybrid_search is synchronous and takes a SearchQuery; it returns
+        # (resources, total, facets, snippets).
+        resources, total, _facets, snippets = SearchService(db).hybrid_search(query)
+        results = [
+            {
+                "id": str(r.id),
+                "title": r.title,
+                "identifier": r.identifier,
+                "type": r.type,
+                "snippet": snippets.get(str(r.id)) if snippets else None,
+            }
+            for r in resources
+        ]
+        return {"results": results, "total": total}
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def get_hover_info_handler(
     arguments: Dict[str, Any], context: Dict[str, Any]
 ) -> Any:
     """Handler for get_hover_info tool"""
-    from ..graph.router import get_hover_information
-    from ...shared.database import get_sync_db
+    from uuid import UUID
 
-    db = next(get_sync_db())
+    from ..graph.router import get_hover_information
+
+    db, owned = _acquire_db(context)
     try:
-        result = await get_hover_information(
+        # Synchronous route function; returns a plain dict.
+        return get_hover_information(
             file_path=arguments["file_path"],
             line=arguments["line"],
             column=arguments["column"],
-            resource_id=arguments["resource_id"],
+            resource_id=UUID(str(arguments["resource_id"])),
             db=db,
         )
-        return result.dict()
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def compute_graph_metrics_handler(
@@ -243,15 +270,15 @@ async def compute_graph_metrics_handler(
 ) -> Any:
     """Handler for compute_graph_metrics tool"""
     from ..graph.service import GraphService
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         service = GraphService(db)
         metrics = await service.compute_degree_centrality(arguments["resource_ids"])
-        return {"metrics": {str(k): v.dict() for k, v in metrics.items()}}
+        return {"metrics": {str(k): v for k, v in metrics.items()}}
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def detect_communities_handler(
@@ -259,18 +286,18 @@ async def detect_communities_handler(
 ) -> Any:
     """Handler for detect_communities tool"""
     from ..graph.service import CommunityDetectionService
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         service = CommunityDetectionService(db)
         result = await service.detect_communities(
             resource_ids=arguments["resource_ids"],
             resolution=arguments.get("resolution", 1.0),
         )
-        return result.dict()
+        return result
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def generate_plan_handler(
@@ -278,9 +305,8 @@ async def generate_plan_handler(
 ) -> Any:
     """Handler for generate_plan tool"""
     from ..planning.service import MultiHopAgent
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         # Note: LLM client would need to be initialized
         agent = MultiHopAgent(db, llm_client=None)
@@ -290,7 +316,8 @@ async def generate_plan_handler(
         )
         return result.dict()
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def parse_architecture_handler(
@@ -298,9 +325,8 @@ async def parse_architecture_handler(
 ) -> Any:
     """Handler for parse_architecture tool"""
     from ..planning.service import ArchitectureParser
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         # Note: LLM client would need to be initialized
         parser = ArchitectureParser(db, llm_client=None)
@@ -309,7 +335,8 @@ async def parse_architecture_handler(
         )
         return result.dict()
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 async def link_pdf_to_code_handler(
@@ -318,9 +345,8 @@ async def link_pdf_to_code_handler(
     """Handler for link_pdf_to_code tool"""
     from ..resources.service import AutoLinkingService
     from ...shared.embeddings import EmbeddingGenerator
-    from ...shared.database import get_sync_db
 
-    db = next(get_sync_db())
+    db, owned = _acquire_db(context)
     try:
         embedding_generator = EmbeddingGenerator()
         service = AutoLinkingService(db, embedding_generator)
@@ -330,7 +356,8 @@ async def link_pdf_to_code_handler(
         )
         return {"links_created": len(links), "links": [link.dict() for link in links]}
     finally:
-        db.close()
+        if owned:
+            db.close()
 
 
 # Tool handler mapping
@@ -351,8 +378,8 @@ def register_all_tools(mcp_server) -> None:
         handler = TOOL_HANDLERS.get(tool_name)
         if handler:
             mcp_server.register_tool(tool_name, schema, handler)
-            logger.info(f"Registered MCP tool: {tool_name}")
+            logger.debug("Registered MCP tool: %s", tool_name)
         else:
             logger.warning(f"No handler found for tool: {tool_name}")
 
-    logger.info(f"Registered {len(TOOL_SCHEMAS)} MCP tools")
+    logger.debug("Registered %d MCP tools", len(TOOL_SCHEMAS))

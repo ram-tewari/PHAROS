@@ -1,639 +1,249 @@
 """
-Neo Alexandria 2.0 - FastAPI Application Factory
+Pharos — FastAPI application factory.
 
-This module creates and configures the FastAPI application instance for Neo Alexandria 2.0.
-It sets up the application with all necessary routers and database initialization.
+``create_app()`` wires:
 
-Related files:
-- app/database/base.py: Database engine and session configuration
-- app/database/models.py: SQLAlchemy models for all entities
-- app/routers/: API endpoint routers for different features
-- app/config/settings.py: Application configuration management
+* the code-intelligence API (``app.modules.code``: repositories, ingestion
+  jobs, code search, context retrieval) and the legacy module routers;
+* the native MCP server at ``/mcp`` (built per application instance);
+* bearer-token authentication (``app.shared.auth``) on every path except
+  health checks and API docs;
+* SQLite table creation for local/test use (PostgreSQL schema is owned by
+  Alembic: ``alembic -c config/alembic.ini upgrade head``).
 
-The application includes the following feature modules:
-- Resources: URL ingestion and CRUD operations
-- Search: Full-text search with FTS5 and faceting
-- Authority: Subject, creator, and publisher normalization
-- Graph: Knowledge graph, citations, dependency traversal
-- Quality: Multi-dimensional scoring and outlier detection
+The cloud API (``MODE=CLOUD``) never imports torch: query embeddings go to
+the edge embed server over HTTP, or the configured CPU backend.
 """
 
+from __future__ import annotations
+
 import logging
-import importlib
-import pkgutil
+import os
+from collections.abc import Callable
 from contextlib import asynccontextmanager
-from typing import List, Tuple, Callable
-import sys
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 
-from .shared.database import Base, sync_engine, get_pool_usage_warning, init_database
 from .config.settings import get_settings
-
-# Ensure models are imported so Base.metadata is populated for create_all
-# Only import in non-test mode to avoid circular dependencies during test discovery
-import os
+from .monitoring import setup_monitoring
+from .shared import database as shared_db
+from .shared.auth import allowed_for, is_public, parse_bearer, principal_for_token, token_problems
+from .shared.database import Base, get_pool_usage_warning, init_database
 
 if os.getenv("TESTING") != "true" and os.getenv("PYTEST_CURRENT_TEST") is None:
-    from .database import models  # noqa: F401
-from .monitoring import setup_monitoring
+    from .database import models  # noqa: F401  (populate Base.metadata)
 
 logger = logging.getLogger(__name__)
 
+APP_TITLE = "Pharos"
+APP_VERSION = "0.5.0"
+
+
+def _is_test_mode() -> bool:
+    return os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+
 
 def register_all_modules(app: FastAPI) -> None:
+    """Import every module slice and register its routers and event handlers.
+
+    Module failures are collected; in production any failure aborts startup
+    (a missing module means silently-404ing endpoints). Elsewhere the app
+    keeps booting so a partially broken tree is still explorable.
     """
-    Register all modular vertical slices with the application.
-
-    This function dynamically loads and registers:
-    1. Module routers (API endpoints)
-    2. Module event handlers (for cross-module communication)
-
-    Modules are loaded with error handling to ensure application startup
-    continues even if individual modules fail to load.
-
-    Args:
-        app: FastAPI application instance
-    """
-    logger.info("Starting module registration...")
-
-    # Get deployment mode
-    from app.config.settings import get_settings
-
     settings = get_settings()
-    deployment_mode = settings.MODE
-
-    logger.info(f"Deployment mode: {deployment_mode}")
-
-    # Define modules to register: (module_name, import_path, router_names)
-    # router_names can be a single string or a list of strings for modules with multiple routers
-    # Modular vertical slices (completed)
-    # Phase 2 amputation (2026-07): the Neo Alexandria modules (annotations,
-    # authority, scholarly, quality, collections, auth) were removed. Pharos is
-    # now a focused code-intelligence backend. graph keeps its citations/
-    # discovery sub-routers (their models are still referenced internally).
-    base_modules: List[Tuple[str, str, List[str]]] = [
-        ("resources", "app.modules.resources", ["resources_router"]),
-        ("search", "app.modules.search", ["search_router"]),
-        (
-            "graph",
-            "app.modules.graph",
-            ["graph_router", "citations_router", "discovery_router"],
-        ),
-    ]
-
-    # Additional routers registered separately with their own prefixes.
-    additional_routers: List[Tuple[str, str, List[str]]] = [
-        ("search", "app.modules.search", ["advanced_search_router"]),
-        ("resources", "app.modules.resources", ["chunking_router"]),
+    modules: list[tuple[str, str, list[str]]] = [
+        ("code", "app.modules.code", ["code_router"]),
+        ("resources", "app.modules.resources", ["resources_router", "chunking_router"]),
+        ("search", "app.modules.search", ["search_router", "advanced_search_router"]),
+        ("graph", "app.modules.graph", ["graph_router", "citations_router", "discovery_router"]),
         ("planning", "app.modules.planning", ["ai_planning_router"]),
         ("mcp", "app.modules.mcp", ["mcp_router"]),
         ("patterns", "app.modules.patterns", ["patterns_router"]),
-        ("pdf_ingestion", "app.modules.pdf_ingestion", ["router"]),  # Phase 4: PDF ingestion
-        ("github", "app.modules.github", ["github_router"]),  # GitHub on-demand code fetch
-        ("admin", "app.modules.admin", ["admin_router"]),  # Backfills, housekeeping
-    ]
-
-    # Modules that require torch (only load in EDGE mode)
-    edge_only_modules: List[Tuple[str, str, List[str]]] = []
-
-    # Modules that require redis (only load in EDGE mode or when redis is available)
-    redis_modules: List[Tuple[str, str, List[str]]] = [
+        ("pdf_ingestion", "app.modules.pdf_ingestion", ["router"]),
+        ("github", "app.modules.github", ["github_router"]),
+        ("admin", "app.modules.admin", ["admin_router"]),
         ("monitoring", "app.modules.monitoring", ["monitoring_router"]),
     ]
 
-    # Build final module list based on deployment mode
-    modules = base_modules.copy()
+    import importlib
 
-    # Check if in test mode
-    is_test_mode = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
+    failed: list[str] = []
+    # Legacy /api/v1/ingestion routes first: its /jobs/history must win over
+    # the code router's /ingestion/jobs/{job_id}.
+    try:
+        from .routers.ingestion import router as ingestion_router
 
-    if deployment_mode == "EDGE" or is_test_mode:
-        # Edge mode or test mode: Load all modules including ML-heavy ones
-        modules.extend(edge_only_modules)
-        modules.extend(redis_modules)
-        # Also register additional routers in EDGE/test mode
-        modules.extend(additional_routers)
-        if is_test_mode:
-            logger.info("Test mode: Loading all modules including ML-heavy modules")
-        else:
-            logger.info("Edge mode: Loading all modules including ML-heavy modules")
-    else:
-        # Cloud mode: Skip torch-dependent modules, add ingestion router
-        logger.info("Cloud mode: Skipping torch-dependent modules")
-        # Try to load redis modules but don't fail if redis unavailable
-        modules.extend(redis_modules)
-        # Also register additional routers in cloud mode
-        modules.extend(additional_routers)
-
-        # Add edge-cloud ingestion router for cloud API
-        try:
-            from app.routers.ingestion import router as ingestion_router
-
-            app.include_router(ingestion_router)
-            logger.info("✓ Registered ingestion router for cloud API")
-        except Exception as e:
-            logger.warning(f"Could not load ingestion router: {e}")
-
-    registered_count = 0
-    failed_count = 0
-    handler_count = 0
-    total_routers = 0
-    failed_modules: List[str] = []
+        app.include_router(ingestion_router)
+    except Exception as exc:
+        failed.append("ingestion")
+        logger.error("Failed to register ingestion router: %s", exc, exc_info=True)
 
     for module_name, module_path, router_names in modules:
         try:
-            logger.debug(f"Loading module: {module_name}")
-
-            # Dynamically import the module
-            import importlib
-
             module = importlib.import_module(module_path)
-
-            # Get module version if available
-            module_version = getattr(module, "__version__", "unknown")
-
-            # Register all routers for this module
-            routers_registered = 0
             for router_name in router_names:
-                if hasattr(module, router_name):
-                    router = getattr(module, router_name)
-                    app.include_router(router)
-                    routers_registered += 1
-                    total_routers += 1
-                else:
-                    logger.warning(
-                        f"Module {module_name} does not expose {router_name}"
-                    )
+                router = getattr(module, router_name, None)
+                if router is None:
+                    logger.warning("Module %s does not expose %s", module_name, router_name)
+                    continue
+                app.include_router(router)
+            register: Callable[[], None] | None = getattr(module, "register_handlers", None)
+            if register is not None:
+                register()
+        except Exception as exc:
+            failed.append(module_name)
+            logger.error("Failed to register module %s: %s", module_name, exc, exc_info=True)
 
-            if routers_registered > 0:
-                logger.info(
-                    f"✓ Registered {routers_registered} router(s) for module: {module_name} (v{module_version})"
-                )
-
-            # Register event handlers if the module has them
-            if hasattr(module, "register_handlers"):
-                register_handlers_func: Callable[[], None] = getattr(
-                    module, "register_handlers"
-                )
-                register_handlers_func()
-                handler_count += 1
-                logger.info(f"✓ Registered event handlers for module: {module_name}")
-            else:
-                logger.debug(f"Module {module_name} has no event handlers to register")
-
-            registered_count += 1
-
-        except Exception as e:
-            failed_count += 1
-            failed_modules.append(module_name)
-            logger.error(
-                f"✗ Failed to register module {module_name}: {e}",
-                exc_info=True,
-                extra={
-                    "module_name": module_name,
-                    "module_path": module_path,
-                    "error_type": type(e).__name__,
-                },
-            )
-            # Continue so we collect ALL failures before deciding whether to abort.
-
-    logger.info(
-        f"Module registration complete: {registered_count} modules registered, "
-        f"{total_routers} routers registered, "
-        f"{handler_count} event handler sets registered, {failed_count} failed"
-    )
-
-    # Fail loud in production. A module that fails to register means its
-    # endpoints silently 404 — exactly the class of invisible outage that let
-    # the edge worker sit dead for 25 days. In prod, refuse to boot instead;
-    # Render will surface the failed deploy. Outside prod we keep booting so a
-    # half-broken dev tree is still explorable.
-    if failed_modules and settings.ENV == "prod":
+    logger.info("Registered %d module(s), %d failed", len(modules) + 1 - len(failed), len(failed))
+    if failed and settings.ENV == "prod":
         raise RuntimeError(
-            f"Refusing to start: {len(failed_modules)} module(s) failed to "
-            f"register in production: {', '.join(failed_modules)}. "
-            f"See logs above for the underlying import/registration errors."
+            f"Refusing to start: {len(failed)} module(s) failed to register in production: "
+            f"{', '.join(failed)}. See the log for the underlying errors."
         )
 
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """
-    Application lifespan manager for startup and shutdown events.
+def _validate_production(settings) -> None:
+    if settings.ENV != "prod":
+        return
+    if _is_test_mode() or settings.TEST_MODE:
+        raise RuntimeError("TESTING / TEST_MODE must not be enabled in production")
+    if os.getenv("TEST_AUTH_BYPASS"):
+        raise RuntimeError("TEST_AUTH_BYPASS must not be set in production")
 
-    Startup:
-    - Validate environment (prevent TEST_MODE in production)
-    - Warmup embedding model to avoid cold start latency
-    - Register event hooks for automatic data consistency
-    - Initialize Redis cache connection
-    - Log event system initialization
 
-    The native MCP server is mounted as a sub-app (see create_app below) and
-    does NOT receive this lifespan automatically — its session manager must
-    be run explicitly for the streamable-HTTP transport to work, or every
-    request to /mcp 500s.
-
-    Shutdown:
-    - Clean up resources if needed
-    """
-    from .modules.mcp import mcp_native
-
-    # Startup
-    logger.info("Starting Neo Alexandria 2.0...")
-
-    # Skip heavy initialization in test mode
-    import os
-
-    is_test_mode = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
-
-    # Validate environment: prevent TEST_MODE/TESTING in production
-    settings = get_settings()
-    if settings.ENV == "prod":
-        if is_test_mode:
-            logger.critical(
-                "SECURITY VIOLATION: TESTING environment variable is set to 'true' in production. "
-                "This would enable authentication bypass. Refusing to start."
-            )
-            raise RuntimeError(
-                "CRITICAL: TESTING environment variable must not be set in production. "
-                "This is a security requirement to prevent authentication bypass."
-            )
-        if settings.TEST_MODE:
-            logger.critical(
-                "SECURITY VIOLATION: TEST_MODE is enabled in production. "
-                "This would enable authentication bypass. Refusing to start."
-            )
-            raise RuntimeError(
-                "CRITICAL: TEST_MODE must be False in production. "
-                "This is a security requirement to prevent authentication bypass."
-            )
-        logger.info(
-            "✓ Production environment validated - TEST_MODE and TESTING are disabled"
-        )
-
-    if is_test_mode:
-        logger.info(
-            "Test mode detected - skipping heavy initialization (embedding warmup, Redis)"
-        )
-    else:
-        # Skip embedding model warmup in CLOUD mode (handled by edge worker)
-        deployment_mode = settings.MODE
-        if deployment_mode == "CLOUD":
-            logger.info(
-                "✓ Cloud mode detected - skipping embedding model warmup (handled by edge worker)"
-            )
-            logger.info(
-                "✓ Cloud mode: ML models will NOT be loaded (queued to edge worker via Redis)"
-            )
-        else:
-            # Warmup embedding model to avoid cold start latency (EDGE mode only)
-            logger.info("Edge mode: Loading ML models for local processing")
+def _build_lifespan(mcp_server, *, test_mode: bool):
+    @asynccontextmanager
+    async def lifespan(app: FastAPI):
+        if not test_mode:
+            settings = get_settings()
+            _validate_production(settings)
+            for problem in token_problems():
+                logger.warning("Auth configuration: %s", problem)
             try:
-                from .shared.embeddings import EmbeddingService
+                from .events.hooks import register_all_hooks
 
-                embedding_service = EmbeddingService()
-                if embedding_service.warmup():
-                    logger.info("✓ Embedding model warmed up successfully")
-                else:
-                    logger.warning(
-                        "⚠ Embedding model warmup failed - first encoding may be slow"
-                    )
-            except Exception as e:
-                logger.warning(
-                    f"Embedding model warmup failed: {e} - first encoding may be slow"
-                )
+                register_all_hooks()
+            except Exception as exc:
+                logger.error("Failed to register event hooks: %s", exc, exc_info=True)
+            logger.info("Pharos started (MODE=%s, ENV=%s)", settings.MODE, settings.ENV)
+        # The mounted MCP app does not receive this lifespan; its session
+        # manager must run for the app's whole lifetime.
+        async with mcp_server.session_manager.run():
+            yield
+        logger.info("Pharos shutting down")
 
-        # Initialize Redis cache connection (lazy - will connect on first use)
-        try:
-            from .shared.cache import cache
-
-            if cache.redis is None:
-                logger.warning(
-                    "Redis client not initialized - check REDIS_URL environment variable"
-                )
-            else:
-                # Don't ping on startup - let it connect on first use
-                # This avoids blocking startup on Redis cold starts (5-15s on Upstash free tier)
-                logger.info("✓ Redis cache initialized (will connect on first use)")
-        except Exception as e:
-            logger.warning(
-                f"Redis cache initialization failed: {e} - caching will be disabled"
-            )
-
-    # Register event hooks for automatic data consistency
-    try:
-        from .events.hooks import register_all_hooks
-
-        register_all_hooks()
-        logger.info(
-            "Event system initialized - all hooks registered for automatic data consistency"
-        )
-    except Exception as e:
-        logger.error(f"Failed to register event hooks: {e}", exc_info=True)
-
-    logger.info("Neo Alexandria 2.0 startup complete")
-
-    async with mcp_native.session_manager.run():
-        yield
-
-    # Shutdown
-    logger.info("Shutting down Neo Alexandria 2.0...")
+    return lifespan
 
 
-def create_app() -> FastAPI:
-    """
-    Create and configure the FastAPI application instance.
-
-    Sets up the application with:
-    - Database table creation for SQLite environments
-    - All feature routers (resources, curation, search, authority, classification)
-    - Application metadata and versioning
-    - Event system and Redis cache initialization via lifespan
-
-    Returns:
-        FastAPI: Configured application instance ready for deployment
-    """
-    # Initialize database using shared kernel
-    # Skip database initialization during tests - test fixtures handle it
-    import os
-
-    # In test mode, create a minimal app without lifespan to avoid blocking
-    is_test_mode = os.getenv("TESTING", "").lower() in ("true", "1", "yes")
-
-    if not is_test_mode:
-        settings = get_settings()
-        init_database(settings.get_database_url(), settings.ENV)
-        app = FastAPI(title="Neo Alexandria 2.0", version="0.4.0", lifespan=lifespan)
-    else:
-        # Test mode: skip the heavy startup path, but the native MCP server's
-        # session manager still must run for the whole app lifetime, or every
-        # request to the mounted /mcp sub-app 500s (mounted sub-apps do not
-        # receive the parent app's lifespan automatically).
-        @asynccontextmanager
-        async def _test_mode_lifespan(app: FastAPI):
-            from .modules.mcp import mcp_native
-
-            async with mcp_native.session_manager.run():
-                yield
-
-        app = FastAPI(
-            title="Neo Alexandria 2.0", version="0.4.0", lifespan=_test_mode_lifespan
-        )
-
-    # Add CORS middleware to allow frontend connections
-    settings = get_settings() if not is_test_mode else None
-    allowed_origins = (
-        settings.ALLOWED_ORIGINS
-        if settings
-        else ["http://localhost:3000", "http://localhost:5173"]
-    )
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=allowed_origins,
-        allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
-    )
-
-    # CSRF middleware disabled for API-only service
-    # API authentication via Bearer tokens provides sufficient protection
-    # CSRF is primarily needed for cookie-based authentication in web apps
-    # Uncomment below if adding cookie-based authentication:
-    #
-    # try:
-    #     from .middleware.csrf import CSRFMiddleware
-    #     app.add_middleware(CSRFMiddleware)
-    #     logger.info("✓ CSRF protection middleware registered")
-    # except Exception as e:
-    #     logger.error(f"✗ Failed to register CSRF middleware: {e}")
-
-    # Add authentication middleware
+def _install_auth_middleware(app: FastAPI) -> None:
     @app.middleware("http")
     async def authentication_middleware(request: Request, call_next):
-        """
-        Middleware to enforce authentication on all endpoints except excluded paths.
-
-        Supports:
-        - PHAROS_ADMIN_TOKEN for admin access
-        - Test bypass for development
-        - Excluded paths for public endpoints
-        """
-        # Skip authentication for OPTIONS requests (CORS preflight)
-        if request.method == "OPTIONS":
+        path = request.url.path
+        if request.method == "OPTIONS" or is_public(path):
             return await call_next(request)
 
-        from fastapi import HTTPException, status
-        from fastapi.responses import JSONResponse
+        # Opt-in bypass for local tests only; refused in production at startup
+        # and ignored here when ENV=prod. Never driven by a request header.
+        if os.getenv("TEST_AUTH_BYPASS", "").lower() in ("true", "1", "yes") and get_settings().ENV != "prod":
+            from .shared.auth import ADMIN
 
-        # Define excluded paths.
-        # SECURITY: only unauthenticated health checks and API docs belong here.
-        # Data-bearing endpoints (search, job history, worker status) were
-        # previously public — they exposed the indexed corpus and operational
-        # internals to anyone with the URL. Ronin already sends the admin token,
-        # so re-protecting them costs nothing.
-        excluded_paths = [
-            "/health",  # Root health check for Render
-            "/docs",
-            "/openapi.json",
-            "/redoc",
-            "/api/monitoring/health",  # Health check endpoint (with /api prefix)
-            "/api/v1/ingestion/health",  # Ingestion health check
-            "/api/search/health",  # Search health endpoint
-            "/api/github/health",  # GitHub health endpoint
-        ]
+            request.state.principal = ADMIN
+            request.state.user = ADMIN.as_state()
+            return await call_next(request)
 
-        # Check if path is excluded
-        path = request.url.path
-        is_excluded = (
-            any(path.startswith(excluded) for excluded in excluded_paths)
-            or path.startswith("/auth/")
-            or path.startswith("/api/auth/")
-        )
-
-        if not is_excluded:
-            # Test authentication bypass.
-            # SECURITY: never honor a client-supplied header for this — a request
-            # header is attacker-controlled and would let anyone skip auth. The
-            # bypass is opt-in via a server-side env var AND only outside prod.
-            settings = get_settings()
-            test_bypass = (
-                settings.ENV != "prod"
-                and os.getenv("TEST_AUTH_BYPASS", "").lower() in ("true", "1", "yes")
-            )
-
-            if not test_bypass:
-                # Require authentication for all other endpoints
-                try:
-                    # Extract token from Authorization header
-                    authorization = request.headers.get("Authorization")
-                    if not authorization or not authorization.startswith("Bearer "):
-                        return JSONResponse(
-                            status_code=status.HTTP_401_UNAUTHORIZED,
-                            content={"detail": "Not authenticated"},
-                            headers={"WWW-Authenticate": "Bearer"},
-                        )
-
-                    token = authorization.split(" ")[1]
-
-                    # Check admin token
-                    admin_token = os.getenv("PHAROS_ADMIN_TOKEN")
-                    if admin_token and token == admin_token:
-                        # Valid admin token - create mock user for request state
-                        request.state.user = {
-                            "user_id": "admin",
-                            "username": "admin",
-                            "scopes": ["admin"],
-                            "tier": "admin",
-                        }
-                    else:
-                        return JSONResponse(
-                            status_code=status.HTTP_401_UNAUTHORIZED,
-                            content={"detail": "Invalid authentication token"},
-                            headers={"WWW-Authenticate": "Bearer"},
-                        )
-
-                except Exception as e:
-                    logger.error(f"Authentication error: {e}")
-                    return JSONResponse(
-                        status_code=status.HTTP_401_UNAUTHORIZED,
-                        content={"detail": "Could not validate credentials"},
-                        headers={"WWW-Authenticate": "Bearer"},
-                    )
-            else:
-                # Test bypass: create a mock user for testing
-                request.state.user = {
-                    "user_id": "testuser",
-                    "username": "testuser",
-                    "scopes": [],
-                    "tier": "free",
-                }
-
-        # Process request with error handling
-        try:
-            response = await call_next(request)
-            return response
-        except Exception as e:
-            logger.error(
-                f"Request processing error in authentication middleware: {e}",
-                exc_info=True,
-                extra={"path": request.url.path, "method": request.method},
-            )
-            from fastapi.responses import JSONResponse
-
+        token = parse_bearer(request.headers.get("Authorization"))
+        if token is None:
             return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error"},
+                status_code=401,
+                content={"detail": "Not authenticated"},
+                headers={"WWW-Authenticate": "Bearer"},
             )
+        principal = principal_for_token(token)
+        if principal is None:
+            logger.info("Rejected invalid bearer token for %s %s", request.method, path)
+            return JSONResponse(
+                status_code=401,
+                content={"detail": "Invalid authentication token"},
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+        if not allowed_for(principal, request.method, path):
+            return JSONResponse(status_code=403, content={"detail": "admin token required"})
+        request.state.principal = principal
+        request.state.user = principal.as_state()
+        return await call_next(request)
 
-    # Add rate limiting middleware
-    # TEMPORARILY DISABLED: Depends on auth middleware
-    # TODO: Re-enable after fixing auth module
-    pass  # Placeholder to maintain valid Python syntax
 
-    # Add connection pool monitoring middleware
-    # Track request count for sampling
-    _pool_check_counter = {"count": 0}
+def _install_pool_monitor(app: FastAPI) -> None:
+    counter = {"n": 0}
 
     @app.middleware("http")
     async def monitor_connection_pool(request: Request, call_next):
-        """
-        Middleware to monitor database connection pool usage.
-
-        Checks pool usage periodically (every 10 requests) to reduce overhead.
-        Logs warnings when pool capacity exceeds 90%.
-        """
-        # Only check pool every 10 requests to reduce overhead
-        _pool_check_counter["count"] += 1
-        should_check = _pool_check_counter["count"] % 10 == 0
-
-        if should_check:
-            # Check pool usage before request (with error handling)
+        counter["n"] += 1
+        if counter["n"] % 50 == 0:
             try:
                 warning = get_pool_usage_warning()
                 if warning:
                     logger.warning(
-                        f"Connection pool near capacity: {warning['pool_usage_percent']:.1f}% "
-                        f"({warning['checked_out']}/{warning['total_capacity']} connections in use)",
-                        extra=warning,
+                        "Connection pool near capacity: %.1f%% (%s/%s in use)",
+                        warning["pool_usage_percent"], warning["checked_out"], warning["total_capacity"],
                     )
-            except Exception as e:
-                # Don't fail request if pool monitoring fails
-                logger.error(f"Connection pool monitoring error: {e}")
+            except Exception as exc:
+                logger.debug("Pool monitoring failed: %s", exc)
+        return await call_next(request)
 
-        # Process request with error handling
-        try:
-            response = await call_next(request)
-            return response
-        except Exception as e:
-            logger.error(
-                f"Request processing error in connection pool middleware: {e}",
-                exc_info=True,
-                extra={"path": request.url.path, "method": request.method},
-            )
-            from fastapi.responses import JSONResponse
 
-            return JSONResponse(
-                status_code=500,
-                content={"detail": "Internal server error"},
-            )
+def create_app() -> FastAPI:
+    """Create and configure the FastAPI application."""
+    test_mode = _is_test_mode()
+    settings = get_settings()
+    if not test_mode:
+        init_database(settings.get_database_url(), settings.ENV)
 
-    # Ensure tables exist for SQLite environments without migrations.
-    # Postgres/prod uses Alembic, so a create_all failure there is not fatal —
-    # but it must never be swallowed silently (that hid real schema drift).
-    try:
-        Base.metadata.create_all(bind=sync_engine)
-    except Exception as e:
-        logger.warning(
-            f"Base.metadata.create_all failed (expected on prod/Postgres where "
-            f"Alembic owns schema; investigate if on SQLite): {e}"
-        )
+    from .modules.mcp.native_server import build_mcp_server
 
-    # Add root-level health check endpoint for Render
-    @app.get("/health")
+    mcp_server = build_mcp_server()
+    app = FastAPI(
+        title=APP_TITLE,
+        version=APP_VERSION,
+        description=(
+            "Code-intelligence backend for AI coding assistants: AST-aware repository "
+            "indexing, hybrid (keyword + vector + graph) retrieval and context assembly."
+        ),
+        lifespan=_build_lifespan(mcp_server, test_mode=test_mode),
+    )
+    app.state.mcp_server = mcp_server
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.ALLOWED_ORIGINS,
+        allow_credentials=False,  # bearer tokens only; no cookies
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "Mcp-Session-Id"],
+    )
+    _install_pool_monitor(app)
+    _install_auth_middleware(app)
+
+    # Local / test convenience: SQLite gets tables directly. PostgreSQL
+    # schema is managed exclusively by Alembic.
+    engine = shared_db.sync_engine
+    if engine is not None and engine.dialect.name == "sqlite":
+        Base.metadata.create_all(bind=engine)
+
+    @app.get("/health", tags=["meta"])
     async def root_health_check():
-        """
-        Root-level health check endpoint for Render deployment.
-        
-        This endpoint is required by Render's health check system.
-        Returns a simple status response without database checks to ensure
-        fast response times during deployment.
-        """
-        return {"status": "healthy", "service": "pharos-api"}
+        """Liveness probe (no dependencies checked)."""
+        return {"status": "healthy", "service": "pharos-api", "version": APP_VERSION}
 
-    # Register modular vertical slices (Collections, Resources, Search, and all modules)
-    # This must happen before processing requests to ensure event handlers are registered
-    logger.info("Registering modular vertical slices...")
     register_all_modules(app)
 
-    # Mount the native MCP server (real MCP protocol, streamable-HTTP
-    # transport) at exactly "/mcp". native_server.py builds FastMCP with
-    # streamable_http_path="/", so mounting its app at "/mcp" here serves at
-    # "/mcp" and NOT "/mcp/mcp". Auth middleware still applies — "/mcp" is
-    # not in excluded_paths, so MCP clients must send the bearer token.
-    try:
-        from .modules.mcp.native_server import get_streamable_http_app
+    app.mount("/mcp", mcp_server.streamable_http_app())
 
-        app.mount("/mcp", get_streamable_http_app())
-        logger.info("✓ Mounted native MCP server at /mcp")
-    except Exception as e:
-        logger.error(f"✗ Failed to mount native MCP server: {e}", exc_info=True)
-        settings_for_mcp = get_settings() if not is_test_mode else None
-        if settings_for_mcp and settings_for_mcp.ENV == "prod":
-            raise RuntimeError(
-                f"Refusing to start: native MCP server failed to mount: {e}"
-            )
-
-    # Set up performance monitoring
-    if not is_test_mode:
+    if not test_mode:
         setup_monitoring(app)
-
-    logger.info("Application initialization complete")
-
     return app
 
 
-# Never create app at module level - always use create_app() function
-# This prevents circular imports and blocking during test discovery
+# Never create the app at import time; use create_app() (see app/main.py).
 app = None

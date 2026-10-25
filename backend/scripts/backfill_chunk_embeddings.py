@@ -119,7 +119,7 @@ def main():
         print(f"  Failed: {failed}")
         print(f"\nNow test search:")
         print(f'  curl -X POST "https://pharos-cloud-api.onrender.com/api/search/advanced" \\')
-        print(f'    -H "Authorization: Bearer 4bad61a35f5d570014f9fa2a74ac51c19a35e9185c6f1e2987f96e49eefd3c74" \\')
+        print(f'    -H "Authorization: Bearer <REDACTED-PHAROS_ADMIN_TOKEN-rotate>" \\')
         print(f'    -H "Content-Type: application/json" \\')
         print(f'    -d \'{{"query": "message translator", "strategy": "parent-child", "top_k": 5}}\'')
         

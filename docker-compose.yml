@@ -1,0 +1,67 @@
+# Local PHAROS stack: PostgreSQL + pgvector, Redis, the API and an ingestion worker.
+#
+#   cp backend/config/.env.example .env      # then set PHAROS_ADMIN_TOKEN / PHAROS_READ_TOKEN
+#   docker compose up --build -d
+#   curl -s localhost:8000/health
+#
+# Credentials below are for this local stack only. Published ports are bound to 127.0.0.1:
+# Redis has no password, and the database password is public, so neither may be reachable from
+# the network.
+
+services:
+  db:
+    image: pgvector/pgvector:0.8.0-pg16
+    environment:
+      POSTGRES_USER: pharos
+      POSTGRES_PASSWORD: pharos
+      POSTGRES_DB: pharos
+    ports: ["127.0.0.1:5432:5432"]
+    volumes: ["pgdata:/var/lib/postgresql/data"]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pharos -d pharos"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  redis:
+    image: redis:7.4-alpine
+    ports: ["127.0.0.1:6379:6379"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 2s
+      retries: 30
+
+  api:
+    build: ./backend
+    env_file: [{ path: .env, required: false }]
+    environment:
+      DATABASE_URL: postgresql://pharos:pharos@db:5432/pharos
+      REDIS_URL: redis://redis:6379/0
+      MODE: ${MODE:-CLOUD}
+      EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-hash}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-1}
+    ports: ["127.0.0.1:8000:8000"]
+    depends_on:
+      db: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  # Same image; claims durable jobs from PostgreSQL, woken by Redis.
+  worker:
+    build: ./backend
+    entrypoint: ["python", "-m", "app.workers.ingest_worker"]
+    env_file: [{ path: .env, required: false }]
+    environment:
+      DATABASE_URL: postgresql://pharos:pharos@db:5432/pharos
+      REDIS_URL: redis://redis:6379/0
+      MODE: ${MODE:-CLOUD}
+      EMBEDDING_BACKEND: ${EMBEDDING_BACKEND:-hash}
+    depends_on:
+      api: { condition: service_healthy }   # the API container runs the migrations
+
+volumes:
+  pgdata:

@@ -166,6 +166,7 @@ class TestChunkingPerformance:
 class TestGraphExtractionPerformance:
     """Test graph extraction performance meets requirements."""
 
+    @pytest.mark.xfail(strict=True, reason="no entity extractor works offline ('llm' needs an AI service, 'spacy' needs spaCy + en_core_web_sm); see test_extraction_without_extractor_reports_unavailable")
     def test_graph_extraction_100_chunks_under_5_minutes(
         self, db_session: Session, graph_service: GraphExtractionService
     ):
@@ -303,6 +304,7 @@ class TestGraphExtractionPerformance:
 class TestSearchPerformance:
     """Test search performance meets requirements."""
 
+    @pytest.mark.xfail(strict=True, reason="parent-child search is PostgreSQL + pgvector SQL and this suite runs on in-memory SQLite; covered on PostgreSQL by tests/codeintel/test_legacy_search_pg.py")
     @performance_limit(max_ms=200)
     def test_parent_child_retrieval_under_200ms(
         self, db_session: Session, search_service: SearchService

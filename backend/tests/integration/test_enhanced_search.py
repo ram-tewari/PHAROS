@@ -7,6 +7,8 @@ and question-based retrieval (Reverse HyDE).
 **Validates: Requirements 8.1-8.10, 9.1-9.10, 3.7**
 """
 
+import pytest
+
 from unittest.mock import Mock, patch
 from sqlalchemy.orm import Session
 
@@ -23,6 +25,7 @@ from app.modules.search.service import SearchService
 class TestParentChildRetrieval:
     """Test parent-child retrieval strategy."""
 
+    @pytest.mark.xfail(strict=True, reason="parent-child search is PostgreSQL + pgvector SQL and this suite runs on in-memory SQLite; covered on PostgreSQL by tests/codeintel/test_legacy_search_pg.py")
     def test_parent_child_search_basic(self, db_session: Session):
         """
         Test basic parent-child retrieval with sample data.
@@ -87,6 +90,7 @@ class TestParentChildRetrieval:
         db_session.delete(resource)
         db_session.commit()
 
+    @pytest.mark.xfail(strict=True, reason="parent-child search is PostgreSQL + pgvector SQL and this suite runs on in-memory SQLite; covered on PostgreSQL by tests/codeintel/test_legacy_search_pg.py")
     def test_parent_child_search_with_filters(self, db_session: Session):
         """
         Test parent-child retrieval with resource filters.
@@ -158,6 +162,7 @@ class TestParentChildRetrieval:
         db_session.delete(book)
         db_session.commit()
 
+    @pytest.mark.xfail(strict=True, reason="parent-child search is PostgreSQL + pgvector SQL and this suite runs on in-memory SQLite; covered on PostgreSQL by tests/codeintel/test_legacy_search_pg.py")
     def test_parent_child_search_deduplication(self, db_session: Session):
         """
         Test that multiple chunks from same resource are deduplicated.
@@ -286,8 +291,9 @@ class TestGraphRAGRetrieval:
         assert "graph_path" in result
         assert "score" in result
 
-        # Verify chunk is linked via provenance
-        assert result["chunk"].id == chunk.id
+        # Verify chunk is linked via provenance (results are JSON-shaped dicts)
+        assert result["chunk"]["id"] == str(chunk.id)
+        assert result["entities"][0]["name"] in {"Neural Networks", "Deep Learning"}
 
         # Cleanup
         db_session.delete(relationship)

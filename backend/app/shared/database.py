@@ -16,6 +16,8 @@ import time
 import logging
 import os
 
+from .db_url import asyncpg_ssl_mode, database_kind, normalize_database_url
+
 logger = logging.getLogger(__name__)
 
 # Type variables for generic decorator
@@ -74,12 +76,7 @@ def get_database_type(
         # Use environment variable directly to avoid circular import
         database_url = _get_database_url_from_env()
 
-    if database_url.startswith("sqlite"):
-        return "sqlite"
-    elif database_url.startswith("postgresql"):
-        return "postgresql"
-    else:
-        raise ValueError(f"Unsupported database type in URL: {database_url}")
+    return database_kind(database_url)
 
 
 def create_database_engine(
@@ -109,52 +106,17 @@ def create_database_engine(
         SQLAlchemy Engine configured with database-specific parameters
     """
     db_type = get_database_type(database_url)
-
-    # ========================================================================
-    # CRITICAL: Convert URL to use appropriate driver
-    # ========================================================================
-    # NeonDB and other serverless PostgreSQL providers use standard postgresql://
-    # URLs, but we need to convert them to use asyncpg (async) or psycopg2 (sync)
-    # drivers for proper connection handling.
-    
-    if is_async:
-        # Async: use aiosqlite for SQLite, asyncpg for PostgreSQL
-        if database_url.startswith("sqlite:///"):
-            database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///")
-        elif database_url.startswith("postgresql://"):
-            # NeonDB provides postgresql:// URLs - convert to asyncpg
-            database_url = database_url.replace(
-                "postgresql://", "postgresql+asyncpg://"
-            )
-            logger.info("Converted PostgreSQL URL to use asyncpg driver (async)")
-        elif database_url.startswith("postgresql+psycopg2://"):
-            database_url = database_url.replace(
-                "postgresql+psycopg2://", "postgresql+asyncpg://"
-            )
-            logger.info("Converted psycopg2 URL to use asyncpg driver (async)")
-    else:
-        # Sync: use default sqlite driver, psycopg2 for PostgreSQL
-        if (
-            database_url.startswith("postgresql://")
-            and "+psycopg2" not in database_url
-            and "+asyncpg" not in database_url
-        ):
-            # NeonDB provides postgresql:// URLs - convert to psycopg2
-            database_url = database_url.replace(
-                "postgresql://", "postgresql+psycopg2://"
-            )
-            logger.info("Converted PostgreSQL URL to use psycopg2 driver (sync)")
-        elif database_url.startswith("postgresql+asyncpg://"):
-            database_url = database_url.replace(
-                "postgresql+asyncpg://", "postgresql+psycopg2://"
-            )
-            logger.info("Converted asyncpg URL to use psycopg2 driver (sync)")
+    # Explicit driver selection (psycopg2 sync / asyncpg async). See db_url.py
+    # for why relying on SQLAlchemy's default driver is unsafe.
+    raw_url = database_url
+    database_url = normalize_database_url(raw_url, async_driver=is_async)
 
     # Common parameters
-    common_params = {
-        "echo": True if env == "dev" else False,
-        "echo_pool": env == "dev",  # Only log pool events in dev
-    }
+    # SQL echo is opt-in: logging every statement (with bound parameters,
+    # which include embeddings and repository content) is too noisy and too
+    # revealing to be a default, even in dev.
+    echo = os.getenv("DB_ECHO", "").lower() in ("1", "true", "yes")
+    common_params = {"echo": echo, "echo_pool": echo}
 
     # Database-specific parameters
     if db_type == "postgresql":
@@ -223,14 +185,15 @@ def create_database_engine(
                 # SQLAlchemy manages its own connection pool via pool_size/max_overflow
             }
             
-            # SSL Configuration
-            if is_neondb:
-                # NeonDB requires SSL with SNI routing
-                connect_args["ssl"] = "require"  # Enforce SSL for NeonDB
-                logger.info("NeonDB detected: SSL required, SNI routing enabled")
+            # SSL: an explicit ?sslmode= in the URL wins; Neon always requires
+            # TLS; anything else uses TLS when the server offers it.
+            url_ssl = asyncpg_ssl_mode(raw_url)
+            if url_ssl is not None:
+                connect_args["ssl"] = url_ssl
+            elif is_neondb:
+                connect_args["ssl"] = "require"
             else:
-                # Other PostgreSQL providers (Render, AWS RDS, etc.)
-                connect_args["ssl"] = "prefer"  # Use SSL if available
+                connect_args["ssl"] = "prefer"
             
             engine_params["connect_args"] = connect_args
         else:
@@ -260,14 +223,10 @@ def create_database_engine(
             connect_args["keepalives_interval"] = 10  # Keepalive probe interval
             connect_args["keepalives_count"] = 5  # Number of keepalive probes
             
-            # SSL Configuration
-            if is_neondb:
-                # NeonDB requires SSL with SNI routing
-                connect_args["sslmode"] = "require"  # Enforce SSL for NeonDB
-                logger.info("NeonDB detected: SSL required, SNI routing enabled")
-            else:
-                # Other PostgreSQL providers (Render, AWS RDS, etc.)
-                connect_args["sslmode"] = "prefer"  # Use SSL if available
+            # SSL: libpq reads ?sslmode= from the URL itself; only set a
+            # default when the URL does not specify one.
+            if "sslmode=" not in raw_url:
+                connect_args["sslmode"] = "require" if is_neondb else "prefer"
             
             engine_params["connect_args"] = connect_args
     else:  # sqlite
@@ -485,50 +444,19 @@ def _setup_event_listeners():
 
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """
-    Async database dependency for FastAPI dependency injection with retry logic.
+    Async database dependency for FastAPI dependency injection.
 
-    Provides an async database session that is automatically created and closed
-    for each request. Includes retry logic for serverless database wake-up.
-
-    Yields:
-        AsyncSession: SQLAlchemy async database session
+    Yields exactly once. (A previous version retried *after* the yield, so an
+    error raised inside the request handler re-entered the generator and made
+    it yield a second time, which FastAPI turns into a RuntimeError.) Cold
+    starts of serverless Postgres are handled by ``pool_pre_ping`` and the
+    connect timeout configured in :func:`create_database_engine`.
     """
     if AsyncSessionLocal is None:
         raise RuntimeError("Database not initialized. Call init_database() first.")
 
-    # Retry configuration for session creation (handles NeonDB auto-suspend)
-    max_retries = 3
-    initial_backoff = 1.0
-    backoff_multiplier = 2.0
-
-    last_error = None
-    backoff = initial_backoff
-
-    for attempt in range(max_retries):
-        try:
-            async with AsyncSessionLocal() as session:
-                yield session
-                return  # Success!
-
-        except (OperationalError, DBAPIError) as e:
-            last_error = e
-
-            # Check if this is a connection refused error (NeonDB auto-suspend)
-            if _is_connection_refused_error(e) and attempt < max_retries - 1:
-                logger.warning(
-                    f"Database session creation failed on attempt {attempt + 1}/{max_retries}. "
-                    f"Retrying after {backoff:.1f}s (serverless database may be waking up)..."
-                )
-                await asyncio.sleep(backoff)
-                backoff *= backoff_multiplier
-                continue
-
-            # Not a connection refused error, or out of retries
-            raise
-
-    # If we get here, all retries failed
-    if last_error:
-        raise last_error
+    async with AsyncSessionLocal() as session:
+        yield session
 
 
 def get_sync_db() -> Generator[OrmSession, None, None]:

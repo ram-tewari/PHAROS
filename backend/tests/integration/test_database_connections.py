@@ -7,6 +7,8 @@ and error handling for connection failures.
 Requirements: 2.1, 2.4, 8.1
 """
 
+import os
+
 import pytest
 from unittest.mock import patch, MagicMock
 
@@ -53,63 +55,56 @@ class TestSQLiteConnection:
 class TestPostgreSQLConnection:
     """Test PostgreSQL database connection."""
 
-    def test_postgresql_url_construction(self):
-        """Test PostgreSQL URL construction from settings."""
+    def test_postgresql_url_construction(self, monkeypatch):
+        """With DATABASE_URL unset, a URL is assembled from POSTGRES_* parts."""
+        monkeypatch.delenv("DATABASE_URL", raising=False)
         settings = Settings(
+            _env_file=None,
             POSTGRES_SERVER="testhost",
             POSTGRES_USER="testuser",
             POSTGRES_PASSWORD="testpass",
             POSTGRES_DB="testdb",
             POSTGRES_PORT=5432,
-            DATABASE_URL="postgresql://placeholder",  # Trigger PostgreSQL mode
         )
 
         database_url = settings.get_database_url()
 
-        # Verify URL format
-        assert (
-            database_url
-            == "postgresql+asyncpg://testuser:testpass@testhost:5432/testdb"
-        )
+        # Driver selection happens later (app.shared.db_url), not here.
+        assert database_url == "postgresql://testuser:testpass@testhost:5432/testdb"
         assert get_database_type(database_url) == "postgresql"
 
-    def test_postgresql_url_with_custom_port(self):
+    def test_postgresql_url_with_custom_port(self, monkeypatch):
         """Test PostgreSQL URL with custom port."""
+        monkeypatch.delenv("DATABASE_URL", raising=False)
         settings = Settings(
+            _env_file=None,
             POSTGRES_SERVER="localhost",
             POSTGRES_USER="user",
             POSTGRES_PASSWORD="pass",
             POSTGRES_DB="db",
             POSTGRES_PORT=5433,
-            DATABASE_URL="postgresql://placeholder",
         )
 
         database_url = settings.get_database_url()
 
-        assert "5433" in database_url
+        assert ":5433/" in database_url
         assert get_database_type(database_url) == "postgresql"
 
     @pytest.mark.skipif(
-        True,  # Skip by default - requires actual PostgreSQL instance
-        reason="Requires PostgreSQL instance - run manually with real database",
+        not os.getenv("PHAROS_TEST_DATABASE_URL"),
+        reason="set PHAROS_TEST_DATABASE_URL to a PostgreSQL database to run",
     )
     def test_postgresql_connection_real(self):
-        """Test actual PostgreSQL connection (manual test only)."""
-        # This test requires a real PostgreSQL instance
-        # Set environment variables before running:
-        # POSTGRES_SERVER=localhost
-        # POSTGRES_USER=neo_user
-        # POSTGRES_PASSWORD=neo_password
-        # POSTGRES_DB=neo_alexandria
+        """init_database() connects to a real PostgreSQL server and runs a query."""
+        from sqlalchemy import text
 
-        settings = Settings(DATABASE_URL="postgresql://placeholder")
-        database_url = settings.get_database_url()
+        from app.shared import database
 
-        # Initialize database
-        init_database(database_url, env="dev")
-
-        # Verify database type
+        database_url = os.environ["PHAROS_TEST_DATABASE_URL"]
         assert get_database_type(database_url) == "postgresql"
+        init_database(database_url, env="dev")
+        with database.sync_engine.connect() as conn:
+            assert conn.execute(text("SELECT 1")).scalar_one() == 1
 
 
 class TestDatabaseConnectionErrors:
@@ -117,7 +112,7 @@ class TestDatabaseConnectionErrors:
 
     def test_invalid_database_url_raises_error(self):
         """Test that invalid database URL raises ValueError."""
-        with pytest.raises(ValueError, match="Unsupported database type"):
+        with pytest.raises(ValueError, match="Unsupported database"):
             get_database_type("mysql://localhost/db")
 
     def test_connection_failure_logs_and_raises(self):
@@ -160,22 +155,28 @@ class TestDatabaseConnectionErrors:
 
         assert url == "sqlite:///./test.db"
 
-    def test_get_database_url_with_postgresql_constructs_url(self):
-        """Test that PostgreSQL URLs are constructed from components."""
+    def test_explicit_postgresql_database_url_wins_over_parts(self):
+        """An explicit DATABASE_URL is never replaced by one built from POSTGRES_*.
+
+        (It used to be: any PostgreSQL DATABASE_URL was rebuilt from the
+        POSTGRES_* defaults, i.e. localhost, so Neon/CI URLs were ignored.)
+        """
         settings = Settings(
             POSTGRES_SERVER="host",
             POSTGRES_USER="user",
             POSTGRES_PASSWORD="pass",
             POSTGRES_DB="db",
             POSTGRES_PORT=5432,
-            DATABASE_URL="postgresql://anything",  # Trigger PostgreSQL mode
+            DATABASE_URL="postgresql://real:secret@neon.example/prod",
         )
 
-        url = settings.get_database_url()
+        assert settings.get_database_url() == "postgresql://real:secret@neon.example/prod"
 
-        # Should construct new URL from components
-        assert url == "postgresql+asyncpg://user:pass@host:5432/db"
-        assert "asyncpg" in url  # Verify async driver
+    def test_explicit_sqlite_database_url_wins_over_postgres_password(self):
+        """Setting DATABASE_URL to the SQLite default still means SQLite."""
+        settings = Settings(DATABASE_URL="sqlite:///./backend.db", POSTGRES_PASSWORD="pass")
+
+        assert settings.get_database_url() == "sqlite:///./backend.db"
 
 
 class TestDatabaseTypeDetection:
@@ -198,10 +199,10 @@ class TestDatabaseTypeDetection:
 
     def test_unsupported_database_type_raises_error(self):
         """Test that unsupported database types raise ValueError."""
-        with pytest.raises(ValueError, match="Unsupported database type"):
+        with pytest.raises(ValueError, match="Unsupported database"):
             get_database_type("mysql://localhost/db")
 
-        with pytest.raises(ValueError, match="Unsupported database type"):
+        with pytest.raises(ValueError, match="Unsupported database"):
             get_database_type("mongodb://localhost/db")
 
 

@@ -11,7 +11,7 @@
 1. ✅ Docker build successful
 2. ✅ All dependencies installed
 3. ✅ ENV = `prod` (fixed)
-4. ✅ JWT_SECRET_KEY = `11a7da6fb545...` (fixed)
+4. ✅ JWT_SECRET_KEY = `<REDACTED-JWT_SECRET_KEY-rotate>...` (fixed)
 5. ✅ Code deployed to Render
 6. ✅ Database and Redis ready
 
@@ -64,7 +64,7 @@ Value: neondb_owner
 #### Variable 4: POSTGRES_PASSWORD
 ```
 Key: POSTGRES_PASSWORD
-Value: npg_2Lv8pxVJzgyd
+Value: <REDACTED-NEON_PASSWORD-rotate>
 ```
 **Why**: Settings validation requires database password
 
@@ -102,10 +102,10 @@ Use this to quickly add all variables:
 ✅ Already Set:
 - MODE = CLOUD
 - ENV = prod
-- DATABASE_URL = postgresql+asyncpg://neondb_owner:npg_2Lv8pxVJzgyd@...
+- DATABASE_URL = postgresql+asyncpg://neondb_owner:<REDACTED-NEON_PASSWORD-rotate>@...
 - UPSTASH_REDIS_REST_URL = https://living-sculpin-96916.upstash.io
-- UPSTASH_REDIS_REST_TOKEN = gQAAAAAAAXqUAAIncDFmMDExYmFjN2Y1ZjQ0ZDY2Yjc0NWE1NTBhMzg2ZDg5M3AxOTY5MTY
-- JWT_SECRET_KEY = 11a7da6fb545fc0d8d2ddd0ee03be15672799fa57128e0e55328d8750483bd79
+- UPSTASH_REDIS_REST_TOKEN = <REDACTED-rotate>
+- JWT_SECRET_KEY = <REDACTED-rotate>
 - PHAROS_ADMIN_TOKEN = (auto-generated)
 - MAX_QUEUE_SIZE = 10
 - TASK_TTL_SECONDS = 3600
@@ -119,7 +119,7 @@ Use this to quickly add all variables:
 1. ALLOWED_REDIRECT_URLS = ["https://pharos-cloud-api.onrender.com"]
 2. POSTGRES_SERVER = ep-flat-meadow-ahvsmoyw-pooler.c-3.us-east-1.aws.neon.tech
 3. POSTGRES_USER = neondb_owner
-4. POSTGRES_PASSWORD = npg_2Lv8pxVJzgyd
+4. POSTGRES_PASSWORD = <REDACTED-NEON_PASSWORD-rotate>
 5. POSTGRES_DB = neondb
 6. POSTGRES_PORT = 5432
 ```

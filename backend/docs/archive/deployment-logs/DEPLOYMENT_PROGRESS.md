@@ -10,7 +10,7 @@
 
 1. ✅ **ENV Variable**: Changed from `production` to `prod`
 2. ✅ **JWT_SECRET_KEY**: Set to secure 64-character hex
-   - Value: `11a7da6fb545fc0d8d2ddd0ee03be15672799fa57128e0e55328d8750483bd79`
+   - Value: `<REDACTED-JWT_SECRET_KEY-rotate>`
 3. ✅ **Docker Build**: Successful
 4. ✅ **Dependencies**: All installed
 5. ✅ **Database**: NeonDB connected
@@ -128,7 +128,7 @@ After this fix, you should have:
 - [x] **DATABASE_URL**: NeonDB connection string
 - [x] **UPSTASH_REDIS_REST_URL**: Upstash Redis URL
 - [x] **UPSTASH_REDIS_REST_TOKEN**: Upstash Redis token
-- [x] **JWT_SECRET_KEY**: `11a7da6fb545...` ✅ Fixed
+- [x] **JWT_SECRET_KEY**: `<REDACTED-JWT_SECRET_KEY-rotate>...` ✅ Fixed
 - [x] **PHAROS_ADMIN_TOKEN**: Auto-generated
 - [ ] **ALLOWED_REDIRECT_URLS**: `["https://pharos-cloud-api.onrender.com"]` ⚠️ **ADD NOW**
 - [x] **MAX_QUEUE_SIZE**: `10`

@@ -11,7 +11,6 @@ Also tests the enhanced health check endpoint that verifies:
 - Celery worker status
 """
 
-import pytest
 from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -156,12 +155,12 @@ def test_health_check_with_all_services_available(
     client: TestClient, db_session: Session
 ):
     """
-    Test health check when all services (database, Redis, Celery) are available.
+    Test health check when all services (database, Redis, ingestion queue) are available.
 
     Verifies:
     - Status is "healthy"
     - All components report healthy status
-    - Response includes database, redis, celery, and api components
+    - Response includes database, redis, ingestion, and api components
     """
     response = client.get("/api/monitoring/health")
 
@@ -178,7 +177,7 @@ def test_health_check_with_all_services_available(
     components = data["components"]
     assert "database" in components
     assert "redis" in components
-    assert "celery" in components
+    assert "ingestion" in components
     assert "api" in components
 
     # Database should be healthy (we have a working db_session)
@@ -260,43 +259,32 @@ def test_health_check_with_redis_unavailable(client: TestClient, db_session: Ses
         assert data["components"]["api"]["status"] == "healthy"
 
 
-def test_health_check_with_celery_unavailable(client: TestClient, db_session: Session):
+def test_health_check_degraded_when_ingestion_jobs_are_stuck(client: TestClient, db_session: Session):
     """
-    Test health check when Celery workers are unavailable.
-
-    Verifies:
-    - Status is "degraded" (not unhealthy - Celery is non-critical)
-    - Celery component reports unhealthy status
-    - Database and API still report healthy
-    - System continues to operate in degraded mode
+    A queued job nobody claims (or a running job that stopped heartbeating)
+    means no worker is making progress: overall status "degraded" (workers
+    are non-critical), the ingestion component says why, database/API stay
+    healthy.
     """
-    pytest.importorskip(
-        "celery", reason="celery not installed; health-check celery tests require celery"
-    )
-    # Mock Celery inspect to return empty stats (no workers)
-    with patch("app.tasks.celery_app.celery_app.control.inspect") as mock_inspect_func:
-        mock_inspect = MagicMock()
-        mock_inspect.stats.return_value = {}  # No workers
-        mock_inspect_func.return_value = mock_inspect
+    from datetime import datetime, timedelta, timezone
 
-        response = client.get("/api/monitoring/health")
+    from app.database.models import IngestionJob
 
-        assert response.status_code == 200
-        data = response.json()
+    db_session.add(IngestionJob(
+        repo_url="https://github.com/a/stuck", branch_key="", status="queued", attempts=0, max_attempts=3,
+        created_at=datetime.now(timezone.utc) - timedelta(hours=2),
+    ))
+    db_session.commit()
 
-        # Status should be degraded (not unhealthy)
-        assert data["status"] == "degraded"
-        assert "Celery" in data["message"] or "degraded" in data["message"]
+    data = client.get("/api/monitoring/health").json()
 
-        # Celery component should be unhealthy
-        assert data["components"]["celery"]["status"] == "unhealthy"
-        assert data["components"]["celery"]["worker_count"] == 0
-
-        # Database should still be healthy
-        assert data["components"]["database"]["status"] == "healthy"
-
-        # API should still be healthy
-        assert data["components"]["api"]["status"] == "healthy"
+    assert data["status"] == "degraded"
+    assert "ingestion jobs are stuck" in data["message"]
+    ingestion = data["components"]["ingestion"]
+    assert ingestion["status"] == "degraded" and ingestion["queued"] == 1
+    assert ingestion["oldest_queued_seconds"] > 3600
+    assert data["components"]["database"]["status"] == "healthy"
+    assert data["components"]["api"]["status"] == "healthy"
 
 
 def test_health_check_response_structure(client: TestClient, db_session: Session):
@@ -324,13 +312,14 @@ def test_health_check_response_structure(client: TestClient, db_session: Session
     components = data["components"]
 
     # Each component should have status and message
-    for component_name in ["database", "redis", "celery", "api"]:
+    for component_name in ["database", "redis", "ingestion", "api"]:
         assert component_name in components
         assert "status" in components[component_name]
         assert "message" in components[component_name]
 
-    # Celery should have worker_count
-    assert "worker_count" in components["celery"]
+    # The ingestion component reports the durable job queue
+    for key in ("queued", "running", "stale_running", "failed_last_24h"):
+        assert key in components["ingestion"]
 
     # NCF model should indicate removal (single-tenant optimization)
     assert "ncf_model" in components
