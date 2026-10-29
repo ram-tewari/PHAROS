@@ -22,11 +22,19 @@ import urllib.request
 from pathlib import Path
 
 REPO = "sentence-transformers/all-MiniLM-L6-v2"
-REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"
+# Public commit and file hashes, not credentials; the pragmas keep the secret
+# scanner from flagging them.
+REVISION = "1110a243fdf4706b3f48f1d95db1a4f5529b4d41"  # pragma: allowlist secret
 FILES = {
     # local name: (path in the Hugging Face repo, sha256)
-    "model.onnx": ("onnx/model.onnx", "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452"),
-    "tokenizer.json": ("tokenizer.json", "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037"),
+    "model.onnx": (
+        "onnx/model.onnx",
+        "6fd5d72fe4589f189f8ebc006442dbb529bb7ce38f8082112682524616046452",  # pragma: allowlist secret
+    ),
+    "tokenizer.json": (
+        "tokenizer.json",
+        "be50c3628f2bf5bb5e3a7f17b1f74611b2561a3a27eeab05e5aa30f411572037",  # pragma: allowlist secret
+    ),
 }
 DEFAULT_DIR = Path(__file__).resolve().parents[1] / "models" / "all-MiniLM-L6-v2"
 
