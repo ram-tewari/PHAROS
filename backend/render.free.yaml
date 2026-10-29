@@ -1,0 +1,83 @@
+# Render Blueprint: PHAROS on free tiers ($0/mo)
+#
+# One free Render web service runs the API *and* the ingestion worker (on a
+# thread, INGEST_WORKER_IN_PROCESS) against a free Neon Postgres. Embeddings
+# are all-MiniLM-L6-v2 on CPU via ONNX, downloaded at build time with pinned
+# hashes (scripts/fetch_onnx_model.py). No Redis: the worker polls Postgres.
+#
+# Free-tier behaviour to expect:
+# - The service sleeps after 15 min without HTTP traffic; the next request
+#   takes ~1 min to wake it. Neon then suspends 5 min later, so neither burns
+#   compute while idle. Jobs left queued while asleep run on the next wake.
+# - 0.1 CPU: indexing psf/requests (~750 chunks) takes a few minutes. A job
+#   interrupted by sleep is re-queued after INGESTION_JOB_STALE_SECONDS.
+# - 512 MB RAM: measured peak ~420 MB with EMBEDDING_ONNX_BATCH_SIZE=4 and
+#   uvicorn (no Gunicorn master). Keep WEB_CONCURRENCY at 1.
+# - No preDeployCommand on free plans, so migrations run in startCommand.
+#
+# Paid setup with a separate worker and the GPU edge machine: render.yaml.
+
+services:
+  - type: web
+    name: pharos
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: backend
+    branch: master
+    autoDeploy: true
+    healthCheckPath: /health
+    buildCommand: >-
+      pip install --require-hashes -r requirements-cloud.txt -r requirements-onnx.txt
+      && python scripts/fetch_onnx_model.py
+    # --forwarded-allow-ips: trust Render's proxy so redirects keep https.
+    startCommand: >-
+      alembic -c config/alembic.ini upgrade head
+      && exec uvicorn app.main:app --host 0.0.0.0 --port $PORT
+      --proxy-headers --forwarded-allow-ips '*'
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: ENV
+        value: prod
+      - key: MODE
+        value: CLOUD
+      - key: WEB_CONCURRENCY
+        value: 1
+      - key: MALLOC_ARENA_MAX  # glibc: fewer malloc arenas, less fragmentation
+        value: 2
+
+      # Neon connection string (sslmode=require). Set in the dashboard.
+      - key: DATABASE_URL
+        sync: false
+
+      # Bearer tokens (python -m app.cli gen-token). Admin: indexing, deletes.
+      # Read: search, context, MCP. Without them every request gets 401.
+      - key: PHAROS_ADMIN_TOKEN
+        sync: false
+      - key: PHAROS_READ_TOKEN
+        sync: false
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+      # This service's public hostname, e.g. ["pharos-xxxx.onrender.com"].
+      - key: MCP_ALLOWED_HOSTS
+        sync: false
+      - key: ALLOWED_ORIGINS
+        value: "[]"
+
+      - key: EMBEDDING_BACKEND
+        value: onnx
+      - key: EMBEDDING_ONNX_DIR
+        value: models/all-MiniLM-L6-v2
+      - key: EMBEDDING_MODEL_ID
+        value: all-MiniLM-L6-v2-onnx
+      - key: EMBEDDING_ONNX_BATCH_SIZE
+        value: 4
+      - key: EMBEDDING_ONNX_THREADS
+        value: 1
+
+      - key: INGEST_WORKER_IN_PROCESS
+        value: true
+      - key: WORKER_POLL_INTERVAL
+        value: 5

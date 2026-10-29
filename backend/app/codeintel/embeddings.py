@@ -378,7 +378,11 @@ def get_embedder(settings=None) -> Embedder | None:
         elif backend == "onnx":
             if not settings.EMBEDDING_ONNX_DIR:
                 raise ValueError("EMBEDDING_BACKEND=onnx requires EMBEDDING_ONNX_DIR")
-            embedder = OnnxEmbedder(settings.EMBEDDING_ONNX_DIR, settings.EMBEDDING_MODEL_ID)
+            embedder = OnnxEmbedder(
+                settings.EMBEDDING_ONNX_DIR,
+                settings.EMBEDDING_MODEL_ID,
+                batch_size=settings.EMBEDDING_ONNX_BATCH_SIZE,
+            )
         else:
             raise ValueError(f"Unknown EMBEDDING_BACKEND {backend!r}")
         _cached[key] = embedder

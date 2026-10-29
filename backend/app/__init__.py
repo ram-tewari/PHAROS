@@ -113,9 +113,24 @@ def _validate_production(settings) -> None:
         raise RuntimeError("TEST_AUTH_BYPASS must not be set in production")
 
 
+def _start_in_process_worker(settings):
+    """Run the ingestion worker on a daemon thread (INGEST_WORKER_IN_PROCESS)."""
+    if not settings.INGEST_WORKER_IN_PROCESS:
+        return None
+    import threading
+
+    from .workers.ingest_worker import Worker
+
+    worker = Worker()
+    threading.Thread(target=worker.run_forever, name="pharos-ingest-worker", daemon=True).start()
+    logger.info("Ingestion worker running in-process (%s)", worker.worker_id)
+    return worker
+
+
 def _build_lifespan(mcp_server, *, test_mode: bool):
     @asynccontextmanager
     async def lifespan(app: FastAPI):
+        worker = None
         if not test_mode:
             settings = get_settings()
             _validate_production(settings)
@@ -128,10 +143,13 @@ def _build_lifespan(mcp_server, *, test_mode: bool):
             except Exception as exc:
                 logger.error("Failed to register event hooks: %s", exc, exc_info=True)
             logger.info("Pharos started (MODE=%s, ENV=%s)", settings.MODE, settings.ENV)
+            worker = _start_in_process_worker(settings)
         # The mounted MCP app does not receive this lifespan; its session
         # manager must run for the app's whole lifetime.
         async with mcp_server.session_manager.run():
             yield
+        if worker is not None:
+            worker.stop()
         logger.info("Pharos shutting down")
 
     return lifespan
