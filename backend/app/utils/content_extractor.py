@@ -50,10 +50,21 @@ try:
 except Exception:  # pragma: no cover - optional dependency fallback
     Document = None  # type: ignore
 
-try:  # PDF extraction primary
-    import fitz  # type: ignore  # PyMuPDF
-except Exception:  # pragma: no cover - optional
-    fitz = None  # type: ignore
+# PDF extraction primary: PyMuPDF, imported on first use because importing it
+# costs ~180 MB resident, which every process would otherwise pay at startup.
+_FITZ_UNLOADED = object()
+fitz = _FITZ_UNLOADED  # type: ignore
+
+
+def _get_fitz():
+    global fitz
+    if fitz is _FITZ_UNLOADED:
+        try:
+            import fitz as _fitz  # type: ignore  # PyMuPDF
+        except Exception:  # pragma: no cover - optional
+            _fitz = None
+        fitz = _fitz
+    return fitz
 
 try:  # PDF extraction fallback
     from pdfminer.high_level import extract_text as pdfminer_extract_text  # type: ignore
@@ -245,9 +256,10 @@ def extract_pdf(content_bytes: bytes, extract_metadata: bool = False) -> Dict[st
     structured_metadata = {}
 
     # Primary: PyMuPDF
-    if fitz is not None:  # pragma: no cover - depends on optional lib
+    pymupdf = _get_fitz()
+    if pymupdf is not None:  # pragma: no cover - depends on optional lib
         try:
-            with fitz.open(stream=content_bytes, filetype="pdf") as doc:
+            with pymupdf.open(stream=content_bytes, filetype="pdf") as doc:
                 parts = []
                 current_offset = 0
 

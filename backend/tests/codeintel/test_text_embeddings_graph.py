@@ -66,6 +66,25 @@ def test_backend_resolution():
     assert resolve_backend("hash", "CLOUD", None) == "hash"
 
 
+def test_onnx_batch_size_comes_from_settings():
+    from types import SimpleNamespace
+
+    from app.codeintel.embeddings import OnnxEmbedder, get_embedder, reset_embedder_cache
+
+    settings = SimpleNamespace(
+        EMBEDDING_BACKEND="onnx", MODE="CLOUD", EDGE_EMBEDDING_URL=None, EDGE_EMBED_TOKEN=None,
+        EMBEDDING_MODEL_NAME="unused", EMBEDDING_ONNX_DIR="/models/mini", EMBEDDING_MODEL_ID="mini-onnx",
+        EMBEDDING_ONNX_BATCH_SIZE=4,
+    )
+    reset_embedder_cache()
+    try:
+        embedder = get_embedder(settings)  # the model loads lazily, so no files are needed
+        assert isinstance(embedder, OnnxEmbedder)
+        assert embedder.batch_size == 4 and embedder.model_id == "mini-onnx"
+    finally:
+        reset_embedder_cache()
+
+
 def test_http_embedder_reports_unreachable_server():
     e = HttpEmbedder("http://127.0.0.1:9", "nomic-ai/nomic-embed-text-v1", timeout=1)
     assert e.model_id == "nomic-ai/nomic-embed-text-v1+prefix"

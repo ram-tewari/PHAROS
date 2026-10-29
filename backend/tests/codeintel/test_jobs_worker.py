@@ -164,6 +164,28 @@ def test_worker_recovers_after_crash(session, ref, engine, codeintel_settings):
     assert final.status == "succeeded" and final.attempts == 2
 
 
+def test_in_process_worker_runs_jobs_on_a_thread(session, ref, engine, codeintel_settings, monkeypatch):
+    import time
+
+    from app import _start_in_process_worker
+
+    assert _start_in_process_worker(codeintel_settings) is None  # off by default
+    monkeypatch.setattr(codeintel_settings, "INGEST_WORKER_IN_PROCESS", True)
+    monkeypatch.setattr(codeintel_settings, "WORKER_POLL_INTERVAL", 1)
+    job = jobs.submit(session, ref).job
+    worker = _start_in_process_worker(codeintel_settings)
+    try:
+        deadline = time.monotonic() + 30
+        while time.monotonic() < deadline:
+            session.expire_all()
+            if session.get(IngestionJob, job.id).status == "succeeded":
+                break
+            time.sleep(0.2)
+        assert session.get(IngestionJob, job.id).status == "succeeded"
+    finally:
+        worker.stop()
+
+
 def test_duplicate_notifications_run_a_job_once(session, ref, engine, codeintel_settings):
     from app.workers.ingest_worker import process_job
 

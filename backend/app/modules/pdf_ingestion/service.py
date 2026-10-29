@@ -5,6 +5,7 @@ Business logic for PDF extraction, chunking, and annotation.
 Integrates with GraphRAG for conceptual linking.
 """
 
+import importlib.util
 import logging
 import uuid
 from datetime import datetime
@@ -13,12 +14,9 @@ from typing import List, Dict, Any, Optional, BinaryIO, TYPE_CHECKING
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, and_, or_
 
-# PDF extraction libraries
-try:
-    import fitz  # PyMuPDF
-    HAS_PYMUPDF = True
-except ImportError:
-    HAS_PYMUPDF = False
+# PDF extraction library. PyMuPDF is imported where it is used: importing it
+# costs ~180 MB resident, which every API process would otherwise pay.
+HAS_PYMUPDF = importlib.util.find_spec("fitz") is not None
 
 from ...database.models import (
     Resource,
@@ -181,6 +179,8 @@ class PDFIngestionService:
         pdf_bytes = file.read()
 
         # Open PDF with PyMuPDF
+        import fitz
+
         doc = fitz.open(stream=pdf_bytes, filetype="pdf")
 
         pages = []

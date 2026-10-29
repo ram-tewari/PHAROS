@@ -313,6 +313,10 @@ class Settings(BaseSettings):
     EDGE_EMBED_TOKEN: SecretStr | None = None
     EMBEDDING_ONNX_DIR: str | None = None
     EMBEDDING_MODEL_ID: str | None = None
+    # Texts per ONNX forward pass. Peak memory grows with it: with
+    # all-MiniLM-L6-v2 at 256 tokens, 32 peaks near 1 GB, 8 near 420 MB.
+    # Use 8 or less on 512 MB instances.
+    EMBEDDING_ONNX_BATCH_SIZE: int = Field(default=32, ge=1)
 
     # ── Code ingestion limits & safety (app/codeintel) ─────────────────────
     # Remote hosts the API may ask the worker to clone from (https only).
@@ -338,6 +342,10 @@ class Settings(BaseSettings):
 
     # Edge Worker Configuration
     WORKER_POLL_INTERVAL: int = 2  # Seconds between queue polls
+    # Run the ingestion worker on a thread inside the API process, for
+    # single-instance deployments with no separate worker (e.g. a free web
+    # service). Use with WEB_CONCURRENCY=1: every Gunicorn worker starts one.
+    INGEST_WORKER_IN_PROCESS: bool = False
     DEVICE: str | None = None  # Set automatically based on CUDA availability
 
     # Feedback Loop (Phase 6) — Heuristic Sieve & Local Extraction
