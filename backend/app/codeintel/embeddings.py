@@ -382,14 +382,40 @@ class EdgeFirstEmbedder(Embedder):
         self.timeout = timeout
         self.retry_after = retry_after
         self._headers = {"Authorization": f"Bearer {token}"}
+        self._client = None  # one keep-alive connection: a TLS handshake per query cost ~0.5 s through Funnel
+        self._client_lock = threading.Lock()
         self._skip_until = 0.0
         self.edge_calls = self.local_calls = 0
+
+    def _http(self):
+        import httpx
+
+        with self._client_lock:
+            if self._client is None:
+                self._client = httpx.Client(base_url=self.base_url, headers=self._headers, timeout=self.timeout,
+                                            limits=httpx.Limits(max_keepalive_connections=2, keepalive_expiry=300))
+            return self._client
+
+    def _reset_http(self) -> None:
+        with self._client_lock:
+            client, self._client = self._client, None
+        if client is not None:
+            client.close()
 
     def _edge(self, texts: list[str]) -> list[list[float]]:
         import httpx
 
-        resp = httpx.post(f"{self.base_url}/embed/batch", json={"texts": texts}, headers=self._headers,
-                          timeout=self.timeout)
+        try:
+            resp = self._http().post("/embed/batch", json={"texts": texts})
+        except httpx.TransportError:
+            # An idle connection the edge or the proxy closed: retry once on a
+            # fresh one before falling back (the fallback loads the local model).
+            self._reset_http()
+            try:
+                resp = self._http().post("/embed/batch", json={"texts": texts})
+            except Exception:
+                self._reset_http()
+                raise
         if resp.status_code != 200:
             raise EmbeddingUnavailable(f"edge returned HTTP {resp.status_code}")
         data = resp.json()
