@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased — learning phase 2: test homes and a leaner memory block
+
+### Added
+
+- **`testhome` miner** (L1): the existing test files a source file's changes add tests to, from
+  git history ("Tests for src/flask/ctx.py go in the existing tests/test_reqctx.py (12 of 30
+  commits)"). Test helpers, fixtures and `conftest.py` are excluded.
+
+### Changed
+
+- **`retrieve_context` memory block:** the brief is cut to its Conventions section (retrieval
+  already shows the layout and main modules; `get_repo_brief` still returns all of it), and test
+  homes for the retrieved files come first.
+- On the dev repositories (flask, ky; 16 tasks), against no memory: all-file recall 0.419 → 0.512
+  (8 tasks better, 1 worse), and the commits' test files found went from 3 to 9 of 31. Source-file
+  recall did not change (0.643 → 0.611, one task worse).
+
+### Fixed
+
+- Learning a single new miner family no longer fails with a `KeyError` when its items are retired.
+
 ## Unreleased — learning phase 2, stage 1: deterministic repository memory
 
 Evaluation protocol locked first: `docs/benchmarks/phase2-eval-protocol.md`. Not evaluated yet.

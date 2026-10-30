@@ -3,6 +3,7 @@
 import pytest
 
 from app.learning.miners import (
+    TEST_SUPPORT_RE,
     _deps_go,
     _deps_npm,
     _deps_python,
@@ -11,7 +12,7 @@ from app.learning.miners import (
     addition_pattern,
     case_style,
 )
-from app.learning.recall import glob_match
+from app.learning.recall import brief_conventions, glob_match
 
 
 @pytest.mark.parametrize("name,style", [
@@ -74,3 +75,19 @@ def test_addition_patterns(path, pattern):
 ])
 def test_glob_match(pattern, path, ok):
     assert glob_match(pattern, path) is ok
+
+
+@pytest.mark.parametrize("path,support", [
+    ("test/helpers/create-http-test-server.ts", True), ("tests/conftest.py", True),
+    ("tests/fixtures/app.py", True), ("cmd/testdata/x.golden", True),
+    ("test/hooks.ts", False), ("tests/test_helpers.py", False),
+])
+def test_test_support_files_are_not_test_homes(path, support):
+    assert bool(TEST_SUPPORT_RE.search(path)) is support
+
+
+def test_brief_conventions_keeps_only_the_conventions():
+    brief = ("# shop — repository brief (commit abc)\nLanguages (source): python 2 files\n\n## Layout\n- shop/\n"
+             "\n## Conventions\n- Tests live in tests/test_*.py.\n\n## Playbooks\n- add-plugin: steps\n")
+    assert brief_conventions(brief, "shop") == "# shop conventions\n- Tests live in tests/test_*.py.\n"
+    assert brief_conventions("# shop — repository brief\n\n## Layout\n- shop/\n", "shop") == ""
