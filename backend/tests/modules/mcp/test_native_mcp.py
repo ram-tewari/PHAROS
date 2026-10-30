@@ -90,7 +90,8 @@ async def test_tools_list_contains_expected_tools(native_mcp_server):
             result = await session.list_tools()
             names = {tool.name for tool in result.tools}
 
-    assert names == {"retrieve_context", "search_code", "find_symbol", "list_repositories"}
+    assert names == {"retrieve_context", "search_code", "find_symbol", "list_repositories", "get_repo_brief",
+                     "search_memory", "list_skills", "get_skill"}
 
 
 @pytest.mark.asyncio
