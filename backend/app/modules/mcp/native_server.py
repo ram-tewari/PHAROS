@@ -84,7 +84,9 @@ def build_mcp_server() -> FastMCP:
         description=(
             "Retrieve the code most relevant to a question about an indexed repository: "
             "ranked functions/classes with verified source, their callers/callees, and the "
-            "repository's coding rules, plus a Markdown rendering with path:line citations."
+            "repository's coding rules, plus a Markdown rendering with path:line citations. "
+            "Ask in plain words; optionally pass hints: identifiers or keywords you guess the code uses "
+            "(e.g. ['parse_url', 'redirect'])."
         )
     )
     def retrieve_context(
@@ -94,6 +96,7 @@ def build_mcp_server() -> FastMCP:
         include_code: bool = True,
         max_chars: int = 24000,
         profile_id: str | None = None,
+        hints: list[str] | None = None,
     ) -> dict[str, Any]:
         with session_scope() as db:
             try:
@@ -107,6 +110,7 @@ def build_mcp_server() -> FastMCP:
                         include_code=include_code,
                         max_chars=max(1000, min(max_chars, 400_000)),
                         profile_id=profile_id,
+                        hints=(hints or [])[:20] or None,
                     ),
                     fetch_token=secret(get_settings().GIT_CLONE_TOKEN),
                 )
@@ -116,7 +120,8 @@ def build_mcp_server() -> FastMCP:
     @server.tool(
         description=(
             "Search indexed code. mode: auto (default), keyword, dense, hybrid or graph. "
-            "Returns chunk pointers (path, lines, symbol) with retrieval evidence, no code."
+            "Returns chunk pointers (path, lines, symbol) with retrieval evidence, no code. "
+            "Optionally pass hints: identifiers or keywords you guess the code uses."
         )
     )
     def search_code(
@@ -126,6 +131,7 @@ def build_mcp_server() -> FastMCP:
         k: int = 10,
         languages: list[str] | None = None,
         path_prefix: str | None = None,
+        hints: list[str] | None = None,
     ) -> dict[str, Any]:
         from ...codeintel.context import hit_to_dict
 
@@ -141,6 +147,7 @@ def build_mcp_server() -> FastMCP:
                         languages=languages,
                         path_prefix=path_prefix,
                     ),
+                    hints=(hints or [])[:20] or None,
                 )
             except (ModeUnavailable, RepositoryNotFound) as exc:
                 return _error(exc)

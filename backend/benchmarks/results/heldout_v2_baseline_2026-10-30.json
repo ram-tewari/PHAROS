@@ -1,0 +1,4673 @@
+{
+ "dataset": {
+  "name": "pharos-heldout",
+  "version": 2,
+  "labeling": "Second locked test set: Go, Java and TypeScript repositories that no PHAROS benchmark or deployment had indexed, pinned at their branch heads on 2026-10-29. Queries and graded relevance were written by hand from reading the source; labels were checked against parser output only and the file was hashed before any retrieval ran on it. 'behavior' queries paraphrase what the code does without naming identifiers; 'identifier' queries name the API. Grade 2 = the implementation asked about; grade 1 = closely related. Single annotator who also builds the system: run each candidate change against this set once, after tuning on the dev set.",
+  "repositories": [
+   {
+    "name": "chi",
+    "url": "https://github.com/go-chi/chi",
+    "ref": "master",
+    "commit": "9f8adb1aabaa8a91180a821111d3f8e668d1c0bf",
+    "language": "go"
+   },
+   {
+    "name": "gson",
+    "url": "https://github.com/google/gson",
+    "ref": "main",
+    "commit": "57731049da3e415be3d5d34db1ca3b80f3c73810",
+    "language": "java"
+   },
+   {
+    "name": "immer",
+    "url": "https://github.com/immerjs/immer",
+    "ref": "main",
+    "commit": "75a290e44ba14bd723c8ef8546b6559c8ef3ae88",
+    "language": "typescript"
+   }
+  ]
+ },
+ "n_queries": 50,
+ "k": 10,
+ "repeats": 1,
+ "runs": {
+  "all-MiniLM-L6-v2-onnx": {
+   "embedder": {
+    "spec": "onnx",
+    "model_id": "all-MiniLM-L6-v2-onnx",
+    "semantic": true
+   },
+   "indexing": {
+    "chi": {
+     "wall_seconds": 12.19,
+     "files_indexed": 89,
+     "files_skipped": {
+      "not_source": 21
+     },
+     "chunks": 578,
+     "lines": 13152,
+     "source_bytes": 377806,
+     "graph": {
+      "edges": 1566,
+      "contains": 487,
+      "imports": 110,
+      "calls_resolved": 969,
+      "calls_unresolved": 1028,
+      "calls_ambiguous": 453,
+      "calls_by_resolution": {
+       "unique_name": 754,
+       "same_file": 211,
+       "imported_file": 4
+      }
+     },
+     "timings_s": {
+      "checkout": 0.016,
+      "parse": 0.158,
+      "embed": 9.46,
+      "db_write": 2.457,
+      "graph": 0.056,
+      "total": 12.185
+     },
+     "files_per_second": 7.3,
+     "chunks_per_second": 47.4,
+     "fallback_files": {
+      "go": 0
+     }
+    },
+    "gson": {
+     "wall_seconds": 218.05,
+     "files_indexed": 264,
+     "files_skipped": {
+      "not_source": 49
+     },
+     "chunks": 4345,
+     "lines": 57131,
+     "source_bytes": 2022078,
+     "graph": {
+      "edges": 8681,
+      "contains": 4081,
+      "imports": 987,
+      "calls_resolved": 3613,
+      "calls_unresolved": 6039,
+      "calls_ambiguous": 5618,
+      "calls_by_resolution": {
+       "same_file": 1382,
+       "imported_file": 1734,
+       "unique_name": 497
+      }
+     },
+     "timings_s": {
+      "checkout": 0.017,
+      "parse": 0.927,
+      "embed": 186.398,
+      "db_write": 30.115,
+      "graph": 0.525,
+      "total": 218.045
+     },
+     "files_per_second": 1.2,
+     "chunks_per_second": 19.9,
+     "fallback_files": {
+      "java": 0
+     }
+    },
+    "immer": {
+     "wall_seconds": 19.18,
+     "files_indexed": 57,
+     "files_skipped": {
+      "not_source": 112
+     },
+     "chunks": 474,
+     "lines": 17865,
+     "source_bytes": 461909,
+     "graph": {
+      "edges": 1010,
+      "contains": 417,
+      "imports": 52,
+      "calls_resolved": 541,
+      "calls_unresolved": 717,
+      "calls_ambiguous": 132,
+      "calls_by_resolution": {
+       "unique_name": 279,
+       "same_file": 244,
+       "imported_file": 18
+      }
+     },
+     "timings_s": {
+      "checkout": 0.08,
+      "parse": 0.258,
+      "embed": 15.738,
+      "db_write": 3.008,
+      "graph": 0.048,
+      "total": 19.175
+     },
+     "files_per_second": 3.0,
+     "chunks_per_second": 24.7,
+     "fallback_files": {
+      "javascript": 0,
+      "typescript": 0
+     }
+    }
+   },
+   "retrieval": {
+    "keyword": {
+     "overall": {
+      "n": 50,
+      "recall@5": {
+       "mean": 0.4733,
+       "ci95": [
+        0.3533,
+        0.6
+       ]
+      },
+      "recall@10": {
+       "mean": 0.5117,
+       "ci95": [
+        0.395,
+        0.6333
+       ]
+      },
+      "mrr": {
+       "mean": 0.4396,
+       "ci95": [
+        0.3139,
+        0.5694
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.4139,
+       "ci95": [
+        0.3087,
+        0.5202
+       ]
+      },
+      "success@1": {
+       "mean": 0.3,
+       "ci95": [
+        0.18,
+        0.42
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 42,
+       "recall@5": {
+        "mean": 0.373,
+        "ci95": [
+         0.254,
+         0.4921
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4187,
+        "ci95": [
+         0.2996,
+         0.5417
+        ]
+       },
+       "mrr": {
+        "mean": 0.3665,
+        "ci95": [
+         0.2425,
+         0.4984
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3286,
+        "ci95": [
+         0.2219,
+         0.4309
+        ]
+       },
+       "success@1": {
+        "mean": 0.2143,
+        "ci95": [
+         0.0952,
+         0.3333
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.8229,
+        "ci95": [
+         0.625,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.8618,
+        "ci95": [
+         0.6788,
+         0.9955
+        ]
+       },
+       "success@1": {
+        "mean": 0.75,
+        "ci95": [
+         0.375,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "chi": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.5196,
+        "ci95": [
+         0.3333,
+         0.7059
+        ]
+       },
+       "recall@10": {
+        "mean": 0.5539,
+        "ci95": [
+         0.3725,
+         0.7353
+        ]
+       },
+       "mrr": {
+        "mean": 0.5556,
+        "ci95": [
+         0.3529,
+         0.7647
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5153,
+        "ci95": [
+         0.3202,
+         0.6916
+        ]
+       },
+       "success@1": {
+        "mean": 0.4118,
+        "ci95": [
+         0.1765,
+         0.6471
+        ]
+       }
+      },
+      "gson": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.3137,
+        "ci95": [
+         0.1275,
+         0.5098
+        ]
+       },
+       "recall@10": {
+        "mean": 0.3137,
+        "ci95": [
+         0.1275,
+         0.5196
+        ]
+       },
+       "mrr": {
+        "mean": 0.2814,
+        "ci95": [
+         0.1049,
+         0.4824
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.2292,
+        "ci95": [
+         0.0882,
+         0.3848
+        ]
+       },
+       "success@1": {
+        "mean": 0.1765,
+        "ci95": [
+         0.0,
+         0.3529
+        ]
+       }
+      },
+      "immer": {
+       "n": 16,
+       "recall@5": {
+        "mean": 0.5938,
+        "ci95": [
+         0.3646,
+         0.8125
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6771,
+        "ci95": [
+         0.4792,
+         0.8646
+        ]
+       },
+       "mrr": {
+        "mean": 0.4844,
+        "ci95": [
+         0.2938,
+         0.6885
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5024,
+        "ci95": [
+         0.3166,
+         0.6898
+        ]
+       },
+       "success@1": {
+        "mean": 0.3125,
+        "ci95": [
+         0.125,
+         0.5625
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 28.39,
+      "p95": 222.87,
+      "max": 464.71
+     },
+     "top5_noise_share": 0.312,
+     "queries": [
+      {
+       "id": "chi-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "_examples.rest.main",
+        "middleware.throttle.ThrottleWithOpts",
+        "middleware.maybe_test.TestMaybeBuildsMiddlewareOnce",
+        "middleware.throttle.ThrottleBacklog",
+        "middleware.throttle.Throttle"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.656,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded",
+        "middleware.throttle_test.TestThrottleRetryAfterRounding",
+        "middleware.throttle_test.TestThrottleRetryAfter",
+        "middleware.throttle.Throttle",
+        "middleware.nocache.NoCache"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.timeout.Timeout",
+        "middleware.timeout",
+        "_examples.custom-handler.main.Handler",
+        "context.RouteContext",
+        "_examples.custom-handler.main.customHandler"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.recoverer.PrintPrettyStack",
+        "middleware.recoverer.printPrettyStack",
+        "_examples.custom-handler.main.Handler",
+        "_examples.custom-handler.main.customHandler",
+        "middleware.logger.defaultLogEntry.Panic"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.501,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip_test.TestClientIPFromRemoteAddr",
+        "middleware.client_ip.ClientIPFromHeader",
+        "middleware.client_ip.GetClientIP",
+        "middleware.client_ip_test.TestClientIP_TrustedPeer"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.client_ip.ClientIPFromXFFTrustedProxies",
+        "middleware.client_ip_test.TestClientIPFromXFFTrustedProxies",
+        "middleware.client_ip_test.TestClientIPFromXFFTrustedProxies_PanicsOnZero",
+        "middleware.client_ip_example_test.Example_clientIPFromXFFTrustedProxies",
+        "middleware.client_ip.ClientIPFromXFF"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.726,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.client_ip.parseHeaderAddr",
+        "middleware.route_headers.HeaderRouter",
+        "middleware.route_headers.HeaderRoute",
+        "middleware.content_type.SetHeader",
+        "middleware.wrap_writer.basicWriter.maybeWriteHeader"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.compress",
+        "middleware.compress.compressFlusher",
+        "middleware.compress.encoderGzip",
+        "middleware.compress.encoderDeflate",
+        "middleware.compress.compressResponseWriter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.111,
+       "ndcg@10": 0.052,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.path_rewrite",
+        "middleware.clean_path.CleanPath",
+        "middleware.clean_path",
+        "middleware.strip.RedirectSlashes",
+        "middleware.path_rewrite.PathRewrite"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.356,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.request_id.RequestID",
+        "middleware.request_id.NextRequestID",
+        "middleware.request_id.ctxKeyRequestID",
+        "middleware.request_id",
+        "middleware.request_id_test.maintainDefaultRequestID"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.879,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-11",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.get_head.GetHead",
+        "middleware.get_head",
+        "middleware.get_head_test",
+        "middleware.get_head_test.TestGetHead",
+        "middleware.page_route.PageRoute"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-12",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "tree_test.TestTreeRegexMatchWholeParam",
+        "tree.Walk",
+        "middleware.path_rewrite.PathRewrite",
+        "tree.node.walk",
+        "middleware.clean_path.CleanPath"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-13",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "mux.Mux.nextRoutePath",
+        "middleware.route_headers.HeaderRoute",
+        "tree.patNextSegment",
+        "middleware.route_headers.HeaderRouter.Route",
+        "context.Context.RoutePattern"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-14",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.path_rewrite",
+        "middleware.clean_path",
+        "middleware.url_format_test.TestURLFormatInSubRouter",
+        "middleware.path_rewrite.PathRewrite",
+        "middleware.clean_path.CleanPath"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-15",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "middleware.route_headers.Pattern",
+        "middleware.route_headers.NewPattern",
+        "middleware.route_headers.HeaderRoute",
+        "context.Context.RoutePattern",
+        "middleware.route_headers.HeaderRouter.Route"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.264,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-16",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "context.URLParam",
+        "context.Context.URLParam",
+        "context.URLParamFromCtx",
+        "middleware.url_format_test.TestURLFormat",
+        "middleware.url_format"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-17",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "mux.Mux.MethodNotAllowed",
+        "mux.Mux.MethodNotAllowedHandler",
+        "mux.methodNotAllowedHandler",
+        "mux.Mux.NotFoundHandler",
+        "mux_test.TestMuxNestedMethodNotAllowed"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "proto.src.test.java.com.google.gson.protobuf.functional.ProtosWithAnnotationsAndJsonNamesTest.ProtosWithAnnotationsAndJsonNamesTest.testProtoWithAnnotationsAndJsonNames_fieldWithJsonNameAndCustomSerializedName",
+        "proto.src.test.java.com.google.gson.protobuf.functional.ProtosWithAnnotationsAndJsonNamesTest.ProtosWithAnnotationsAndJsonNamesTest.testProtoWithAnnotationsAndJsonNames_fieldWithJsonName",
+        "proto.src.main.java.com.google.gson.protobuf.LegacyProtoTypeAdapterFactory.LegacyProtoTypeAdapterFactory.Adapter.makeJavaNameToFieldDescriptor",
+        "gson.src.main.java.com.google.gson.JsonIOException",
+        "gson.src.main.java.com.google.gson.JsonSyntaxException"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.PreJava9DateFormatProvider.PreJava9DateFormatProvider.getTimePartOfDateTimePattern",
+        "gson.src.main.java.com.google.gson.internal.PreJava9DateFormatProvider.PreJava9DateFormatProvider.getDatePartOfDateTimePattern",
+        "gson.src.test.java.com.google.gson.functional.DefaultTypeAdaptersTest.DefaultTypeAdaptersTest.testJavaTimeZonedDateTimeWithZoneId",
+        "gson.src.test.java.com.google.gson.functional.DefaultTypeAdaptersTest.DefaultTypeAdaptersTest.testJavaTimeZonedDateTimeWithZoneOffset",
+        "gson.src.test.java.com.google.gson.functional.DefaultTypeAdaptersTest.DefaultTypeAdaptersTest.testJavaTimeZonedDateTimeWithZoneIdThatHasAdapter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor.ThrowingObjectConstructor.ThrowingObjectConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithNoArgsConstructor.ClassWithNoArgsConstructor.ClassWithNoArgsConstructor",
+        "gson.src.main.java.com.google.gson.internal.ObjectConstructor.ObjectConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithNoArgsConstructor.ClassWithNoArgsConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithUnreferencedNoArgsConstructor.ClassWithUnreferencedNoArgsConstructor.ClassWithUnreferencedNoArgsConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.test.java.com.google.gson.functional.ObjectTest.ObjectTest.testClassWithTransientFieldsDeserializationTransientFieldsPassedInJsonAreIgnored",
+        "gson.src.test.java.com.google.gson.common.TestTypes.TestTypes.ClassWithTransientFields",
+        "gson.src.test.java.com.google.gson.common.TestTypes.TestTypes.ClassWithTransientFields.ClassWithTransientFields",
+        "gson.src.main.java.com.google.gson.internal.JavaVersion.JavaVersion.getMajorJavaVersion",
+        "gson.src.main.java.com.google.gson.internal.JavaVersion.JavaVersion.determineMajorJavaVersion"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setHtmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.isHtmlSafe",
+        "gson.src.main.java.com.google.gson.Gson.Gson.htmlSafe",
+        "gson.src.test.java.com.google.gson.functional.JsonAdapterAnnotationOnFieldsTest.JsonAdapterAnnotationOnFieldsTest.testJsonAdapterWrappedInNullSafeAsRequested",
+        "gson.src.test.java.com.google.gson.functional.EscapingTest.EscapingTest.testEscapeAllHtmlCharacters"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.275,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@70",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@54",
+        "gson.src.main.java.com.google.gson.ToNumberStrategy.ToNumberStrategy.readNumber",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@104"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.726,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.GsonTypes",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.TypeAdapters",
+        "gson.src.main.java.com.google.gson.internal.sql.SqlTypesSupport.SqlTypesSupport.SqlTypesSupport",
+        "gson.src.test.java.com.google.gson.internal.bind.RecursiveTypesResolveTest.RecursiveTypesResolveTest",
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.test.java.com.google.gson.functional.MapAsArrayTypeAdapterTest.MapAsArrayTypeAdapterTest.testDuplicateKeyWithNullFirstValueArrayForm",
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.getMapKeyAndValueTypes",
+        "gson.src.test.java.com.google.gson.functional.MapTest.MapTest.testMapDeserializationWithDuplicateKeysNullFirstValue",
+        "gson.src.test.java.com.google.gson.functional.MapAsArrayTypeAdapterTest.MapAsArrayTypeAdapterTest",
+        "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory.Adapter.write"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.387,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.resolveTypeVariable",
+        "gson.src.test.java.com.google.gson.functional.ReusedTypeVariablesFullyResolveTest.ReusedTypeVariablesFullyResolveTest",
+        "gson.src.test.java.com.google.gson.reflect.TypeTokenTest.TypeTokenTest.createTypeTokenTypeVariable",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapterRuntimeTypeWrapper",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapterRuntimeTypeWrapper.TypeAdapterRuntimeTypeWrapper.TypeAdapterRuntimeTypeWrapper"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.613,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testLenientUnquotedNames",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testLenientSingleQuotedNames",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testLenientComments",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testStrictUnquotedNames",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testLenientUnquotedStrings"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-11",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@71",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMapIterator.LinkedTreeMapIterator",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@83",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMapIterator"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-12",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.RecordHelper.getCanonicalRecordConstructor",
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.getCanonicalRecordConstructor",
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.RecordNotSupportedHelper.getCanonicalRecordConstructor",
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.RecordSupportedHelper.getCanonicalRecordConstructor",
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-13",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.test.java.com.google.gson.stream.JsonWriterTest.JsonWriterTest.testUnicodeLineBreaksEscaped",
+        "gson.src.test.java.com.google.gson.functional.FormattingStyleTest.FormattingStyleTest.testFormatPrettySingleLine",
+        "gson.src.test.java.com.google.gson.functional.PrettyPrintingTest.PrettyPrintingTest",
+        "gson.src.test.java.com.google.gson.functional.PrettyPrintingTest.PrettyPrintingTest.testPrettyPrintArrayOfPrimitives",
+        "gson.src.test.java.com.google.gson.functional.PrettyPrintingTest.PrettyPrintingTest.testPrettyPrintArrayOfObjects"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-14",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "test-shrinker.src.main.java.com.example.ClassWithNamedFields.ClassWithNamedFields.ClassWithNamedFields",
+        "test-shrinker.src.main.java.com.example.ClassWithNamedFields.ClassWithNamedFields",
+        "test-shrinker.src.main.java.com.example.ClassWithNamedFields",
+        "gson.src.test.java.com.google.gson.functional.ExposeFieldsTest.ExposeFieldsTest.ClassWithExposedFields.ClassWithExposedFields",
+        "gson.src.test.java.com.google.gson.functional.ObjectTest.ObjectTest.testClassWithTransientFieldsDeserializationTransientFieldsPassedInJsonAreIgnored"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-15",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getTypeTokenTypeArgument",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.TypeToken@80",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getParameterized",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.TypeToken",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-16",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapter",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.GsonBuilder",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapterFactory",
+        "gson.src.test.java.com.google.gson.GsonBuilderTest.GsonBuilderTest.testRegisterTypeAdapterForCoreType",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapterRuntimeTypeWrapper.TypeAdapterRuntimeTypeWrapper.TypeAdapterRuntimeTypeWrapper"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-17",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parseString",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parse"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.431,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "__tests__.produce.Recipe@197",
+        "__tests__.produce.Recipe@81",
+        "__tests__.produce.Recipe@95",
+        "__tests__.produce.Recipe",
+        "__tests__.produce.Recipe@186"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.utils.common.shallowCopy",
+        "src.core.immerClass.Immer.setUseStrictShallowCopy",
+        "__tests__.not-strict-copy",
+        "__tests__.patch.makeBaseState",
+        "__tests__.base.enumerableOnly"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.1,
+       "ndcg@10": 0.239,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "__tests__.draft.markAllFinished",
+        "src.utils.common.isModified",
+        "__tests__.draft.fromDraft",
+        "__tests__.draft.toDraft",
+        "src.core.proxy.markChanged"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.387,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "__performance_tests__.todo.freeze",
+        "src.core.finalize.processResult",
+        "src.core.finalize.maybeFreeze",
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "src.utils.common.freeze"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.544,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "__tests__.current.takeSetSnapshot",
+        "src.core.current.current",
+        "src.core.current",
+        "src.core.current.currentImpl",
+        "__tests__.current"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.651,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.utils.common.getProxyDraft",
+        "src.utils.common.getValue",
+        "__tests__.draft.fromDraft",
+        "src.utils.common.getArchtype",
+        "src.utils.common.original"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.387,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "__tests__.patch.runNestedPatchScenario",
+        "__tests__.patch.runPatchTests",
+        "__tests__.patch",
+        "__tests__.patch.createPatchTestData",
+        "src.types.types-external.Patch"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.167,
+       "ndcg@10": 0.086,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "perf-testing.immutability-benchmarks.mapValues",
+        "__tests__.map-set",
+        "src.utils.plugins.MapSetPlugin",
+        "src.plugins.mapset.enableMapSet",
+        "src.utils.plugins.SetState"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.25,
+       "ndcg@10": 0.313,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.utils.common.isPlainObject",
+        "src.utils.common.getValue",
+        "src.types.types-internal.Drafted",
+        "src.utils.common.getFinalValue",
+        "src.core.immerClass.Immer.produce"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.524,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.core.scope.revokeScope",
+        "src.core.scope.revokeDraft",
+        "vitest-custom-reporter.CustomReporter.onFinished",
+        "__tests__.redux.reduceCounterProducer",
+        "__tests__.draft.markAllFinished"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.907,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-11",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "__tests__.draft.fromDraft",
+        "__tests__.draft.toDraft",
+        "src.plugins.mapset.DraftMap.keys",
+        "src.core.proxy.deleteProperty",
+        "src.plugins.mapset.DraftSet.keys"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-12",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "perf-testing.immutability-benchmarks.mapValues",
+        "src.core.finalize.markStateFinalized",
+        "__tests__.patch.Base.nested@1261",
+        "__tests__.produce.Recipe@81",
+        "__tests__.produce.Recipe@95"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-13",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.core.immerClass.Immer.createDraft",
+        "src.core.immerClass.Immer.finishDraft",
+        "__tests__.draft.fromDraft",
+        "__tests__.draft.toDraft",
+        "__tests__.draft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-14",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "__tests__.map-set",
+        "__performance_tests__.todo.freeze",
+        "src.core.finalize.maybeFreeze",
+        "src.utils.common.freeze"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-15",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "src.utils.common.isDraft",
+        "__tests__.draft.fromDraft",
+        "__tests__.draft.toDraft",
+        "src.core.immerClass.Immer.createDraft",
+        "src.plugins.mapset.DraftSet"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-16",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "src.immer.castImmutable",
+        "__tests__.immutable",
+        "src.immer.castDraft",
+        "src.types.types-external.Immutable",
+        "__tests__.produce.Recipe@197"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "dense": {
+     "overall": {
+      "n": 50,
+      "recall@5": {
+       "mean": 0.465,
+       "ci95": [
+        0.3583,
+        0.5733
+       ]
+      },
+      "recall@10": {
+       "mean": 0.6117,
+       "ci95": [
+        0.5,
+        0.7183
+       ]
+      },
+      "mrr": {
+       "mean": 0.4814,
+       "ci95": [
+        0.3653,
+        0.6022
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.4544,
+       "ci95": [
+        0.3532,
+        0.5576
+       ]
+      },
+      "success@1": {
+       "mean": 0.3,
+       "ci95": [
+        0.18,
+        0.44
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 42,
+       "recall@5": {
+        "mean": 0.3948,
+        "ci95": [
+         0.2897,
+         0.5119
+        ]
+       },
+       "recall@10": {
+        "mean": 0.5575,
+        "ci95": [
+         0.4325,
+         0.6786
+        ]
+       },
+       "mrr": {
+        "mean": 0.4303,
+        "ci95": [
+         0.3074,
+         0.5532
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3998,
+        "ci95": [
+         0.297,
+         0.5038
+        ]
+       },
+       "success@1": {
+        "mean": 0.2619,
+        "ci95": [
+         0.1429,
+         0.4048
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 0.8333,
+        "ci95": [
+         0.5833,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8958,
+        "ci95": [
+         0.7708,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.75,
+        "ci95": [
+         0.5208,
+         0.9375
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.7412,
+        "ci95": [
+         0.5157,
+         0.9251
+        ]
+       },
+       "success@1": {
+        "mean": 0.5,
+        "ci95": [
+         0.125,
+         0.875
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "chi": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.6863,
+        "ci95": [
+         0.5686,
+         0.8039
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8873,
+        "ci95": [
+         0.7941,
+         0.9657
+        ]
+       },
+       "mrr": {
+        "mean": 0.8078,
+        "ci95": [
+         0.6608,
+         0.9412
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.7258,
+        "ci95": [
+         0.6193,
+         0.8278
+        ]
+       },
+       "success@1": {
+        "mean": 0.5294,
+        "ci95": [
+         0.2941,
+         0.7647
+        ]
+       }
+      },
+      "gson": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.299,
+        "ci95": [
+         0.1225,
+         0.4804
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4706,
+        "ci95": [
+         0.2941,
+         0.6667
+        ]
+       },
+       "mrr": {
+        "mean": 0.3105,
+        "ci95": [
+         0.1552,
+         0.4935
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3105,
+        "ci95": [
+         0.1569,
+         0.4907
+        ]
+       },
+       "success@1": {
+        "mean": 0.1765,
+        "ci95": [
+         0.0,
+         0.3529
+        ]
+       }
+      },
+      "immer": {
+       "n": 16,
+       "recall@5": {
+        "mean": 0.4062,
+        "ci95": [
+         0.2188,
+         0.6042
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4688,
+        "ci95": [
+         0.2708,
+         0.6667
+        ]
+       },
+       "mrr": {
+        "mean": 0.3162,
+        "ci95": [
+         0.1548,
+         0.5
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3189,
+        "ci95": [
+         0.1782,
+         0.4771
+        ]
+       },
+       "success@1": {
+        "mean": 0.1875,
+        "ci95": [
+         0.0,
+         0.375
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 35.31,
+      "p95": 69.19,
+      "max": 82.65
+     },
+     "top5_noise_share": 0.088,
+     "queries": [
+      {
+       "id": "chi-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.throttle.throttler",
+        "middleware.throttle.Throttle",
+        "middleware.throttle.ThrottleWithOpts",
+        "_examples.limits.main",
+        "middleware.throttle.ThrottleBacklog"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.609,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.throttle.Throttle",
+        "middleware.throttle.throttler",
+        "_examples.limits.main",
+        "middleware.timeout.Timeout",
+        "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.411,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.timeout.Timeout",
+        "_examples.limits.main",
+        "middleware.throttle.ThrottleBacklog",
+        "middleware.throttle.ThrottleWithOpts",
+        "middleware.sunset.Sunset"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.recoverer.Recoverer",
+        "middleware.logger.defaultLogEntry.Panic",
+        "middleware.recoverer.printPrettyStack",
+        "middleware.recoverer_test.panickingHandler",
+        "middleware.logger.Logger"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.893,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip.ClientIPFromHeader",
+        "middleware.realip.RealIP",
+        "middleware.client_ip_test.TestXFF_MultipleHeadersMerged",
+        "middleware.client_ip_example_test.Example_clientIP"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.333,
+       "ndcg@10": 0.307,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.client_ip.ClientIPFromXFF",
+        "middleware.client_ip.ClientIPFromXFFTrustedProxies",
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip.ClientIPFromHeader",
+        "middleware.client_ip.GetClientIP"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.601,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.basic_auth.basicAuthFailed",
+        "middleware.basic_auth",
+        "middleware.logger.GetLogEntry",
+        "middleware.logger.defaultLogEntry.Write",
+        "middleware.basic_auth.BasicAuth"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.595,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.compress.Compressor.Handler",
+        "middleware.compress.Compress",
+        "middleware.compress.compressResponseWriter.Unwrap",
+        "middleware.compress.compressResponseWriter.isCompressible",
+        "middleware.compress.NewCompressor"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.772,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.path_rewrite.PathRewrite",
+        "middleware.path_rewrite",
+        "mux_test.TestMuxTrailingSlash",
+        "middleware.clean_path.CleanPath",
+        "middleware.strip.RedirectSlashes"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.399,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.request_id.RequestID",
+        "middleware.request_id.NextRequestID",
+        "middleware.route_headers.RouteHeaders",
+        "middleware.request_id.ctxKeyRequestID",
+        "middleware.request_id.GetReqID"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.96,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "middleware.get_head.GetHead",
+        "middleware.route_headers.HeaderRouter.Handler",
+        "middleware.route_headers.RouteHeaders",
+        "middleware.page_route.PageRoute",
+        "middleware.maybe.Maybe"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-12",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "tree.node.FindRoute",
+        "tree.node.findRoute",
+        "tree.walk",
+        "tree.node.addChild",
+        "tree.node.routes"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.907,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-13",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "tree.patNextSegment",
+        "middleware.route_headers.NewPattern",
+        "middleware.route_headers.Pattern.Match",
+        "middleware.route_headers.Pattern",
+        "mux.Mux.Find"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-14",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "mux.Mux.Route",
+        "_examples.todos-resource.main",
+        "_examples.router-walk.main",
+        "context.RouteParams.Add",
+        "middleware.path_rewrite.PathRewrite"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.57,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-15",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "context.replaceWildcards",
+        "middleware.route_headers.Pattern",
+        "middleware.route_headers.Pattern.Match",
+        "context_test.TestRoutePattern",
+        "middleware.route_headers.NewPattern"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.613,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-16",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "context.URLParam",
+        "context.URLParamFromCtx",
+        "context.Context.URLParam",
+        "_examples.versions.main.getArticle",
+        "middleware.url_format_test.TestURLFormatInSubRouter"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-17",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "mux.Mux.MethodNotAllowedHandler",
+        "mux.Mux.MethodNotAllowed",
+        "mux.Mux.Method",
+        "mux.Mux.MethodFunc",
+        "mux.Mux.NotFoundHandler"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.7,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.FieldNamingPolicy.FieldNamingPolicy.upperCaseFirstLetter",
+        "gson.src.main.java.com.google.gson.FieldNamingStrategy.FieldNamingStrategy.translateName",
+        "gson.src.main.java.com.google.gson.FieldNamingPolicy.FieldNamingPolicy",
+        "gson.src.main.java.com.google.gson.FieldAttributes.FieldAttributes.getName",
+        "proto.src.main.java.com.google.gson.protobuf.ProtoTypeAdapter.ProtoTypeAdapter.Builder.setFieldNameSerializationFormat"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.333,
+       "ndcg@10": 0.138,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "extras.src.main.java.com.google.gson.typeadapters.UtcDateTypeAdapter.UtcDateTypeAdapter.parse",
+        "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.parse",
+        "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils",
+        "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.format@91",
+        "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.format"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.521,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.ObjectConstructor.ObjectConstructor.construct",
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor.InstanceCreatorConstructor.construct",
+        "test-shrinker.src.main.java.com.example.ClassWithUnreferencedHasArgsConstructor.ClassWithUnreferencedHasArgsConstructor.ClassWithUnreferencedHasArgsConstructor",
+        "test-shrinker.src.main.java.com.example.NoSerializedNameMain.NoSerializedNameMain.TestClassNotAbstract",
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.excludeFieldsWithModifiers",
+        "gson.src.main.java.com.google.gson.ExclusionStrategy.ExclusionStrategy.shouldSkipField",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.setVersion",
+        "gson.src.main.java.com.google.gson.internal.Excluder.Excluder.isExcludedByVersion",
+        "gson.src.main.java.com.google.gson.internal.Excluder.Excluder.isValidVersion"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.667,
+       "mrr": 0.25,
+       "ndcg@10": 0.346,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.Gson.Gson.htmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setHtmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.readEscapeCharacter",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.jsonValue",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.serializeSpecialFloatingPointValues"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.174,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@104",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.getCharacterOffset",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.nextDouble",
+        "gson.src.main.java.com.google.gson.JsonPrimitive.JsonPrimitive.getAsLong",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testHighPrecisionLong"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.111,
+       "ndcg@10": 0.219,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapterFactory",
+        "proto.src.main.java.com.google.gson.protobuf.LegacyProtoTypeAdapterFactory.LegacyProtoTypeAdapterFactory.Adapter",
+        "gson.src.main.java.com.google.gson.TypeAdapterFactory.TypeAdapterFactory",
+        "gson.src.main.java.com.google.gson.internal.bind.CollectionTypeAdapterFactory.CollectionTypeAdapterFactory.Adapter.Adapter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.getMapKeyAndValueTypes",
+        "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory",
+        "gson.src.main.java.com.google.gson.JsonObject.JsonObject.keySet",
+        "gson.src.test.java.com.google.gson.functional.MapTest.MapTest.newMap",
+        "gson.src.test.java.com.google.gson.JsonObjectAsMapSuiteTest.JsonObjectAsMapSuiteTest.MapGenerator.createKeyArray"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 1.0,
+       "mrr": 0.167,
+       "ndcg@10": 0.356,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.test.java.com.google.gson.reflect.TypeTokenTest.TypeTokenTest.Enclosing",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.Adapter.finalize",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.newTypeHierarchyFactory",
+        "proto.src.main.java.com.google.gson.protobuf.LegacyProtoTypeAdapterFactory.LegacyProtoTypeAdapterFactory.Adapter",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.newFactory"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.test.java.com.google.gson.CommentsTest.CommentsTest.testParseComments",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.nextQuotedValue",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.skipQuotedValue",
+        "gson.src.test.java.com.google.gson.CommentsTest.CommentsTest",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.setStrictness"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.rebalance",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.removeInternal",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@71",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.rotateRight",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.rotateLeft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-12",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.Adapter",
+        "gson.src.main.java.com.google.gson.JsonSerializer.JsonSerializer",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.BoundField.readIntoArray",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.FieldsData.FieldsData",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.Adapter.createAccumulator"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-13",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setIndent",
+        "gson.src.main.java.com.google.gson.Gson.Gson.Gson",
+        "gson.src.main.java.com.google.gson.FormattingStyle.FormattingStyle.withSpaceAfterSeparators",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setFormattingStyle",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.getFormattingStyle"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.427,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-14",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.FieldsData.FieldsData",
+        "gson.src.main.java.com.google.gson.FieldAttributes.FieldAttributes.getDeclaringClass",
+        "gson.src.main.java.com.google.gson.FieldAttributes.FieldAttributes.getDeclaredClass",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.IntegerFieldsTypeAdapter",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.includeField"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-15",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getParameterized",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getTypeTokenTypeArgument",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getRawType",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.toString",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.typeEquals"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-16",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "proto.src.main.java.com.google.gson.protobuf.LegacyProtoTypeAdapterFactory.LegacyProtoTypeAdapterFactory.create",
+        "extras.src.main.java.com.google.gson.typeadapters.RuntimeTypeAdapterFactory.RuntimeTypeAdapterFactory.RuntimeTypeAdapterFactory",
+        "extras.src.main.java.com.google.gson.typeadapters.RuntimeTypeAdapterFactory.RuntimeTypeAdapterFactory.of@198",
+        "extras.src.main.java.com.google.gson.typeadapters.RuntimeTypeAdapterFactory.RuntimeTypeAdapterFactory.recognizeSubtypes",
+        "gson.src.main.java.com.google.gson.TypeAdapter.TypeAdapter.TypeAdapter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.098,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-17",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parseString",
+        "gson.src.main.java.com.google.gson.JsonStreamParser.JsonStreamParser.JsonStreamParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parseReader",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parse",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.immerClass.Immer.produce",
+        "__tests__.produce.Recipe@197",
+        "src.core.finalize.updateDraftInParent",
+        "src.immer.castDraft",
+        "src.utils.common.isModified"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.isModified",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "src.plugins.arrayMethods.enableArrayMethods",
+        "src.core.proxy.isRelocatedBaseRef"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.finalize.updateDraftInParent",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "src.utils.common.isModified",
+        "src.plugins.mapset.DraftSet",
+        "src.types.types-external.Draft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "__performance_tests__.todo.freeze",
+        "src.core.immerClass.Immer.produce",
+        "src.core.finalize.maybeFreeze",
+        "__tests__.frozen.runTests"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.264,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.finalize.updateDraftInParent",
+        "__tests__.produce.Recipe@197",
+        "src.immer.castDraft",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "src.utils.common.isDraft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.143,
+       "ndcg@10": 0.204,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.isModified",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "src.utils.common.original",
+        "__tests__.draft.fromDraft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.431,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "perf-testing.immutability-benchmarks.updateProvided",
+        "perf-testing.immutability-benchmarks.updateMultiple",
+        "perf-testing.immutability-benchmarks.updateQueries",
+        "perf-testing.immutability-profiling.updateMultiple",
+        "perf-testing.immutability-benchmarks.update"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.plugins.mapset.DraftMap.set",
+        "src.plugins.mapset.DraftMap.values",
+        "src.plugins.mapset.DraftMap.forEach",
+        "src.plugins.mapset.DraftSet",
+        "src.plugins.mapset.DraftMap"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.25,
+       "ndcg@10": 0.198,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.plugins.mapset.DraftMap.values",
+        "src.plugins.mapset.DraftSet.values",
+        "src.plugins.mapset.DraftMap.set",
+        "src.plugins.mapset.DraftMap.forEach",
+        "src.plugins.mapset.DraftSet.keys"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.scope.revokeDraft",
+        "src.plugins.mapset.DraftSet.delete",
+        "src.plugins.mapset.DraftSet.clear",
+        "src.plugins.mapset.DraftMap.delete",
+        "src.core.finalize.registerChildFinalizationCallback"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.556,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.plugins.mapset.DraftMap.set",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "src.plugins.mapset.DraftMap.keys",
+        "src.plugins.mapset.DraftSet.keys",
+        "src.plugins.mapset.DraftSet.add"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-12",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.core.finalize.registerChildFinalizationCallback",
+        "__tests__.produce.Recipe@197",
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.isModified",
+        "src.immer.castDraft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-13",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "__tests__.produce.Recipe@197",
+        "src.types.types-external.Draft",
+        "src.core.immerClass.Immer.finishDraft",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "__tests__.produce.reducer@403"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.491,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-14",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "__tests__.frozen.runTests",
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "__performance_tests__.todo",
+        "__performance_tests__.add-data",
+        "src.utils.common.freeze"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-15",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "src.utils.common.isDraftable",
+        "__tests__.isDraftable",
+        "src.utils.common.isDraft",
+        "src.utils.common.isModified",
+        "src.utils.common.freeze"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-16",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "src.immer.castImmutable",
+        "src.types.types-external.Immutable",
+        "src.immer.castDraft",
+        "src.types.types-external.WritableDraft",
+        "__tests__.immutable"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "hybrid": {
+     "overall": {
+      "n": 50,
+      "recall@5": {
+       "mean": 0.475,
+       "ci95": [
+        0.355,
+        0.59
+       ]
+      },
+      "recall@10": {
+       "mean": 0.5783,
+       "ci95": [
+        0.4667,
+        0.6933
+       ]
+      },
+      "mrr": {
+       "mean": 0.4912,
+       "ci95": [
+        0.3767,
+        0.6058
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.4686,
+       "ci95": [
+        0.3567,
+        0.5763
+       ]
+      },
+      "success@1": {
+       "mean": 0.34,
+       "ci95": [
+        0.22,
+        0.48
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 42,
+       "recall@5": {
+        "mean": 0.3869,
+        "ci95": [
+         0.2758,
+         0.502
+        ]
+       },
+       "recall@10": {
+        "mean": 0.498,
+        "ci95": [
+         0.375,
+         0.6171
+        ]
+       },
+       "mrr": {
+        "mean": 0.3943,
+        "ci95": [
+         0.2836,
+         0.5132
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3706,
+        "ci95": [
+         0.2685,
+         0.4741
+        ]
+       },
+       "success@1": {
+        "mean": 0.2143,
+        "ci95": [
+         0.0952,
+         0.3333
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 0.9375,
+        "ci95": [
+         0.8125,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.9832,
+        "ci95": [
+         0.9622,
+         1.0
+        ]
+       },
+       "success@1": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "chi": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.5833,
+        "ci95": [
+         0.4069,
+         0.7549
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7059,
+        "ci95": [
+         0.5294,
+         0.8627
+        ]
+       },
+       "mrr": {
+        "mean": 0.5882,
+        "ci95": [
+         0.4118,
+         0.7598
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5682,
+        "ci95": [
+         0.3812,
+         0.7469
+        ]
+       },
+       "success@1": {
+        "mean": 0.4118,
+        "ci95": [
+         0.1765,
+         0.6471
+        ]
+       }
+      },
+      "gson": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.3137,
+        "ci95": [
+         0.1471,
+         0.4902
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4265,
+        "ci95": [
+         0.25,
+         0.6275
+        ]
+       },
+       "mrr": {
+        "mean": 0.3578,
+        "ci95": [
+         0.1887,
+         0.5539
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3302,
+        "ci95": [
+         0.1672,
+         0.5019
+        ]
+       },
+       "success@1": {
+        "mean": 0.1765,
+        "ci95": [
+         0.0,
+         0.3529
+        ]
+       }
+      },
+      "immer": {
+       "n": 16,
+       "recall@5": {
+        "mean": 0.5312,
+        "ci95": [
+         0.3333,
+         0.7396
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6042,
+        "ci95": [
+         0.4062,
+         0.8021
+        ]
+       },
+       "mrr": {
+        "mean": 0.5298,
+        "ci95": [
+         0.3214,
+         0.7366
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5099,
+        "ci95": [
+         0.3266,
+         0.6901
+        ]
+       },
+       "success@1": {
+        "mean": 0.4375,
+        "ci95": [
+         0.1875,
+         0.6875
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 54.93,
+      "p95": 415.37,
+      "max": 467.26
+     },
+     "top5_noise_share": 0.156,
+     "queries": [
+      {
+       "id": "chi-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.throttle.ThrottleWithOpts",
+        "middleware.throttle.Throttle",
+        "middleware.throttle.ThrottleBacklog",
+        "middleware.throttle.throttler",
+        "_examples.rest.main.paginate"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.throttle.Throttle",
+        "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded",
+        "middleware.throttle.throttler",
+        "middleware.sunset.Sunset",
+        "middleware.timeout.Timeout"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.619,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.timeout.Timeout",
+        "middleware.request_size.RequestSize",
+        "middleware.request_id.RequestID",
+        "middleware.timeout",
+        "_examples.custom-handler.main.customHandler"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.recoverer.printPrettyStack",
+        "middleware.logger.defaultLogEntry.Panic",
+        "middleware.recoverer.PrintPrettyStack",
+        "middleware.recoverer.Recoverer",
+        "_examples.custom-handler.main.customHandler"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.333,
+       "ndcg@10": 0.434,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip.ClientIPFromHeader",
+        "middleware.client_ip.GetClientIP",
+        "middleware.realip.RealIP",
+        "middleware.client_ip"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.264,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.client_ip.ClientIPFromXFF",
+        "middleware.client_ip.ClientIPFromXFFTrustedProxies",
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip_example_test.Example_clientIPFromXFFTrustedProxies",
+        "middleware.client_ip.GetClientIP"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.458,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded",
+        "middleware.basic_auth.basicAuthFailed",
+        "middleware.content_type.SetHeader",
+        "middleware.logger.LogEntry",
+        "middleware.timeout.Timeout"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.174,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.compress.compressFlusher",
+        "middleware.compress.Compress",
+        "middleware.compress.compressResponseWriter",
+        "middleware.compress.encoderGzip",
+        "middleware.compress"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.263,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.path_rewrite",
+        "middleware.clean_path.CleanPath",
+        "middleware.path_rewrite.PathRewrite",
+        "middleware.strip.RedirectSlashes",
+        "middleware.clean_path"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.443,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.request_id.RequestID",
+        "middleware.request_id.NextRequestID",
+        "middleware.request_id.ctxKeyRequestID",
+        "middleware.request_id.GetReqID",
+        "middleware.request_id"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.965,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.get_head.GetHead",
+        "middleware.page_route.PageRoute",
+        "middleware.route_headers.HeaderRouter.Handler",
+        "middleware.route_headers.RouteHeaders",
+        "middleware.route_headers.HeaderRouter.RouteDefault"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-12",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "tree.node.walk",
+        "middleware.url_format.URLFormat",
+        "mux.Mux.Match",
+        "tree.WalkFunc",
+        "middleware.path_rewrite.PathRewrite"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-13",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "tree.patNextSegment",
+        "middleware.route_headers.Pattern",
+        "middleware.route_headers.NewPattern",
+        "context.Context.RoutePattern",
+        "middleware.route_headers.HeaderRouter.RouteAny"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-14",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.path_rewrite.PathRewrite",
+        "middleware.clean_path.CleanPath",
+        "_examples.router-walk.main",
+        "mux.Mux.updateSubRoutes",
+        "middleware.path_rewrite"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.098,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-15",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "middleware.route_headers.Pattern",
+        "middleware.route_headers.NewPattern",
+        "context_test.TestRoutePattern",
+        "mux.Mux.Route",
+        "middleware.route_headers.HeaderRoute"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-16",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "context.URLParam",
+        "context.Context.URLParam",
+        "context.URLParamFromCtx",
+        "middleware.url_format.URLFormat",
+        "_examples.versions.main.getArticle"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-17",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "mux.Mux.MethodNotAllowed",
+        "mux.Mux",
+        "mux.Mux.MethodNotAllowedHandler",
+        "mux.Mux.NotFoundHandler",
+        "mux.methodNotAllowedHandler"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.941,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.FieldNamingStrategy.FieldNamingStrategy.translateName",
+        "proto.src.main.java.com.google.gson.protobuf.ProtoTypeAdapter.ProtoTypeAdapter.Builder.setFieldNameSerializationFormat",
+        "proto.src.main.java.com.google.gson.protobuf.ProtoTypeAdapter.ProtoTypeAdapter.Builder.setShouldUseJsonNameFieldOption",
+        "gson.src.test.java.com.google.gson.functional.JsonAdapterAnnotationOnFieldsTest.JsonAdapterAnnotationOnFieldsTest.PartJsonFieldAnnotationAdapter",
+        "gson.src.main.java.com.google.gson.FieldNamingPolicy.FieldNamingPolicy.upperCaseFirstLetter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.098,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "extras.src.main.java.com.google.gson.typeadapters.UtcDateTypeAdapter.UtcDateTypeAdapter.parse",
+        "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.parse",
+        "metrics.src.main.java.com.google.gson.metrics.ParseBenchmark.ParseBenchmark.timeParse",
+        "gson.src.main.java.com.google.gson.internal.bind.JavaTimeTypeAdapters.JavaTimeTypeAdapters.zonedDateTime",
+        "gson.src.main.java.com.google.gson.internal.PreJava9DateFormatProvider.PreJava9DateFormatProvider.getTimePartOfDateTimePattern"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.521,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithUnreferencedNoArgsConstructor.ClassWithUnreferencedNoArgsConstructor",
+        "gson.src.test.java.com.google.gson.internal.ConstructorConstructorTest.ConstructorConstructorTest.testGet_AbstractClassNoArgConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithNoArgsConstructor.ClassWithNoArgsConstructor",
+        "gson.src.main.java.com.google.gson.internal.ObjectConstructor.ObjectConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.excludeFieldsWithModifiers",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest.testOlderVersion",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest.testNewerVersion",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest.testSameVersion"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.667,
+       "mrr": 0.125,
+       "ndcg@10": 0.286,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setHtmlSafe",
+        "gson.src.main.java.com.google.gson.Gson.Gson.htmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.isHtmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.readEscapeCharacter"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.275,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@104",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@70",
+        "gson.src.main.java.com.google.gson.ToNumberStrategy.ToNumberStrategy.readNumber",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@54"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.333,
+       "ndcg@10": 0.363,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.test.java.com.google.gson.internal.bind.RecursiveTypesResolveTest.RecursiveTypesResolveTest",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters",
+        "gson.src.test.java.com.google.gson.OverrideCoreTypeAdaptersTest.OverrideCoreTypeAdaptersTest",
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.GsonTypes",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.TypeAdapters"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.getMapKeyAndValueTypes",
+        "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory.Adapter.write",
+        "gson.src.test.java.com.google.gson.functional.MapAsArrayTypeAdapterTest.MapAsArrayTypeAdapterTest.testDuplicateKeyWithNullFirstValueArrayForm",
+        "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory",
+        "gson.src.test.java.com.google.gson.JsonObjectAsMapSuiteTest.JsonObjectAsMapSuiteTest.MapGenerator.createKeyArray"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapterRuntimeTypeWrapper.TypeAdapterRuntimeTypeWrapper",
+        "gson.src.test.java.com.google.gson.functional.ReusedTypeVariablesFullyResolveTest.ReusedTypeVariablesFullyResolveTest",
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.resolveTypeVariable",
+        "gson.src.test.java.com.google.gson.functional.MoreSpecificTypeSerializationTest.MoreSpecificTypeSerializationTest.testWildcardTypeVariableSubclassFields",
+        "gson.src.test.java.com.google.gson.functional.TypeAdapterRuntimeTypeWrapperTest.TypeAdapterRuntimeTypeWrapperTest.Subclass"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.333,
+       "ndcg@10": 0.307,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testStrictSingleQuotedNames",
+        "gson.src.test.java.com.google.gson.CommentsTest.CommentsTest",
+        "gson.src.test.java.com.google.gson.CommentsTest.CommentsTest.testParseComments",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.skipUnquotedValue",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testStrictUnquotedNames"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@71",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@83",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.entrySet"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-12",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.RecordHelper.getCanonicalRecordConstructor",
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor.newMapConstructor",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.Adapter",
+        "gson.src.main.java.com.google.gson.JsonSerializer.JsonSerializer",
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.getCanonicalRecordConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-13",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.setPrettyPrinting",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setIndent",
+        "gson.src.main.java.com.google.gson.Gson.Gson.Gson",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.skipToEndOfLine",
+        "gson.src.test.java.com.google.gson.functional.PrettyPrintingTest.PrettyPrintingTest"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.125,
+       "ndcg@10": 0.207,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-14",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.FieldsData.FieldsData",
+        "gson.src.test.java.com.google.gson.functional.ExposeFieldsTest.ExposeFieldsTest.ClassWithExposedFields.ClassWithExposedFields@145",
+        "gson.src.test.java.com.google.gson.functional.ExposeFieldsTest.ExposeFieldsTest.ClassWithExposedFields.ClassWithExposedFields",
+        "gson.src.test.java.com.google.gson.functional.MoreSpecificTypeSerializationTest.MoreSpecificTypeSerializationTest.ClassWithBaseFields.ClassWithBaseFields",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.IntegerFieldsTypeAdapter.IntegerFieldsTypeAdapter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-15",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getParameterized",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.TypeToken@80",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.TypeToken",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getTypeTokenTypeArgument"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-16",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapter",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.GsonBuilder",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.GsonBuilder@166",
+        "gson.src.test.java.com.google.gson.GsonBuilderTest.GsonBuilderTest.testRegisterTypeAdapterForCoreType"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.924,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-17",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parseString",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parse",
+        "gson.src.main.java.com.google.gson.JsonStreamParser.JsonStreamParser.JsonStreamParser"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "__tests__.produce.Recipe@197",
+        "__tests__.produce.Recipe@95",
+        "__tests__.produce.Recipe@81",
+        "src.core.immerClass.Immer.produce",
+        "__tests__.produce.Recipe@186"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.356,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.core.immerClass.Immer.setUseStrictShallowCopy",
+        "src.core.proxy.isRelocatedBaseRef",
+        "src.utils.common.isModified",
+        "src.types.types-external.Draft",
+        "src.immer.castDraft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.utils.common.isModified",
+        "src.plugins.mapset.DraftSet",
+        "src.core.finalize.updateDraftInParent",
+        "src.plugins.mapset.DraftMap",
+        "src.types.types-external.Draft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "__performance_tests__.todo.freeze",
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "src.core.finalize.maybeFreeze",
+        "src.core.finalize.processResult",
+        "src.utils.common.freeze"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.544,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.core.current.current",
+        "src.immer.castDraft",
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.isDraft",
+        "__tests__.produce.Recipe@197"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.613,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.original",
+        "src.types.types-external.Draft",
+        "__tests__.draft.fromDraft",
+        "src.plugins.mapset.DraftSet"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "__tests__.patch.runPatchTests",
+        "perf-testing.immutability-benchmarks.updateQueries",
+        "__tests__.patch.createPatchTestData",
+        "__tests__.patch",
+        "__tests__.patch.runNestedPatchScenario"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.143,
+       "ndcg@10": 0.081,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.plugins.mapset.DraftMap.set",
+        "src.plugins.mapset.DraftMap.values",
+        "src.plugins.mapset.DraftSet.values",
+        "src.plugins.mapset.DraftSet",
+        "src.plugins.mapset.enableMapSet"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.471,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.utils.common.isDraftable",
+        "src.plugins.mapset.DraftMap.values",
+        "src.plugins.mapset.DraftMap.entries",
+        "src.types.types-external.IsPlainArray",
+        "src.plugins.mapset.DraftSet.has"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.906,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.core.scope.revokeDraft",
+        "src.core.proxy.createProxyProxy",
+        "src.plugins.mapset.DraftSet.delete",
+        "src.utils.common.isModified",
+        "src.plugins.arrayMethods.enableArrayMethods"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.556,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.plugins.mapset.DraftMap.keys",
+        "src.plugins.mapset.DraftSet.keys",
+        "src.core.finalize.updateDraftInParent",
+        "__tests__.draft.toDraft",
+        "src.plugins.mapset.DraftMap.set"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-12",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.utils.common.isModified",
+        "__tests__.produce.Recipe@81",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "__tests__.produce.Recipe@95",
+        "src.core.finalize.updateDraftInParent"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-13",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.core.immerClass.Immer.finishDraft",
+        "src.core.immerClass.Immer.createDraft",
+        "src.core.immerClass.Immer.produce",
+        "__tests__.draft.fromDraft",
+        "src.types.types-external.Draft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-14",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "__performance_tests__.todo.freeze",
+        "src.utils.common.freeze",
+        "src.core.finalize.maybeFreeze",
+        "perf-testing.immutability-profiling.main"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-15",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.utils.common.isDraft",
+        "src.core.immerClass.Immer.createDraft",
+        "src.core.immerClass.Immer.finishDraft",
+        "src.core.finalize.updateDraftInParent",
+        "src.types.types-external.WritableNonArrayDraft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-16",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.immer.castImmutable",
+        "src.types.types-external.Immutable",
+        "src.immer.castDraft",
+        "__tests__.immutable",
+        "src.types.types-external.IfAvailable"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "graph": {
+     "overall": {
+      "n": 50,
+      "recall@5": {
+       "mean": 0.4683,
+       "ci95": [
+        0.3517,
+        0.58
+       ]
+      },
+      "recall@10": {
+       "mean": 0.5617,
+       "ci95": [
+        0.4517,
+        0.6717
+       ]
+      },
+      "mrr": {
+       "mean": 0.4912,
+       "ci95": [
+        0.3767,
+        0.6058
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.4626,
+       "ci95": [
+        0.3514,
+        0.5689
+       ]
+      },
+      "success@1": {
+       "mean": 0.34,
+       "ci95": [
+        0.22,
+        0.48
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 42,
+       "recall@5": {
+        "mean": 0.3869,
+        "ci95": [
+         0.2758,
+         0.502
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4782,
+        "ci95": [
+         0.3571,
+         0.5952
+        ]
+       },
+       "mrr": {
+        "mean": 0.3943,
+        "ci95": [
+         0.2836,
+         0.5132
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3637,
+        "ci95": [
+         0.2645,
+         0.4681
+        ]
+       },
+       "success@1": {
+        "mean": 0.2143,
+        "ci95": [
+         0.0952,
+         0.3333
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 0.8958,
+        "ci95": [
+         0.75,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.9815,
+        "ci95": [
+         0.955,
+         1.0
+        ]
+       },
+       "success@1": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "chi": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.5637,
+        "ci95": [
+         0.3971,
+         0.7255
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7059,
+        "ci95": [
+         0.5294,
+         0.8627
+        ]
+       },
+       "mrr": {
+        "mean": 0.5882,
+        "ci95": [
+         0.4118,
+         0.7598
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5674,
+        "ci95": [
+         0.3809,
+         0.7454
+        ]
+       },
+       "success@1": {
+        "mean": 0.4118,
+        "ci95": [
+         0.1765,
+         0.6471
+        ]
+       }
+      },
+      "gson": {
+       "n": 17,
+       "recall@5": {
+        "mean": 0.3137,
+        "ci95": [
+         0.1471,
+         0.4902
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4069,
+        "ci95": [
+         0.2353,
+         0.6029
+        ]
+       },
+       "mrr": {
+        "mean": 0.3578,
+        "ci95": [
+         0.1887,
+         0.5539
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3179,
+        "ci95": [
+         0.1514,
+         0.4967
+        ]
+       },
+       "success@1": {
+        "mean": 0.1765,
+        "ci95": [
+         0.0,
+         0.3529
+        ]
+       }
+      },
+      "immer": {
+       "n": 16,
+       "recall@5": {
+        "mean": 0.5312,
+        "ci95": [
+         0.3333,
+         0.7396
+        ]
+       },
+       "recall@10": {
+        "mean": 0.5729,
+        "ci95": [
+         0.375,
+         0.7708
+        ]
+       },
+       "mrr": {
+        "mean": 0.5298,
+        "ci95": [
+         0.3214,
+         0.7366
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5049,
+        "ci95": [
+         0.324,
+         0.6841
+        ]
+       },
+       "success@1": {
+        "mean": 0.4375,
+        "ci95": [
+         0.1875,
+         0.6875
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 62.38,
+      "p95": 479.31,
+      "max": 512.03
+     },
+     "top5_noise_share": 0.156,
+     "queries": [
+      {
+       "id": "chi-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.throttle.ThrottleWithOpts",
+        "middleware.throttle.Throttle",
+        "middleware.throttle.ThrottleBacklog",
+        "middleware.throttle.throttler",
+        "_examples.rest.main.paginate"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.throttle.Throttle",
+        "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded",
+        "middleware.throttle.throttler",
+        "middleware.sunset.Sunset",
+        "middleware.timeout.Timeout"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.619,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.timeout.Timeout",
+        "middleware.request_size.RequestSize",
+        "middleware.request_id.RequestID",
+        "middleware.timeout",
+        "_examples.custom-handler.main.customHandler"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.recoverer.printPrettyStack",
+        "middleware.logger.defaultLogEntry.Panic",
+        "middleware.recoverer.PrintPrettyStack",
+        "middleware.recoverer.Recoverer",
+        "_examples.custom-handler.main.customHandler"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.333,
+       "ndcg@10": 0.434,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip.ClientIPFromHeader",
+        "middleware.client_ip.GetClientIP",
+        "middleware.realip.RealIP",
+        "middleware.client_ip"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.264,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.client_ip.ClientIPFromXFF",
+        "middleware.client_ip.ClientIPFromXFFTrustedProxies",
+        "middleware.client_ip.ClientIPFromRemoteAddr",
+        "middleware.client_ip_example_test.Example_clientIPFromXFFTrustedProxies",
+        "middleware.client_ip.GetClientIP"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.458,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded",
+        "middleware.basic_auth.basicAuthFailed",
+        "middleware.content_type.SetHeader",
+        "middleware.logger.LogEntry",
+        "middleware.timeout.Timeout"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.174,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.compress.compressFlusher",
+        "middleware.compress.Compress",
+        "middleware.compress.compressResponseWriter",
+        "middleware.compress.encoderGzip",
+        "middleware.compress"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.263,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.path_rewrite",
+        "middleware.clean_path.CleanPath",
+        "middleware.path_rewrite.PathRewrite",
+        "middleware.strip.RedirectSlashes",
+        "middleware.clean_path"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.443,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.request_id.RequestID",
+        "middleware.request_id.NextRequestID",
+        "middleware.request_id.ctxKeyRequestID",
+        "middleware.request_id.GetReqID",
+        "middleware.request_id"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.965,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-11",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.get_head.GetHead",
+        "middleware.page_route.PageRoute",
+        "middleware.route_headers.HeaderRouter.Handler",
+        "middleware.route_headers.RouteHeaders",
+        "middleware.route_headers.HeaderRouter.RouteDefault"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-12",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "tree.node.walk",
+        "middleware.url_format.URLFormat",
+        "mux.Mux.Match",
+        "tree.WalkFunc",
+        "middleware.path_rewrite.PathRewrite"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-13",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "tree.patNextSegment",
+        "middleware.route_headers.Pattern",
+        "middleware.route_headers.NewPattern",
+        "context.Context.RoutePattern",
+        "middleware.route_headers.HeaderRouter.RouteAny"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-14",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.path_rewrite.PathRewrite",
+        "middleware.clean_path.CleanPath",
+        "_examples.router-walk.main",
+        "mux.Mux.updateSubRoutes",
+        "middleware.path_rewrite"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.098,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-15",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "middleware.route_headers.Pattern",
+        "middleware.route_headers.NewPattern",
+        "context_test.TestRoutePattern",
+        "mux.Mux.Route",
+        "middleware.route_headers.HeaderRoute"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "chi-16",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "context.URLParam",
+        "context.Context.URLParam",
+        "context.URLParamFromCtx",
+        "context.Context",
+        "middleware.url_format.URLFormat"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "chi-17",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "mux.Mux.MethodNotAllowed",
+        "mux.Mux",
+        "mux.Mux.MethodNotAllowedHandler",
+        "mux.Mux.NotFoundHandler",
+        "chain.Chain"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.928,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.FieldNamingStrategy.FieldNamingStrategy.translateName",
+        "proto.src.main.java.com.google.gson.protobuf.ProtoTypeAdapter.ProtoTypeAdapter.Builder.setFieldNameSerializationFormat",
+        "proto.src.main.java.com.google.gson.protobuf.ProtoTypeAdapter.ProtoTypeAdapter.Builder.setShouldUseJsonNameFieldOption",
+        "gson.src.test.java.com.google.gson.functional.JsonAdapterAnnotationOnFieldsTest.JsonAdapterAnnotationOnFieldsTest.PartJsonFieldAnnotationAdapter",
+        "gson.src.main.java.com.google.gson.FieldNamingPolicy.FieldNamingPolicy.upperCaseFirstLetter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.098,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "extras.src.main.java.com.google.gson.typeadapters.UtcDateTypeAdapter.UtcDateTypeAdapter.parse",
+        "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.parse",
+        "metrics.src.main.java.com.google.gson.metrics.ParseBenchmark.ParseBenchmark.timeParse",
+        "gson.src.main.java.com.google.gson.internal.bind.JavaTimeTypeAdapters.JavaTimeTypeAdapters.zonedDateTime",
+        "gson.src.main.java.com.google.gson.internal.PreJava9DateFormatProvider.PreJava9DateFormatProvider.getTimePartOfDateTimePattern"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.521,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithUnreferencedNoArgsConstructor.ClassWithUnreferencedNoArgsConstructor",
+        "gson.src.test.java.com.google.gson.internal.ConstructorConstructorTest.ConstructorConstructorTest.testGet_AbstractClassNoArgConstructor",
+        "test-shrinker.src.main.java.com.example.ClassWithNoArgsConstructor.ClassWithNoArgsConstructor",
+        "gson.src.main.java.com.google.gson.internal.ObjectConstructor.ObjectConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.excludeFieldsWithModifiers",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest.testOlderVersion",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest.testNewerVersion",
+        "gson.src.test.java.com.google.gson.VersionExclusionStrategyTest.VersionExclusionStrategyTest.testSameVersion"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.125,
+       "ndcg@10": 0.076,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setHtmlSafe",
+        "gson.src.main.java.com.google.gson.Gson.Gson.htmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.isHtmlSafe",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.readEscapeCharacter"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.275,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@104",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@70",
+        "gson.src.main.java.com.google.gson.ToNumberStrategy.ToNumberStrategy.readNumber",
+        "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@54"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.333,
+       "ndcg@10": 0.363,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.test.java.com.google.gson.internal.bind.RecursiveTypesResolveTest.RecursiveTypesResolveTest",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters",
+        "gson.src.test.java.com.google.gson.OverrideCoreTypeAdaptersTest.OverrideCoreTypeAdaptersTest",
+        "gson.src.main.java.com.google.gson.TypeAdapter.TypeAdapter.nullSafe",
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.GsonTypes"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.getMapKeyAndValueTypes",
+        "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory.Adapter.write",
+        "gson.src.test.java.com.google.gson.functional.MapAsArrayTypeAdapterTest.MapAsArrayTypeAdapterTest.testDuplicateKeyWithNullFirstValueArrayForm",
+        "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory",
+        "gson.src.test.java.com.google.gson.JsonObjectAsMapSuiteTest.JsonObjectAsMapSuiteTest.MapGenerator.createKeyArray"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapterRuntimeTypeWrapper.TypeAdapterRuntimeTypeWrapper",
+        "gson.src.test.java.com.google.gson.functional.ReusedTypeVariablesFullyResolveTest.ReusedTypeVariablesFullyResolveTest",
+        "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.resolveTypeVariable",
+        "gson.src.test.java.com.google.gson.functional.MoreSpecificTypeSerializationTest.MoreSpecificTypeSerializationTest.testWildcardTypeVariableSubclassFields",
+        "gson.src.test.java.com.google.gson.functional.TypeAdapterRuntimeTypeWrapperTest.TypeAdapterRuntimeTypeWrapperTest.Subclass"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.333,
+       "ndcg@10": 0.307,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testStrictSingleQuotedNames",
+        "gson.src.test.java.com.google.gson.CommentsTest.CommentsTest",
+        "gson.src.test.java.com.google.gson.CommentsTest.CommentsTest.testParseComments",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.skipUnquotedValue",
+        "gson.src.test.java.com.google.gson.stream.JsonReaderTest.JsonReaderTest.testStrictUnquotedNames"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-11",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@71",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap@83",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.LinkedTreeMap",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap",
+        "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.entrySet"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-12",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.RecordHelper.getCanonicalRecordConstructor",
+        "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor.newMapConstructor",
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.Adapter",
+        "gson.src.main.java.com.google.gson.JsonSerializer.JsonSerializer",
+        "gson.src.main.java.com.google.gson.internal.reflect.ReflectionHelper.ReflectionHelper.getCanonicalRecordConstructor"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-13",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.setPrettyPrinting",
+        "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setIndent",
+        "gson.src.main.java.com.google.gson.Gson.Gson.Gson",
+        "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.skipToEndOfLine",
+        "gson.src.test.java.com.google.gson.functional.PrettyPrintingTest.PrettyPrintingTest"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.125,
+       "ndcg@10": 0.207,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-14",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.FieldsData.FieldsData",
+        "gson.src.test.java.com.google.gson.functional.ExposeFieldsTest.ExposeFieldsTest.ClassWithExposedFields.ClassWithExposedFields@145",
+        "gson.src.test.java.com.google.gson.functional.ExposeFieldsTest.ExposeFieldsTest.ClassWithExposedFields.ClassWithExposedFields",
+        "gson.src.test.java.com.google.gson.functional.MoreSpecificTypeSerializationTest.MoreSpecificTypeSerializationTest.ClassWithBaseFields.ClassWithBaseFields",
+        "gson.src.main.java.com.google.gson.internal.bind.TypeAdapters.TypeAdapters.IntegerFieldsTypeAdapter.IntegerFieldsTypeAdapter"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "gson-15",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getParameterized",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.TypeToken@80",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.TypeToken",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken",
+        "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getTypeTokenTypeArgument"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-16",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapter",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.GsonBuilder",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder",
+        "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.GsonBuilder@166",
+        "gson.src.test.java.com.google.gson.GsonBuilderTest.GsonBuilderTest.testRegisterTypeAdapterForCoreType"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.924,
+       "success@1": 1.0
+      },
+      {
+       "id": "gson-17",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parseString",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.JsonParser",
+        "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parse",
+        "gson.src.main.java.com.google.gson.JsonStreamParser.JsonStreamParser.JsonStreamParser"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "__tests__.produce.Recipe@197",
+        "__tests__.produce.Recipe@95",
+        "__tests__.produce.Recipe@81",
+        "src.core.immerClass.Immer.produce",
+        "__tests__.produce.Recipe@186"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.25,
+       "ndcg@10": 0.356,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.core.immerClass.Immer.setUseStrictShallowCopy",
+        "src.core.proxy.isRelocatedBaseRef",
+        "src.utils.common.isModified",
+        "src.types.types-external.Draft",
+        "src.immer.castDraft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.utils.common.isModified",
+        "src.plugins.mapset.DraftSet",
+        "src.core.finalize.updateDraftInParent",
+        "src.plugins.mapset.DraftMap",
+        "src.types.types-external.Draft"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "__performance_tests__.todo.freeze",
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "src.core.finalize.maybeFreeze",
+        "src.core.finalize.processResult",
+        "src.utils.common.freeze"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.544,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.core.current.current",
+        "src.immer.castDraft",
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.isDraft",
+        "__tests__.produce.Recipe@197"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.613,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.core.finalize.updateDraftInParent",
+        "src.utils.common.original",
+        "src.types.types-external.Draft",
+        "__tests__.draft.fromDraft",
+        "src.plugins.mapset.DraftSet"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "__tests__.patch.runPatchTests",
+        "perf-testing.immutability-benchmarks.updateQueries",
+        "__tests__.patch.createPatchTestData",
+        "__tests__.patch",
+        "__tests__.patch.runNestedPatchScenario"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.143,
+       "ndcg@10": 0.081,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.plugins.mapset.DraftMap.set",
+        "src.plugins.mapset.DraftMap.values",
+        "src.plugins.mapset.DraftSet.values",
+        "src.plugins.mapset.DraftSet",
+        "src.plugins.mapset.enableMapSet"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.471,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.utils.common.isDraftable",
+        "src.plugins.mapset.DraftMap.values",
+        "src.plugins.mapset.DraftMap.entries",
+        "src.types.types-external.IsPlainArray",
+        "src.plugins.mapset.DraftSet.has"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.core.scope.revokeDraft",
+        "src.core.proxy.createProxyProxy",
+        "src.plugins.mapset.DraftSet.delete",
+        "src.utils.common.isModified",
+        "src.plugins.arrayMethods.enableArrayMethods"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.556,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-11",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.plugins.mapset.DraftMap.keys",
+        "src.plugins.mapset.DraftSet.keys",
+        "src.core.finalize.updateDraftInParent",
+        "__tests__.draft.toDraft",
+        "src.plugins.mapset.DraftMap.set"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-12",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.utils.common.isModified",
+        "__tests__.produce.Recipe@81",
+        "src.core.finalize.registerChildFinalizationCallback",
+        "__tests__.produce.Recipe@95",
+        "src.core.finalize.updateDraftInParent"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "immer-13",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.core.immerClass.Immer.finishDraft",
+        "src.core.immerClass.Immer.createDraft",
+        "src.core.immerClass.Immer.produce",
+        "__tests__.draft.fromDraft",
+        "src.types.types-external.Draft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-14",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "src.core.immerClass.Immer.setAutoFreeze",
+        "__performance_tests__.todo.freeze",
+        "src.utils.common.freeze",
+        "src.core.finalize.maybeFreeze",
+        "perf-testing.immutability-profiling.main"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-15",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "src.utils.common.isDraft",
+        "src.core.immerClass.Immer.createDraft",
+        "src.core.immerClass.Immer.finishDraft",
+        "src.core.finalize.updateDraftInParent",
+        "src.types.types-external.WritableNonArrayDraft"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "immer-16",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "src.immer.castImmutable",
+        "src.types.types-external.Immutable",
+        "src.immer.castDraft",
+        "__tests__.immutable",
+        "src.types.types-external.IfAvailable"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "paired_ndcg": {
+     "dense-keyword": {
+      "delta": 0.0405,
+      "ci95": [
+       -0.0704,
+       0.1628
+      ],
+      "wins": 19,
+      "losses": 20
+     },
+     "hybrid-dense": {
+      "delta": 0.0142,
+      "ci95": [
+       -0.0875,
+       0.1092
+      ],
+      "wins": 19,
+      "losses": 13
+     },
+     "graph-hybrid": {
+      "delta": -0.0061,
+      "ci95": [
+       -0.0161,
+       0.0
+      ],
+      "wins": 0,
+      "losses": 3
+     }
+    },
+    "query_embedding_ms": {
+     "p50": 4.22,
+     "p95": 45.52
+    },
+    "ann": {
+     "requested": 50,
+     "returned_min": 50,
+     "returned_median": 50.0,
+     "hnsw_recall_vs_exact_mean": 1.0,
+     "hnsw_recall_vs_exact_min": 1.0
+    }
+   },
+   "context": {
+    "settings": "defaults: max_chunks=8, max_chars=24000, include_code/related/rules",
+    "context_chars": {
+     "p50": 5888,
+     "p95": 24000,
+     "max": 24000
+    },
+    "approx_tokens_p50": 1472,
+    "approx_tokens_note": "chars/4 heuristic, not a tokenizer count",
+    "chunks_per_context_p50": 8,
+    "code_verified_fraction": 1.0,
+    "latency_ms_including_code_fetch": {
+     "p50": 94.76,
+     "p95": 534.64
+    }
+   },
+   "query_plans": {
+    "dense": [
+     "Limit",
+     "Sort",
+     "Index Scan on ix_document_chunks_repository_id"
+    ],
+    "dense_unfiltered": [
+     "Limit",
+     "Sort",
+     "Seq Scan"
+    ],
+    "keyword": [
+     "Limit",
+     "Index Scan on ix_document_chunks_repository_id"
+    ]
+   },
+   "storage": {
+    "tables": {
+     "document_chunks": {
+      "table_bytes": 30040064,
+      "index_bytes": 24821760,
+      "total_bytes": 54861824
+     },
+     "resources": {
+      "table_bytes": 2023424,
+      "index_bytes": 1835008,
+      "total_bytes": 3858432
+     },
+     "code_edges": {
+      "table_bytes": 1613824,
+      "index_bytes": 909312,
+      "total_bytes": 2523136
+     },
+     "repositories": {
+      "table_bytes": 16384,
+      "index_bytes": 81920,
+      "total_bytes": 98304
+     },
+     "ingestion_jobs": {
+      "table_bytes": 8192,
+      "index_bytes": 24576,
+      "total_bytes": 32768
+     }
+    },
+    "indexes": {
+     "idx_chunks_embedding_hnsw": 22118400,
+     "idx_resources_embedding_hnsw": 1687552,
+     "idx_chunks_search_text_fts": 1294336,
+     "idx_chunk_repo_symbol": 778240,
+     "idx_chunk_resource_index": 237568,
+     "document_chunks_pkey": 188416,
+     "ix_document_chunks_resource_id": 73728,
+     "idx_chunk_resource": 73728,
+     "ix_document_chunks_repository_id": 57344,
+     "resources_pkey": 32768,
+     "ix_resources_arxiv_id": 16384,
+     "ix_resources_doi": 16384,
+     "ix_resources_is_stale": 16384,
+     "ix_resources_pmid": 16384,
+     "ix_resources_publication_year": 16384,
+     "idx_resources_sparse_updated": 16384,
+     "ix_resources_repository_id": 16384
+    },
+    "footprint_bytes": 61374464,
+    "raw_source_bytes_of_indexed_files": 2861793,
+    "per_chunk_avg_bytes": {
+     "embedding": 3076,
+     "search_text": 443,
+     "semantic_summary": 272,
+     "chunk_metadata": 385,
+     "content_if_stored_on_disk": 552,
+     "content_if_stored_raw": 1248
+    },
+    "chunks": 5397,
+    "counterfactual_content_in_chunks": {
+     "document_chunks_table_bytes_with_content": 32423936,
+     "added_bytes": 2383872,
+     "footprint_with_content_bytes": 63758336,
+     "ratio_full_over_hybrid": 1.039
+    },
+    "ratio_raw_source_over_footprint": 0.047
+   }
+  }
+ },
+ "environment": {
+  "date": "2026-10-30T00:55:45+00:00",
+  "cpu": "arm",
+  "cpus": 18,
+  "memory_gib": 36.0,
+  "python": "3.13.15",
+  "postgres": "17.11 (Homebrew)",
+  "pgvector": "0.8.7",
+  "onnxruntime": "1.31.0",
+  "pharos_commit": "0b017297c0a8402832d5d164f02894f37796ceae",
+  "gpu": "none (CPU only)"
+ }
+}

@@ -280,6 +280,41 @@ def cmd_doctor(_args) -> int:
     return 1 if failures else 0
 
 
+def cmd_describe(args) -> int:
+    import subprocess
+    from pathlib import Path
+
+    from .codeintel.context import resolve_repositories
+    from .codeintel.describe import describe_repository
+    from .codeintel.embeddings import get_embedder
+    from .codeintel.runtime import session_scope
+    from .learning.llm import CodexCLI
+
+    llm = CodexCLI(effort="low", timeout=300, max_calls=args.max_calls)
+    if not llm.ready():
+        print("error: Codex CLI is not installed or not signed in with ChatGPT (codex login)", file=sys.stderr)
+        return 1
+    checkout = Path(args.checkout)
+    with session_scope() as db:
+        repos = resolve_repositories(db, args.repo)
+        if len(repos) != 1:
+            print(f"error: {args.repo!r} matches {len(repos)} repositories", file=sys.stderr)
+            return 1
+        repo = repos[0]
+        head = subprocess.run(["git", "-C", str(checkout), "rev-parse", "HEAD"], capture_output=True, text=True)
+        if head.stdout.strip() != repo.last_commit_sha:
+            print(f"error: checkout is at {head.stdout.strip() or '?'}, the index at {repo.last_commit_sha}",
+                  file=sys.stderr)
+            return 1
+        stats = describe_repository(db, repo.id, checkout, llm, get_embedder(), limit=args.limit,
+                                    only_undocumented=not args.include_documented,
+                                    progress=lambda m: print(m, file=sys.stderr, flush=True))
+    _print({"repository": repo.name, **{k: v for k, v in vars(stats).items()},
+            "codex": {"calls": llm.usage.calls, "input_tokens": llm.usage.input_tokens,
+                      "output_tokens": llm.usage.output_tokens, "seconds": round(llm.usage.seconds)}}, True)
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="pharos", description="Pharos code-intelligence CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -301,6 +336,14 @@ def build_parser() -> argparse.ArgumentParser:
         if name == "search":
             s.add_argument("--language", action="append")
         s.set_defaults(func=func)
+
+    s = sub.add_parser("describe", help="write contextual descriptions with Codex (owner's machine only)")
+    s.add_argument("repo", help="indexed repository id, URL or name")
+    s.add_argument("--checkout", required=True, help="working tree at the indexed commit")
+    s.add_argument("--limit", type=int, help="describe at most this many functions")
+    s.add_argument("--include-documented", action="store_true", help="also functions that have a doc comment")
+    s.add_argument("--max-calls", type=int, default=200, help="Codex call budget for this run")
+    s.set_defaults(func=cmd_describe)
 
     s = sub.add_parser("symbol", help="find a definition and its callers / callees")
     s.add_argument("name")

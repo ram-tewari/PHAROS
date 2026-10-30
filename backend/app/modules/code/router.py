@@ -203,7 +203,8 @@ def search_code(body: SearchRequest, db: Session = Depends(get_sync_db)):
     """Chunk-level retrieval. ``mode=auto`` reports what it actually used."""
     filters = _filters(db, body.repository, body.languages, body.kinds, body.path_prefix)
     try:
-        outcome = Retriever(db, get_embedder()).search(body.query, mode=body.mode, k=body.k, filters=filters)
+        outcome = Retriever(db, get_embedder()).search(body.query, mode=body.mode, k=body.k, filters=filters,
+                                                       hints=body.hints)
     except ModeUnavailable as exc:
         raise _mode_unavailable(exc) from exc
     return SearchResponse(

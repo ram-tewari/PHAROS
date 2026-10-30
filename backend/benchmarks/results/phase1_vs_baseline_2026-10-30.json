@@ -1,0 +1,186 @@
+{
+ "heldout_v1": {
+  "n": 51,
+  "ndcg@10": {
+   "baseline": 0.394,
+   "phase1": 0.697,
+   "phase1_hints": 0.709
+  },
+  "recall@10": {
+   "baseline": 0.469,
+   "phase1": 0.775,
+   "phase1_hints": 0.766
+  },
+  "mrr": {
+   "baseline": 0.439,
+   "phase1": 0.751,
+   "phase1_hints": 0.777
+  },
+  "success@1": {
+   "baseline": 0.275,
+   "phase1": 0.549,
+   "phase1_hints": 0.569
+  },
+  "paired_ndcg_phase1_minus_baseline": {
+   "delta": 0.3026,
+   "ci95": [
+    0.2081,
+    0.4009
+   ],
+   "wins": 32,
+   "losses": 4
+  },
+  "zero_recall": {
+   "baseline": 17,
+   "phase1": 4,
+   "phase1_hints": 4
+  },
+  "zero_recall_ids_phase1": [
+   "click-09",
+   "ky-09",
+   "anyhow-10",
+   "curl-09"
+  ],
+  "by_category": {
+   "behavior": {
+    "baseline": 0.284,
+    "phase1": 0.657
+   },
+   "identifier": {
+    "baseline": 0.987,
+    "phase1": 0.907
+   }
+  },
+  "by_repo": {
+   "click": {
+    "baseline": 0.484,
+    "phase1": 0.753
+   },
+   "ky": {
+    "baseline": 0.43,
+    "phase1": 0.795
+   },
+   "anyhow": {
+    "baseline": 0.184,
+    "phase1": 0.598
+   },
+   "curl": {
+    "baseline": 0.442,
+    "phase1": 0.631
+   }
+  },
+  "noise_top5": {
+   "baseline": 0.196,
+   "phase1": 0.027
+  },
+  "latency_ms_local": {
+   "baseline_graph": {
+    "p50": 38.28,
+    "p95": 122.71,
+    "max": 133.55
+   },
+   "phase1_auto": {
+    "p50": 12.46,
+    "p95": 28.2,
+    "max": 29.09
+   }
+  },
+  "modes_phase1": {
+   "keyword": 0.329,
+   "dense": 0.697,
+   "hybrid": 0.485,
+   "graph": 0.477,
+   "auto": 0.697,
+   "auto+hints": 0.709
+  }
+ },
+ "heldout_v2": {
+  "n": 50,
+  "ndcg@10": {
+   "baseline": 0.463,
+   "phase1": 0.726,
+   "phase1_hints": 0.822
+  },
+  "recall@10": {
+   "baseline": 0.562,
+   "phase1": 0.827,
+   "phase1_hints": 0.913
+  },
+  "mrr": {
+   "baseline": 0.491,
+   "phase1": 0.776,
+   "phase1_hints": 0.874
+  },
+  "success@1": {
+   "baseline": 0.34,
+   "phase1": 0.52,
+   "phase1_hints": 0.66
+  },
+  "paired_ndcg_phase1_minus_baseline": {
+   "delta": 0.2639,
+   "ci95": [
+    0.1792,
+    0.351
+   ],
+   "wins": 33,
+   "losses": 6
+  },
+  "zero_recall": {
+   "baseline": 12,
+   "phase1": 2,
+   "phase1_hints": 1
+  },
+  "zero_recall_ids_phase1": [
+   "gson-03",
+   "gson-14"
+  ],
+  "by_category": {
+   "behavior": {
+    "baseline": 0.364,
+    "phase1": 0.687
+   },
+   "identifier": {
+    "baseline": 0.982,
+    "phase1": 0.931
+   }
+  },
+  "by_repo": {
+   "chi": {
+    "baseline": 0.567,
+    "phase1": 0.836
+   },
+   "gson": {
+    "baseline": 0.318,
+    "phase1": 0.611
+   },
+   "immer": {
+    "baseline": 0.505,
+    "phase1": 0.732
+   }
+  },
+  "noise_top5": {
+   "baseline": 0.156,
+   "phase1": 0.008
+  },
+  "latency_ms_local": {
+   "baseline_graph": {
+    "p50": 62.38,
+    "p95": 479.31,
+    "max": 512.03
+   },
+   "phase1_auto": {
+    "p50": 25.52,
+    "p95": 39.63,
+    "max": 50.89
+   }
+  },
+  "modes_phase1": {
+   "keyword": 0.445,
+   "dense": 0.726,
+   "hybrid": 0.582,
+   "graph": 0.58,
+   "auto": 0.726,
+   "auto+hints": 0.822
+  }
+ }
+}

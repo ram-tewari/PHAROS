@@ -127,7 +127,19 @@ def test_search_code_contract(indexed_api, fixture_repo):
     )
     assert resp.status_code == 200
     data = resp.json()
-    assert data["mode_requested"] == "auto" and data["mode_used"] == "graph"
+    assert data["mode_requested"] == "auto" and data["mode_used"] == "dense"  # a question routes to dense
+    named = indexed_api.post("/api/v1/search/code", json={"query": "verify_password", "repository": "tinyshop"},
+                             headers=auth(READ_TOKEN)).json()
+    assert named["mode_used"] == "dense"  # names too: the embedder ranks them
+    hinted = indexed_api.post(
+        "/api/v1/search/code",
+        json={"query": "check a password against the stored hash", "repository": "tinyshop",
+              "hints": ["verify_password"]},
+        headers=auth(READ_TOKEN),
+    ).json()
+    assert hinted["mode_used"] == "hybrid"  # hints add keyword evidence, so auto fuses
+    assert hinted["results"][0]["symbol"] == "shop.auth.verify_password"
+    assert "exact_symbol_name" in hinted["results"][0]["evidence"]["boosts"]
     top = data["results"][0]
     assert top["repository"]["name"] == "tinyshop"
     assert top["commit_sha"] == fixture_repo.head

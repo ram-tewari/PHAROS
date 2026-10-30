@@ -1,5 +1,35 @@
 # Changelog
 
+## Unreleased — retrieval phase 1 (branch `retrieval-phase1`)
+
+Held-out nDCG@10 0.394 → 0.697 and 0.463 → 0.726 (two locked test sets, 101 questions);
+see `docs/benchmarks/retrieval-phase1-2026-10-30.md`.
+
+### Changed
+
+- **Default embedding model** for the free deployment: granite-embedding-english-r2 (int8 ONNX).
+  Switching models requires re-indexing. On 512 MB hosts it embeds queries only, and indexing runs
+  on another machine (`backend/deployment/mac/`, `INGEST_WORKER_IN_PROCESS=false`).
+- **`auto` is `dense`**, or `hybrid` when `hints` are passed (it was hybrid + graph for every query).
+- **Tests, docs and examples** are down-ranked (× 0.7, was × 0.85 for tests only) unless the query
+  asks for them.
+- **Embedded summaries** include up to 25 body lines; line-fallback chunks embed their own lines.
+- **Rust doc comments** survive `#[...]` attributes; **Rust `macro_rules!` and C/C++ function-like
+  macros** are indexed as `macro` symbols; **TypeScript `./x.js` imports** resolve to `x.ts`.
+- pgvector ≥ 0.8: filtered dense queries use iterative HNSW scans.
+
+### Added
+
+- `hints` on `POST /api/v1/search/code`, `POST /api/v1/context/retrieve` and the MCP
+  `search_code` / `retrieve_context` tools: identifiers the caller guesses.
+- `scripts/fetch_onnx_model.py --model …`: several pinned models, each with a `pharos_model.json`
+  profile (pooling, prefixes, maximum length) that `OnnxEmbedder` reads.
+- `pharos describe` and migration `0003_chunk_descriptions`: Codex-written function descriptions,
+  grounded and cached per blob SHA, folded into embeddings (built, not yet measured).
+- `app.learning.llm.CodexCLI`: a hardened `codex exec` adapter for jobs on the owner's machine.
+- Benchmarks: `--local-checkouts` and `--hints` in `retrieval_eval`, `prod_eval.py`,
+  `make_synthetic.py`, the locked `heldout_v2` set and the synthetic `dev_synth_v1` set.
+
 ## 0.5.0 — 2026-10 (unreleased; branch `claude/trusting-wozniak-8n9q2q`)
 
 A hardening release: one working code-intelligence path, real tests, measured retrieval, and the

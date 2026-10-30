@@ -42,11 +42,14 @@ from app.codeintel.context import ContextRequest, assemble_context  # noqa: E402
 from app.codeintel.embeddings import Embedder, HashEmbedder, OnnxEmbedder  # noqa: E402
 from app.codeintel.git_source import parse_repo_spec  # noqa: E402
 from app.codeintel.indexer import CodeIndexer  # noqa: E402
-from app.codeintel.retrieval import Filters, Retriever  # noqa: E402
+from app.codeintel.retrieval import Filters, Retriever, is_test_path  # noqa: E402
 from app.database.models import DocumentChunk, Repository, Resource  # noqa: E402
 from app.shared.db_url import normalize_database_url  # noqa: E402
 
-MODES = ("keyword", "dense", "hybrid", "graph")
+MODES = ("keyword", "dense", "hybrid", "graph", "auto")
+PAIRS = (("dense", "keyword"), ("hybrid", "dense"), ("graph", "hybrid"), ("auto", "dense"), ("auto", "graph"))
+#: ``auto`` with the caller's identifier / keyword guesses (``--hints``), scored when hints are given.
+HINTED = "auto+hints"
 K = 10
 BOOTSTRAP = 2000
 TABLES = ("document_chunks", "resources", "code_edges", "repositories", "ingestion_jobs")
@@ -102,6 +105,25 @@ def summarize(per_query: list[dict], seed: int = 0) -> dict:
     return out
 
 
+def paired_delta(a: list[float], b: list[float], n: int = 5000, seed: int = 1) -> dict:
+    """Mean per-query difference a − b with a paired percentile-bootstrap 95% CI."""
+    rng = random.Random(seed)
+    d = [x - y for x, y in zip(a, b, strict=True)]
+    means = sorted(statistics.fmean(rng.choices(d, k=len(d))) for _ in range(n))
+    return {"delta": round(statistics.fmean(d), 4),
+            "ci95": [round(means[int(0.025 * n)], 4), round(means[int(0.975 * n) - 1], 4)],
+            "wins": sum(x > 0 for x in d), "losses": sum(x < 0 for x in d)}
+
+
+_NOISE_PREFIXES = ("docs/", "doc/", "examples/", "example/", "test/", "tests/", "testdata/")
+
+
+def is_noise_path(path: str) -> bool:
+    """Tests, docs and examples: results that usually crowd out the implementation."""
+    p = (path or "").lower()
+    return is_test_path(path) or p.startswith(_NOISE_PREFIXES) or "/examples/" in p or "/docs/" in p
+
+
 def pct(values: list[float], p: float) -> float:
     s = sorted(values)
     return round(s[min(len(s) - 1, max(0, math.ceil(p / 100 * len(s)) - 1))], 2)
@@ -132,14 +154,24 @@ def make_embedder(spec: str) -> Embedder:
         return HashEmbedder()
     if spec.startswith("onnx="):
         path = spec.split("=", 1)[1]
-        return OnnxEmbedder(path, model_id=os.getenv("BENCH_ONNX_MODEL_ID", "all-MiniLM-L6-v2-onnx"))
+        # The model id comes from the directory's pharos_model.json when there is one.
+        return OnnxEmbedder(path, model_id=os.getenv("BENCH_ONNX_MODEL_ID"))
     raise SystemExit(f"unknown embedder {spec!r} (use 'hash' or 'onnx=<dir>')")
 
 
-def pinned_clone(repo: dict, workdir: Path) -> Path:
-    """A working tree at the dataset's commit (raw-size and content counterfactual)."""
+def pinned_clone(repo: dict, workdir: Path, by_commit: bool = False) -> Path:
+    """A working tree at the dataset's commit (raw-size and content counterfactual).
+
+    ``by_commit`` fetches the pinned commit itself, so a branch that has moved on
+    since the dataset was written still benchmarks the same code.
+    """
     dest = workdir / repo["name"]
-    if not dest.exists():
+    if not dest.exists() and by_commit:
+        subprocess.run(["git", "init", "-q", str(dest)], check=True)
+        subprocess.run(["git", "-C", str(dest), "fetch", "-q", "--depth", "1", repo["url"], repo["commit"]],
+                       check=True, timeout=600)
+        subprocess.run(["git", "-C", str(dest), "checkout", "-q", "FETCH_HEAD"], check=True)
+    elif not dest.exists():
         subprocess.run(["git", "clone", "-q", "--depth", "1", "--branch", repo["ref"], repo["url"], str(dest)],
                        check=True, timeout=600)
     head = subprocess.run(["git", "-C", str(dest), "rev-parse", "HEAD"], capture_output=True, text=True,
@@ -182,13 +214,19 @@ def environment(db: Session) -> dict:
 # ── measurements ────────────────────────────────────────────────────────────
 
 
-def index_repositories(factory, dataset: dict, embedder: Embedder) -> tuple[dict, dict]:
+def index_repositories(factory, dataset: dict, embedder: Embedder, clones: dict[str, Path] | None = None
+                       ) -> tuple[dict, dict]:
+    """Index each dataset repository: from GitHub at its ref, or from ``clones`` (pinned local checkouts)."""
     stats, repos = {}, {}
     for repo in dataset["repositories"]:
-        ref = parse_repo_spec(repo["url"], allowed_hosts=["github.com"])
+        if clones:
+            ref = parse_repo_spec(str(clones[repo["name"]]), allowed_hosts=[], allow_local=True)
+        else:
+            ref = parse_repo_spec(repo["url"], allowed_hosts=["github.com"])
         with factory() as db:
             t0 = time.perf_counter()
-            s = CodeIndexer(db, embedder, clone_timeout=600).index(ref, branch=repo["ref"])
+            branch = None if clones else repo["ref"]
+            s = CodeIndexer(db, embedder, clone_timeout=600).index(ref, branch=branch)
             wall = time.perf_counter() - t0
             if s.commit_sha != repo["commit"]:
                 raise SystemExit(f"{repo['name']}: indexed {s.commit_sha}, dataset pins {repo['commit']}")
@@ -211,7 +249,8 @@ def index_repositories(factory, dataset: dict, embedder: Embedder) -> tuple[dict
     return stats, repos
 
 
-def evaluate(factory, dataset: dict, embedder: Embedder, repo_ids: dict, repeats: int) -> dict:
+def evaluate(factory, dataset: dict, embedder: Embedder, repo_ids: dict, repeats: int,
+             hints: dict[str, list[str]] | None = None) -> dict:
     results = {}
     with factory() as db:
         retriever = Retriever(db, embedder)
@@ -221,20 +260,24 @@ def evaluate(factory, dataset: dict, embedder: Embedder, repo_ids: dict, repeats
             t0 = time.perf_counter()
             embedder.embed_query(q["query"])
             embed_ms.append((time.perf_counter() - t0) * 1000)
-        for mode in MODES:
-            per_query, latencies, rows = [], [], []
+        for label in MODES + ((HINTED,) if hints else ()):
+            mode = "auto" if label == HINTED else label
+            per_query, latencies, rows, noise = [], [], [], []
             for q in dataset["queries"]:
                 filters = Filters(repository_ids=[repo_ids[q["repo"]]])
-                retriever.search(q["query"], mode=mode, k=K, filters=filters)  # warm-up
+                q_hints = hints.get(q["id"]) if label == HINTED else None
+                retriever.search(q["query"], mode=mode, k=K, filters=filters, hints=q_hints)  # warm-up
                 times, outcome = [], None
                 for _ in range(repeats):
                     t0 = time.perf_counter()
-                    outcome = retriever.search(q["query"], mode=mode, k=K, filters=filters)
+                    outcome = retriever.search(q["query"], mode=mode, k=K, filters=filters, hints=q_hints)
                     times.append((time.perf_counter() - t0) * 1000)
                 ranked = ranked_symbols(outcome.hits)
                 m = query_metrics(ranked, q["relevant"])
                 per_query.append(m)
                 latencies.append(statistics.median(times))
+                top5 = [h.path for h in outcome.hits[:5]]
+                noise.append(sum(map(is_noise_path, top5)) / len(top5) if top5 else 0.0)
                 rows.append({"id": q["id"], "category": q["category"], "mode_used": outcome.mode_used,
                              "top5": ranked[:5], **{k: round(v, 3) for k, v in m.items()}})
             by_cat = {}
@@ -245,13 +288,17 @@ def evaluate(factory, dataset: dict, embedder: Embedder, repo_ids: dict, repeats
             for repo in repo_ids:
                 idx = [i for i, q in enumerate(dataset["queries"]) if q["repo"] == repo]
                 by_repo[repo] = {"n": len(idx), **summarize([per_query[i] for i in idx])}
-            results[mode] = {
+            results[label] = {
                 "overall": {"n": len(per_query), **summarize(per_query)},
                 "by_category": by_cat,
                 "by_repository": by_repo,
                 "latency_ms": {"p50": pct(latencies, 50), "p95": pct(latencies, 95), "max": pct(latencies, 100)},
+                "top5_noise_share": round(statistics.fmean(noise), 3),
                 "queries": rows,
             }
+        results["paired_ndcg"] = {f"{a}-{b}": paired_delta([r["ndcg@10"] for r in results[a]["queries"]],
+                                                           [r["ndcg@10"] for r in results[b]["queries"]])
+                                  for a, b in PAIRS + (((HINTED, "auto"),) if hints else ())}
         results["query_embedding_ms"] = {"p50": pct(embed_ms, 50), "p95": pct(embed_ms, 95)}
         results["ann"] = ann_quality(db, retriever, dataset, repo_ids)
     return results
@@ -422,6 +469,9 @@ def main(argv=None) -> int:
     ap.add_argument("--embedder", action="append", required=True, help="'hash' or 'onnx=<model dir>'")
     ap.add_argument("--repeats", type=int, default=3)
     ap.add_argument("--workdir", default=None, help="where to keep pinned clones")
+    ap.add_argument("--hints", help="JSON {query id: [identifier / keyword guesses]}; adds the auto+hints mode")
+    ap.add_argument("--local-checkouts", action="store_true",
+                    help="fetch each repository's pinned commit and index that checkout, instead of the ref on GitHub")
     ap.add_argument("--out", required=True)
     args = ap.parse_args(argv)
 
@@ -430,7 +480,7 @@ def main(argv=None) -> int:
         raise SystemExit("refusing to reset a database whose name does not contain 'bench'")
     dataset = json.loads(Path(args.dataset).read_text())
     workdir = Path(args.workdir or tempfile.mkdtemp(prefix="pharos_bench_"))
-    clones = {r["name"]: pinned_clone(r, workdir) for r in dataset["repositories"]}
+    clones = {r["name"]: pinned_clone(r, workdir, by_commit=args.local_checkouts) for r in dataset["repositories"]}
 
     report = {"dataset": {k: dataset[k] for k in ("name", "version", "labeling", "repositories")},
               "n_queries": len(dataset["queries"]), "k": K, "repeats": args.repeats, "runs": {}}
@@ -442,13 +492,19 @@ def main(argv=None) -> int:
         factory = sessionmaker(bind=engine, expire_on_commit=False)
         with factory() as db:
             report.setdefault("environment", environment(db))
-        indexing, repo_ids = index_repositories(factory, dataset, embedder)
+        indexing, repo_ids = index_repositories(factory, dataset, embedder,
+                                                clones if args.local_checkouts else None)
         print(f"   indexed: {json.dumps({k: v['wall_seconds'] for k, v in indexing.items()})}", flush=True)
-        retrieval = evaluate(factory, dataset, embedder, repo_ids, args.repeats)
-        for mode in MODES:
+        hints = json.loads(Path(args.hints).read_text()) if args.hints else None
+        retrieval = evaluate(factory, dataset, embedder, repo_ids, args.repeats, hints)
+        for mode in MODES + ((HINTED,) if hints else ()):
             o = retrieval[mode]["overall"]
             print(f"   {mode:8s} R@10={o['recall@10']['mean']:.3f} MRR={o['mrr']['mean']:.3f} "
-                  f"nDCG@10={o['ndcg@10']['mean']:.3f} p50={retrieval[mode]['latency_ms']['p50']}ms", flush=True)
+                  f"nDCG@10={o['ndcg@10']['mean']:.3f} {o['ndcg@10']['ci95']} "
+                  f"noise@5={retrieval[mode]['top5_noise_share']} p50={retrieval[mode]['latency_ms']['p50']}ms",
+                  flush=True)
+        for pair, d in retrieval["paired_ndcg"].items():
+            print(f"   {pair:15s} Δ nDCG@10 {d['delta']:+.4f} {d['ci95']} ({d['wins']}W/{d['losses']}L)", flush=True)
         run = {
             "embedder": {"spec": spec if spec == "hash" else "onnx", "model_id": embedder.model_id,
                          "semantic": embedder.semantic},

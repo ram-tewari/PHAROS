@@ -41,6 +41,9 @@ GRAMMAR_PACKAGES: dict[str, tuple[str, str, str]] = {
 }
 
 _COMMENT_TYPES = {"comment", "line_comment", "block_comment"}
+# Siblings that may sit between a doc comment and its definition
+# (Rust `#[must_use]`, `#[cfg(...)]`): skipped when collecting the comment.
+_ATTRIBUTE_TYPES = {"attribute_item"}
 _IDENT_TYPES = {
     "identifier",
     "type_identifier",
@@ -231,6 +234,7 @@ LANGUAGES: dict[str, _Lang] = {
             "enum_item": _Def("enum", _field_text("name")),
             "trait_item": _Def("trait", _field_text("name"), container=True),
             "impl_item": _Def("impl", _rust_impl_name, container=True),
+            "macro_definition": _Def("macro", _field_text("name")),
         },
         calls={
             "call_expression": _callee("function"),
@@ -243,6 +247,7 @@ LANGUAGES: dict[str, _Lang] = {
             "function_definition": _Def("function", _c_declarator_name),
             "struct_specifier": _Def("struct", _named_with_body),
             "enum_specifier": _Def("enum", _named_with_body),
+            "preproc_function_def": _Def("macro", _field_text("name")),
         },
         calls={"call_expression": _callee("function")},
         imports={"preproc_include": _string_field("path")},
@@ -250,6 +255,7 @@ LANGUAGES: dict[str, _Lang] = {
     "cpp": _Lang(
         defs={
             "function_definition": _Def("function", _c_declarator_name),
+            "preproc_function_def": _Def("macro", _field_text("name")),
             "class_specifier": _Def("class", _named_with_body, container=True),
             "struct_specifier": _Def("struct", _named_with_body, container=True),
             "enum_specifier": _Def("enum", _named_with_body),
@@ -353,15 +359,23 @@ def _leading_comment(node, src: bytes) -> str:
     comments = []
     expected_end_row = target.start_point[0]
     sibling = target.prev_sibling
-    while sibling is not None and sibling.type in _COMMENT_TYPES:
+    while sibling is not None and sibling.type in _COMMENT_TYPES | _ATTRIBUTE_TYPES:
         if sibling.end_point[0] < expected_end_row - 1:
             break  # a blank line separates the comment from the definition
-        comments.append(_text(sibling, src))
+        if sibling.type in _COMMENT_TYPES:
+            comments.append(_text(sibling, src))
         expected_end_row = sibling.start_point[0]
         sibling = sibling.prev_sibling
     if not comments:
         return ""
     return clip(_clean_comment("\n".join(reversed(comments))), MAX_DOCSTRING_CHARS)
+
+
+def _end_line(node) -> int:
+    """1-based last line; a node that ends with its newline (C preprocessor
+    directives) ends on the line before the one its end point is on."""
+    row, column = node.end_point
+    return row if column == 0 and row > node.start_point[0] else row + 1
 
 
 def _signature(node, src: bytes) -> str:
@@ -371,7 +385,8 @@ def _signature(node, src: bytes) -> str:
     header = src[node.start_byte:end].decode("utf-8", errors="replace")
     if body is None:
         header = header.split("\n", 1)[0]
-    return clip(header.rstrip().rstrip("{").rstrip(), MAX_SIGNATURE_CHARS)
+    # A C macro's first line ends in a line continuation.
+    return clip(header.rstrip().rstrip("\\").rstrip().rstrip("{").rstrip(), MAX_SIGNATURE_CHARS)
 
 
 def _go_receiver_type(node, src: bytes) -> str | None:
@@ -460,7 +475,7 @@ def parse_treesitter(path: str, source: str, language: str, grammar: str, module
                 qualified_name=qualified,
                 kind=kind,
                 start_line=node.start_point[0] + 1,
-                end_line=node.end_point[0] + 1,
+                end_line=_end_line(node),
                 signature=_signature(node, src),
                 docstring=_leading_comment(node, src),
                 parent=parent_qual,

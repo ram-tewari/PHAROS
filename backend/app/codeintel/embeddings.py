@@ -35,6 +35,7 @@ is exactly preserved.
 from __future__ import annotations
 
 import hashlib
+import json
 import logging
 import math
 import os
@@ -282,10 +283,26 @@ class HttpEmbedder(_PrefixMixin, Embedder):
 
 
 class OnnxEmbedder(Embedder):
-    def __init__(self, model_dir: str, model_id: str | None = None, max_length: int = 256, batch_size: int = 32):
+    """A sentence-embedding model exported to ONNX, run on CPU.
+
+    ``pharos_model.json`` in ``model_dir`` (written by
+    ``scripts/fetch_onnx_model.py``) gives the model's pooling (``mean`` or
+    ``cls``), query / document prefixes, maximum length, ONNX file name and
+    model id; without it the defaults suit all-MiniLM-L6-v2.
+    """
+
+    def __init__(self, model_dir: str, model_id: str | None = None, max_length: int | None = None,
+                 batch_size: int = 32):
         self.model_dir = model_dir
-        self.model_id = model_id or f"onnx:{os.path.basename(os.path.normpath(model_dir))}"
-        self.max_length = max_length
+        profile = _read_profile(model_dir)
+        self.model_id = model_id or profile.get("model_id") or f"onnx:{os.path.basename(os.path.normpath(model_dir))}"
+        self.max_length = max_length or int(profile.get("max_length", 256))
+        self.pooling = profile.get("pooling", "mean")
+        if self.pooling not in ("mean", "cls"):
+            raise ValueError(f"unsupported pooling {self.pooling!r} in {model_dir}/pharos_model.json")
+        self.query_prefix = profile.get("query_prefix", "")
+        self.document_prefix = profile.get("document_prefix", "")
+        self.onnx_file = profile.get("onnx_file", "model.onnx")
         self.batch_size = batch_size
         self._session = None
         self._tokenizer = None
@@ -304,10 +321,10 @@ class OnnxEmbedder(Embedder):
                 raise EmbeddingUnavailable(
                     "onnx backend needs onnxruntime and tokenizers (pip install -r requirements-onnx.txt)"
                 ) from exc
-            model_path = os.path.join(self.model_dir, "model.onnx")
+            model_path = os.path.join(self.model_dir, self.onnx_file)
             tok_path = os.path.join(self.model_dir, "tokenizer.json")
             if not (os.path.isfile(model_path) and os.path.isfile(tok_path)):
-                raise EmbeddingUnavailable(f"{self.model_dir} must contain model.onnx and tokenizer.json")
+                raise EmbeddingUnavailable(f"{self.model_dir} must contain {self.onnx_file} and tokenizer.json")
             tokenizer = Tokenizer.from_file(tok_path)
             tokenizer.enable_truncation(max_length=self.max_length)
             tokenizer.enable_padding()
@@ -318,6 +335,12 @@ class OnnxEmbedder(Embedder):
             self._tokenizer = tokenizer
 
     def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.encode_raw([self.document_prefix + t for t in texts])
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.encode_raw([self.query_prefix + text])[0]
+
+    def encode_raw(self, texts: list[str]) -> list[list[float]]:
         import numpy as np
 
         self._load()
@@ -330,11 +353,22 @@ class OnnxEmbedder(Embedder):
             if "token_type_ids" in self._input_names:
                 feeds["token_type_ids"] = np.zeros_like(ids)
             hidden = self._session.run(None, feeds)[0]  # (batch, seq, dim)
-            m = mask[..., None].astype(np.float32)
-            pooled = (hidden * m).sum(axis=1) / np.clip(m.sum(axis=1), 1e-9, None)
+            if self.pooling == "cls":
+                pooled = hidden[:, 0, :].astype(np.float32)
+            else:
+                m = mask[..., None].astype(np.float32)
+                pooled = (hidden * m).sum(axis=1) / np.clip(m.sum(axis=1), 1e-9, None)
             pooled /= np.clip(np.linalg.norm(pooled, axis=1, keepdims=True), 1e-12, None)
             out.extend(_pad(v.tolist(), self.dim) for v in pooled)
         return out
+
+
+def _read_profile(model_dir: str) -> dict:
+    path = os.path.join(model_dir, "pharos_model.json")
+    if not os.path.isfile(path):
+        return {}
+    with open(path) as fh:
+        return json.load(fh)
 
 
 # ── factory ─────────────────────────────────────────────────────────────────

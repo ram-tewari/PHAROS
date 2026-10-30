@@ -66,6 +66,12 @@ class RepositoryOut(BaseModel):
     graph: dict | None
 
 
+HINTS_DESCRIPTION = (
+    "Optional guesses of identifiers or keywords the code probably uses (e.g. ['parse_url', 'redirect']). "
+    "They help keyword matching; the question itself is still what is embedded."
+)
+
+
 class SearchRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=2000)
     repository: str | None = Field(None, description="Repository id, URL or name; all repositories when omitted.")
@@ -74,6 +80,7 @@ class SearchRequest(BaseModel):
     languages: list[str] | None = Field(None, max_length=20)
     kinds: list[str] | None = Field(None, max_length=20, description="e.g. function, method, class, module")
     path_prefix: str | None = Field(None, max_length=1024)
+    hints: list[str] | None = Field(None, max_length=20, description=HINTS_DESCRIPTION)
 
 
 class RepositoryRef(BaseModel):
@@ -136,6 +143,7 @@ class ContextRequestIn(BaseModel):
     languages: list[str] | None = None
     kinds: list[str] | None = None
     path_prefix: str | None = Field(None, max_length=1024)
+    hints: list[str] | None = Field(None, max_length=20, description=HINTS_DESCRIPTION)
 
 
 class ContextChunk(ChunkHit):

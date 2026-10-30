@@ -1,0 +1,1428 @@
+{
+ "name": "pharos-dev-synth",
+ "version": 1,
+ "created": "2026-10-30",
+ "labeling": "Synthetic dev set for tuning only. Codex wrote one behaviour question per sampled source function from its body with comments and docs removed; the function is the only label (grade 2). Dropped: 44 skipped as trivial, 3 that named an identifier, 0 in failed Codex batches. Questions follow the body, so they favour body-aware methods; confirm every change on the hand-written locked test sets.",
+ "repositories": [
+  {
+   "name": "flask",
+   "url": "https://github.com/pallets/flask",
+   "ref": "3.0.3",
+   "commit": "c12a5d874c5a014495eb2db8a73f40037bc813ac",
+   "language": "python"
+  },
+  {
+   "name": "cobra",
+   "url": "https://github.com/spf13/cobra",
+   "ref": "v1.8.1",
+   "commit": "e94f6d0dd9a5e5738dca6bce03c4b1207ffbc0ec",
+   "language": "go"
+  },
+  {
+   "name": "log",
+   "url": "https://github.com/rust-lang/log",
+   "ref": "master",
+   "commit": "b4e2b1277ec9e490e7c269635300f94ba2740bcd",
+   "language": "rust"
+  },
+  {
+   "name": "jq",
+   "url": "https://github.com/jqlang/jq",
+   "ref": "master",
+   "commit": "ac35c7dcbb991fa0f3c3196dd00ca479211e9847",
+   "language": "c"
+  },
+  {
+   "name": "execa",
+   "url": "https://github.com/sindresorhus/execa",
+   "ref": "main",
+   "commit": "247faa0ff0641020e8790475989cee72df85d62b",
+   "language": "typescript"
+  }
+ ],
+ "queries": [
+  {
+   "id": "flask-s001",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can I queue categorized notifications for later display and notify subscribers when added?",
+   "relevant": {
+    "flask.helpers.flash": 2
+   }
+  },
+  {
+   "id": "flask-s002",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where are incoming requests routed to handlers, with routing errors and automatic preflight responses handled?",
+   "relevant": {
+    "flask.app.Flask.dispatch_request": 2
+   }
+  },
+  {
+   "id": "flask-s003",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How does the testing client prepare requests, manage preserved contexts, and configure returned JSON decoding?",
+   "relevant": {
+    "flask.testing.FlaskClient.open": 2
+   }
+  },
+  {
+   "id": "flask-s004",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can I detect single entry dictionaries whose keys match registered serialization markers?",
+   "relevant": {
+    "flask.json.tag.TagDict.check": 2
+   }
+  },
+  {
+   "id": "flask-s005",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where are recognized serialization markers decoded while ordinary dictionaries are left unchanged?",
+   "relevant": {
+    "flask.json.tag.TaggedJSONSerializer.untag": 2
+   }
+  },
+  {
+   "id": "flask-s006",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How are certificate arguments validated to accept filesystem paths, temporary certificates, or imported secure connection configurations?",
+   "relevant": {
+    "flask.cli.CertParamType.convert": 2
+   }
+  },
+  {
+   "id": "flask-s007",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How are component registration settings initialized by combining supplied overrides with existing routing defaults?",
+   "relevant": {
+    "flask.sansio.blueprints.BlueprintSetupState.__init__": 2
+   }
+  },
+  {
+   "id": "flask-s008",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can a decorator register a request handler for a URL pattern with optional settings?",
+   "relevant": {
+    "flask.sansio.scaffold.Scaffold.route": 2
+   }
+  },
+  {
+   "id": "flask-s009",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can configuration be loaded from a path stored in an environment setting, optionally ignoring missing values?",
+   "relevant": {
+    "flask.config.Config.from_envvar": 2
+   }
+  },
+  {
+   "id": "flask-s010",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can configuration be populated from uppercase attributes of an object or an imported reference?",
+   "relevant": {
+    "flask.config.Config.from_object": 2
+   }
+  },
+  {
+   "id": "flask-s011",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can an application be located using a textual attribute reference or factory call with literal arguments?",
+   "relevant": {
+    "flask.cli.find_app_by_string": 2
+   }
+  },
+  {
+   "id": "flask-s012",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where is development server startup configured with environment settings, listening address, debugging, and automatic reloading?",
+   "relevant": {
+    "flask.app.Flask.run": 2
+   }
+  },
+  {
+   "id": "flask-s013",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where does the application reject configuration changes after handling its first incoming request?",
+   "relevant": {
+    "flask.sansio.app.App._check_setup_finished": 2
+   }
+  },
+  {
+   "id": "flask-s014",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How is an imported package\u2019s containing directory located, including namespace packages and missing imports?",
+   "relevant": {
+    "flask.sansio.scaffold._find_package_path": 2
+   }
+  },
+  {
+   "id": "flask-s015",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where are helpful debugging errors added for uploads submitted without the required multipart encoding?",
+   "relevant": {
+    "flask.wrappers.Request._load_form_data": 2
+   }
+  },
+  {
+   "id": "flask-s016",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can a decorator register a view handler under a specified routing label?",
+   "relevant": {
+    "flask.sansio.scaffold.Scaffold.endpoint": 2
+   }
+  },
+  {
+   "id": "flask-s017",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where are outgoing HTTP results passed through postprocessing callbacks before persisting browser session changes?",
+   "relevant": {
+    "flask.app.Flask.process_response": 2
+   }
+  },
+  {
+   "id": "flask-s018",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can I diagnose all template loading attempts while returning the first successful result?",
+   "relevant": {
+    "flask.templating.DispatchingJinjaLoader._get_source_explained": 2
+   }
+  },
+  {
+   "id": "flask-s019",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can URL generation failures be passed through recovery callbacks before raising the final error?",
+   "relevant": {
+    "flask.sansio.app.App.handle_url_build_error": 2
+   }
+  },
+  {
+   "id": "flask-s020",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can I render a text template using supplied context and the active application's rendering pipeline?",
+   "relevant": {
+    "flask.templating.render_template_string": 2
+   }
+  },
+  {
+   "id": "flask-s021",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where is an incoming request matched to a route, with routing failures saved for later handling?",
+   "relevant": {
+    "flask.ctx.RequestContext.match_request": 2
+   }
+  },
+  {
+   "id": "flask-s022",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can a module register a cleanup callback for every application request when first attached?",
+   "relevant": {
+    "flask.sansio.blueprints.Blueprint.teardown_app_request": 2
+   }
+  },
+  {
+   "id": "flask-s023",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How can I extract configuration entries sharing a prefix, optionally removing it and lowercasing keys?",
+   "relevant": {
+    "flask.config.Config.get_namespace": 2
+   }
+  },
+  {
+   "id": "flask-s024",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where is incoming HTTP context activated, ensuring application scope, opening browser state, and matching routes?",
+   "relevant": {
+    "flask.ctx.RequestContext.push": 2
+   }
+  },
+  {
+   "id": "flask-s025",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where is a web application initialized with command line support and automatic static asset routing?",
+   "relevant": {
+    "flask.app.Flask.__init__": 2
+   }
+  },
+  {
+   "id": "flask-s026",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How is the configured file caching duration converted from a time interval into seconds?",
+   "relevant": {
+    "flask.blueprints.Blueprint.get_send_file_max_age": 2
+   }
+  },
+  {
+   "id": "flask-s027",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where is incoming HTTP context initialized, capturing routing failures and preparing per-call callback storage?",
+   "relevant": {
+    "flask.ctx.RequestContext.__init__": 2
+   }
+  },
+  {
+   "id": "flask-s028",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "Where are default serialization handlers registered while initializing lookup and processing order collections?",
+   "relevant": {
+    "flask.json.tag.TaggedJSONSerializer.__init__": 2
+   }
+  },
+  {
+   "id": "flask-s029",
+   "repo": "flask",
+   "category": "behavior",
+   "query": "How are application globals and incoming HTTP state exposed to templates when their contexts exist?",
+   "relevant": {
+    "flask.templating._default_template_ctx_processor": 2
+   }
+  },
+  {
+   "id": "cobra-s030",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I calculate the minimum edits between two strings while optionally ignoring letter case?",
+   "relevant": {
+    "cobra.ld": 2
+   }
+  },
+  {
+   "id": "cobra-s031",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How do I generate shell completion statements for sorted alternative argument names?",
+   "relevant": {
+    "bash_completions.writeArgAliases": 2
+   }
+  },
+  {
+   "id": "cobra-s032",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I require at least one command line option from a specified group?",
+   "relevant": {
+    "flag_groups.Command.MarkFlagsOneRequired": 2
+   }
+  },
+  {
+   "id": "cobra-s033",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How do I generate required option completion entries with long names, short forms, and value markers?",
+   "relevant": {
+    "bash_completions.writeRequiredFlag": 2
+   }
+  },
+  {
+   "id": "cobra-s034",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I track explicitly supplied options within annotated groups whose members are all available?",
+   "relevant": {
+    "flag_groups.processFlagForGroupAnnotation": 2
+   }
+  },
+  {
+   "id": "cobra-s035",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How are inherited and locally persistent options merged into a command\u2019s active option set?",
+   "relevant": {
+    "command.Command.mergePersistentFlags": 2
+   }
+  },
+  {
+   "id": "cobra-s036",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I check whether every requested option exists in a collection of command-line options?",
+   "relevant": {
+    "flag_groups.hasAllFlags": 2
+   }
+  },
+  {
+   "id": "cobra-s037",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where are shell completion handlers generated for options using file extensions, custom actions, or directories?",
+   "relevant": {
+    "bash_completions.writeFlagHandler": 2
+   }
+  },
+  {
+   "id": "cobra-s038",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where are integer and string values compared through reflection while unsupported collection types trigger a panic?",
+   "relevant": {
+    "cobra.Eq": 2
+   }
+  },
+  {
+   "id": "cobra-s039",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where is the shell completion list populated with available subcommands, help, and their aliases?",
+   "relevant": {
+    "bash_completions.writeCommands": 2
+   }
+  },
+  {
+   "id": "cobra-s040",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where is the shell completion entry point generated with initialization and compatibility-aware registration?",
+   "relevant": {
+    "bash_completions.writePostscript": 2
+   }
+  },
+  {
+   "id": "cobra-s041",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I detect whether a short option accepts omission of its value?",
+   "relevant": {
+    "command.shortHasNoOptDefVal": 2
+   }
+  },
+  {
+   "id": "cobra-s042",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How are ancestor command options collected while excluding options already defined locally?",
+   "relevant": {
+    "command.Command.InheritedFlags": 2
+   }
+  },
+  {
+   "id": "cobra-s043",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How is configuration read from command-specific environment settings with a global fallback?",
+   "relevant": {
+    "completions.getEnvConfig": 2
+   }
+  },
+  {
+   "id": "cobra-s044",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where is the shell completion preamble generated with debugging helpers and custom completion support?",
+   "relevant": {
+    "bash_completions.writePreamble": 2
+   }
+  },
+  {
+   "id": "cobra-s045",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How is a command classified as help-only by checking its visibility, executability, and descendants?",
+   "relevant": {
+    "command.Command.IsAdditionalHelpTopicCommand": 2
+   }
+  },
+  {
+   "id": "cobra-s046",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How are short command-line options emitted for shell completion, including argument requirements and custom handlers?",
+   "relevant": {
+    "bash_completions.writeShortFlag": 2
+   }
+  },
+  {
+   "id": "cobra-s047",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I generate a shell completion script with optional descriptions and completion directive handling?",
+   "relevant": {
+    "bash_completionsV2.genBashComp": 2
+   }
+  },
+  {
+   "id": "cobra-s048",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I remove the first matching positional argument while preserving options and their values?",
+   "relevant": {
+    "command.Command.argsMinusFirstX": 2
+   }
+  },
+  {
+   "id": "cobra-s049",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I detach selected subcommands and recalculate display widths for the remaining children?",
+   "relevant": {
+    "command.Command.RemoveCommand": 2
+   }
+  },
+  {
+   "id": "cobra-s050",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I find a command option locally before checking inherited persistent options?",
+   "relevant": {
+    "command.Command.Flag": 2
+   }
+  },
+  {
+   "id": "cobra-s051",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I resolve command input through parent inheritance before using a default reader?",
+   "relevant": {
+    "command.Command.getIn": 2
+   }
+  },
+  {
+   "id": "cobra-s052",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I enforce that related options are supplied together and report missing ones?",
+   "relevant": {
+    "flag_groups.validateRequiredFlagGroups": 2
+   }
+  },
+  {
+   "id": "cobra-s053",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I suggest matching long and short command line options with their descriptions?",
+   "relevant": {
+    "completions.getFlagNameCompletions": 2
+   }
+  },
+  {
+   "id": "cobra-s054",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where are child commands attached while updating display widths and inheriting option normalization rules?",
+   "relevant": {
+    "command.Command.AddCommand": 2
+   }
+  },
+  {
+   "id": "cobra-s055",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I render a text template with custom helpers and supplied data to an output stream?",
+   "relevant": {
+    "cobra.tmpl": 2
+   }
+  },
+  {
+   "id": "cobra-s056",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where are command line arguments resolved and executed with context propagation, help handling, and error reporting?",
+   "relevant": {
+    "command.Command.ExecuteC": 2
+   }
+  },
+  {
+   "id": "cobra-s057",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I safely retrieve a registered completion callback for a command line option?",
+   "relevant": {
+    "completions.Command.GetFlagCompletionFunc": 2
+   }
+  },
+  {
+   "id": "cobra-s058",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "Where is launching from the graphical file explorer detected to display guidance before exiting?",
+   "relevant": {
+    "command_win.preExecHook": 2
+   }
+  },
+  {
+   "id": "cobra-s059",
+   "repo": "cobra",
+   "category": "behavior",
+   "query": "How can I check required command line options and report all that were omitted?",
+   "relevant": {
+    "command.Command.ValidateRequiredFlags": 2
+   }
+  },
+  {
+   "id": "log-s060",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I convert stored integers into an unsigned 128-bit number while rejecting negative values?",
+   "relevant": {
+    "src.kv.value.Inner.to_u128": 2
+   }
+  },
+  {
+   "id": "log-s061",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are numeric settings mapped to logging severity thresholds, with invalid numbers rejected?",
+   "relevant": {
+    "src.lib.LevelFilter.from_usize": 2
+   }
+  },
+  {
+   "id": "log-s062",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Which test checks the error message for attempting to initialize logging more than once?",
+   "relevant": {
+    "src.lib.test_error_trait": 2
+   }
+  },
+  {
+   "id": "log-s063",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are logging threshold reductions tested, including saturation when logging is disabled?",
+   "relevant": {
+    "src.lib.test_level_filter_down": 2
+   }
+  },
+  {
+   "id": "log-s064",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are borrowed and copy-on-write text conversions tested for textual versus nontextual values?",
+   "relevant": {
+    "src.kv.value.test_to_cow_str": 2
+   }
+  },
+  {
+   "id": "log-s065",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where is deserialization of logging thresholds from uppercase byte sequences tested?",
+   "relevant": {
+    "src.serde.test_level_filter_de_bytes": 2
+   }
+  },
+  {
+   "id": "log-s066",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How are visited key-value entries rendered as a diagnostic map while propagating failures?",
+   "relevant": {
+    "src.lib.KeyValues.fmt": 2
+   }
+  },
+  {
+   "id": "log-s067",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are integers mapped to logging severities, rejecting numbers outside one through five?",
+   "relevant": {
+    "src.lib.Level.from_usize": 2
+   }
+  },
+  {
+   "id": "log-s068",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are tests verifying case insensitive parsing of logging severity names and rejection of invalid inputs?",
+   "relevant": {
+    "src.lib.test_level_from_str": 2
+   }
+  },
+  {
+   "id": "log-s069",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I search multiple data sources in order and return the first matching entry?",
+   "relevant": {
+    "src.kv.source.[S].get": 2
+   }
+  },
+  {
+   "id": "log-s070",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are tests checking that primitive conversions preserve numeric categories and represent absent options as null?",
+   "relevant": {
+    "src.kv.value.test_to_value_structured": 2
+   }
+  },
+  {
+   "id": "log-s071",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How are callbacks adapted between two structured data traversal interfaces while translating errors and handling nulls?",
+   "relevant": {
+    "src.kv.value.visit": 2
+   }
+  },
+  {
+   "id": "log-s072",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I retain the entry content when its label matches a requested label?",
+   "relevant": {
+    "src.kv.source.Get.visit_pair": 2
+   }
+  },
+  {
+   "id": "log-s073",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I traverse multiple structured data sources and stop at the first error?",
+   "relevant": {
+    "src.kv.source.[S].visit": 2
+   }
+  },
+  {
+   "id": "log-s074",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I construct serialization tokens for a logging threshold represented by bytes?",
+   "relevant": {
+    "src.serde.level_filter_bytes_tokens": 2
+   }
+  },
+  {
+   "id": "log-s075",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I install a global logging backend without synchronization and reject repeated initialization?",
+   "relevant": {
+    "src.lib.set_logger_racy": 2
+   }
+  },
+  {
+   "id": "log-s076",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I convert optional data into a generic representation, treating absence as empty?",
+   "relevant": {
+    "src.kv.value.Option.to_value": 2
+   }
+  },
+  {
+   "id": "log-s077",
+   "repo": "log",
+   "category": "behavior",
+   "query": "How can I parse a logging threshold from text while ignoring letter case and rejecting unknown names?",
+   "relevant": {
+    "src.lib.LevelFilter.from_str": 2
+   }
+  },
+  {
+   "id": "log-s078",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where are stored values formatted using ordinary text or diagnostic output according to their representation?",
+   "relevant": {
+    "src.kv.value.Inner.fmt@910": 2
+   }
+  },
+  {
+   "id": "log-s079",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Which test verifies that every structured logging pair survives construction and can be visited afterward?",
+   "relevant": {
+    "src.lib.test_record_key_values_builder": 2
+   }
+  },
+  {
+   "id": "log-s080",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Which test checks stepping logging severity toward greater urgency while keeping the most urgent setting unchanged?",
+   "relevant": {
+    "src.lib.test_level_down": 2
+   }
+  },
+  {
+   "id": "log-s081",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Which test checks floating point conversion accepts integers within supported bounds and rejects those just outside?",
+   "relevant": {
+    "src.kv.value.test_to_float": 2
+   }
+  },
+  {
+   "id": "log-s082",
+   "repo": "log",
+   "category": "behavior",
+   "query": "Where is a logging entry initialized with empty content, default metadata, and absent source location details?",
+   "relevant": {
+    "src.lib.RecordBuilder.new": 2
+   }
+  },
+  {
+   "id": "jq-s083",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I format text from variadic arguments while automatically growing the destination buffer?",
+   "relevant": {
+    "src.jv.jv_string_vfmt": 2
+   }
+  },
+  {
+   "id": "jq-s084",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where are subexpressions compiled with optimized handling for empty operations and constant values?",
+   "relevant": {
+    "src.compile.gen_subexp": 2
+   }
+  },
+  {
+   "id": "jq-s085",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How is execution marked as halted while preserving an exit status and error message?",
+   "relevant": {
+    "src.execute.jq_halt": 2
+   }
+  },
+  {
+   "id": "jq-s086",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where is string memory released only after its reference count reaches zero?",
+   "relevant": {
+    "src.jv.jvp_string_free": 2
+   }
+  },
+  {
+   "id": "jq-s087",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I build a character lookup table containing positions adjusted by an offset?",
+   "relevant": {
+    "src.jv_dtoa.htinit": 2
+   }
+  },
+  {
+   "id": "jq-s088",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where is a value checked for being not a number, rejecting nonnumeric values?",
+   "relevant": {
+    "src.builtin.f_isnan": 2
+   }
+  },
+  {
+   "id": "jq-s089",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How are decimal values classified by sign, normality, zero, infinity, and signaling or quiet invalidity?",
+   "relevant": {
+    "vendor.decNumber.decBasic.decFloatClass": 2
+   }
+  },
+  {
+   "id": "jq-s090",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where are sorting ties resolved by original position while detecting excessively deep comparisons?",
+   "relevant": {
+    "src.jv_aux.sort_cmp": 2
+   }
+  },
+  {
+   "id": "jq-s091",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can densely packed decimal bits be decoded into decimal digits across machine word boundaries?",
+   "relevant": {
+    "vendor.decNumber.decimal64.decDigitsFromDPD": 2
+   }
+  },
+  {
+   "id": "jq-s092",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can two objects be merged so properties from the second overwrite matching properties?",
+   "relevant": {
+    "src.jv.jv_object_merge": 2
+   }
+  },
+  {
+   "id": "jq-s093",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where is an accumulator loop compiled to combine generated values into a final result?",
+   "relevant": {
+    "src.compile.gen_reduce": 2
+   }
+  },
+  {
+   "id": "jq-s094",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How are imported modules or data files loaded while detecting circular imports and handling optional failures?",
+   "relevant": {
+    "src.linker.load_library": 2
+   }
+  },
+  {
+   "id": "jq-s095",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can an instruction sequence be checked for a main entry point?",
+   "relevant": {
+    "src.compile.block_has_main": 2
+   }
+  },
+  {
+   "id": "jq-s096",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can array elements be sorted and deduplicated using separately supplied comparison values?",
+   "relevant": {
+    "src.jv_aux.jv_unique": 2
+   }
+  },
+  {
+   "id": "jq-s097",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How is aligned memory reserved on a downward growing stack with automatic capacity expansion?",
+   "relevant": {
+    "src.exec_stack.stack_push_block": 2
+   }
+  },
+  {
+   "id": "jq-s098",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How do I initialize a fresh execution with an initial value and optional tracing?",
+   "relevant": {
+    "src.execute.jq_start": 2
+   }
+  },
+  {
+   "id": "jq-s099",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where is a compiler instruction created to bind a named global to a constant?",
+   "relevant": {
+    "src.compile.gen_const_global": 2
+   }
+  },
+  {
+   "id": "jq-s100",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I remove Unicode whitespace from either or both ends of a string?",
+   "relevant": {
+    "src.builtin.string_trim": 2
+   }
+  },
+  {
+   "id": "jq-s101",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where does the lexer prepare a newly encountered buffer for normal processing?",
+   "relevant": {
+    "src.lexer.if": 2
+   }
+  },
+  {
+   "id": "jq-s102",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I select an array element using the smallest or largest corresponding comparison key?",
+   "relevant": {
+    "src.builtin.minmax_by": 2
+   }
+  },
+  {
+   "id": "jq-s103",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where are string letters converted between uppercase and lowercase while preserving non-ASCII characters?",
+   "relevant": {
+    "src.builtin.ascii_case": 2
+   }
+  },
+  {
+   "id": "jq-s104",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How do I adjust a decimal number to match another number's exponent while handling special values?",
+   "relevant": {
+    "vendor.decNumber.decBasic.decFloatQuantize": 2
+   }
+  },
+  {
+   "id": "jq-s105",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where does incremental JSON parsing process each character, track positions, and detect truncated sequence records?",
+   "relevant": {
+    "src.jv_parse.scan": 2
+   }
+  },
+  {
+   "id": "jq-s106",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I initialize thread specific storage and register cleanup handlers, aborting on failure?",
+   "relevant": {
+    "src.jv_alloc.tsd_init": 2
+   }
+  },
+  {
+   "id": "jq-s107",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where is a randomized hashing seed initialized using system entropy with a random fallback?",
+   "relevant": {
+    "src.jv.jvp_hash_seed_init": 2
+   }
+  },
+  {
+   "id": "jq-s108",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I check that every instruction satisfies required binding flags, except module metadata?",
+   "relevant": {
+    "src.compile.block_has_only_binders": 2
+   }
+  },
+  {
+   "id": "jq-s109",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where is a string allocated with zeroed contents, a terminating zero, and empty length metadata?",
+   "relevant": {
+    "src.jv.jvp_string_empty_new": 2
+   }
+  },
+  {
+   "id": "jq-s110",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where are destructuring instructions assembled with input duplication and support for alternative matching patterns?",
+   "relevant": {
+    "src.compile.gen_destructure": 2
+   }
+  },
+  {
+   "id": "jq-s111",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I count supplied closure arguments while asserting that no unexpected instructions appear?",
+   "relevant": {
+    "src.compile.block_count_actuals": 2
+   }
+  },
+  {
+   "id": "jq-s112",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I convert numeric epoch seconds into UTC date components while preserving fractional seconds?",
+   "relevant": {
+    "src.builtin.f_gmtime@1815": 2
+   }
+  },
+  {
+   "id": "jq-s113",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I list unique function names with argument counts, optionally excluding names starting with underscores?",
+   "relevant": {
+    "src.compile.block_list_funcs": 2
+   }
+  },
+  {
+   "id": "jq-s114",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I validate a decimal representation and report malformed special values or digit storage?",
+   "relevant": {
+    "vendor.decNumber.decNumber.decCheckNumber": 2
+   }
+  },
+  {
+   "id": "jq-s115",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I clear interpreter execution state, release stored values, and reset error tracking?",
+   "relevant": {
+    "src.execute.jq_reset": 2
+   }
+  },
+  {
+   "id": "jq-s116",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "Where are decimal results rounded and adjusted for subnormal values, overflow, and exponent clamping?",
+   "relevant": {
+    "vendor.decNumber.decNumber.decFinalize": 2
+   }
+  },
+  {
+   "id": "jq-s117",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I convert packed decimal bytes into a decimal value with sign and scaling?",
+   "relevant": {
+    "vendor.decNumber.decPacked.decPackedToNumber": 2
+   }
+  },
+  {
+   "id": "jq-s118",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I generate instructions that match successive array elements during pattern destructuring?",
+   "relevant": {
+    "src.compile.gen_array_matcher": 2
+   }
+  },
+  {
+   "id": "jq-s119",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I read successive input values while supporting raw lines, parsed data, and accumulation?",
+   "relevant": {
+    "src.util.jq_util_input_next_input": 2
+   }
+  },
+  {
+   "id": "jq-s120",
+   "repo": "jq",
+   "category": "behavior",
+   "query": "How can I scale a decimal floating point value by an integer power of ten?",
+   "relevant": {
+    "vendor.decNumber.decBasic.decFloatScaleB": 2
+   }
+  },
+  {
+   "id": "execa-s121",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I propagate cancellation immediately or on request while automatically cleaning up the listener?",
+   "relevant": {
+    "lib.pipe.setup.abortOnSignal": 2
+   }
+  },
+  {
+   "id": "execa-s122",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I expose asynchronous completion through readable, writable, bidirectional, web, and iteration interfaces?",
+   "relevant": {
+    "lib.return.early-error.getConvertedStreams": 2
+   }
+  },
+  {
+   "id": "execa-s123",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I calculate the total byte count across multiple byte arrays?",
+   "relevant": {
+    "lib.utils.uint-array.getJoinLength": 2
+   }
+  },
+  {
+   "id": "execa-s124",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I build a callable command runner with bound settings and support for nested configurations?",
+   "relevant": {
+    "lib.methods.create.createExeca": 2
+   }
+  },
+  {
+   "id": "execa-s125",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I gracefully cancel a child process and schedule forced termination if it takes too long?",
+   "relevant": {
+    "lib.terminate.graceful.sendOnAbort": 2
+   }
+  },
+  {
+   "id": "execa-s126",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I normalize process input and output settings, validate interprocess communication, and handle synchronous execution?",
+   "relevant": {
+    "lib.stdio.stdio-option.normalizeStdioOption": 2
+   }
+  },
+  {
+   "id": "execa-s127",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where do we wait for a strict failure, record its cause, and cancel ongoing work?",
+   "relevant": {
+    "lib.ipc.get-each.abortOnStrictError": 2
+   }
+  },
+  {
+   "id": "execa-s128",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How are diagnostic messages formatted with timestamps, command labels, colored symbols, and outcome indicators?",
+   "relevant": {
+    "lib.verbose.default.defaultVerboseFunction": 2
+   }
+  },
+  {
+   "id": "execa-s129",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where are reused standard streams checked for compatibility and shared instances created when supported?",
+   "relevant": {
+    "lib.stdio.duplicate.getDuplicateStream": 2
+   }
+  },
+  {
+   "id": "execa-s130",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can process messaging be converted into a promise interface and cached for reuse?",
+   "relevant": {
+    "lib.ipc.send.getSendMethod": 2
+   }
+  },
+  {
+   "id": "execa-s131",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where are numbered stream references checked for existence and the required read or write capability?",
+   "relevant": {
+    "lib.arguments.fd-options.validateFdNumber": 2
+   }
+  },
+  {
+   "id": "execa-s132",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Which tests verify inferred output types when asynchronously consuming child processes with text and byte settings?",
+   "relevant": {
+    "test-d.convert.iterable.test-d.asyncIteration": 2
+   }
+  },
+  {
+   "id": "execa-s133",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where are unsupported text conversion settings rejected with suggested replacements or a list of accepted values?",
+   "relevant": {
+    "lib.arguments.encoding-option.validateEncoding": 2
+   }
+  },
+  {
+   "id": "execa-s134",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How are termination arguments interpreted, validated, and normalized when callers supply a signal or failure object?",
+   "relevant": {
+    "lib.terminate.kill.parseKillArguments": 2
+   }
+  },
+  {
+   "id": "execa-s135",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Which configured input or output option corresponds to a particular process file descriptor?",
+   "relevant": {
+    "lib.arguments.fd-options.getInvalidStdioOption": 2
+   }
+  },
+  {
+   "id": "execa-s136",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where is an error raised when another interprocess message would exceed the configured buffer limit?",
+   "relevant": {
+    "lib.io.max-buffer.checkIpcMaxBuffer": 2
+   }
+  },
+  {
+   "id": "execa-s137",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How are process messaging methods and cancellation support exposed based on communication channel availability?",
+   "relevant": {
+    "lib.ipc.methods.getIpcExport": 2
+   }
+  },
+  {
+   "id": "execa-s138",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How does writable stream destruction coordinate concurrent streams, terminate process input, and propagate errors?",
+   "relevant": {
+    "lib.convert.writable.onWritableDestroy": 2
+   }
+  },
+  {
+   "id": "execa-s139",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can process output be iterated with validated binary, encoding, and newline preservation options?",
+   "relevant": {
+    "lib.convert.iterable.createIterable": 2
+   }
+  },
+  {
+   "id": "execa-s140",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where are text and buffer chunks converted into unsigned byte arrays while other chunks pass through?",
+   "relevant": {
+    "lib.transform.encoding-transform.encodingUint8ArrayGenerator": 2
+   }
+  },
+  {
+   "id": "execa-s141",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How are final chunks from an optional asynchronous producer passed through the remaining transformations?",
+   "relevant": {
+    "lib.transform.run-async.generatorFinalChunks": 2
+   }
+  },
+  {
+   "id": "execa-s142",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I distinguish local filesystem paths from remote addresses and reject unsupported inputs?",
+   "relevant": {
+    "lib.stdio.input-option.getInputFileType": 2
+   }
+  },
+  {
+   "id": "execa-s143",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I normalize per-descriptor settings into an array and fill in default values?",
+   "relevant": {
+    "lib.arguments.specific.normalizeFdSpecificOption": 2
+   }
+  },
+  {
+   "id": "execa-s144",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I send interprocess data asynchronously, track pending transmissions, and disconnect after failures?",
+   "relevant": {
+    "lib.ipc.send.sendMessageAsync": 2
+   }
+  },
+  {
+   "id": "execa-s145",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I validate each item from an asynchronous sequence before passing it downstream?",
+   "relevant": {
+    "lib.stdio.handle-async.validateAsyncIterable": 2
+   }
+  },
+  {
+   "id": "execa-s146",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I wait for incoming communications to finish before cleaning up a disconnected process?",
+   "relevant": {
+    "lib.ipc.incoming.onDisconnect": 2
+   }
+  },
+  {
+   "id": "execa-s147",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I explain serialization failures with the offending payload while preserving the original error?",
+   "relevant": {
+    "lib.ipc.validation.handleSerializationError": 2
+   }
+  },
+  {
+   "id": "execa-s148",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How can I validate a process channel selection and explain supported choices when invalid?",
+   "relevant": {
+    "lib.arguments.fd-options.parseFdNumber": 2
+   }
+  },
+  {
+   "id": "execa-s149",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where is a process outcome logged and optionally thrown when execution fails?",
+   "relevant": {
+    "lib.return.reject.handleResult": 2
+   }
+  },
+  {
+   "id": "execa-s150",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How are placeholder input and output channels attached to a child process?",
+   "relevant": {
+    "lib.return.early-error.createDummyStreams": 2
+   }
+  },
+  {
+   "id": "execa-s151",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "Where are custom process channels destroyed while preserving standard channels and suppressing cleanup errors?",
+   "relevant": {
+    "lib.stdio.handle.cleanupCustomStreams": 2
+   }
+  },
+  {
+   "id": "execa-s152",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How are piped process options prepared with default input piping and no inherited properties?",
+   "relevant": {
+    "lib.pipe.pipe-arguments.mapDestinationArguments": 2
+   }
+  },
+  {
+   "id": "execa-s153",
+   "repo": "execa",
+   "category": "behavior",
+   "query": "How is a downstream process terminated without killing the original or leaving unhandled rejections?",
+   "relevant": {
+    "lib.pipe.pipe-arguments.abortDestination": 2
+   }
+  }
+ ],
+ "generation": {
+  "model": "codex default",
+  "calls": 25,
+  "input_tokens": 262311,
+  "output_tokens": 7562
+ }
+}
