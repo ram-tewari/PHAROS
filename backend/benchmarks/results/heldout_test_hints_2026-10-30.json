@@ -1,0 +1,685 @@
+{
+ "click-01": [
+  "NoSuchOption",
+  "get_close_matches",
+  "possibilities",
+  "_match_long_opt",
+  "parser.py"
+ ],
+ "click-02": [
+  "value_from_envvar",
+  "resolve_envvar_value",
+  "envvar",
+  "auto_envvar_prefix",
+  "consume_value"
+ ],
+ "click-03": [
+  "AtomicFile",
+  "atomic",
+  "open_stream",
+  "LazyFile",
+  "_compat.py"
+ ],
+ "click-04": [
+  "ProgressBar",
+  "eta",
+  "time_per_iteration",
+  "make_step",
+  "_termui_impl.py"
+ ],
+ "click-05": [
+  "BoolParamType",
+  "convert",
+  "BOOL",
+  "types.py"
+ ],
+ "click-06": [
+  "edit",
+  "Editor",
+  "edit_file",
+  "tempfile",
+  "_termui_impl.py"
+ ],
+ "click-07": [
+  "get_app_dir",
+  "APPDATA",
+  "XDG_CONFIG_HOME",
+  "force_posix",
+  "utils.py"
+ ],
+ "click-08": [
+  "split_arg_string",
+  "shlex",
+  "ValueError",
+  "parser.py"
+ ],
+ "click-09": [
+  "CliRunner",
+  "invoke",
+  "isolation",
+  "Result",
+  "testing.py"
+ ],
+ "click-10": [
+  "IntRange",
+  "FloatRange",
+  "_NumberRangeBase",
+  "clamp",
+  "types.py"
+ ],
+ "click-11": [
+  "echo_via_pager",
+  "pager",
+  "_pipepager",
+  "_tempfilepager",
+  "termui.py"
+ ],
+ "click-12": [
+  "ensure_object",
+  "find_object",
+  "obj",
+  "Context",
+  "core.py"
+ ],
+ "click-13": [
+  "make_pass_decorator",
+  "pass_context",
+  "ensure_object",
+  "find_object",
+  "decorators.py"
+ ],
+ "ky-01": [
+  "_calculateRetryDelay",
+  "backoffLimit",
+  "delay",
+  "jitter",
+  "retry.ts"
+ ],
+ "ky-02": [
+  "Retry-After",
+  "retryAfter",
+  "maxRetryAfter",
+  "afterStatusCodes",
+  "Date.parse"
+ ],
+ "ky-03": [
+  "_calculateRetryDelay",
+  "retryCount",
+  "methods",
+  "statusCodes",
+  "shouldRetry"
+ ],
+ "ky-04": [
+  "isNetworkError",
+  "network-error",
+  "TypeError",
+  "Failed to fetch",
+  "NetworkError"
+ ],
+ "ky-05": [
+  "maxResponseSize",
+  "ReadableStream",
+  "reader",
+  "cancel",
+  "ResponsePromise"
+ ],
+ "ky-06": [
+  "onDownloadProgress",
+  "_stream",
+  "transferredBytes",
+  "totalBytes",
+  "ReadableStream"
+ ],
+ "ky-07": [
+  "onUploadProgress",
+  "duplex",
+  "TransformStream",
+  "transferredBytes",
+  "Request"
+ ],
+ "ky-08": [
+  "prefixUrl",
+  "Ky",
+  "input",
+  "URL",
+  "source/core/Ky.ts"
+ ],
+ "ky-09": [
+  "validateAndMerge",
+  "deepMerge",
+  "mergeHeaders",
+  "hooks",
+  "source/utils/merge.ts"
+ ],
+ "ky-10": [
+  "timeout",
+  "TimeoutError",
+  "AbortController",
+  "source/utils/timeout.ts"
+ ],
+ "ky-11": [
+  "HTTPError",
+  "source/errors/HTTPError.ts"
+ ],
+ "ky-12": [
+  "normalizeRetryOptions",
+  "retry",
+  "source/utils/normalize.ts"
+ ],
+ "ky-13": [
+  "createInstance",
+  "ky.create",
+  "ky.extend",
+  "source/index.ts"
+ ],
+ "anyhow-01": [
+  "chain",
+  "Chain",
+  "source",
+  "src/chain.rs"
+ ],
+ "anyhow-02": [
+  "root_cause",
+  "chain",
+  "last"
+ ],
+ "anyhow-03": [
+  "with_context",
+  "Context",
+  "context",
+  "src/context.rs"
+ ],
+ "anyhow-04": [
+  "is",
+  "downcast_ref",
+  "Error"
+ ],
+ "anyhow-05": [
+  "Debug",
+  "debug",
+  "fmt",
+  "Caused by:",
+  "src/fmt.rs"
+ ],
+ "anyhow-06": [
+  "From",
+  "Error",
+  "StdError",
+  "from"
+ ],
+ "anyhow-07": [
+  "Error::msg",
+  "msg",
+  "MessageError",
+  "anyhow!"
+ ],
+ "anyhow-08": [
+  "into_boxed_dyn_error",
+  "Box",
+  "StdError",
+  "object_boxed"
+ ],
+ "anyhow-09": [
+  "Drop",
+  "drop",
+  "object_drop",
+  "ErrorVTable",
+  "src/error.rs"
+ ],
+ "anyhow-10": [
+  "bail!",
+  "anyhow!",
+  "format_args!",
+  "src/macros.rs"
+ ],
+ "anyhow-11": [
+  "downcast_mut",
+  "Error",
+  "object_downcast_mut",
+  "src/error.rs"
+ ],
+ "curl-01": [
+  "Curl_follow",
+  "FOLLOWLOCATION",
+  "Location",
+  "lib/http.c",
+  "lib/url.c"
+ ],
+ "curl-02": [
+  "curl_url_set",
+  "parseurl",
+  "CURLUPART_URL",
+  "Curl_url_set",
+  "lib/urlapi.c"
+ ],
+ "curl-03": [
+  "cookie_tailmatch",
+  "tailmatch",
+  "Curl_cookie_getlist",
+  "lib/cookie.c"
+ ],
+ "curl-04": [
+  "Curl_check_noproxy",
+  "noproxy.c",
+  "no_proxy",
+  "Curl_cidr4_match",
+  "Curl_cidr6_match"
+ ],
+ "curl-05": [
+  "Curl_cert_hostcheck",
+  "hostmatch",
+  "hostcheck.c",
+  "wildcard",
+  "hostname"
+ ],
+ "curl-06": [
+  "Curl_httpchunk_read",
+  "Curl_chunked_write",
+  "http_chunks.c",
+  "CHUNK_HEX",
+  "CHUNK_DATA"
+ ],
+ "curl-07": [
+  "Curl_parsenetrc",
+  "netrc.c",
+  "NETRC",
+  "login",
+  "password"
+ ],
+ "curl-08": [
+  "Curl_urldecode",
+  "curl_easy_unescape",
+  "escape.c",
+  "REJECT_NUL",
+  "url_decode"
+ ],
+ "curl-09": [
+  "Happy Eyeballs",
+  "cf-happy-eyeballs.c",
+  "Curl_cf_he_create",
+  "happy_eyeballs_timeout",
+  "cf_he_connect"
+ ],
+ "curl-10": [
+  "Curl_resolv",
+  "Curl_resolv_timeout",
+  "Curl_resolv_check",
+  "Curl_getaddrinfo",
+  "hostip.c"
+ ],
+ "curl-11": [
+  "Curl_base64_encode",
+  "Curl_base64url_encode",
+  "base64.c",
+  "base64.h",
+  "base64"
+ ],
+ "curl-12": [
+  "http_on_response",
+  "http_version",
+  "http.c",
+  "Curl_http_readwrite_headers",
+  "HTTP/1.1"
+ ],
+ "curl-13": [
+  "curl_easy_setopt",
+  "Curl_vsetopt",
+  "setopt.c",
+  "CURLOPT",
+  "va_list"
+ ],
+ "curl-14": [
+  "curl_multi_perform",
+  "multi_runsingle",
+  "multi.c",
+  "CURLM_STATE",
+  "Curl_multi_handle"
+ ],
+ "chi-01": [
+  "Throttle",
+  "ThrottleBacklog",
+  "ThrottleWithOpts",
+  "ThrottleOpts",
+  "middleware/throttle.go"
+ ],
+ "chi-02": [
+  "RetryAfter",
+  "Retry-After",
+  "ThrottleOpts",
+  "StatusTooManyRequests",
+  "middleware/throttle.go"
+ ],
+ "chi-03": [
+  "Timeout",
+  "context.WithTimeout",
+  "ctx.Done",
+  "http.StatusGatewayTimeout",
+  "middleware/timeout.go"
+ ],
+ "chi-04": [
+  "Recoverer",
+  "PrintPrettyStack",
+  "prettyStack",
+  "debug.Stack",
+  "middleware/recoverer.go"
+ ],
+ "chi-05": [
+  "RealIP",
+  "realIP",
+  "X-Real-IP",
+  "X-Forwarded-For",
+  "middleware/realip.go"
+ ],
+ "chi-06": [
+  "ClientIP",
+  "TrustedProxies",
+  "X-Forwarded-For",
+  "net.ParseIP",
+  "proxy"
+ ],
+ "chi-07": [
+  "BasicAuth",
+  "BasicAuth",
+  "subtle.ConstantTimeCompare",
+  "Authorization",
+  "middleware/basic_auth.go"
+ ],
+ "chi-08": [
+  "Compress",
+  "NewCompressor",
+  "Compressor",
+  "Accept-Encoding",
+  "middleware/compress.go"
+ ],
+ "chi-09": [
+  "RedirectSlashes",
+  "StripSlashes",
+  "http.Redirect",
+  "http.StatusMovedPermanently",
+  "middleware/strip.go"
+ ],
+ "chi-10": [
+  "RequestID",
+  "NextRequestID",
+  "prefix",
+  "reqid",
+  "middleware/request_id.go"
+ ],
+ "chi-11": [
+  "GetHead",
+  "MethodHead",
+  "MethodGet",
+  "RouteContext",
+  "middleware/get_head.go"
+ ],
+ "chi-12": [
+  "FindRoute",
+  "findRoute",
+  "node",
+  "routeParams",
+  "tree.go"
+ ],
+ "chi-13": [
+  "patNextSegment",
+  "ntParam",
+  "ntRegexp",
+  "paramKeys",
+  "tree.go"
+ ],
+ "chi-14": [
+  "Mount",
+  "Mux",
+  "mountHandler",
+  "RoutePath",
+  "mux.go"
+ ],
+ "chi-15": [
+  "RoutePattern",
+  "replaceWildcards",
+  "RoutePatterns",
+  "strings.Replace",
+  "context.go"
+ ],
+ "chi-16": [
+  "URLParam",
+  "URLParamFromCtx",
+  "RouteContext",
+  "URLParams",
+  "context.go"
+ ],
+ "chi-17": [
+  "MethodNotAllowed",
+  "methodNotAllowedHandler",
+  "methodNotAllowed",
+  "allowedMethods",
+  "mux.go"
+ ],
+ "gson-01": [
+  "FieldNamingPolicy",
+  "LOWER_CASE_WITH_UNDERSCORES",
+  "translateName",
+  "separateCamelCase",
+  "FieldNamingStrategy"
+ ],
+ "gson-02": [
+  "ISO8601Utils",
+  "parse",
+  "ParsePosition",
+  "TimeZone",
+  "DefaultDateTypeAdapter"
+ ],
+ "gson-03": [
+  "UnsafeAllocator",
+  "ConstructorConstructor",
+  "ObjectConstructor",
+  "newInstance",
+  "allocateInstance"
+ ],
+ "gson-04": [
+  "Excluder",
+  "excludeField",
+  "modifiers",
+  "isValidVersion",
+  "Since"
+ ],
+ "gson-05": [
+  "JsonWriter",
+  "htmlSafe",
+  "HTML_SAFE_REPLACEMENT_CHARS",
+  "setHtmlSafe",
+  "disableHtmlEscaping"
+ ],
+ "gson-06": [
+  "ToNumberPolicy",
+  "LONG_OR_DOUBLE",
+  "readNumber",
+  "nextString",
+  "Long.parseLong"
+ ],
+ "gson-07": [
+  "Gson.getAdapter",
+  "FutureTypeAdapter",
+  "threadLocalAdapterResults",
+  "setDelegate",
+  "TypeToken"
+ ],
+ "gson-08": [
+  "MapTypeAdapterFactory",
+  "complexMapKeySerialization",
+  "keyToString",
+  "JsonArray",
+  "write"
+ ],
+ "gson-09": [
+  "$Gson$Types",
+  "resolve",
+  "resolveTypeVariable",
+  "getGenericSupertype",
+  "TypeVariable"
+ ],
+ "gson-10": [
+  "JsonReader",
+  "checkLenient",
+  "setLenient",
+  "Strictness",
+  "doPeek"
+ ],
+ "gson-11": [
+  "LinkedTreeMap",
+  "rebalance",
+  "rotateLeft",
+  "rotateRight",
+  "height"
+ ],
+ "gson-12": [
+  "ReflectiveTypeAdapterFactory",
+  "RecordAdapter",
+  "RecordHelper",
+  "getCanonicalRecordConstructor",
+  "constructorArgs"
+ ],
+ "gson-13": [
+  "FormattingStyle",
+  "setFormattingStyle",
+  "setPrettyPrinting",
+  "setIndent",
+  "JsonWriter"
+ ],
+ "gson-14": [
+  "ReflectiveTypeAdapterFactory",
+  "getBoundFields",
+  "BoundField",
+  "getDeclaredFields",
+  "getGenericSuperclass"
+ ],
+ "gson-15": [
+  "TypeToken",
+  "getParameterized",
+  "newParameterizedTypeWithOwner",
+  "ParameterizedType",
+  "typeArguments"
+ ],
+ "gson-16": [
+  "GsonBuilder",
+  "registerTypeAdapter",
+  "TypeAdapter",
+  "TreeTypeAdapter",
+  "SingleTypeFactory"
+ ],
+ "gson-17": [
+  "JsonParser",
+  "parseString",
+  "parseReader",
+  "StringReader",
+  "Streams.parse"
+ ],
+ "immer-01": [
+  "produce",
+  "Immer",
+  "recipe",
+  "createProxy",
+  "processResult"
+ ],
+ "immer-02": [
+  "prepareCopy",
+  "shallowCopy",
+  "copy_",
+  "base_",
+  "set"
+ ],
+ "immer-03": [
+  "markChanged",
+  "modified_",
+  "parent_",
+  "ImmerState"
+ ],
+ "immer-04": [
+  "freeze",
+  "autoFreeze_",
+  "maybeFreeze",
+  "finalize",
+  "setAutoFreeze"
+ ],
+ "immer-05": [
+  "current",
+  "currentImpl",
+  "isDraft",
+  "DRAFT_STATE",
+  "shallowCopy"
+ ],
+ "immer-06": [
+  "original",
+  "isDraft",
+  "DRAFT_STATE",
+  "base_"
+ ],
+ "immer-07": [
+  "enablePatches",
+  "produceWithPatches",
+  "applyPatches",
+  "Patch",
+  "patches.ts"
+ ],
+ "immer-08": [
+  "enableMapSet",
+  "mapset.ts",
+  "DraftMap",
+  "DraftSet",
+  "proxyMap_"
+ ],
+ "immer-09": [
+  "isDraftable",
+  "isPlainObject",
+  "DRAFTABLE",
+  "Array.isArray",
+  "isMap"
+ ],
+ "immer-10": [
+  "revokeScope",
+  "revokeDraft",
+  "revoke_",
+  "Proxy.revocable",
+  "scope.ts"
+ ],
+ "immer-11": [
+  "objectTraps",
+  "set",
+  "assigned_",
+  "markChanged",
+  "prepareCopy"
+ ],
+ "immer-12": [
+  "finalize",
+  "processResult",
+  "finalizeProperty",
+  "finalize.ts",
+  "isDraft"
+ ],
+ "immer-13": [
+  "createDraft",
+  "finishDraft",
+  "isManual_",
+  "Immer",
+  "immerClass.ts"
+ ],
+ "immer-14": [
+  "setAutoFreeze",
+  "autoFreeze_",
+  "freeze",
+  "Immer",
+  "immerClass.ts"
+ ],
+ "immer-15": [
+  "isDraft",
+  "DRAFT_STATE",
+  "common.ts",
+  "Draft",
+  "ImmerState"
+ ],
+ "immer-16": [
+  "castImmutable",
+  "Immutable",
+  "immer.ts",
+  "types-external.ts"
+ ]
+}

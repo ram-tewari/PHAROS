@@ -1,0 +1,538 @@
+{
+ "name": "pharos-heldout",
+ "version": 2,
+ "created": "2026-10-29",
+ "labeling": "Second locked test set: Go, Java and TypeScript repositories that no PHAROS benchmark or deployment had indexed, pinned at their branch heads on 2026-10-29. Queries and graded relevance were written by hand from reading the source; labels were checked against parser output only and the file was hashed before any retrieval ran on it. 'behavior' queries paraphrase what the code does without naming identifiers; 'identifier' queries name the API. Grade 2 = the implementation asked about; grade 1 = closely related. Single annotator who also builds the system: run each candidate change against this set once, after tuning on the dev set.",
+ "repositories": [
+  {
+   "name": "chi",
+   "url": "https://github.com/go-chi/chi",
+   "ref": "master",
+   "commit": "9f8adb1aabaa8a91180a821111d3f8e668d1c0bf",
+   "language": "go"
+  },
+  {
+   "name": "gson",
+   "url": "https://github.com/google/gson",
+   "ref": "main",
+   "commit": "57731049da3e415be3d5d34db1ca3b80f3c73810",
+   "language": "java"
+  },
+  {
+   "name": "immer",
+   "url": "https://github.com/immerjs/immer",
+   "ref": "main",
+   "commit": "75a290e44ba14bd723c8ef8546b6559c8ef3ae88",
+   "language": "typescript"
+  }
+ ],
+ "queries": [
+  {
+   "id": "chi-01",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "limit how many requests are processed at once and queue the rest for a while",
+   "relevant": {
+    "middleware.throttle.ThrottleWithOpts": 2,
+    "middleware.throttle.Throttle": 1,
+    "middleware.throttle.ThrottleBacklog": 1
+   }
+  },
+  {
+   "id": "chi-02",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "tell rejected clients when they can try again after being rate limited",
+   "relevant": {
+    "middleware.throttle.throttler.setRetryAfterHeaderIfNeeded": 2,
+    "middleware.throttle.ThrottleWithOpts": 1
+   }
+  },
+  {
+   "id": "chi-03",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "cancel the request context and answer with a gateway timeout when a handler runs too long",
+   "relevant": {
+    "middleware.timeout.Timeout": 2
+   }
+  },
+  {
+   "id": "chi-04",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "recover from a panic in a handler, print a readable stack trace and respond with a server error",
+   "relevant": {
+    "middleware.recoverer.Recoverer": 2,
+    "middleware.recoverer.PrintPrettyStack": 1,
+    "middleware.recoverer.prettyStack.parse": 1
+   }
+  },
+  {
+   "id": "chi-05",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "set the request's remote address from proxy headers such as the real client IP",
+   "relevant": {
+    "middleware.realip.RealIP": 2,
+    "middleware.realip.realIP": 2
+   }
+  },
+  {
+   "id": "chi-06",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "find the client address in a forwarded-for chain, skipping trusted proxies from the right",
+   "relevant": {
+    "middleware.client_ip.ClientIPFromXFFTrustedProxies": 2,
+    "middleware.client_ip.walkXFF": 1,
+    "middleware.client_ip.untrustedPeer": 1
+   }
+  },
+  {
+   "id": "chi-07",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "check a username and password from the Authorization header without leaking timing information",
+   "relevant": {
+    "middleware.basic_auth.BasicAuth": 2,
+    "middleware.basic_auth.basicAuthFailed": 1
+   }
+  },
+  {
+   "id": "chi-08",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "compress responses with gzip or deflate depending on what the client accepts",
+   "relevant": {
+    "middleware.compress.Compressor.Handler": 2,
+    "middleware.compress.Compressor.selectEncoder": 2,
+    "middleware.compress.matchAcceptEncoding": 1,
+    "middleware.compress.Compress": 1
+   }
+  },
+  {
+   "id": "chi-09",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "redirect a path that ends with a slash to the same path without it",
+   "relevant": {
+    "middleware.strip.RedirectSlashes": 2,
+    "middleware.strip.StripSlashes": 1
+   }
+  },
+  {
+   "id": "chi-10",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "give every request a unique id made of a host prefix and an increasing counter",
+   "relevant": {
+    "middleware.request_id.RequestID": 2,
+    "middleware.request_id.init": 1,
+    "middleware.request_id.NextRequestID": 1
+   }
+  },
+  {
+   "id": "chi-11",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "serve HEAD requests with the GET handler when no HEAD route exists",
+   "relevant": {
+    "middleware.get_head.GetHead": 2
+   }
+  },
+  {
+   "id": "chi-12",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "walk the radix tree to match a request path, capturing URL parameters",
+   "relevant": {
+    "tree.node.findRoute": 2,
+    "tree.node.FindRoute": 2,
+    "tree.node.findEdge": 1
+   }
+  },
+  {
+   "id": "chi-13",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "parse the next segment of a route pattern with a named parameter and optional regular expression",
+   "relevant": {
+    "tree.patNextSegment": 2
+   }
+  },
+  {
+   "id": "chi-14",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "attach a whole sub-router under a path prefix",
+   "relevant": {
+    "mux.Mux.Mount": 2,
+    "mux.Mux.Route": 1
+   }
+  },
+  {
+   "id": "chi-15",
+   "repo": "chi",
+   "category": "behavior",
+   "query": "collapse wildcard segments when building the matched route pattern",
+   "relevant": {
+    "context.replaceWildcards": 2,
+    "context.Context.RoutePattern": 2
+   }
+  },
+  {
+   "id": "chi-16",
+   "repo": "chi",
+   "category": "identifier",
+   "query": "URLParam",
+   "relevant": {
+    "context.URLParam": 2,
+    "context.Context.URLParam": 1,
+    "context.URLParamFromCtx": 1
+   }
+  },
+  {
+   "id": "chi-17",
+   "repo": "chi",
+   "category": "identifier",
+   "query": "Mux.MethodNotAllowed handler",
+   "relevant": {
+    "mux.Mux.MethodNotAllowed": 2,
+    "mux.Mux.MethodNotAllowedHandler": 1,
+    "mux.methodNotAllowedHandler": 1
+   }
+  },
+  {
+   "id": "gson-01",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "turn a Java field name like fooBar into a JSON key such as foo_bar",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.FieldNamingPolicy.FieldNamingPolicy.separateCamelCase": 2,
+    "gson.src.main.java.com.google.gson.FieldNamingPolicy.FieldNamingPolicy": 1
+   }
+  },
+  {
+   "id": "gson-02",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "parse an ISO 8601 date string with an optional time zone and fractional seconds",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.parse": 2,
+    "gson.src.main.java.com.google.gson.internal.bind.util.ISO8601Utils.ISO8601Utils.checkOffset": 1
+   }
+  },
+  {
+   "id": "gson-03",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "create an object of a class that has no no-argument constructor",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.UnsafeAllocator.UnsafeAllocator.create": 2,
+    "gson.src.main.java.com.google.gson.internal.ConstructorConstructor.ConstructorConstructor.get": 1
+   }
+  },
+  {
+   "id": "gson-04",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "skip fields that are transient, static or outside the configured version range",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.Excluder.Excluder.excludeField": 2,
+    "gson.src.main.java.com.google.gson.internal.Excluder.Excluder.isExcludedByModifier": 1,
+    "gson.src.main.java.com.google.gson.internal.Excluder.Excluder.isExcludedByVersion": 1
+   }
+  },
+  {
+   "id": "gson-05",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "escape angle brackets and ampersands so JSON output is safe to embed in HTML",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.string": 2,
+    "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setHtmlSafe": 1
+   }
+  },
+  {
+   "id": "gson-06",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "read a JSON number as a long when it fits and as a double otherwise",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.readNumber@70": 2,
+    "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy": 1,
+    "gson.src.main.java.com.google.gson.ToNumberPolicy.ToNumberPolicy.parseAsDouble": 1
+   }
+  },
+  {
+   "id": "gson-07",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "avoid infinite recursion when building adapters for types that refer to themselves",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.Gson.Gson.FutureTypeAdapter": 2,
+    "gson.src.main.java.com.google.gson.Gson.Gson.getAdapter": 2,
+    "gson.src.main.java.com.google.gson.Gson.Gson.FutureTypeAdapter.setDelegate": 1
+   }
+  },
+  {
+   "id": "gson-08",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "write a map whose keys are objects as an array of key and value pairs",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.bind.MapTypeAdapterFactory.MapTypeAdapterFactory.Adapter.write": 2
+   }
+  },
+  {
+   "id": "gson-09",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "resolve a generic type variable like T to the concrete type in a subclass",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.resolve": 2,
+    "gson.src.main.java.com.google.gson.internal.GsonTypes.GsonTypes.resolveTypeVariable": 2
+   }
+  },
+  {
+   "id": "gson-10",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "reject comments, single quotes and unquoted names unless lenient parsing is enabled",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.stream.JsonReader.JsonReader.checkLenient": 2,
+    "gson.src.main.java.com.google.gson.Strictness.Strictness": 1
+   }
+  },
+  {
+   "id": "gson-11",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "keep the tree map balanced after inserting or removing an entry",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.LinkedTreeMap.LinkedTreeMap.rebalance": 2
+   }
+  },
+  {
+   "id": "gson-12",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "deserialize a Java record by passing component values to its canonical constructor",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.RecordAdapter": 2,
+    "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.RecordAdapter.finalize": 1,
+    "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.RecordAdapter.readField": 1
+   }
+  },
+  {
+   "id": "gson-13",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "configure indentation and line breaks for pretty-printed output",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.FormattingStyle.FormattingStyle": 2,
+    "gson.src.main.java.com.google.gson.FormattingStyle.FormattingStyle.withIndent": 1,
+    "gson.src.main.java.com.google.gson.FormattingStyle.FormattingStyle.withNewline": 1,
+    "gson.src.main.java.com.google.gson.stream.JsonWriter.JsonWriter.setFormattingStyle": 1
+   }
+  },
+  {
+   "id": "gson-14",
+   "repo": "gson",
+   "category": "behavior",
+   "query": "collect the serializable fields of a class including its superclasses",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.internal.bind.ReflectiveTypeAdapterFactory.ReflectiveTypeAdapterFactory.getBoundFields": 2
+   }
+  },
+  {
+   "id": "gson-15",
+   "repo": "gson",
+   "category": "identifier",
+   "query": "TypeToken.getParameterized",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.reflect.TypeToken.TypeToken.getParameterized": 2
+   }
+  },
+  {
+   "id": "gson-16",
+   "repo": "gson",
+   "category": "identifier",
+   "query": "GsonBuilder.registerTypeAdapter",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapter": 2,
+    "gson.src.main.java.com.google.gson.GsonBuilder.GsonBuilder.registerTypeAdapterFactory": 1
+   }
+  },
+  {
+   "id": "gson-17",
+   "repo": "gson",
+   "category": "identifier",
+   "query": "JsonParser.parseString",
+   "relevant": {
+    "gson.src.main.java.com.google.gson.JsonParser.JsonParser.parseString": 2
+   }
+  },
+  {
+   "id": "immer-01",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "produce the next immutable state from changes made to a draft inside a recipe",
+   "relevant": {
+    "src.core.immerClass.Immer.produce": 2,
+    "src.core.immerClass.createProxy": 1
+   }
+  },
+  {
+   "id": "immer-02",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "make a shallow copy of the base object only the first time a draft is modified",
+   "relevant": {
+    "src.core.proxy.prepareCopy": 2,
+    "src.core.proxy.markChanged": 1
+   }
+  },
+  {
+   "id": "immer-03",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "mark a draft and all of its parents as modified",
+   "relevant": {
+    "src.core.proxy.markChanged": 2
+   }
+  },
+  {
+   "id": "immer-04",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "deeply freeze the result so it cannot be mutated afterwards",
+   "relevant": {
+    "src.utils.common.freeze": 2,
+    "src.core.finalize.maybeFreeze": 2
+   }
+  },
+  {
+   "id": "immer-05",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "take a snapshot of a draft's current value in the middle of a recipe",
+   "relevant": {
+    "src.core.current.current": 2,
+    "src.core.current.currentImpl": 2
+   }
+  },
+  {
+   "id": "immer-06",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "get the original object that a draft was created from",
+   "relevant": {
+    "src.utils.common.original": 2
+   }
+  },
+  {
+   "id": "immer-07",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "record changes as JSON-patch style operations and apply them later",
+   "relevant": {
+    "src.plugins.patches.enablePatches": 2,
+    "src.core.immerClass.Immer.produceWithPatches": 1,
+    "src.core.immerClass.Immer.applyPatches": 1
+   }
+  },
+  {
+   "id": "immer-08",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "support Map and Set values inside drafts",
+   "relevant": {
+    "src.plugins.mapset.enableMapSet": 2,
+    "src.plugins.mapset.DraftMap": 1,
+    "src.plugins.mapset.DraftSet": 1
+   }
+  },
+  {
+   "id": "immer-09",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "decide whether a value can be drafted, such as plain objects, arrays, maps and sets",
+   "relevant": {
+    "src.utils.common.isDraftable": 2,
+    "src.utils.common.isPlainObject": 1
+   }
+  },
+  {
+   "id": "immer-10",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "revoke the proxies of a finished producer so stale drafts throw when used",
+   "relevant": {
+    "src.core.scope.revokeScope": 2,
+    "src.core.scope.revokeDraft": 2,
+    "src.core.scope.leaveScope": 1
+   }
+  },
+  {
+   "id": "immer-11",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "intercept a property assignment on a draft and remember which keys were assigned",
+   "relevant": {
+    "src.core.proxy.set": 2,
+    "src.core.proxy.markChanged": 1,
+    "src.core.proxy.prepareCopy": 1
+   }
+  },
+  {
+   "id": "immer-12",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "turn drafts nested in the recipe's result back into plain finalized values",
+   "relevant": {
+    "src.core.finalize.finalize": 2,
+    "src.core.finalize.processResult": 1,
+    "src.core.finalize.handleValue": 1
+   }
+  },
+  {
+   "id": "immer-13",
+   "repo": "immer",
+   "category": "behavior",
+   "query": "create a draft by hand outside of produce and finish it later",
+   "relevant": {
+    "src.core.immerClass.Immer.createDraft": 2,
+    "src.core.immerClass.Immer.finishDraft": 2
+   }
+  },
+  {
+   "id": "immer-14",
+   "repo": "immer",
+   "category": "identifier",
+   "query": "setAutoFreeze",
+   "relevant": {
+    "src.core.immerClass.Immer.setAutoFreeze": 2
+   }
+  },
+  {
+   "id": "immer-15",
+   "repo": "immer",
+   "category": "identifier",
+   "query": "isDraft",
+   "relevant": {
+    "src.utils.common.isDraft": 2
+   }
+  },
+  {
+   "id": "immer-16",
+   "repo": "immer",
+   "category": "identifier",
+   "query": "castImmutable",
+   "relevant": {
+    "src.immer.castImmutable": 2
+   }
+  }
+ ]
+}

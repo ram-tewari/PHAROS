@@ -60,7 +60,62 @@ def query_terms(query: str) -> list[str]:
     return list(dict.fromkeys(tokenize(query)))
 
 
-def semantic_summary(sym: Symbol, *, language: str, path: str, module_name: str) -> str:
+#: Kinds whose own lines are the code a question is about. Containers
+#: (classes, impls, modules) would only repeat the members indexed after them.
+BODY_KINDS = frozenset({"function", "method", "macro", "block"})
+#: Body lines in the embedded summary (0 = signature, docstring and calls only).
+SUMMARY_BODY_LINES = 25
+SUMMARY_BODY_CHARS = 1200
+_DOCSTRING_RE = re.compile(r'^\s*[rbuRBU]?("""|\'\'\')(.|\n)*?\1', re.S)
+
+
+def body_excerpt(lines: list[str], sym: Symbol, *, max_lines: int | None = None,
+                 max_chars: int = SUMMARY_BODY_CHARS) -> str:
+    """The first non-blank lines of a function after its signature (docstring removed).
+
+    Behaviour that lives only in the body ("run the persistent pre-run hooks")
+    is invisible to a summary of signature and docstring alone.
+    """
+    max_lines = SUMMARY_BODY_LINES if max_lines is None else max_lines
+    if max_lines <= 0 or sym.kind not in BODY_KINDS:
+        return ""
+    body = lines[sym.start_line - 1:sym.end_line]
+    if sym.kind != "block":
+        body = _after_signature(body, sym.signature)
+    text = _DOCSTRING_RE.sub("", "\n".join(body), count=1) if sym.docstring else "\n".join(body)
+    kept = [line.rstrip() for line in text.splitlines() if line.strip() and not _BRACES_ONLY.match(line)]
+    return "\n".join(kept[:max_lines])[:max_chars]
+
+
+_BRACES_ONLY = re.compile(r"^\s*[{}()\[\];,]*\s*$")
+_SPACE = re.compile(r"\s+")
+
+
+def _after_signature(body: list[str], signature: str) -> list[str]:
+    """Drop decorator lines and the lines the (whitespace-collapsed) signature spans."""
+    i = 0
+    while i < len(body) and body[i].lstrip().startswith("@") and not signature.lstrip().startswith("@"):
+        i += 1
+    need = len(_SPACE.sub("", signature)) if signature else 1
+    seen = 0
+    while i < len(body) and seen < need:
+        seen += len(_SPACE.sub("", body[i])) or 0
+        i += 1
+    return body[i:]
+
+
+def with_description(summary: str, description: str) -> str:
+    """Insert ``purpose: <description>`` after the summary's signature and
+    docstring, ahead of the body excerpt (embedders truncate long inputs)."""
+    lines = summary.split("\n")
+    at = 2 if len(lines) > 1 and " :: " in lines[0] else 1  # after the signature, or the header of a block
+    if len(lines) > at and lines[at].startswith('    """'):
+        at += 1
+    return "\n".join([*lines[:at], f"    purpose: {description}", *lines[at:]])
+
+
+def semantic_summary(sym: Symbol, *, language: str, path: str, module_name: str, body: str = "",
+                     description: str = "") -> str:
     '''The text that gets embedded for a chunk (not the raw source).
 
     Format::
@@ -68,7 +123,12 @@ def semantic_summary(sym: Symbol, *, language: str, path: str, module_name: str)
         [python] pkg/auth.py :: TokenStore.issue
         def issue(self, user):
             """Issue a signed token."""
+            payload = {"sub": user.id}
+            return self._sign(encode(payload))
             calls: [_sign, encode]
+
+    ``body`` (see :func:`body_excerpt`) goes before the call list: embedders
+    truncate long inputs (MiniLM at 256 tokens), and the body says more.
     '''
     local_name = sym.qualified_name
     if module_name and local_name.startswith(module_name + "."):
@@ -80,6 +140,10 @@ def semantic_summary(sym: Symbol, *, language: str, path: str, module_name: str)
     lines = [header, sym.signature] if sym.signature else [header]
     if sym.docstring:
         lines.append(f'    """{sym.docstring}"""')
+    if description:
+        lines.append(f"    purpose: {description}")
+    if body:
+        lines.append(body)
     if sym.calls:
         lines.append(f"    calls: [{', '.join(sym.calls[:20])}]")
     return "\n".join(lines)

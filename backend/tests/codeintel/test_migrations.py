@@ -45,7 +45,7 @@ def test_upgrade_downgrade_upgrade_from_scratch(blank_engine):
     with blank_engine.begin() as conn:
         command.upgrade(_cfg(conn), "head")
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    assert version == "0002_codeintel"
+    assert version == "0003_chunk_descriptions"
 
 
 def test_models_match_migrations(blank_engine):

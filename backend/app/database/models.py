@@ -1301,6 +1301,27 @@ class CodeEdge(Base):
     )
 
 
+class ChunkDescription(Base):
+    """An LLM-written description of one symbol at one file version.
+
+    Keyed by the file's git blob SHA and the symbol's qualified name, so it
+    survives re-indexing and is only written again when the file changes.
+    The indexer adds it to the chunk's embedded summary (contextual
+    retrieval). Written on the owner's machine (``pharos describe``), never by
+    the API.
+    """
+
+    __tablename__ = "chunk_descriptions"
+
+    content_sha: Mapped[str] = mapped_column(String(64), primary_key=True)
+    symbol_name: Mapped[str] = mapped_column(String(512), primary_key=True)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    model: Mapped[str] = mapped_column(String(100), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+
+
 class IngestionJob(Base):
     """Durable repository-ingestion job.
 

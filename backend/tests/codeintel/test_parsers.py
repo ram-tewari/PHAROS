@@ -110,6 +110,42 @@ def test_rust_impl_methods_qualified_by_type():
     assert any(k == "impl" for k in names.values())
 
 
+def test_rust_doc_comment_survives_attributes_and_macros_are_symbols():
+    src = (
+        "/// The lowest level cause.\n///\n/// The last error in the chain.\n"
+        '#[cfg(feature = "std")]\n#[must_use]\npub fn root_cause(&self) -> u8 { 1 }\n\n'
+        "/// Return early with an error.\n#[macro_export]\nmacro_rules! bail {\n    ($m:literal) => { return };\n}\n\n"
+        "#[must_use]\npub fn undocumented() {}\n"
+    )
+    by = {s.name: s for s in parse_file("src/error.rs", src).symbols}
+    assert by["root_cause"].docstring == "The lowest level cause. The last error in the chain."
+    assert (by["bail"].kind, by["bail"].docstring, by["bail"].start_line) == ("macro", "Return early with an error.", 10)
+    assert by["undocumented"].docstring == ""
+
+
+def test_c_function_like_macros_are_symbols():
+    src = "/* Max of two values. */\n#define MAX(a, b) \\\n  ((a) > (b) ? (a) : (b))\n#define VERSION 3\nint f(void) { return MAX(1, 2); }\n"
+    by = {s.name: s for s in parse_file("lib/m.c", src).symbols}
+    assert (by["MAX"].kind, by["MAX"].docstring, by["MAX"].signature) == ("macro", "Max of two values.", "#define MAX(a, b)")
+    assert "VERSION" not in by  # object-like macros are constants, not code to retrieve
+    assert "MAX" in by["f"].calls
+    assert (by["MAX"].start_line, by["MAX"].end_line) == (2, 3)  # not the following line
+
+
+def test_summary_includes_a_bounded_body_excerpt():
+    from app.codeintel.text import body_excerpt, semantic_summary
+
+    src = ('@app.route("/x")\ndef view(\n    a,\n    b,\n):\n    """Add them."""\n'
+           + "".join(f"    step{i} = a + {i}\n" for i in range(40)) + "    return b\n")
+    sym = next(s for s in parse_file("pkg/x.py", src).symbols if s.name == "view")
+    body = body_excerpt(src.splitlines(), sym, max_lines=3)
+    assert body == "    step0 = a + 0\n    step1 = a + 1\n    step2 = a + 2"  # no decorator, signature or docstring
+    summary = semantic_summary(sym, language="python", path="pkg/x.py", module_name="pkg.x", body=body)
+    assert summary.index("Add them") < summary.index("step0")
+    cls = parse_file("pkg/c.py", "class C:\n    x = 1\n    def m(self):\n        return 2\n").symbols
+    assert body_excerpt(["class C:", "    x = 1"], next(s for s in cls if s.kind == "class")) == ""
+
+
 def test_syntax_error_falls_back_and_says_so():
     r = parse_file("bad.py", "def broken(:\n    pass\n")
     assert r.parser == "line-fallback"

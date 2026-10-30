@@ -1,0 +1,1447 @@
+{
+ "codeqa_v1:flask-01": [
+  "make_response",
+  "response_class",
+  "app.py"
+ ],
+ "codeqa_v1:flask-02": [
+  "dispatch_request",
+  "view_functions",
+  "ensure_sync",
+  "app.py"
+ ],
+ "codeqa_v1:flask-03": [
+  "preprocess_request",
+  "before_request_funcs",
+  "app.py"
+ ],
+ "codeqa_v1:flask-04": [
+  "process_response",
+  "after_request_funcs",
+  "save_session",
+  "app.py"
+ ],
+ "codeqa_v1:flask-05": [
+  "from_prefixed_env",
+  "Config",
+  "config.py"
+ ],
+ "codeqa_v1:flask-06": [
+  "from_pyfile",
+  "Config",
+  "config.py"
+ ],
+ "codeqa_v1:flask-07": [
+  "save_session",
+  "SecureCookieSessionInterface",
+  "get_signing_serializer",
+  "set_cookie",
+  "sessions.py"
+ ],
+ "codeqa_v1:flask-08": [
+  "open_session",
+  "get_signing_serializer",
+  "BadSignature",
+  "SecureCookieSessionInterface",
+  "sessions.py"
+ ],
+ "codeqa_v1:flask-09": [
+  "should_set_cookie",
+  "SESSION_REFRESH_EACH_REQUEST",
+  "modified",
+  "permanent",
+  "sessions.py"
+ ],
+ "codeqa_v1:flask-10": [
+  "TaggedJSONSerializer",
+  "JSONTag",
+  "tag",
+  "untag",
+  "json/tag.py"
+ ],
+ "codeqa_v1:flask-11": [
+  "flash",
+  "get_flashed_messages",
+  "_flashes",
+  "helpers.py"
+ ],
+ "codeqa_v1:flask-12": [
+  "send_from_directory",
+  "safe_join",
+  "helpers.py"
+ ],
+ "codeqa_v1:flask-13": [
+  "url_for",
+  "url_adapter",
+  "build",
+  "handle_url_build_error"
+ ],
+ "codeqa_v1:flask-14": [
+  "stream_with_context",
+  "RequestContext",
+  "helpers.py"
+ ],
+ "codeqa_v1:flask-15": [
+  "ScriptInfo",
+  "load_app",
+  "locate_app",
+  "find_best_app",
+  "cli.py"
+ ],
+ "codeqa_v1:flask-16": [
+  "load_dotenv",
+  "FlaskGroup",
+  "dotenv",
+  "cli.py"
+ ],
+ "codeqa_v1:flask-17": [
+  "routes_command",
+  "iter_rules",
+  "url_map",
+  "cli.py"
+ ],
+ "codeqa_v1:flask-18": [
+  "_find_error_handler",
+  "error_handler_spec",
+  "_get_exc_class_and_code"
+ ],
+ "codeqa_v1:flask-19": [
+  "handle_exception",
+  "log_exception",
+  "InternalServerError",
+  "PROPAGATE_EXCEPTIONS",
+  "finalize_request"
+ ],
+ "codeqa_v1:flask-20": [
+  "register_blueprint",
+  "Blueprint",
+  "register",
+  "BlueprintSetupState",
+  "url_prefix"
+ ],
+ "codeqa_v1:flask-21": [
+  "MethodView",
+  "dispatch_request",
+  "flask/views.py"
+ ],
+ "codeqa_v1:flask-22": [
+  "View.as_view",
+  "view_func",
+  "flask/views.py"
+ ],
+ "codeqa_v1:flask-23": [
+  "DispatchingJinjaLoader",
+  "_iter_loaders",
+  "get_source",
+  "flask/templating.py"
+ ],
+ "codeqa_v1:flask-24": [
+  "render_template",
+  "_render",
+  "update_template_context",
+  "flask/templating.py"
+ ],
+ "codeqa_v1:flask-25": [
+  "EXPLAIN_TEMPLATE_LOADING",
+  "explain_template_loading_attempts",
+  "_get_source_explained",
+  "TemplateNotFound",
+  "flask/debughelpers.py"
+ ],
+ "codeqa_v1:flask-26": [
+  "app_context",
+  "AppContext",
+  "push",
+  "current_app",
+  "flask/ctx.py"
+ ],
+ "codeqa_v1:flask-27": [
+  "after_this_request",
+  "_after_request_functions",
+  "flask/ctx.py"
+ ],
+ "codeqa_v1:flask-28": [
+  "FlaskClient",
+  "session_transaction",
+  "flask/testing.py"
+ ],
+ "codeqa_v1:flask-29": [
+  "jsonify",
+  "JSONProvider.response",
+  "DefaultJSONProvider",
+  "application/json",
+  "flask/json/provider.py"
+ ],
+ "codeqa_v1:flask-30": [
+  "MAX_CONTENT_LENGTH",
+  "max_content_length",
+  "RequestEntityTooLarge",
+  "flask/wrappers.py"
+ ],
+ "codeqa_v1:flask-31": [
+  "wsgi_app",
+  "__call__",
+  "full_dispatch_request",
+  "flask/app.py"
+ ],
+ "codeqa_v1:flask-32": [
+  "post",
+  "_method_route",
+  "route",
+  "flask/sansio/scaffold.py"
+ ],
+ "codeqa_v1:flask-33": [
+  "_endpoint_from_view_func",
+  "__name__",
+  "add_url_rule",
+  "flask/sansio/scaffold.py"
+ ],
+ "codeqa_v1:flask-34": [
+  "teardown_request",
+  "teardown_request_funcs",
+  "do_teardown_request",
+  "RequestContext.pop",
+  "flask/app.py"
+ ],
+ "codeqa_v1:flask-35": [
+  "send_file",
+  "conditional",
+  "etag",
+  "_prepare_send_file_kwargs",
+  "flask/helpers.py"
+ ],
+ "codeqa_v1:flask-36": [
+  "Config",
+  "from_mapping",
+  "flask/config.py"
+ ],
+ "codeqa_v1:flask-37": [
+  "Config",
+  "get_namespace",
+  "lowercase",
+  "trim_namespace",
+  "flask/config.py"
+ ],
+ "codeqa_v1:flask-38": [
+  "async_to_sync",
+  "ensure_sync",
+  "asgiref.sync",
+  "flask/app.py"
+ ],
+ "codeqa_v1:flask-39": [
+  "SessionInterface",
+  "make_null_session",
+  "null_session_class",
+  "NullSession",
+  "flask/sessions.py"
+ ],
+ "codeqa_v1:flask-40": [
+  "FlaskGroup",
+  "_load_plugin_commands",
+  "entry_points",
+  "flask.commands",
+  "flask/cli.py"
+ ],
+ "codeqa_v1:cobra-01": [
+  "ExactArgs",
+  "PositionalArgs",
+  "args.go"
+ ],
+ "codeqa_v1:cobra-02": [
+  "OnlyValidArgs",
+  "ValidArgs",
+  "args.go"
+ ],
+ "codeqa_v1:cobra-03": [
+  "MatchAll",
+  "PositionalArgs",
+  "args.go"
+ ],
+ "codeqa_v1:cobra-04": [
+  "SuggestionsFor",
+  "SuggestFor",
+  "SuggestionsMinimumDistance",
+  "DisableSuggestions"
+ ],
+ "codeqa_v1:cobra-05": [
+  "Find",
+  "Traverse",
+  "command.go"
+ ],
+ "codeqa_v1:cobra-06": [
+  "Execute",
+  "ExecuteC",
+  "ExecuteContext",
+  "execute"
+ ],
+ "codeqa_v1:cobra-07": [
+  "PersistentPreRun",
+  "PersistentPreRunE",
+  "EnableTraverseRunHooks",
+  "execute"
+ ],
+ "codeqa_v1:cobra-08": [
+  "MarkFlagsRequiredTogether",
+  "ValidateFlagGroups",
+  "flag_groups.go"
+ ],
+ "codeqa_v1:cobra-09": [
+  "MarkFlagsMutuallyExclusive",
+  "ValidateFlagGroups",
+  "flag_groups.go"
+ ],
+ "codeqa_v1:cobra-10": [
+  "MarkFlagRequired",
+  "MarkPersistentFlagRequired",
+  "ValidateRequiredFlags"
+ ],
+ "codeqa_v1:cobra-11": [
+  "GenBashCompletion",
+  "GenBashCompletionV2",
+  "GenBashCompletionFile",
+  "bash_completions.go"
+ ],
+ "codeqa_v1:cobra-12": [
+  "GenZshCompletion",
+  "GenZshCompletionFile",
+  "zsh_completions.go"
+ ],
+ "codeqa_v1:cobra-13": [
+  "GenFishCompletion",
+  "GenFishCompletionFile",
+  "fish_completions.go"
+ ],
+ "codeqa_v1:cobra-14": [
+  "GenPowerShellCompletionWithDesc",
+  "GenPowerShellCompletionFileWithDesc",
+  "powershell_completions.go"
+ ],
+ "codeqa_v1:cobra-15": [
+  "getCompletions",
+  "ValidArgsFunction",
+  "ShellCompDirective",
+  "completions.go"
+ ],
+ "codeqa_v1:cobra-16": [
+  "RegisterFlagCompletionFunc",
+  "GetFlagCompletionFunc",
+  "CompletionFunc"
+ ],
+ "codeqa_v1:cobra-17": [
+  "GenManTree",
+  "GenManTreeFromOpts",
+  "GenManHeader",
+  "doc/man_docs.go"
+ ],
+ "codeqa_v1:cobra-18": [
+  "GenMarkdown",
+  "GenMarkdownCustom",
+  "doc/md_docs.go"
+ ],
+ "codeqa_v1:cobra-19": [
+  "InitDefaultHelpCmd",
+  "SetHelpCommand",
+  "helpCommand"
+ ],
+ "codeqa_v1:cobra-20": [
+  "InitDefaultVersionFlag",
+  "Version",
+  "SetVersionTemplate",
+  "versionFlag"
+ ],
+ "codeqa_v1:cobra-21": [
+  "mergePersistentFlags",
+  "PersistentFlags",
+  "InheritedFlags",
+  "updateParentsPflags"
+ ],
+ "codeqa_v1:cobra-22": [
+  "Usage",
+  "UsageString",
+  "UsageFunc",
+  "SilenceUsage",
+  "flagErrorFunc"
+ ],
+ "codeqa_v1:cobra-23": [
+  "Group",
+  "AddGroup",
+  "GroupID",
+  "AllChildCommandsHaveGroup",
+  "SetHelpCommandGroupID"
+ ],
+ "codeqa_v1:cobra-24": [
+  "OnInitialize",
+  "initializers",
+  "preRun"
+ ],
+ "codeqa_v1:cobra-25": [
+  "AddTemplateFunc",
+  "AddTemplateFuncs",
+  "templateFuncs"
+ ],
+ "codeqa_v1:cobra-26": [
+  "AppendActiveHelp",
+  "activeHelp",
+  "ShellCompDirective"
+ ],
+ "codeqa_v1:cobra-27": [
+  "GetActiveHelpConfig",
+  "activeHelpEnvVar",
+  "COBRA_ACTIVE_HELP"
+ ],
+ "codeqa_v1:cobra-28": [
+  "CommandPath",
+  "Parent",
+  "Name"
+ ],
+ "codeqa_v1:cobra-29": [
+  "HasAlias",
+  "Aliases",
+  "CalledAs"
+ ],
+ "codeqa_v1:cobra-30": [
+  "stripFlags",
+  "Find",
+  "Traverse",
+  "argsMinusFirstX"
+ ],
+ "codeqa_v1:cobra-31": [
+  "ExecuteContext",
+  "ExecuteContextC",
+  "SetContext",
+  "Context",
+  "Execute"
+ ],
+ "codeqa_v1:cobra-32": [
+  "SetHelpFunc",
+  "HelpFunc",
+  "Help",
+  "helpFunc"
+ ],
+ "codeqa_v1:cobra-33": [
+  "MarkFlagFilename",
+  "MarkPersistentFlagFilename",
+  "BashCompFilenameExt",
+  "annotations"
+ ],
+ "codeqa_v1:cobra-34": [
+  "NoFileCompletions",
+  "ShellCompDirectiveNoFileComp",
+  "CompletionFunc"
+ ],
+ "codeqa_v1:cobra-35": [
+  "FixedCompletions",
+  "CompletionFunc",
+  "ShellCompDirective"
+ ],
+ "dev_synth_v1:flask-s001": [
+  "flash",
+  "get_flashed_messages",
+  "message_flashed",
+  "session",
+  "_flashes"
+ ],
+ "dev_synth_v1:flask-s002": [
+  "dispatch_request",
+  "routing_exception",
+  "raise_routing_exception",
+  "provide_automatic_options",
+  "make_default_options_response"
+ ],
+ "dev_synth_v1:flask-s003": [
+  "FlaskClient",
+  "open",
+  "_copy_environ",
+  "preserve_context",
+  "json_module"
+ ],
+ "dev_synth_v1:flask-s004": [
+  "TagDict",
+  "check",
+  "JSONTag",
+  "serializer.tags",
+  "len(value) == 1"
+ ],
+ "dev_synth_v1:flask-s005": [
+  "TaggedJSONSerializer",
+  "untag",
+  "_untag_scan",
+  "tags",
+  "to_python"
+ ],
+ "dev_synth_v1:flask-s006": [
+  "CertParamType",
+  "convert",
+  "ssl.SSLContext",
+  "adhoc",
+  "click.Path"
+ ],
+ "dev_synth_v1:flask-s007": [
+  "BlueprintSetupState",
+  "__init__",
+  "url_prefix",
+  "subdomain",
+  "url_defaults"
+ ],
+ "dev_synth_v1:flask-s008": [
+  "route",
+  "decorator",
+  "add_url_rule",
+  "rule",
+  "options"
+ ],
+ "dev_synth_v1:flask-s009": [
+  "Config",
+  "from_envvar",
+  "os.environ",
+  "silent",
+  "from_pyfile"
+ ],
+ "dev_synth_v1:flask-s010": [
+  "from_object",
+  "import_string",
+  "isupper",
+  "dir",
+  "getattr"
+ ],
+ "dev_synth_v1:flask-s011": [
+  "find_app_by_string",
+  "ast.parse",
+  "ast.literal_eval",
+  "find_best_app",
+  "NoAppException"
+ ],
+ "dev_synth_v1:flask-s012": [
+  "run_command",
+  "Flask.run",
+  "FLASK_DEBUG",
+  "run_simple",
+  "use_reloader"
+ ],
+ "dev_synth_v1:flask-s013": [
+  "_check_setup_finished",
+  "_got_first_request",
+  "setupmethod",
+  "AssertionError",
+  "sansio/app.py"
+ ],
+ "dev_synth_v1:flask-s014": [
+  "get_root_path",
+  "find_package",
+  "_find_package_path",
+  "importlib.util.find_spec",
+  "submodule_search_locations"
+ ],
+ "dev_synth_v1:flask-s015": [
+  "attach_enctype_error_multidict",
+  "DebugFilesKeyError",
+  "debughelpers.py",
+  "request.files",
+  "multipart/form-data"
+ ],
+ "dev_synth_v1:flask-s016": [
+  "endpoint",
+  "view_functions",
+  "decorator",
+  "endpoint",
+  "scaffold.py"
+ ],
+ "dev_synth_v1:flask-s017": [
+  "process_response",
+  "after_request_funcs",
+  "_after_request_functions",
+  "session_interface.save_session",
+  "finalize_request"
+ ],
+ "dev_synth_v1:flask-s018": [
+  "DispatchingJinjaLoader",
+  "_get_source_explained",
+  "EXPLAIN_TEMPLATE_LOADING",
+  "explain_template_loading_attempts",
+  "TemplateNotFound"
+ ],
+ "dev_synth_v1:flask-s019": [
+  "handle_url_build_error",
+  "url_build_error_handlers",
+  "BuildError",
+  "url_for",
+  "build_error"
+ ],
+ "dev_synth_v1:flask-s020": [
+  "render_template_string",
+  "current_app",
+  "jinja_env.from_string",
+  "_render",
+  "update_template_context"
+ ],
+ "dev_synth_v1:flask-s021": [
+  "RequestContext.match_request",
+  "url_adapter.match",
+  "routing_exception"
+ ],
+ "dev_synth_v1:flask-s022": [
+  "Blueprint.teardown_app_request",
+  "record_once",
+  "teardown_request_funcs"
+ ],
+ "dev_synth_v1:flask-s023": [
+  "Config.get_namespace",
+  "namespace",
+  "lowercase",
+  "trim_namespace"
+ ],
+ "dev_synth_v1:flask-s024": [
+  "RequestContext.push",
+  "app_context",
+  "open_session",
+  "match_request"
+ ],
+ "dev_synth_v1:flask-s025": [
+  "Flask.__init__",
+  "cli",
+  "AppGroup",
+  "add_url_rule",
+  "static_url_path"
+ ],
+ "dev_synth_v1:flask-s026": [
+  "get_send_file_max_age",
+  "SEND_FILE_MAX_AGE_DEFAULT",
+  "timedelta",
+  "total_seconds"
+ ],
+ "dev_synth_v1:flask-s027": [
+  "RequestContext.__init__",
+  "routing_exception",
+  "_after_request_functions",
+  "create_url_adapter"
+ ],
+ "dev_synth_v1:flask-s028": [
+  "TaggedJSONSerializer.__init__",
+  "default_tags",
+  "tags",
+  "order",
+  "register"
+ ],
+ "dev_synth_v1:flask-s029": [
+  "Flask.update_template_context",
+  "_default_template_ctx_processor",
+  "g",
+  "request",
+  "session"
+ ],
+ "dev_synth_v1:cobra-s030": [
+  "ld",
+  "levenshtein",
+  "ignoreCase",
+  "strings.ToLower"
+ ],
+ "dev_synth_v1:cobra-s031": [
+  "writeArgAliases",
+  "ArgAliases",
+  "sort.Strings",
+  "bash_completions.go"
+ ],
+ "dev_synth_v1:cobra-s032": [
+  "MarkFlagsOneRequired",
+  "oneRequired",
+  "flag_groups.go",
+  "ValidateFlagGroups"
+ ],
+ "dev_synth_v1:cobra-s033": [
+  "writeRequiredFlag",
+  "BashCompOneRequiredFlag",
+  "Shorthand",
+  "NoOptDefVal"
+ ],
+ "dev_synth_v1:cobra-s034": [
+  "processFlagForGroupAnnotation",
+  "Changed",
+  "Annotations",
+  "hasAllFlags",
+  "flag_groups.go"
+ ],
+ "dev_synth_v1:cobra-s035": [
+  "mergePersistentFlags",
+  "updateParentsPflags",
+  "PersistentFlags",
+  "parentsPflags",
+  "AddFlagSet"
+ ],
+ "dev_synth_v1:cobra-s036": [
+  "hasAllFlags",
+  "pflag.FlagSet",
+  "Lookup",
+  "flag_groups.go"
+ ],
+ "dev_synth_v1:cobra-s037": [
+  "writeFlagHandler",
+  "BashCompFilenameExt",
+  "BashCompCustom",
+  "BashCompSubdirsInDir",
+  "bash_completions.go"
+ ],
+ "dev_synth_v1:cobra-s038": [
+  "Eq",
+  "reflect.ValueOf",
+  "reflect.Int",
+  "reflect.String",
+  "panic"
+ ],
+ "dev_synth_v1:cobra-s039": [
+  "writeCommands",
+  "IsAvailableCommand",
+  "helpCommand",
+  "Aliases",
+  "bash_completions.go"
+ ],
+ "dev_synth_v1:cobra-s040": [
+  "writePostscript",
+  "__start_",
+  "bash_completion",
+  "complete",
+  "compopt"
+ ],
+ "dev_synth_v1:cobra-s041": [
+  "shorthand",
+  "NoOptDefVal",
+  "Flag",
+  "ShorthandLookup"
+ ],
+ "dev_synth_v1:cobra-s042": [
+  "InheritedFlags",
+  "mergePersistentFlags",
+  "LocalFlags",
+  "VisitAll"
+ ],
+ "dev_synth_v1:cobra-s043": [
+  "GetEnv",
+  "getEnv",
+  "os.LookupEnv",
+  "os.Getenv",
+  "commandName"
+ ],
+ "dev_synth_v1:cobra-s044": [
+  "writePreamble",
+  "GenBashCompletion",
+  "__debug",
+  "__custom_func"
+ ],
+ "dev_synth_v1:cobra-s045": [
+  "IsAdditionalHelpTopicCommand",
+  "IsAvailableCommand",
+  "Runnable",
+  "HasAvailableSubCommands"
+ ],
+ "dev_synth_v1:cobra-s046": [
+  "writeShortFlag",
+  "writeFlag",
+  "NoOptDefVal",
+  "BashCompCustom"
+ ],
+ "dev_synth_v1:cobra-s047": [
+  "GenZshCompletion",
+  "GenZshCompletionNoDesc",
+  "GenFishCompletion",
+  "ShellCompDirective",
+  "GenPowerShellCompletionWithDesc"
+ ],
+ "dev_synth_v1:cobra-s048": [
+  "argsMinusFirstX",
+  "stripFlags",
+  "NoOptDefVal",
+  "ShorthandLookup"
+ ],
+ "dev_synth_v1:cobra-s049": [
+  "RemoveCommand",
+  "commands",
+  "commandsMaxUseLen",
+  "commandsMaxCommandPathLen",
+  "commandsMaxNameLen"
+ ],
+ "dev_synth_v1:cobra-s050": [
+  "Flag",
+  "LocalNonPersistentFlags",
+  "PersistentFlags",
+  "parentsPflags"
+ ],
+ "dev_synth_v1:cobra-s051": [
+  "InOrStdin",
+  "getInput",
+  "inReader",
+  "parent",
+  "os.Stdin"
+ ],
+ "dev_synth_v1:cobra-s052": [
+  "MarkFlagsRequiredTogether",
+  "ValidateFlagGroups",
+  "validateRequiredFlagGroups",
+  "requiredAsGroup"
+ ],
+ "dev_synth_v1:cobra-s053": [
+  "getCompletions",
+  "completeFlag",
+  "ShellCompDirectiveNoFileComp",
+  "Shorthand",
+  "Usage"
+ ],
+ "dev_synth_v1:cobra-s054": [
+  "AddCommand",
+  "SetGlobalNormalizationFunc",
+  "globNormFunc",
+  "commandsMaxUseLen",
+  "commandsMaxNameLen"
+ ],
+ "dev_synth_v1:cobra-s055": [
+  "tmpl",
+  "template.New",
+  "Funcs",
+  "templateFuncs",
+  "Execute"
+ ],
+ "dev_synth_v1:cobra-s056": [
+  "ExecuteC",
+  "ExecuteContextC",
+  "execute",
+  "Find",
+  "Traverse"
+ ],
+ "dev_synth_v1:cobra-s057": [
+  "GetFlagCompletionFunc",
+  "flagCompletionFunctions",
+  "flagCompletionMutex",
+  "RLock"
+ ],
+ "dev_synth_v1:cobra-s058": [
+  "MousetrapHelpText",
+  "MousetrapDisplayDuration",
+  "mousetrap.StartedByExplorer",
+  "cobra_windows.go"
+ ],
+ "dev_synth_v1:cobra-s059": [
+  "ValidateRequiredFlags",
+  "BashCompOneRequiredFlag",
+  "Changed",
+  "VisitAll"
+ ],
+ "dev_synth_v1:log-s060": [
+  "to_u128",
+  "u128",
+  "TryFrom",
+  "Value",
+  "Internal"
+ ],
+ "dev_synth_v1:log-s061": [
+  "LevelFilter::from_usize",
+  "LevelFilter",
+  "from_usize"
+ ],
+ "dev_synth_v1:log-s062": [
+  "test_set_logger_error",
+  "set_logger_error",
+  "SetLoggerError",
+  "SET_LOGGER_ERROR"
+ ],
+ "dev_synth_v1:log-s063": [
+  "test_level_filter_decrement",
+  "LevelFilter::decrement",
+  "decrement",
+  "LevelFilter::Off"
+ ],
+ "dev_synth_v1:log-s064": [
+  "test_to_borrowed_str",
+  "test_to_cow_str",
+  "to_borrowed_str",
+  "to_cow_str",
+  "src/kv/value.rs"
+ ],
+ "dev_synth_v1:log-s065": [
+  "test_level_filter Deserialize",
+  "test_level_filter_deserialize",
+  "LevelFilter",
+  "serde",
+  "Bytes"
+ ],
+ "dev_synth_v1:log-s066": [
+  "Source::fmt",
+  "DebugMap",
+  "debug_map",
+  "VisitSource",
+  "visit_pair"
+ ],
+ "dev_synth_v1:log-s067": [
+  "Level::from_usize",
+  "from_usize",
+  "Level"
+ ],
+ "dev_synth_v1:log-s068": [
+  "test_level_from_str",
+  "test_level_filter_from_str",
+  "FromStr",
+  "ParseLevelError"
+ ],
+ "dev_synth_v1:log-s069": [
+  "Source::get",
+  "get",
+  "Source for [S]",
+  "find_map",
+  "src/kv/source.rs"
+ ],
+ "dev_synth_v1:log-s070": [
+  "test_from",
+  "test_to_value",
+  "ToValue",
+  "Value::null",
+  "src/kv/value.rs"
+ ],
+ "dev_synth_v1:log-s071": [
+  "VisitValue",
+  "Visit",
+  "visit_any",
+  "visit_empty",
+  "value_bag"
+ ],
+ "dev_synth_v1:log-s072": [
+  "visit_pair",
+  "Get",
+  "Key",
+  "Value",
+  "Source::get"
+ ],
+ "dev_synth_v1:log-s073": [
+  "Source::visit",
+  "VisitSource",
+  "Source for [S]",
+  "try_for_each",
+  "src/kv/source.rs"
+ ],
+ "dev_synth_v1:log-s074": [
+  "Token::Bytes",
+  "Token::NewtypeStruct",
+  "LevelFilter",
+  "serde_test",
+  "tokens"
+ ],
+ "dev_synth_v1:log-s075": [
+  "set_logger_racy",
+  "SetLoggerError",
+  "LOGGER",
+  "STATE",
+  "INITIALIZED"
+ ],
+ "dev_synth_v1:log-s076": [
+  "ToValue for Option<T>",
+  "to_value",
+  "Value::null",
+  "Option",
+  "src/kv/value.rs"
+ ],
+ "dev_synth_v1:log-s077": [
+  "LevelFilter::from_str",
+  "FromStr",
+  "eq_ignore_ascii_case",
+  "ParseLevelError",
+  "LOG_LEVEL_NAMES"
+ ],
+ "dev_synth_v1:log-s078": [
+  "Display for Value",
+  "Debug for Value",
+  "fmt",
+  "src/kv/value.rs",
+  "value_bag"
+ ],
+ "dev_synth_v1:log-s079": [
+  "test_kv",
+  "test_key_values",
+  "Record::key_values",
+  "RecordBuilder::key_values",
+  "VisitSource"
+ ],
+ "dev_synth_v1:log-s080": [
+  "test_level_increment",
+  "Level::increment",
+  "increment",
+  "Level::Error"
+ ],
+ "dev_synth_v1:log-s081": [
+  "test_to_f64",
+  "test_f64_conversion",
+  "to_f64",
+  "u64",
+  "i64"
+ ],
+ "dev_synth_v1:log-s082": [
+  "Record::builder",
+  "RecordBuilder::new",
+  "Record",
+  "Metadata::default",
+  "fmt::Arguments"
+ ],
+ "dev_synth_v1:jq-s083": [
+  "jv_string_vfmt",
+  "jv_string_fmt",
+  "vsnprintf",
+  "va_list"
+ ],
+ "dev_synth_v1:jq-s084": [
+  "gen_subexp",
+  "gen_subexp_neverlast",
+  "gen_noop",
+  "gen_const",
+  "src/compile.c"
+ ],
+ "dev_synth_v1:jq-s085": [
+  "jq_halt",
+  "halted",
+  "exit_code",
+  "error_message",
+  "src/execute.c"
+ ],
+ "dev_synth_v1:jq-s086": [
+  "jvp_string_free",
+  "jvp_refcnt_dec",
+  "jv_free",
+  "src/jv.c"
+ ],
+ "dev_synth_v1:jq-s087": [
+  "makeboyerMoore",
+  "bad_char",
+  "offset",
+  "lookup",
+  "src/jv.c"
+ ],
+ "dev_synth_v1:jq-s088": [
+  "jv_number_is_nan",
+  "isnan",
+  "JV_KIND_NUMBER",
+  "jv_get_kind"
+ ],
+ "dev_synth_v1:jq-s089": [
+  "decNumberClass",
+  "decClass",
+  "DEC_CLASS_SNAN",
+  "DEC_CLASS_QNAN",
+  "decNumberIsNormal"
+ ],
+ "dev_synth_v1:jq-s090": [
+  "sort_cmp",
+  "struct sort_entry",
+  "jv_cmp",
+  "index",
+  "stack_overflow"
+ ],
+ "dev_synth_v1:jq-s091": [
+  "decNumberGetBCD",
+  "DPD2BIN",
+  "DPD2BCD",
+  "declets",
+  "decNumber.c"
+ ],
+ "dev_synth_v1:jq-s092": [
+  "jv_object_merge",
+  "jv_object_set",
+  "jv_object_iter",
+  "src/jv.c"
+ ],
+ "dev_synth_v1:jq-s093": [
+  "gen_reduce",
+  "REDUCE",
+  "STOREV",
+  "FORK",
+  "src/compile.c"
+ ],
+ "dev_synth_v1:jq-s094": [
+  "process_dependencies",
+  "load_library",
+  "load_module",
+  "is_data",
+  "optional"
+ ],
+ "dev_synth_v1:jq-s095": [
+  "block_has_main",
+  "block",
+  "inst",
+  "src/compile.c"
+ ],
+ "dev_synth_v1:jq-s096": [
+  "jv_unique",
+  "jv_sort",
+  "sort_items",
+  "keys",
+  "src/jv_aux.c"
+ ],
+ "dev_synth_v1:jq-s097": [
+  "stack_push",
+  "stack_grow",
+  "stack_ptr",
+  "ALIGNMENT",
+  "src/exec_stack.h"
+ ],
+ "dev_synth_v1:jq-s098": [
+  "jq_start",
+  "jq_reset",
+  "JQ_DEBUG_TRACE",
+  "initial",
+  "src/execute.c"
+ ],
+ "dev_synth_v1:jq-s099": [
+  "gen_const_global",
+  "gen_op_unbound",
+  "CLOSURE_CREATE_C",
+  "symbol",
+  "src/compile.c"
+ ],
+ "dev_synth_v1:jq-s100": [
+  "f_trim",
+  "f_ltrim",
+  "f_rtrim",
+  "jv_string_trim",
+  "Unicode whitespace"
+ ],
+ "dev_synth_v1:jq-s101": [
+  "yy_init_buffer",
+  "yy_load_buffer_state",
+  "lexer.c"
+ ],
+ "dev_synth_v1:jq-s102": [
+  "min_by",
+  "max_by",
+  "f_min_by_impl",
+  "f_max_by_impl"
+ ],
+ "dev_synth_v1:jq-s103": [
+  "ascii_upcase",
+  "ascii_downcase",
+  "builtin.jq"
+ ],
+ "dev_synth_v1:jq-s104": [
+  "decNumberRescale",
+  "decNumberQuantize",
+  "decRescale"
+ ],
+ "dev_synth_v1:jq-s105": [
+  "jv_parser_next",
+  "jv_parser",
+  "scan",
+  "JV_PARSE_SEQ"
+ ],
+ "dev_synth_v1:jq-s106": [
+  "pthread_key_create",
+  "pthread_once",
+  "tsd_init",
+  "abort"
+ ],
+ "dev_synth_v1:jq-s107": [
+  "jvp_hash_seed",
+  "getrandom",
+  "urandom",
+  "rand"
+ ],
+ "dev_synth_v1:jq-s108": [
+  "block_has_only_binders",
+  "block_bindings",
+  "OP_HAS_BINDING",
+  "MODULEMETA"
+ ],
+ "dev_synth_v1:jq-s109": [
+  "jvp_string_alloc",
+  "jvp_string",
+  "calloc"
+ ],
+ "dev_synth_v1:jq-s110": [
+  "gen_destructure",
+  "gen_destructure_alt",
+  "DUP",
+  "compile.c"
+ ],
+ "dev_synth_v1:jq-s111": [
+  "block_count_actuals",
+  "CLOSURE_REF",
+  "CLOSURE_CREATE",
+  "assert"
+ ],
+ "dev_synth_v1:jq-s112": [
+  "f_gmtime",
+  "gmtime",
+  "jv2tm",
+  "tm2jv"
+ ],
+ "dev_synth_v1:jq-s113": [
+  "builtins",
+  "f_builtins",
+  "block_list_funcs",
+  "include_private"
+ ],
+ "dev_synth_v1:jq-s114": [
+  "decNumberIsValid",
+  "decCheckNumber",
+  "DECNUMDIGITS",
+  "DECSPECIAL"
+ ],
+ "dev_synth_v1:jq-s115": [
+  "jq_reset",
+  "stack_reset",
+  "jq_teardown",
+  "error"
+ ],
+ "dev_synth_v1:jq-s116": [
+  "decFinish",
+  "decRound",
+  "decSetCoeff",
+  "DEC_Clamped",
+  "DEC_Subnormal"
+ ],
+ "dev_synth_v1:jq-s117": [
+  "decPackedToNumber",
+  "decPacked",
+  "scale",
+  "sign"
+ ],
+ "dev_synth_v1:jq-s118": [
+  "gen_array_matcher",
+  "gen_destructure",
+  "INDEX",
+  "compile.c"
+ ],
+ "dev_synth_v1:jq-s119": [
+  "jq_util_input_next_input",
+  "jq_util_input_read_more",
+  "raw_input",
+  "slurp"
+ ],
+ "dev_synth_v1:jq-s120": [
+  "decNumberScaleB",
+  "decNumber",
+  "power",
+  "exponent"
+ ],
+ "dev_synth_v1:execa-s121": [
+  "addAbortListener",
+  "AbortSignal",
+  "signal.aborted",
+  "onAbort",
+  "removeEventListener"
+ ],
+ "dev_synth_v1:execa-s122": [
+  "toReadable",
+  "toWritable",
+  "toDuplex",
+  "toWeb",
+  "Symbol.asyncIterator"
+ ],
+ "dev_synth_v1:execa-s123": [
+  "getTotalLength",
+  "byteLength",
+  "Uint8Array",
+  "reduce"
+ ],
+ "dev_synth_v1:execa-s124": [
+  "createExeca",
+  "bind",
+  "normalizeOptions",
+  "execa",
+  "$"
+ ],
+ "dev_synth_v1:execa-s125": [
+  "gracefulCancel",
+  "cancelSignal",
+  "forceKillAfterDelay",
+  "kill",
+  "SIGTERM"
+ ],
+ "dev_synth_v1:execa-s126": [
+  "normalizeStdio",
+  "normalizeStdioOptions",
+  "validateIpc",
+  "isSync",
+  "stdio"
+ ],
+ "dev_synth_v1:execa-s127": [
+  "waitForStrictError",
+  "error",
+  "cause",
+  "abortController",
+  "abort"
+ ],
+ "dev_synth_v1:execa-s128": [
+  "verbose",
+  "timestamp",
+  "commandId",
+  "chalk",
+  "formatMessage"
+ ],
+ "dev_synth_v1:execa-s129": [
+  "sharedStreams",
+  "getSharedStream",
+  "validateStreams",
+  "stdio",
+  "Map"
+ ],
+ "dev_synth_v1:execa-s130": [
+  "promisify",
+  "sendMessage",
+  "getOneMessage",
+  "WeakMap",
+  "ipc"
+ ],
+ "dev_synth_v1:execa-s131": [
+  "getStream",
+  "validateFd",
+  "fileDescriptor",
+  "readable",
+  "writable"
+ ],
+ "dev_synth_v1:execa-s132": [
+  "test-d",
+  "expectType",
+  "iterable",
+  "encoding",
+  "Uint8Array"
+ ],
+ "dev_synth_v1:execa-s133": [
+  "validateEncoding",
+  "encoding",
+  "Buffer.isEncoding",
+  "buffer",
+  "TypeError"
+ ],
+ "dev_synth_v1:execa-s134": [
+  "normalizeKillArguments",
+  "signal",
+  "Error",
+  "validateSignal",
+  "kill"
+ ],
+ "dev_synth_v1:execa-s135": [
+  "getStdioOption",
+  "fdNumber",
+  "stdin",
+  "stdout",
+  "stderr"
+ ],
+ "dev_synth_v1:execa-s136": [
+  "maxBuffer",
+  "ipcOutput",
+  "getBufferedMessages",
+  "bufferSize",
+  "MaxBufferError"
+ ],
+ "dev_synth_v1:execa-s137": [
+  "addIpcMethods",
+  "isIpc",
+  "sendMessage",
+  "getOneMessage",
+  "cancelSignal"
+ ],
+ "dev_synth_v1:execa-s138": [
+  "destroy",
+  "destroyWritable",
+  "final",
+  "stdin.end",
+  "destroyStreams"
+ ],
+ "dev_synth_v1:execa-s139": [
+  "iterable",
+  "binary",
+  "encoding",
+  "preserveNewlines",
+  "validateOptions"
+ ],
+ "dev_synth_v1:execa-s140": [
+  "Uint8Array",
+  "Buffer.isBuffer",
+  "TextEncoder",
+  "transform",
+  "encode"
+ ],
+ "dev_synth_v1:execa-s141": [
+  "final",
+  "flush",
+  "transformGenerator",
+  "asyncGenerator",
+  "yield*"
+ ],
+ "dev_synth_v1:execa-s142": [
+  "fileURLToPath",
+  "isFileUrl",
+  "normalizeFile",
+  "URL",
+  "protocol"
+ ],
+ "dev_synth_v1:execa-s143": [
+  "normalizeStdio",
+  "normalizeFdSpecificOptions",
+  "Array.from",
+  "stdio",
+  "defaultOptions"
+ ],
+ "dev_synth_v1:execa-s144": [
+  "sendMessage",
+  "pendingMessages",
+  "disconnect",
+  "promisify",
+  "ipc"
+ ],
+ "dev_synth_v1:execa-s145": [
+  "validateMessage",
+  "validateChunks",
+  "async function*",
+  "for await",
+  "yield"
+ ],
+ "dev_synth_v1:execa-s146": [
+  "waitForMessages",
+  "pendingMessages",
+  "disconnect",
+  "Promise.all",
+  "cleanup"
+ ],
+ "dev_synth_v1:execa-s147": [
+  "serializeMessage",
+  "JSON.stringify",
+  "cause",
+  "message",
+  "TypeError"
+ ],
+ "dev_synth_v1:execa-s148": [
+  "validateFd",
+  "normalizeFd",
+  "stdin",
+  "stdout",
+  "stderr"
+ ],
+ "dev_synth_v1:execa-s149": [
+  "handleResult",
+  "makeError",
+  "verbose",
+  "reject",
+  "failed"
+ ],
+ "dev_synth_v1:execa-s150": [
+  "createDummyStream",
+  "PassThrough",
+  "subprocess.stdio",
+  "stdin",
+  "stdout"
+ ],
+ "dev_synth_v1:execa-s151": [
+  "destroyStreams",
+  "destroy",
+  "stdio",
+  "isStandardStream",
+  "catch"
+ ],
+ "dev_synth_v1:execa-s152": [
+  "normalizePipeOptions",
+  "Object.create",
+  "Object.hasOwn",
+  "stdin",
+  "pipe"
+ ],
+ "dev_synth_v1:execa-s153": [
+  "abortPipeline",
+  "kill",
+  "unpipe",
+  "catch",
+  "AbortController"
+ ]
+}

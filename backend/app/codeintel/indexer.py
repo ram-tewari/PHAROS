@@ -33,14 +33,14 @@ from datetime import UTC, datetime
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.orm import Session
 
-from ..database.models import CodeEdge, DocumentChunk, Repository, Resource
+from ..database.models import ChunkDescription, CodeEdge, DocumentChunk, Repository, Resource
 from ..utils.path_exclusions import has_excluded_ancestor, is_excluded_file
 from .embeddings import Embedder, EmbeddingUnavailable
 from .git_source import Checkout, RepoRef, TreeEntry, open_checkout
 from .graph import ChunkNode, build_edges
 from .languages import detect_language
 from .parsers import ParseResult, parse_file
-from .text import search_text, semantic_summary
+from .text import body_excerpt, search_text, semantic_summary
 
 logger = logging.getLogger(__name__)
 
@@ -426,8 +426,15 @@ class CodeIndexer:
         raw_url = ref.raw_url(commit, entry.path)
         module_name = parsed.symbols[0].qualified_name if parsed.symbols else ""
         chunks: list[_PreparedChunk] = []
+        source_lines = text.splitlines()
+        descriptions = dict(self.db.execute(
+            select(ChunkDescription.symbol_name, ChunkDescription.description)
+            .where(ChunkDescription.content_sha == entry.blob_sha)
+        ).all())
         for idx, sym in enumerate(parsed.symbols[:MAX_SYMBOLS_PER_FILE]):
-            summary = semantic_summary(sym, language=parsed.language, path=entry.path, module_name=module_name)
+            summary = semantic_summary(sym, language=parsed.language, path=entry.path, module_name=module_name,
+                                       body=body_excerpt(source_lines, sym),
+                                       description=descriptions.get(sym.qualified_name[:512], ""))
             meta = {
                 "path": entry.path,
                 "name": sym.name,

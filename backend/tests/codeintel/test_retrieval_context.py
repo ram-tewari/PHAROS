@@ -105,9 +105,11 @@ def test_auto_degrades_visibly(session, indexed):
     assert out.hits
 
 
-def test_auto_uses_graph_when_embeddings_exist(session, indexed, embedder):
+def test_auto_is_dense_or_hybrid_with_hints_when_embeddings_exist(session, indexed, embedder):
     out = Retriever(session, embedder).search("token bucket", mode="auto")
-    assert out.mode_used == "graph" and out.warnings == []
+    assert out.mode_used == "dense" and out.warnings == []
+    hinted = Retriever(session, embedder).search("token bucket", mode="auto", hints=["TokenBucket"])
+    assert hinted.mode_used == "hybrid" and hinted.warnings == []
 
 
 def test_unmatched_query_returns_empty_not_error(session, indexed, embedder):

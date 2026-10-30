@@ -1,0 +1,7257 @@
+{
+ "dataset": {
+  "name": "pharos-heldout",
+  "version": 1,
+  "labeling": "Held-out set for codeqa_v1: four repositories and four languages (Python, TypeScript, Rust, C) that codeqa_v1 does not cover, pinned at the commits the free production deployment indexed on 2026-10-29. Queries and graded relevance were written by hand from reading the source at these commits, and labels were checked against parser output only; no retrieval was run on these queries before the file was written. 'behavior' queries paraphrase what the code does without naming identifiers; 'identifier' queries name the API. Grade 2 = the implementation asked about; grade 1 = closely related. Single annotator, who also ran the system: treat differences inside the bootstrap intervals as noise.",
+  "repositories": [
+   {
+    "name": "click",
+    "url": "https://github.com/pallets/click",
+    "ref": "main",
+    "commit": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+    "language": "python"
+   },
+   {
+    "name": "ky",
+    "url": "https://github.com/sindresorhus/ky",
+    "ref": "main",
+    "commit": "3541888878c4d303a8bc2ad61815f4e048f55a5d",
+    "language": "typescript"
+   },
+   {
+    "name": "anyhow",
+    "url": "https://github.com/dtolnay/anyhow",
+    "ref": "master",
+    "commit": "bb1b0f9af0f645d5fdf1ac63a1fcbf3975ee452c",
+    "language": "rust"
+   },
+   {
+    "name": "curl",
+    "url": "https://github.com/curl/curl",
+    "ref": "master",
+    "commit": "87c4c6d6f45f057041a47f14762d21c56f97f8b7",
+    "language": "c"
+   }
+  ]
+ },
+ "n_queries": 51,
+ "k": 10,
+ "repeats": 1,
+ "runs": {
+  "granite-embedding-english-r2-int8": {
+   "embedder": {
+    "spec": "onnx",
+    "model_id": "granite-embedding-english-r2-int8",
+    "semantic": true
+   },
+   "indexing": {
+    "click": {
+     "wall_seconds": 278.75,
+     "files_indexed": 91,
+     "files_skipped": {
+      "not_source": 87
+     },
+     "chunks": 1517,
+     "lines": 30383,
+     "source_bytes": 1003633,
+     "graph": {
+      "edges": 3465,
+      "contains": 1426,
+      "imports": 176,
+      "calls_resolved": 1863,
+      "calls_unresolved": 2078,
+      "calls_ambiguous": 1146,
+      "calls_by_resolution": {
+       "unique_name": 1149,
+       "same_file": 406,
+       "imported_file": 308
+      }
+     },
+     "timings_s": {
+      "checkout": 0.016,
+      "parse": 0.333,
+      "embed": 271.053,
+      "db_write": 7.183,
+      "graph": 0.114,
+      "total": 278.747
+     },
+     "files_per_second": 0.3,
+     "chunks_per_second": 5.4,
+     "fallback_files": {
+      "python": 0
+     }
+    },
+    "ky": {
+     "wall_seconds": 118.92,
+     "files_indexed": 98,
+     "files_skipped": {
+      "not_source": 17
+     },
+     "chunks": 997,
+     "lines": 36231,
+     "source_bytes": 1083178,
+     "graph": {
+      "edges": 1672,
+      "contains": 899,
+      "imports": 164,
+      "calls_resolved": 609,
+      "calls_unresolved": 2350,
+      "calls_ambiguous": 82,
+      "calls_by_resolution": {
+       "imported_file": 147,
+       "same_file": 227,
+       "unique_name": 235
+      }
+     },
+     "timings_s": {
+      "checkout": 0.023,
+      "parse": 0.3,
+      "embed": 113.707,
+      "db_write": 4.803,
+      "graph": 0.054,
+      "total": 118.919
+     },
+     "files_per_second": 0.8,
+     "chunks_per_second": 8.4,
+     "fallback_files": {
+      "typescript": 0
+     }
+    },
+    "anyhow": {
+     "wall_seconds": 60.43,
+     "files_indexed": 37,
+     "files_skipped": {
+      "not_source": 17
+     },
+     "chunks": 438,
+     "lines": 5857,
+     "source_bytes": 193084,
+     "graph": {
+      "edges": 622,
+      "contains": 401,
+      "imports": 15,
+      "calls_resolved": 206,
+      "calls_unresolved": 310,
+      "calls_ambiguous": 97,
+      "calls_by_resolution": {
+       "same_file": 98,
+       "unique_name": 81,
+       "imported_file": 27
+      }
+     },
+     "timings_s": {
+      "checkout": 0.024,
+      "parse": 0.087,
+      "embed": 58.075,
+      "db_write": 2.162,
+      "graph": 0.05,
+      "total": 60.429
+     },
+     "files_per_second": 0.6,
+     "chunks_per_second": 7.2,
+     "fallback_files": {
+      "rust": 0
+     }
+    },
+    "curl": {
+     "wall_seconds": 703.61,
+     "files_indexed": 1117,
+     "files_skipped": {
+      "not_source": 3428
+     },
+     "chunks": 9424,
+     "lines": 316221,
+     "source_bytes": 10134718,
+     "graph": {
+      "edges": 32130,
+      "contains": 8281,
+      "imports": 3165,
+      "calls_resolved": 20684,
+      "calls_unresolved": 8792,
+      "calls_ambiguous": 3583,
+      "calls_by_resolution": {
+       "unique_name": 13301,
+       "imported_file": 2311,
+       "same_file": 5072
+      }
+     },
+     "timings_s": {
+      "checkout": 0.024,
+      "parse": 1.836,
+      "embed": 659.763,
+      "db_write": 40.736,
+      "graph": 1.137,
+      "total": 703.609
+     },
+     "files_per_second": 1.6,
+     "chunks_per_second": 13.4,
+     "fallback_files": {
+      "c": 10,
+      "cpp": 0,
+      "python": 0
+     }
+    }
+   },
+   "retrieval": {
+    "keyword": {
+     "overall": {
+      "n": 51,
+      "recall@5": {
+       "mean": 0.3529,
+       "ci95": [
+        0.2451,
+        0.4641
+       ]
+      },
+      "recall@10": {
+       "mean": 0.4297,
+       "ci95": [
+        0.3105,
+        0.5408
+       ]
+      },
+      "mrr": {
+       "mean": 0.3576,
+       "ci95": [
+        0.2458,
+        0.4742
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.3288,
+       "ci95": [
+        0.2303,
+        0.4327
+       ]
+      },
+      "success@1": {
+       "mean": 0.2157,
+       "ci95": [
+        0.1176,
+        0.3333
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 43,
+       "recall@5": {
+        "mean": 0.2558,
+        "ci95": [
+         0.1453,
+         0.3682
+        ]
+       },
+       "recall@10": {
+        "mean": 0.3353,
+        "ci95": [
+         0.2171,
+         0.4612
+        ]
+       },
+       "mrr": {
+        "mean": 0.2652,
+        "ci95": [
+         0.1579,
+         0.382
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.2288,
+        "ci95": [
+         0.1403,
+         0.3262
+        ]
+       },
+       "success@1": {
+        "mean": 0.1163,
+        "ci95": [
+         0.0233,
+         0.2093
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 0.875,
+        "ci95": [
+         0.6875,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 0.9375,
+        "ci95": [
+         0.8125,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.8542,
+        "ci95": [
+         0.6667,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.8659,
+        "ci95": [
+         0.6955,
+         0.9882
+        ]
+       },
+       "success@1": {
+        "mean": 0.75,
+        "ci95": [
+         0.375,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "click": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.4551,
+        "ci95": [
+         0.2308,
+         0.6795
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4744,
+        "ci95": [
+         0.2564,
+         0.7308
+        ]
+       },
+       "mrr": {
+        "mean": 0.4641,
+        "ci95": [
+         0.2308,
+         0.7179
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3657,
+        "ci95": [
+         0.1538,
+         0.5818
+        ]
+       },
+       "success@1": {
+        "mean": 0.2308,
+        "ci95": [
+         0.0,
+         0.4615
+        ]
+       }
+      },
+      "ky": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.391,
+        "ci95": [
+         0.1923,
+         0.6026
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4744,
+        "ci95": [
+         0.2692,
+         0.7051
+        ]
+       },
+       "mrr": {
+        "mean": 0.4641,
+        "ci95": [
+         0.2231,
+         0.7179
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.4261,
+        "ci95": [
+         0.2201,
+         0.6237
+        ]
+       },
+       "success@1": {
+        "mean": 0.3077,
+        "ci95": [
+         0.0769,
+         0.5385
+        ]
+       }
+      },
+      "anyhow": {
+       "n": 11,
+       "recall@5": {
+        "mean": 0.1591,
+        "ci95": [
+         0.0,
+         0.3636
+        ]
+       },
+       "recall@10": {
+        "mean": 0.2803,
+        "ci95": [
+         0.0909,
+         0.5227
+        ]
+       },
+       "mrr": {
+        "mean": 0.1859,
+        "ci95": [
+         0.0394,
+         0.3929
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.1724,
+        "ci95": [
+         0.0314,
+         0.3741
+        ]
+       },
+       "success@1": {
+        "mean": 0.0909,
+        "ci95": [
+         0.0,
+         0.2727
+        ]
+       }
+      },
+      "curl": {
+       "n": 14,
+       "recall@5": {
+        "mean": 0.375,
+        "ci95": [
+         0.1429,
+         0.6429
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4643,
+        "ci95": [
+         0.2321,
+         0.7143
+        ]
+       },
+       "mrr": {
+        "mean": 0.2946,
+        "ci95": [
+         0.119,
+         0.5119
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.327,
+        "ci95": [
+         0.1435,
+         0.5363
+        ]
+       },
+       "success@1": {
+        "mean": 0.2143,
+        "ci95": [
+         0.0,
+         0.4286
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 15.76,
+      "p95": 65.98,
+      "max": 69.6
+     },
+     "top5_noise_share": 0.165,
+     "queries": [
+      {
+       "id": "click-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "tests.test_shell_completion.test_flag_option_with_nargs_option",
+        "click.core.Command.get_help_option_names",
+        "tests.test_options.test_flag_duplicate_names",
+        "tests.test_shell_completion.test_option_flag",
+        "click.parser._Option"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click.core.Context.get_parameter_source",
+        "click.core.Parameter.resolve_envvar_value",
+        "click.core.Option.resolve_envvar_value",
+        "click.core.Parameter.consume_value",
+        "click.core.Option.value_from_envvar"
+       ],
+       "recall@5": 0.75,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.661,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click.testing.BytesIOCopy.write",
+        "click.formatting.HelpFormatter.write",
+        "click.formatting.HelpFormatter.write_paragraph",
+        "click._winconsole.ConsoleStream.write",
+        "click._termui_impl._PagerWriter.write"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click.types.DateTimeInfoDict",
+        "click.parser._OptionParser._match_long_opt",
+        "click._textwrap.TextWrapper._handle_long_word",
+        "tests.test_termui.FakeClock.time"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.242,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click.types._is_file_like",
+        "tests.test_termui.test_prompt_required_false",
+        "tests.test_formatting.test_wrapping_long_options_strings",
+        "click.types.Choice",
+        "tests.test_options.test_show_true_default_boolean_flag_value"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click._termui_impl.Editor",
+        "tests.test_utils.test_open_file.test_open_file_respects_ignore",
+        "tests.test_utils.test_open_file.test_open_file",
+        "click.utils._get_text_stream",
+        "click._termui_impl.Editor.get_editor"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.2,
+       "ndcg@10": 0.094,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click._termui_impl.Editor.edit_files",
+        "click.utils.get_app_dir",
+        "tests.test_termui.test_progressbar_time_per_iteration",
+        "tests.test_shell_completion.test_files_closed"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click.shell_completion.split_arg_string",
+        "click.shell_completion.shell_complete",
+        "tests.test_termui.test_editor_unclosed_quote",
+        "click.shell_completion.ShellComplete",
+        "click.shell_completion.PowerShellComplete"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "tests.test_testing.test_exit_code_and_output_from_sys_exit",
+        "tests.test_stream_lifecycle.test_output_isolation_across_invokes",
+        "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+        "tests.test_command_decorators",
+        "tests.test_command_decorators.test_command_no_parens"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click.types.NumberRangeInfoDict",
+        "click.types._NumberRangeBase",
+        "click.types.IntRange",
+        "click.types.FloatRange",
+        "click.types._NumberRangeBase._describe_range"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-11",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "click.termui.get_pager_file",
+        "tests.test_termui.test_echo_via_pager_tty_pager_missing",
+        "click._termui_impl.get_pager_file",
+        "tests.test_termui._run_get_pager_file_with_real_pager",
+        "tests.test_termui.test_get_pager_file_with_real_pager_binary_stream"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.258,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-12",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "click.core.Context.ensure_object",
+        "tests.test_context.test_global_context_object",
+        "tests.test_context.test_ensure_context_objects",
+        "click.core.Context.find_object",
+        "click.decorators.pass_context"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-13",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "click.decorators.make_pass_decorator",
+        "tests.test_context.test_make_pass_meta_decorator_doc",
+        "tests.test_context.test_make_pass_decorator_args",
+        "tests.test_context.test_make_pass_meta_decorator",
+        "click.decorators.pass_meta_key"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "source.types.hooks.BeforeRetryState",
+        "source.types.hooks.BeforeRetryHook",
+        "source.core.Ky.Ky.#applyBeforeRetryOptions",
+        "source.types.hooks.BeforeRetryUpdate",
+        "source.types.retry"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "source.core.retry-timing.RetryTimingDateParts",
+        "source.core.retry-timing.RetryTimingHeader",
+        "source.core.retry-timing.getRetryTimingHeader",
+        "test.retry.createSingleRetryHeaderServer",
+        "test.helpers.create-http-test-server.HttpServerOptions"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.333,
+       "ndcg@10": 0.441,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "test-d.hooks.retryLimitOptionsHook",
+        "test-d.forced-retry",
+        "source.types.retry.RetryOptions",
+        "source.types.request",
+        "test-d.retry"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "test-d.fetch-request.fetch",
+        "test.fetch.fetch@581",
+        "test-d.fetch-request",
+        "test-d.network-error-cause.createNetworkError",
+        "test-d.fetch-extensions.NextFetchRequestConfig"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "source.errors.ResponseSizeError.ResponseSizeError",
+        "source.errors.ResponseSizeError",
+        "test-d.response-size",
+        "source.utils.body.limitResponseSize",
+        "source.utils.body.getBodySize"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.623,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "source.utils.body.streamResponse",
+        "source.utils.body.wrappableBody",
+        "test.response-consumption.onDownloadProgress@51",
+        "test.response-handling.onDownloadProgress",
+        "test.response-size.onDownloadProgress@459"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+        "source.types.request",
+        "source.utils.body.streamRequest",
+        "test-d.request-options",
+        "source.types.request.KyRequest"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.834,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "test.base-url",
+        "test-d.url-options",
+        "source.types.options.Input",
+        "source.types.request",
+        "source.core.Ky.resolveInput"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.387,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "test-d.request-options",
+        "source.types.options.RequestOptions",
+        "test.request-options",
+        "source.types.options.NormalizedOptions",
+        "source.types.options.Options"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "source.types.request",
+        "source.types.request.KyRequest",
+        "test-d.fetch-request",
+        "test-d.request-clone",
+        "test-d.request-options"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-11",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "source.errors.HTTPError",
+        "source.errors.HTTPError.HTTPError",
+        "source.utils.type-guards.isHTTPError",
+        "test.error-data.getHttpError",
+        "test.http-error.throwHttpErrors"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.521,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-12",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.utils.normalize.InternalRetryOptions",
+        "source.types.options.NormalizedRetryOptions",
+        "source.types.retry.MutableRetryOptions",
+        "source.utils.normalize.normalizeRetryMethod"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-13",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "source.index.createInstance",
+        "source.types.ky.KyInstance",
+        "source.core.Ky.Ky.#createManagedSignal",
+        "source.types.ky",
+        "source.errors.KyError.KyError.isKyError"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.906,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.ErrorImpl.chain"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.111,
+       "ndcg@10": 0.056,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 1.0,
+       "mrr": 0.1,
+       "ndcg@10": 0.289,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.MessageError",
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.error.impl Debug for Error",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.MessageError",
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.25,
+       "mrr": 0.5,
+       "ndcg@10": 0.138,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.error.object_boxed",
+        "src.wrapper.impl StdError for BoxedError",
+        "src.error.Error.into_boxed_dyn_error",
+        "src.error.object_reallocate_boxed",
+        "src.error.Error.reallocate_into_boxed_dyn_error_without_backtrace"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 0.333,
+       "ndcg@10": 0.413,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-11",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "src.error.Error.downcast_mut",
+        "src.error.impl DerefMut for Error",
+        "src.error.ErrorImpl.error_mut",
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl StdError for ErrorImpl<E>"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-01",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "src.tool_operate.select_next_url",
+        "src.tool_urlglob.glob_next_url",
+        "lib.url.url_match_http_version@844",
+        "lib.url.url_match_auth_nego@959",
+        "lib.url.url_match_proxy_use@786"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.125,
+       "ndcg@10": 0.069,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-02",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.pop3.pop3_parse_url_path",
+        "lib.smtp.smtp_parse_url_path",
+        "lib.url.parse_connect_to_string",
+        "lib.urlapi.parse_port",
+        "lib.imap.imap_parse_url_path"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-03",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.cookie.cookie_hash_domain",
+        "lib.cookie.Cookie",
+        "lib.ngh2_shim.Curl_ngh2_session_check_request_allowed",
+        "lib.cookie.cookie_sort",
+        "lib.cookie.parse_domain"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 1.0,
+       "mrr": 0.167,
+       "ndcg@10": 0.356,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-04",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.proxy.proxy_check_noproxy",
+        "lib.proxy.proxy_do_not_proxy",
+        "lib.proxy.proxy_detect_proxy",
+        "lib.proxy",
+        "lib.proxy.proxy_info"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-05",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.proxy.match_host",
+        "lib.vtls.schannel_verify.Curl_verify_host",
+        "lib.http.name_const",
+        "tests.http.testenv.ws_dl_server",
+        "lib.proxy.match_ip"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-06",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.content_encoding",
+        "lib.transfer",
+        "lib.content_encoding.Curl_build_unencoding_stack",
+        "lib.urlapi.host_decode",
+        "lib.idn.Curl_idn_decode"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-07",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.netrc.netrc_scanner",
+        "lib.netrc.netrc_scan_reset",
+        "lib.netrc.netrc_scan_end_entry",
+        "lib.netrc.netrc_scan",
+        "lib.netrc.netrc_scan_cleanup"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.25,
+       "mrr": 0.25,
+       "ndcg@10": 0.222,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-08",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.url.url_match_http_version@844",
+        "lib.url.url_match_auth_nego@959",
+        "lib.url.url_match_proxy_use@786",
+        "lib.url.url_match_http_multiplex@843",
+        "lib.url.url_match_multi"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-09",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "docs.examples.block_ip.is_ipv4_mapped_ipv6_address",
+        "tests.perf.first",
+        "tests.server.first",
+        "lib.vdns.hostip.ipv6works@308",
+        "docs.examples.ipv6"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-10",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.ftp.ftp_port_resolve_host",
+        "lib.proxy.match_host",
+        "tests.server.resolve",
+        "docs.examples.resolve",
+        "lib.http.name_const"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-11",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.curlx.base64.base64_encode",
+        "lib.curlx.base64.curlx_base64_encode",
+        "lib.curlx.base64.curlx_base64url_encode",
+        "lib.curlx.base64",
+        "lib.curlx.base64.curlx_base64_decode"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-12",
+       "category": "behavior",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.http.http_request_version",
+        "lib.http.Curl_http_decode_status",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_statusline",
+        "lib.http_proxy.Curl_http_proxy_inspect_tunnel_response"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.25,
+       "ndcg@10": 0.431,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-13",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "include.curl.curl.curl_easy_setopt",
+        "include.curl.typecheck-gcc.curl_easy_setopt",
+        "lib.setopt.curl_easy_setopt",
+        "include.curl.curl.curl_share_setopt",
+        "include.curl.curl.curl_multi_setopt"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-14",
+       "category": "identifier",
+       "mode_used": "keyword",
+       "top5": [
+        "lib.multi.curl_multi_perform",
+        "include.curl.curl.curl_multi_setopt",
+        "lib.multi.Curl_multi_add_perform",
+        "include.curl.multi.curl_multi_socket",
+        "include.curl.typecheck-gcc.curl_multi_setopt"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "dense": {
+     "overall": {
+      "n": 51,
+      "recall@5": {
+       "mean": 0.6814,
+       "ci95": [
+        0.5833,
+        0.7729
+       ]
+      },
+      "recall@10": {
+       "mean": 0.7745,
+       "ci95": [
+        0.683,
+        0.8578
+       ]
+      },
+      "mrr": {
+       "mean": 0.7505,
+       "ci95": [
+        0.6514,
+        0.842
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.6966,
+       "ci95": [
+        0.5972,
+        0.7812
+       ]
+      },
+      "success@1": {
+       "mean": 0.549,
+       "ci95": [
+        0.4118,
+        0.6863
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 43,
+       "recall@5": {
+        "mean": 0.6221,
+        "ci95": [
+         0.5078,
+         0.7306
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7326,
+        "ci95": [
+         0.6298,
+         0.8333
+        ]
+       },
+       "mrr": {
+        "mean": 0.7274,
+        "ci95": [
+         0.6163,
+         0.8295
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.6575,
+        "ci95": [
+         0.5554,
+         0.7543
+        ]
+       },
+       "success@1": {
+        "mean": 0.5116,
+        "ci95": [
+         0.3721,
+         0.6512
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.875,
+        "ci95": [
+         0.75,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.9067,
+        "ci95": [
+         0.81,
+         0.9955
+        ]
+       },
+       "success@1": {
+        "mean": 0.75,
+        "ci95": [
+         0.5,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "click": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.7115,
+        "ci95": [
+         0.5192,
+         0.8782
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8077,
+        "ci95": [
+         0.6154,
+         0.9615
+        ]
+       },
+       "mrr": {
+        "mean": 0.8462,
+        "ci95": [
+         0.6923,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.753,
+        "ci95": [
+         0.5784,
+         0.9015
+        ]
+       },
+       "success@1": {
+        "mean": 0.5385,
+        "ci95": [
+         0.2308,
+         0.7692
+        ]
+       }
+      },
+      "ky": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.8333,
+        "ci95": [
+         0.6667,
+         0.9744
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8526,
+        "ci95": [
+         0.6795,
+         0.9744
+        ]
+       },
+       "mrr": {
+        "mean": 0.8077,
+        "ci95": [
+         0.6154,
+         0.9615
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.7948,
+        "ci95": [
+         0.6218,
+         0.9415
+        ]
+       },
+       "success@1": {
+        "mean": 0.6923,
+        "ci95": [
+         0.4615,
+         0.9231
+        ]
+       }
+      },
+      "anyhow": {
+       "n": 11,
+       "recall@5": {
+        "mean": 0.4848,
+        "ci95": [
+         0.2727,
+         0.7121
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6364,
+        "ci95": [
+         0.4242,
+         0.8485
+        ]
+       },
+       "mrr": {
+        "mean": 0.7071,
+        "ci95": [
+         0.4545,
+         0.9242
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5977,
+        "ci95": [
+         0.3893,
+         0.7783
+        ]
+       },
+       "success@1": {
+        "mean": 0.5455,
+        "ci95": [
+         0.2727,
+         0.8182
+        ]
+       }
+      },
+      "curl": {
+       "n": 14,
+       "recall@5": {
+        "mean": 0.6667,
+        "ci95": [
+         0.4762,
+         0.8512
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7798,
+        "ci95": [
+         0.6012,
+         0.9226
+        ]
+       },
+       "mrr": {
+        "mean": 0.6429,
+        "ci95": [
+         0.4762,
+         0.8095
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.6306,
+        "ci95": [
+         0.4647,
+         0.7841
+        ]
+       },
+       "success@1": {
+        "mean": 0.4286,
+        "ci95": [
+         0.2143,
+         0.7143
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 12.13,
+      "p95": 63.11,
+      "max": 298.01
+     },
+     "top5_noise_share": 0.027,
+     "queries": [
+      {
+       "id": "click-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.core.Option._infer_flag_kind",
+        "click.exceptions.NoSuchOption.__init__",
+        "click.parser._OptionParser._match_short_opt",
+        "click.parser._OptionParser._process_opts",
+        "click.core.Option._pick_type"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.386,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.core.Parameter.value_from_envvar",
+        "click.core.Parameter.resolve_envvar_value",
+        "click.core.Option.value_from_envvar",
+        "click.core.Context.get_parameter_source",
+        "click.core.Parameter.consume_value"
+       ],
+       "recall@5": 0.75,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.987,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click._termui_impl._PagerWriter.close",
+        "click._compat._AtomicFile.close",
+        "click._termui_impl._tempfilepager",
+        "click.utils._KeepOpenFile",
+        "click.testing._FDCapture.start"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click._termui_impl.ProgressBar.eta",
+        "click._termui_impl.ProgressBar.make_step",
+        "click.termui.progressbar",
+        "click._termui_impl.ProgressBar.__iter__"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.7,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.types.BoolParamType.str_to_bool",
+        "click.types.BoolParamType.convert",
+        "click.utils.make_str",
+        "click.termui.prompt",
+        "click.types.BoolParamType.__repr__"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click._termui_impl.Editor.get_editor",
+        "click.termui.edit",
+        "click._termui_impl.Editor.edit_files",
+        "click._termui_impl.Editor.edit",
+        "click._termui_impl._tempfilepager"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.708,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.utils.get_app_dir",
+        "click.testing.CliRunner.isolated_filesystem",
+        "click.types.Path.__init__",
+        "click.types.Path",
+        "click.utils._KeepOpenFile.__init__"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.shell_completion.split_arg_string",
+        "click.shell_completion.BashComplete.get_completion_args",
+        "click.core.Command.parse_args",
+        "click.types.ParamType.split_envvar_value",
+        "click.shell_completion.ZshComplete.get_completion_args"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "tests.test_abort_interrupt._exit_code",
+        "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+        "tests.test_testing.test_isolated_runner",
+        "tests.test_testing.test_command_standalone_mode_returns_value",
+        "tests.test_stream_lifecycle.test_output_isolation_across_invokes"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.types.FloatRange._clamp",
+        "click.types._NumberRangeBase._clamp",
+        "click.types.IntRange._clamp",
+        "click.types._NumberRangeBase.__repr__",
+        "click.types.FloatRange"
+       ],
+       "recall@5": 0.75,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.701,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.termui.echo_via_pager",
+        "click._termui_impl._pipepager",
+        "click._termui_impl._PagerWriter",
+        "click._termui_impl._pager_contextmanager",
+        "click._termui_impl._nullpager"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.956,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-12",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "click.core.Context.ensure_object",
+        "click.core.Context",
+        "click.core.Context.scope",
+        "click.globals.get_current_context",
+        "click.core.Context.__enter__"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-13",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "click.decorators.make_pass_decorator",
+        "click.decorators.pass_meta_key",
+        "click.decorators.password_option",
+        "click.decorators.argument",
+        "click.decorators.pass_obj"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.Ky.#calculateDelay",
+        "source.core.Ky.Ky.#calculateRetryDelay",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.Ky.Ky.#retryFromError",
+        "source.core.constants.retry"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.retry-timing.RetryTimingHeader",
+        "source.core.constants.retry",
+        "source.core.retry-timing.createTimestamp"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.894,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.constants.retry",
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.core.Ky.Ky.#retryFromError",
+        "source.core.Ky.Ky.#calculateRetryDelay",
+        "source.core.constants.ForceRetryOptions"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.466,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.is-network-error.isRawNetworkError",
+        "source.errors.NetworkError.NetworkError",
+        "source.utils.type-guards.isNetworkError",
+        "test.network-error.fetch@27",
+        "test.network-error.fetch"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.body.limitResponseSize",
+        "source.core.Ky.Ky.#limitResponseSize",
+        "source.errors.ResponseSizeError.ResponseSizeError",
+        "source.errors.ResponseSizeError.ResponseSizeError.constructor",
+        "source.core.Ky.readResponseText"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.body.streamResponse",
+        "source.utils.body.withProgress",
+        "source.core.Ky.readResponseText",
+        "source.utils.body.streamRequest",
+        "source.utils.body.wrappableBody"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+        "source.utils.body.withProgress",
+        "source.utils.body.streamRequest",
+        "source.utils.body.streamResponse",
+        "test-d.hooks.withoutUploadProgress"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.951,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.resolveInput",
+        "source.types.options.Input",
+        "source.utils.merge.appendSearchParameters",
+        "source.core.Ky.applySearchParameters",
+        "source.utils.normalize.normalizeRequestMethod"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.types.hooks.InitHook",
+        "source.types.options.NormalizedOptions",
+        "source.core.Ky.cloneInitHookOptions",
+        "test-d.hooks.restoreDefaultsHook",
+        "source.types.options.InternalOptions"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.Ky.#getErrorDataTimeout",
+        "source.errors.TimeoutError.TimeoutError",
+        "source.core.Ky.Ky.#getResponseData",
+        "source.core.Ky.Ky.#throwIfTotalTimeoutExhausted",
+        "source.utils.timeout.timeout"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.434,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-11",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "source.errors.HTTPError",
+        "source.errors.HTTPError.HTTPError",
+        "source.errors.HTTPError.HTTPError.constructor",
+        "source.utils.type-guards.isHTTPError",
+        "source.errors.KyError.KyError"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.659,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-12",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.types.options.NormalizedRetryOptions",
+        "source.utils.normalize.InternalRetryOptions",
+        "test-d.normalized-options.ExpectedNormalizedRetryOptions",
+        "test-d.normalized-options.shouldRetry"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-13",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "source.index.createInstance",
+        "source.types.ky.KyInstance",
+        "source.core.Ky.Ky.create",
+        "source.core.Ky.Ky.constructor",
+        "source.errors.KyError.KyError"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.Error.chain",
+        "src.lib.Chain",
+        "src.error.ErrorImpl.backtrace",
+        "src.error.ErrorImpl.chain"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.Error.chain",
+        "src.fmt.ErrorImpl.debug",
+        "src.error.Error.backtrace",
+        "src.error.Error.from"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.context.Option.context",
+        "src.error.Error.msg",
+        "src.context.Result.context",
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.error.impl From<E> for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.111,
+       "ndcg@10": 0.167,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.is",
+        "src.error.Error.downcast",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.lib.Error",
+        "src.error.ErrorImpl.error_mut"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.605,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.fmt.ErrorImpl.debug",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.error.impl Debug for Error",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.nightly.impl Debug for MyError"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.726,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.Error.into_boxed_dyn_error",
+        "src.error.Error.from_boxed",
+        "src.context.impl StdError for E",
+        "src.macros.anyhow"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.218,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.msg",
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.error.Error.construct_from_adhoc"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.742,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.into_boxed_dyn_error",
+        "src.wrapper.impl StdError for BoxedError",
+        "src.error.Error.from_boxed",
+        "src.error.object_boxed",
+        "src.wrapper.impl Display for BoxedError"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.913,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.object_drop",
+        "src.error.ErrorImpl.erase",
+        "src.error.impl Drop for Error",
+        "src.error.object_drop_front",
+        "src.error.Error.drop"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.851,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.lib.format_err",
+        "src.error.ErrorImpl.fmt@1016",
+        "src.error.ErrorImpl.fmt",
+        "src.error.Error.fmt",
+        "src.error.Error.fmt@708"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-11",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.downcast_mut",
+        "src.error.Error.downcast",
+        "src.error.Error.downcast_ref",
+        "src.error.object_downcast",
+        "src.error.context_downcast"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.http.follow_fake",
+        "lib.urlapi.redirect_url",
+        "lib.http.Curl_http_follow",
+        "src.tool_cb_hdr.write_linked_location",
+        "lib.multi.multi_follow"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.565,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.smtp.smtp_parse_url_path",
+        "lib.urlapi.parse_scheme",
+        "lib.url.parse_connect_to_string",
+        "lib.imap.imap_parse_url_path",
+        "lib.pop3.pop3_parse_url_path"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.373,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.cookie.cookie_tailmatch",
+        "lib.cookie.parse_domain",
+        "lib.cookie.bad_domain",
+        "lib.cookie.cookiehash",
+        "lib.proxy.match_host"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.proxy.proxy_check_noproxy",
+        "lib.proxy.proxy_do_not_proxy",
+        "lib.proxy.proxy_detect_proxy",
+        "lib.vdns.hostip.RESOLV_FAIL",
+        "lib.proxy.Curl_proxy_init_conn"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.vtls.schannel_verify.cert_get_name_string",
+        "lib.vtls.openssl.ossl_verifyhost",
+        "lib.vtls.hostcheck.hostmatch",
+        "lib.vtls.hostcheck.Curl_cert_hostcheck",
+        "lib.proxy.match_host"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.333,
+       "ndcg@10": 0.518,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.http_chunks.Curl_chunked_strerror",
+        "lib.http_chunks.cw_chunked_write",
+        "lib.http_chunks.httpchunk_readwrite",
+        "lib.http_chunks.Curl_httpchunk_read",
+        "lib.http_chunks.chunked_reader"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.532,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.netrc.Curl_netrc_scan",
+        "lib.netrc.netrc_scan_reset",
+        "lib.netrc.netrc_scan_end_entry",
+        "lib.netrc.netrc_tokenstr",
+        "lib.urlapi.parse_hostname_login"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.627,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.tool_getparam.replace_url_encoded_space_by_plus",
+        "lib.escape.curl_easy_unescape",
+        "lib.urlapi.host_decode",
+        "lib.dict.unescape_word",
+        "lib.http.Curl_http_decode_status"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.512,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.cf-ip-happy.cf_ip_attempt_connect",
+        "lib.vdns.hostip.ipv6works@308",
+        "lib.cf-ip-happy.cf_ip_attempt_restart",
+        "lib.vdns.hostip.ipv6works",
+        "lib.proxy.cidr6_match"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.vdns.hostip.hostip_async_new",
+        "lib.vdns.hostip.Curl_resolv_take_result",
+        "lib.vdns.asyn-ares.Curl_async_getaddrinfo",
+        "lib.vdns.hostip4.Curl_ipv4_resolve_r",
+        "lib.vdns.hostip.hostip_resolv_take_result"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.153,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.curlx.base64.base64_encode",
+        "lib.mime.encoder_base64_read",
+        "lib.curlx.base64.curlx_base64_encode",
+        "lib.curlx.base64.curlx_base64url_encode",
+        "lib.ldap.ldap_value_needs_base64"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.92,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-12",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.http.http_statusline",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_on_response",
+        "lib.cf-h1-proxy.on_resp_status",
+        "lib.http.http_may_use_1_1"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-13",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "lib.setopt.curl_easy_setopt",
+        "include.curl.typecheck-gcc.curl_easy_setopt",
+        "include.curl.options.curl_easyoption",
+        "include.curl.curl.curl_easy_setopt",
+        "lib.setopt.setopt_ech"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-14",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "lib.multi.multi_perform",
+        "lib.multi.curl_multi_perform",
+        "lib.multi.Curl_multi_add_perform",
+        "lib.multi.multi_done",
+        "lib.multi.multi_do"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      }
+     ]
+    },
+    "hybrid": {
+     "overall": {
+      "n": 51,
+      "recall@5": {
+       "mean": 0.4657,
+       "ci95": [
+        0.3464,
+        0.5882
+       ]
+      },
+      "recall@10": {
+       "mean": 0.5752,
+       "ci95": [
+        0.4673,
+        0.6765
+       ]
+      },
+      "mrr": {
+       "mean": 0.5215,
+       "ci95": [
+        0.4046,
+        0.6353
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.485,
+       "ci95": [
+        0.3719,
+        0.592
+       ]
+      },
+      "success@1": {
+       "mean": 0.3529,
+       "ci95": [
+        0.2157,
+        0.4902
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 43,
+       "recall@5": {
+        "mean": 0.3779,
+        "ci95": [
+         0.2558,
+         0.5
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4961,
+        "ci95": [
+         0.3857,
+         0.6124
+        ]
+       },
+       "mrr": {
+        "mean": 0.4441,
+        "ci95": [
+         0.3177,
+         0.577
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.398,
+        "ci95": [
+         0.2919,
+         0.5174
+        ]
+       },
+       "success@1": {
+        "mean": 0.2558,
+        "ci95": [
+         0.1395,
+         0.3953
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 0.9375,
+        "ci95": [
+         0.8125,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.9375,
+        "ci95": [
+         0.8125,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.9524,
+        "ci95": [
+         0.8573,
+         1.0
+        ]
+       },
+       "success@1": {
+        "mean": 0.875,
+        "ci95": [
+         0.625,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "click": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.5449,
+        "ci95": [
+         0.3269,
+         0.7564
+        ]
+       },
+       "recall@10": {
+        "mean": 0.641,
+        "ci95": [
+         0.4359,
+         0.8462
+        ]
+       },
+       "mrr": {
+        "mean": 0.6802,
+        "ci95": [
+         0.4462,
+         0.8956
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.544,
+        "ci95": [
+         0.3331,
+         0.7415
+        ]
+       },
+       "success@1": {
+        "mean": 0.3846,
+        "ci95": [
+         0.1538,
+         0.6154
+        ]
+       }
+      },
+      "ky": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.5385,
+        "ci95": [
+         0.3077,
+         0.7692
+        ]
+       },
+       "recall@10": {
+        "mean": 0.641,
+        "ci95": [
+         0.3974,
+         0.8462
+        ]
+       },
+       "mrr": {
+        "mean": 0.5648,
+        "ci95": [
+         0.333,
+         0.8
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5509,
+        "ci95": [
+         0.3377,
+         0.7567
+        ]
+       },
+       "success@1": {
+        "mean": 0.3846,
+        "ci95": [
+         0.1538,
+         0.6154
+        ]
+       }
+      },
+      "anyhow": {
+       "n": 11,
+       "recall@5": {
+        "mean": 0.2576,
+        "ci95": [
+         0.0455,
+         0.4848
+        ]
+       },
+       "recall@10": {
+        "mean": 0.3788,
+        "ci95": [
+         0.1818,
+         0.6061
+        ]
+       },
+       "mrr": {
+        "mean": 0.3577,
+        "ci95": [
+         0.132,
+         0.6023
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3389,
+        "ci95": [
+         0.1324,
+         0.5745
+        ]
+       },
+       "success@1": {
+        "mean": 0.2727,
+        "ci95": [
+         0.0909,
+         0.5455
+        ]
+       }
+      },
+      "curl": {
+       "n": 14,
+       "recall@5": {
+        "mean": 0.4881,
+        "ci95": [
+         0.2381,
+         0.7262
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6071,
+        "ci95": [
+         0.4167,
+         0.8036
+        ]
+       },
+       "mrr": {
+        "mean": 0.4625,
+        "ci95": [
+         0.2595,
+         0.6887
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.4836,
+        "ci95": [
+         0.2801,
+         0.6931
+        ]
+       },
+       "success@1": {
+        "mean": 0.3571,
+        "ci95": [
+         0.1429,
+         0.6429
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 37.86,
+      "p95": 90.57,
+      "max": 93.38
+     },
+     "top5_noise_share": 0.141,
+     "queries": [
+      {
+       "id": "click-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.core.Command.get_help_option_names",
+        "tests.test_shell_completion.test_option_flag",
+        "tests.test_options.test_flag_duplicate_names",
+        "click.core.Option.flag_activation_value",
+        "tests.test_commands.test_get_help_option_names"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.core.Parameter.resolve_envvar_value",
+        "click.core.Context.get_parameter_source",
+        "click.core.Parameter.value_from_envvar",
+        "click.core.Option.value_from_envvar",
+        "click.core.Option.resolve_envvar_value"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.913,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.testing.BytesIOCopy.write",
+        "click._compat._AtomicFile.close",
+        "click._winconsole.ConsoleStream.write",
+        "click._termui_impl._PagerWriter.write",
+        "click._termui_impl.Editor.edit"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click.termui.progressbar",
+        "click._termui_impl.ProgressBar.eta",
+        "click._termui_impl.ProgressBar.make_step",
+        "click.core._check_iter"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.605,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.core.Option.is_bool_flag",
+        "click.shell_completion._start_of_option",
+        "tests.test_options.test_show_true_default_boolean_flag_value",
+        "tests.test_options.test_hide_false_default_boolean_flag_value",
+        "tests.test_options.EnumSentinel.__bool__"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 1.0,
+       "mrr": 0.143,
+       "ndcg@10": 0.398,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click._termui_impl.Editor.get_editor",
+        "click._termui_impl.Editor",
+        "click.utils._get_text_stream",
+        "click._compat.get_text_stdin",
+        "click._winconsole._get_text_stdin"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.242,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.utils.get_app_dir",
+        "click.types.File",
+        "click._termui_impl.Editor.edit_files",
+        "tests.test_shell_completion.test_files_closed",
+        "click.utils._LazyFile"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.shell_completion.split_arg_string",
+        "click.parser._split_opt",
+        "click.shell_completion.shell_complete",
+        "tests.test_parser.test_split_arg_string",
+        "tests.test_shell_completion.test_command"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+        "tests.test_stream_lifecycle.test_output_isolation_across_invokes",
+        "tests.test_testing.test_exit_code_and_output_from_sys_exit",
+        "tests.test_stream_lifecycle.test_stderr_isolation_across_invokes",
+        "tests.test_testing.test_command_standalone_mode_returns_value"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.types.FloatRange",
+        "click.types.IntRange",
+        "click.types._NumberRangeBase",
+        "click.types.NumberRangeInfoDict",
+        "click.types._NumberRangeBase._clamp"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.2,
+       "ndcg@10": 0.283,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click._termui_impl.get_pager_file",
+        "click.termui.get_pager_file",
+        "click._termui_impl._PagerWriter",
+        "click._termui_impl._pager_contextmanager",
+        "tests.test_termui._run_get_pager_file_with_real_pager"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.28,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-12",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.core.Context.ensure_object",
+        "click.core.Context",
+        "click.core.Context.find_object",
+        "click.globals.get_current_context",
+        "click.core.Context._make_sub_context"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-13",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.decorators.make_pass_decorator",
+        "click.decorators.pass_meta_key",
+        "click.decorators.pass_obj",
+        "click.decorators.pass_context",
+        "tests.test_context.test_make_pass_decorator_args"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.types.hooks.BeforeRetryUpdate",
+        "test.retry.jitter",
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.constants.retry"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.retry-timing.RetryTimingHeader",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.retry-timing.RetryTimingDateParts",
+        "source.core.retry-timing"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.773,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.constants.retry",
+        "test.retry-decisions",
+        "test.retry-decisions.shouldRetry",
+        "test.retry.shouldRetry@4549",
+        "test.retry.shouldRetry"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.errors.NetworkError.NetworkError",
+        "test.network-error.fetch@27",
+        "test.network-error.fetch",
+        "test.fetch.fetch@745",
+        "source.utils.is-network-error.isRawNetworkError"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.418,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.errors.ResponseSizeError.ResponseSizeError",
+        "source.utils.body.limitResponseSize",
+        "source.core.Ky.Ky.#limitResponseSize",
+        "source.errors.ResponseSizeError.ResponseSizeError.constructor",
+        "source.utils.body.wrappableBody"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.815,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.utils.body.streamResponse",
+        "test.response-size.onDownloadProgress@274",
+        "test.response-consumption.onDownloadProgress@51",
+        "test.http-response-bodies.onDownloadProgress",
+        "test.stream.onDownloadProgress@754"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+        "source.utils.body.streamRequest",
+        "source.utils.body.withProgress",
+        "test.request-stream-support.onUploadProgress",
+        "test.request-stream-support-runtimes.onUploadProgress"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.types.options.Input",
+        "source.core.Ky.resolveInput",
+        "source.utils.normalize.normalizeRequestMethod",
+        "source.types.request",
+        "test-d.url-options"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.types.options.NormalizedOptions",
+        "source.types.options.InternalOptions",
+        "source.core.Ky.Ky.#runBeforeRequestHooks",
+        "source.types.options.Options",
+        "source.types.options.InitOptions"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "test.resilience.withinTwoSeconds",
+        "source.types.request",
+        "source.types.request.KyRequest",
+        "test-d.fetch-request",
+        "source.core.Ky.Ky.#getErrorDataTimeout"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.143,
+       "ndcg@10": 0.081,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-11",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.errors.HTTPError",
+        "source.errors.HTTPError.HTTPError",
+        "source.utils.type-guards.isHTTPError",
+        "source.errors.KyError.KyError",
+        "test-d.error-names"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.619,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-12",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.utils.normalize.InternalRetryOptions",
+        "source.types.options.NormalizedRetryOptions",
+        "source.utils.normalize.normalizeRetryMethod",
+        "test-d.normalized-options.ExpectedNormalizedRetryOptions"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-13",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.index.createInstance",
+        "source.core.Ky.Ky.create",
+        "source.core.Ky.Ky",
+        "source.types.ky.KyInstance",
+        "source.errors.KyError.KyError"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.ErrorImpl.chain",
+        "src.error.Error.chain",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl Debug for Error"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.impl Debug for Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.context.impl StdError for ContextError<C, Error>"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError + Send + Sync> for Error",
+        "src.context.impl StdError for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl AsRef<dyn StdError + Send + Sync> for Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.ErrorImpl.error_mut"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.167,
+       "ndcg@10": 0.086,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.impl Debug for Error",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.nightly.impl Debug for MyError",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.wrapper.impl Debug for BoxedError"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.context.impl StdError for Error",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>",
+        "src.error.Error.into_boxed_dyn_error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.125,
+       "ndcg@10": 0.193,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.143,
+       "ndcg@10": 0.271,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.into_boxed_dyn_error",
+        "src.wrapper.impl StdError for BoxedError",
+        "src.error.object_boxed",
+        "src.wrapper.impl Display for BoxedError",
+        "src.error.Error.from_boxed"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.impl Drop for Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.lib.format_err",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>",
+        "src.error.ErrorImpl",
+        "src.wrapper.impl StdError for DisplayError<M>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-11",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.downcast_mut",
+        "src.error.ErrorImpl.error_mut",
+        "src.error.Error.downcast",
+        "src.error.impl DerefMut for Error",
+        "src.error.object_downcast"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.urlapi.redirect_url",
+        "src.tool_operate.select_next_url",
+        "lib.http.follow_parse_url",
+        "src.tool_urlglob.glob_next_url",
+        "lib.multi.multi_follow"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 0.333,
+       "ndcg@10": 0.414,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.smtp.smtp_parse_url_path",
+        "lib.pop3.pop3_parse_url_path",
+        "lib.url.parse_connect_to_string",
+        "lib.imap.imap_parse_url_path",
+        "lib.urlapi.parse_port"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.167,
+       "ndcg@10": 0.078,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.cookie.cookie_hash_domain",
+        "lib.cookie.parse_domain",
+        "lib.cookie.cookie_tailmatch",
+        "lib.cookie.bad_domain",
+        "lib.cookie.Curl_cookie_getlist"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.proxy.proxy_check_noproxy",
+        "lib.proxy.proxy_do_not_proxy",
+        "lib.proxy.proxy_detect_proxy",
+        "lib.proxy.CURL_PROXY_IS_ANY_HTTP",
+        "lib.http_proxy.cf_http_proxy_query"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.proxy.match_host",
+        "lib.vtls.schannel_verify.Curl_verify_host",
+        "lib.vtls.schannel_verify.Curl_verify_certificate",
+        "tests.http.testenv.certs.CertificateSpec.name",
+        "tests.http.testenv.certs.Credentials.certificate"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.1,
+       "ndcg@10": 0.161,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.http_chunks.Curl_chunked_strerror",
+        "lib.content_encoding.Curl_build_unencoding_stack",
+        "lib.http_chunks.chunked_reader",
+        "lib.http_chunks.chunked_writer",
+        "lib.mqtt.mqtt_decode_len"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.netrc.netrc_scan_reset",
+        "lib.netrc.netrc_scan_end_entry",
+        "lib.netrc.netrc_scanner",
+        "lib.netrc.netrc_tokenstr",
+        "lib.netrc"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.339,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.urlapi.host_decode",
+        "lib.http.Curl_http_decode_status",
+        "lib.curl_sasl.Curl_sasl_decode_mech",
+        "lib.idn.Curl_idn_decode",
+        "lib.url.url_match_http_version@844"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.125,
+       "ndcg@10": 0.175,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.vdns.hostip.ipv6works@308",
+        "lib.vdns.hostip.ipv6works",
+        "lib.curl_addrinfo.Curl_looks_like_ipv6",
+        "docs.examples.ipv6",
+        "tests.unit.unit1607.IPV6ONLY@65"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.ftp.ftp_port_resolve_host",
+        "tests.server.resolve.test_resolve",
+        "lib.vdns.hostip.hostip_async_new",
+        "lib.vdns.hostip.Curl_resolv_take_result",
+        "lib.vdns.asyn-ares.Curl_async_getaddrinfo"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.25,
+       "ndcg@10": 0.104,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.curlx.base64.base64_encode",
+        "lib.curlx.base64.curlx_base64_encode",
+        "lib.curlx.base64.curlx_base64url_encode",
+        "lib.curlx.base64",
+        "lib.curlx.base64.curlx_base64_decode"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-12",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.http.http_statusline",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_request_version",
+        "lib.http.Curl_http_decode_status",
+        "lib.http.http_on_response"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-13",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.setopt.curl_easy_setopt",
+        "include.curl.typecheck-gcc.curl_easy_setopt",
+        "include.curl.curl.curl_easy_setopt",
+        "src.tool_setopt.my_setopt_str@134",
+        "projects.OS400.ccsidcurl.curl_easy_setopt_RPGnum_"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-14",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.multi.curl_multi_perform",
+        "lib.multi.Curl_multi_add_perform",
+        "lib.multi.curl_multi_init",
+        "lib.multi.curl_multi_socket",
+        "lib.multi.curl_multi_wait"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "graph": {
+     "overall": {
+      "n": 51,
+      "recall@5": {
+       "mean": 0.4657,
+       "ci95": [
+        0.3464,
+        0.5882
+       ]
+      },
+      "recall@10": {
+       "mean": 0.5588,
+       "ci95": [
+        0.4477,
+        0.6601
+       ]
+      },
+      "mrr": {
+       "mean": 0.5177,
+       "ci95": [
+        0.4006,
+        0.6324
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.4773,
+       "ci95": [
+        0.3652,
+        0.5869
+       ]
+      },
+      "success@1": {
+       "mean": 0.3529,
+       "ci95": [
+        0.2157,
+        0.4902
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 43,
+       "recall@5": {
+        "mean": 0.3779,
+        "ci95": [
+         0.2558,
+         0.5
+        ]
+       },
+       "recall@10": {
+        "mean": 0.4767,
+        "ci95": [
+         0.3643,
+         0.593
+        ]
+       },
+       "mrr": {
+        "mean": 0.4396,
+        "ci95": [
+         0.311,
+         0.5757
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3889,
+        "ci95": [
+         0.2796,
+         0.5122
+        ]
+       },
+       "success@1": {
+        "mean": 0.2558,
+        "ci95": [
+         0.1395,
+         0.3953
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 0.9375,
+        "ci95": [
+         0.8125,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.9375,
+        "ci95": [
+         0.8125,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.9524,
+        "ci95": [
+         0.8573,
+         1.0
+        ]
+       },
+       "success@1": {
+        "mean": 0.875,
+        "ci95": [
+         0.625,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "click": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.5449,
+        "ci95": [
+         0.3269,
+         0.7564
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6026,
+        "ci95": [
+         0.4103,
+         0.8077
+        ]
+       },
+       "mrr": {
+        "mean": 0.6769,
+        "ci95": [
+         0.4385,
+         0.8923
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.527,
+        "ci95": [
+         0.3158,
+         0.7256
+        ]
+       },
+       "success@1": {
+        "mean": 0.3846,
+        "ci95": [
+         0.1538,
+         0.6154
+        ]
+       }
+      },
+      "ky": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.5385,
+        "ci95": [
+         0.3077,
+         0.7692
+        ]
+       },
+       "recall@10": {
+        "mean": 0.641,
+        "ci95": [
+         0.3974,
+         0.8462
+        ]
+       },
+       "mrr": {
+        "mean": 0.5648,
+        "ci95": [
+         0.333,
+         0.8
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5509,
+        "ci95": [
+         0.3377,
+         0.7567
+        ]
+       },
+       "success@1": {
+        "mean": 0.3846,
+        "ci95": [
+         0.1538,
+         0.6154
+        ]
+       }
+      },
+      "anyhow": {
+       "n": 11,
+       "recall@5": {
+        "mean": 0.2576,
+        "ci95": [
+         0.0455,
+         0.4848
+        ]
+       },
+       "recall@10": {
+        "mean": 0.3788,
+        "ci95": [
+         0.1818,
+         0.6061
+        ]
+       },
+       "mrr": {
+        "mean": 0.3577,
+        "ci95": [
+         0.132,
+         0.6023
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.3389,
+        "ci95": [
+         0.1324,
+         0.5745
+        ]
+       },
+       "success@1": {
+        "mean": 0.2727,
+        "ci95": [
+         0.0909,
+         0.5455
+        ]
+       }
+      },
+      "curl": {
+       "n": 14,
+       "recall@5": {
+        "mean": 0.4881,
+        "ci95": [
+         0.2381,
+         0.7262
+        ]
+       },
+       "recall@10": {
+        "mean": 0.5833,
+        "ci95": [
+         0.375,
+         0.7917
+        ]
+       },
+       "mrr": {
+        "mean": 0.4518,
+        "ci95": [
+         0.244,
+         0.6804
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.4714,
+        "ci95": [
+         0.2614,
+         0.6847
+        ]
+       },
+       "success@1": {
+        "mean": 0.3571,
+        "ci95": [
+         0.1429,
+         0.6429
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 27.26,
+      "p95": 90.34,
+      "max": 96.94
+     },
+     "top5_noise_share": 0.133,
+     "queries": [
+      {
+       "id": "click-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.core.Command.get_help_option_names",
+        "tests.test_shell_completion.test_option_flag",
+        "tests.test_options.test_flag_duplicate_names",
+        "click.core.Option.flag_activation_value",
+        "tests.test_commands.test_get_help_option_names"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.core.Parameter.resolve_envvar_value",
+        "click.core.Context.get_parameter_source",
+        "click.core.Parameter.value_from_envvar",
+        "click.core.Option.value_from_envvar",
+        "click.core.Option.resolve_envvar_value"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.913,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.testing.BytesIOCopy.write",
+        "click._compat._AtomicFile.close",
+        "click._winconsole.ConsoleStream.write",
+        "click._termui_impl._PagerWriter.write",
+        "click._termui_impl.Editor.edit"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click.termui.progressbar",
+        "click._termui_impl.ProgressBar.eta",
+        "click._termui_impl.ProgressBar.make_step",
+        "click.core._check_iter"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.605,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.core.Option.is_bool_flag",
+        "click.shell_completion._start_of_option",
+        "tests.test_options.test_show_true_default_boolean_flag_value",
+        "tests.test_options.test_hide_false_default_boolean_flag_value",
+        "tests.test_options.EnumSentinel.__bool__"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.1,
+       "ndcg@10": 0.177,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click._termui_impl.Editor.get_editor",
+        "click._termui_impl.Editor",
+        "click.utils._get_text_stream",
+        "click._compat.get_text_stdin",
+        "click._winconsole._get_text_stdin"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.242,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.utils.get_app_dir",
+        "click.types.File",
+        "click._termui_impl.Editor.edit_files",
+        "tests.test_shell_completion.test_files_closed",
+        "click.utils._LazyFile"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.shell_completion.split_arg_string",
+        "click.parser._split_opt",
+        "click.shell_completion.shell_complete",
+        "tests.test_parser.test_split_arg_string",
+        "tests.test_shell_completion.test_command"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+        "tests.test_stream_lifecycle.test_output_isolation_across_invokes",
+        "tests.test_testing.test_exit_code_and_output_from_sys_exit",
+        "tests.test_stream_lifecycle.test_stderr_isolation_across_invokes",
+        "tests.test_testing.test_command_standalone_mode_returns_value"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click.types.FloatRange",
+        "click.types.IntRange",
+        "click.types._NumberRangeBase",
+        "click.types.NumberRangeInfoDict",
+        "click.types._NumberRangeBase._clamp"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.2,
+       "ndcg@10": 0.283,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-11",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "click._termui_impl.get_pager_file",
+        "click.termui.get_pager_file",
+        "click._termui_impl._PagerWriter",
+        "click._termui_impl._pager_contextmanager",
+        "tests.test_termui._run_get_pager_file_with_real_pager"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.28,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-12",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "click.core.Context.ensure_object",
+        "click.core.Context",
+        "click.core.Context.find_object",
+        "click.globals.get_current_context",
+        "click.core.Context._make_sub_context"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-13",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "click.decorators.make_pass_decorator",
+        "click.globals.get_current_context",
+        "click.core.Context.ensure_object",
+        "click.core.Context.find_object",
+        "click.decorators.pass_meta_key"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.types.hooks.BeforeRetryUpdate",
+        "test.retry.jitter",
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.constants.retry"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.retry-timing.RetryTimingHeader",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.retry-timing.RetryTimingDateParts",
+        "source.core.retry-timing"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.773,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.core.constants.retry",
+        "test.retry-decisions",
+        "test.retry-decisions.shouldRetry",
+        "test.retry.shouldRetry@4549",
+        "test.retry.shouldRetry"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.errors.NetworkError.NetworkError",
+        "test.network-error.fetch@27",
+        "test.network-error.fetch",
+        "test.fetch.fetch@745",
+        "source.utils.is-network-error.isRawNetworkError"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.418,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.errors.ResponseSizeError.ResponseSizeError",
+        "source.utils.body.limitResponseSize",
+        "source.core.Ky.Ky.#limitResponseSize",
+        "source.errors.ResponseSizeError.ResponseSizeError.constructor",
+        "source.utils.body.wrappableBody"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.815,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.utils.body.streamResponse",
+        "test.response-size.onDownloadProgress@274",
+        "test.response-consumption.onDownloadProgress@51",
+        "test.http-response-bodies.onDownloadProgress",
+        "test.stream.onDownloadProgress@754"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+        "source.utils.body.streamRequest",
+        "source.utils.body.withProgress",
+        "test.request-stream-support.onUploadProgress",
+        "test.request-stream-support-runtimes.onUploadProgress"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.types.options.Input",
+        "source.core.Ky.resolveInput",
+        "source.utils.normalize.normalizeRequestMethod",
+        "source.types.request",
+        "test-d.url-options"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "source.types.options.NormalizedOptions",
+        "source.types.options.InternalOptions",
+        "source.core.Ky.Ky.#runBeforeRequestHooks",
+        "source.types.options.Options",
+        "source.types.options.InitOptions"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "test.resilience.withinTwoSeconds",
+        "source.types.request",
+        "source.types.request.KyRequest",
+        "test-d.fetch-request",
+        "source.core.Ky.Ky.#getErrorDataTimeout"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.143,
+       "ndcg@10": 0.081,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-11",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "source.errors.HTTPError",
+        "source.errors.HTTPError.HTTPError",
+        "source.utils.type-guards.isHTTPError",
+        "source.errors.KyError.KyError",
+        "test-d.error-names"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.619,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-12",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.utils.normalize.InternalRetryOptions",
+        "source.types.options.NormalizedRetryOptions",
+        "source.utils.normalize.normalizeRetryMethod",
+        "test-d.normalized-options.ExpectedNormalizedRetryOptions"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-13",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "source.index.createInstance",
+        "source.core.Ky.Ky.create",
+        "source.core.Ky.Ky",
+        "source.types.ky.KyInstance",
+        "source.utils.merge.validateAndMerge"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.ErrorImpl.chain",
+        "src.error.Error.chain",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.context.impl StdError for ContextError<C, Error>",
+        "src.error.impl Debug for Error"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.impl Debug for Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.context.impl StdError for ContextError<C, Error>"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl AsRef<dyn StdError + Send + Sync> for Error",
+        "src.context.impl StdError for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl AsRef<dyn StdError + Send + Sync> for Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>",
+        "src.error.ErrorImpl.error_mut"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.167,
+       "ndcg@10": 0.086,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.impl Debug for Error",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.nightly.impl Debug for MyError",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.wrapper.impl Debug for BoxedError"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.context.impl StdError for Error",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>",
+        "src.error.Error.into_boxed_dyn_error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.125,
+       "ndcg@10": 0.193,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.143,
+       "ndcg@10": 0.271,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.Error.into_boxed_dyn_error",
+        "src.wrapper.impl StdError for BoxedError",
+        "src.error.object_boxed",
+        "src.wrapper.impl Display for BoxedError",
+        "src.error.Error.from_boxed"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.impl Drop for Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.lib.format_err",
+        "src.error.impl From<Error> for Box<dyn StdError + Send + 'static>",
+        "src.error.ErrorImpl",
+        "src.wrapper.impl StdError for DisplayError<M>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-11",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "src.error.Error.downcast_mut",
+        "src.error.ErrorImpl.error_mut",
+        "src.error.vtable",
+        "src.error.Error.downcast",
+        "src.error.impl DerefMut for Error"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-01",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.urlapi.redirect_url",
+        "src.tool_operate.select_next_url",
+        "lib.http.follow_parse_url",
+        "src.tool_urlglob.glob_next_url",
+        "lib.multi.multi_follow"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 0.333,
+       "ndcg@10": 0.414,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-02",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.smtp.smtp_parse_url_path",
+        "lib.pop3.pop3_parse_url_path",
+        "lib.url.parse_connect_to_string",
+        "lib.imap.imap_parse_url_path",
+        "lib.urlapi.parse_port"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.167,
+       "ndcg@10": 0.078,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-03",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.cookie.cookie_hash_domain",
+        "lib.cookie.parse_domain",
+        "lib.cookie.cookie_tailmatch",
+        "lib.cookie.bad_domain",
+        "lib.cookie.Curl_cookie_getlist"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.5,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-04",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.proxy.proxy_check_noproxy",
+        "lib.proxy.proxy_do_not_proxy",
+        "lib.proxy.proxy_detect_proxy",
+        "lib.proxy.CURL_PROXY_IS_ANY_HTTP",
+        "lib.http_proxy.cf_http_proxy_query"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-05",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.proxy.match_host",
+        "lib.vtls.schannel_verify.Curl_verify_host",
+        "lib.vtls.schannel_verify.Curl_verify_certificate",
+        "tests.http.testenv.certs.CertificateSpec.name",
+        "lib.strequal.curl_strnequal"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-06",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.http_chunks.Curl_chunked_strerror",
+        "lib.content_encoding.Curl_build_unencoding_stack",
+        "lib.http_chunks.chunked_reader",
+        "lib.http_chunks.chunked_writer",
+        "lib.mqtt.mqtt_decode_len"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-07",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.netrc.netrc_scan_reset",
+        "lib.netrc.netrc_scan_end_entry",
+        "lib.netrc.netrc_scanner",
+        "lib.netrc.netrc_tokenstr",
+        "lib.netrc"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.339,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-08",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.urlapi.host_decode",
+        "lib.http.Curl_http_decode_status",
+        "lib.curl_sasl.Curl_sasl_decode_mech",
+        "lib.idn.Curl_idn_decode",
+        "lib.url.url_match_http_version@844"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.125,
+       "ndcg@10": 0.175,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-09",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.vdns.hostip.ipv6works@308",
+        "lib.vdns.hostip.ipv6works",
+        "lib.curl_addrinfo.Curl_looks_like_ipv6",
+        "docs.examples.ipv6",
+        "tests.unit.unit1607.IPV6ONLY@65"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-10",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.ftp.ftp_port_resolve_host",
+        "lib.cfilters.Curl_conn_get_transport",
+        "tests.server.resolve.test_resolve",
+        "lib.vdns.hostip.hostip_async_new",
+        "lib.vdns.hostip.Curl_resolv_take_result"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.2,
+       "ndcg@10": 0.094,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-11",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.curlx.base64.base64_encode",
+        "lib.curlx.base64.curlx_base64_encode",
+        "lib.curlx.base64.curlx_base64url_encode",
+        "lib.curlx.base64",
+        "lib.curlx.base64.curlx_base64_decode"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-12",
+       "category": "behavior",
+       "mode_used": "graph",
+       "top5": [
+        "lib.http.http_statusline",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_request_version",
+        "lib.http.Curl_http_decode_status",
+        "lib.http.http_on_response"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-13",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "lib.setopt.curl_easy_setopt",
+        "include.curl.typecheck-gcc.curl_easy_setopt",
+        "include.curl.curl.curl_easy_setopt",
+        "lib.api.CURL_EAPI_ENTER",
+        "lib.api.CURL_EAPI_LEAVE"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-14",
+       "category": "identifier",
+       "mode_used": "graph",
+       "top5": [
+        "lib.multi.curl_multi_perform",
+        "lib.multi.Curl_multi_add_perform",
+        "lib.api.CURL_MAPI_LEAVE",
+        "lib.api.CURL_MAPI_ENTER",
+        "lib.multi.curl_multi_init"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "auto": {
+     "overall": {
+      "n": 51,
+      "recall@5": {
+       "mean": 0.6814,
+       "ci95": [
+        0.5833,
+        0.7729
+       ]
+      },
+      "recall@10": {
+       "mean": 0.7745,
+       "ci95": [
+        0.683,
+        0.8578
+       ]
+      },
+      "mrr": {
+       "mean": 0.7505,
+       "ci95": [
+        0.6514,
+        0.842
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.6966,
+       "ci95": [
+        0.5972,
+        0.7812
+       ]
+      },
+      "success@1": {
+       "mean": 0.549,
+       "ci95": [
+        0.4118,
+        0.6863
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 43,
+       "recall@5": {
+        "mean": 0.6221,
+        "ci95": [
+         0.5078,
+         0.7306
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7326,
+        "ci95": [
+         0.6298,
+         0.8333
+        ]
+       },
+       "mrr": {
+        "mean": 0.7274,
+        "ci95": [
+         0.6163,
+         0.8295
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.6575,
+        "ci95": [
+         0.5554,
+         0.7543
+        ]
+       },
+       "success@1": {
+        "mean": 0.5116,
+        "ci95": [
+         0.3721,
+         0.6512
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 0.875,
+        "ci95": [
+         0.75,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.9067,
+        "ci95": [
+         0.81,
+         0.9955
+        ]
+       },
+       "success@1": {
+        "mean": 0.75,
+        "ci95": [
+         0.5,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "click": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.7115,
+        "ci95": [
+         0.5192,
+         0.8782
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8077,
+        "ci95": [
+         0.6154,
+         0.9615
+        ]
+       },
+       "mrr": {
+        "mean": 0.8462,
+        "ci95": [
+         0.6923,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.753,
+        "ci95": [
+         0.5784,
+         0.9015
+        ]
+       },
+       "success@1": {
+        "mean": 0.5385,
+        "ci95": [
+         0.2308,
+         0.7692
+        ]
+       }
+      },
+      "ky": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.8333,
+        "ci95": [
+         0.6667,
+         0.9744
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8526,
+        "ci95": [
+         0.6795,
+         0.9744
+        ]
+       },
+       "mrr": {
+        "mean": 0.8077,
+        "ci95": [
+         0.6154,
+         0.9615
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.7948,
+        "ci95": [
+         0.6218,
+         0.9415
+        ]
+       },
+       "success@1": {
+        "mean": 0.6923,
+        "ci95": [
+         0.4615,
+         0.9231
+        ]
+       }
+      },
+      "anyhow": {
+       "n": 11,
+       "recall@5": {
+        "mean": 0.4848,
+        "ci95": [
+         0.2727,
+         0.7121
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6364,
+        "ci95": [
+         0.4242,
+         0.8485
+        ]
+       },
+       "mrr": {
+        "mean": 0.7071,
+        "ci95": [
+         0.4545,
+         0.9242
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.5977,
+        "ci95": [
+         0.3893,
+         0.7783
+        ]
+       },
+       "success@1": {
+        "mean": 0.5455,
+        "ci95": [
+         0.2727,
+         0.8182
+        ]
+       }
+      },
+      "curl": {
+       "n": 14,
+       "recall@5": {
+        "mean": 0.6667,
+        "ci95": [
+         0.4762,
+         0.8512
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7798,
+        "ci95": [
+         0.6012,
+         0.9226
+        ]
+       },
+       "mrr": {
+        "mean": 0.6429,
+        "ci95": [
+         0.4762,
+         0.8095
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.6306,
+        "ci95": [
+         0.4647,
+         0.7841
+        ]
+       },
+       "success@1": {
+        "mean": 0.4286,
+        "ci95": [
+         0.2143,
+         0.7143
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 12.46,
+      "p95": 28.2,
+      "max": 29.09
+     },
+     "top5_noise_share": 0.027,
+     "queries": [
+      {
+       "id": "click-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.core.Option._infer_flag_kind",
+        "click.exceptions.NoSuchOption.__init__",
+        "click.parser._OptionParser._match_short_opt",
+        "click.parser._OptionParser._process_opts",
+        "click.core.Option._pick_type"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.386,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.core.Parameter.value_from_envvar",
+        "click.core.Parameter.resolve_envvar_value",
+        "click.core.Option.value_from_envvar",
+        "click.core.Context.get_parameter_source",
+        "click.core.Parameter.consume_value"
+       ],
+       "recall@5": 0.75,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.987,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click._termui_impl._PagerWriter.close",
+        "click._compat._AtomicFile.close",
+        "click._termui_impl._tempfilepager",
+        "click.utils._KeepOpenFile",
+        "click.testing._FDCapture.start"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click._termui_impl.ProgressBar.eta",
+        "click._termui_impl.ProgressBar.make_step",
+        "click.termui.progressbar",
+        "click._termui_impl.ProgressBar.__iter__"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.7,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.types.BoolParamType.str_to_bool",
+        "click.types.BoolParamType.convert",
+        "click.utils.make_str",
+        "click.termui.prompt",
+        "click.types.BoolParamType.__repr__"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click._termui_impl.Editor.get_editor",
+        "click.termui.edit",
+        "click._termui_impl.Editor.edit_files",
+        "click._termui_impl.Editor.edit",
+        "click._termui_impl._tempfilepager"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.708,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.utils.get_app_dir",
+        "click.testing.CliRunner.isolated_filesystem",
+        "click.types.Path.__init__",
+        "click.types.Path",
+        "click.utils._KeepOpenFile.__init__"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.shell_completion.split_arg_string",
+        "click.shell_completion.BashComplete.get_completion_args",
+        "click.core.Command.parse_args",
+        "click.types.ParamType.split_envvar_value",
+        "click.shell_completion.ZshComplete.get_completion_args"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "tests.test_abort_interrupt._exit_code",
+        "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+        "tests.test_testing.test_isolated_runner",
+        "tests.test_testing.test_command_standalone_mode_returns_value",
+        "tests.test_stream_lifecycle.test_output_isolation_across_invokes"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.types.FloatRange._clamp",
+        "click.types._NumberRangeBase._clamp",
+        "click.types.IntRange._clamp",
+        "click.types._NumberRangeBase.__repr__",
+        "click.types.FloatRange"
+       ],
+       "recall@5": 0.75,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.701,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "click.termui.echo_via_pager",
+        "click._termui_impl._pipepager",
+        "click._termui_impl._PagerWriter",
+        "click._termui_impl._pager_contextmanager",
+        "click._termui_impl._nullpager"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.956,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-12",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "click.core.Context.ensure_object",
+        "click.core.Context",
+        "click.core.Context.scope",
+        "click.globals.get_current_context",
+        "click.core.Context.__enter__"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-13",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "click.decorators.make_pass_decorator",
+        "click.decorators.pass_meta_key",
+        "click.decorators.password_option",
+        "click.decorators.argument",
+        "click.decorators.pass_obj"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.Ky.#calculateDelay",
+        "source.core.Ky.Ky.#calculateRetryDelay",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.Ky.Ky.#retryFromError",
+        "source.core.constants.retry"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.retry-timing.RetryTimingHeader",
+        "source.core.constants.retry",
+        "source.core.retry-timing.createTimestamp"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.894,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.constants.retry",
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.core.Ky.Ky.#retryFromError",
+        "source.core.Ky.Ky.#calculateRetryDelay",
+        "source.core.constants.ForceRetryOptions"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.466,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.is-network-error.isRawNetworkError",
+        "source.errors.NetworkError.NetworkError",
+        "source.utils.type-guards.isNetworkError",
+        "test.network-error.fetch@27",
+        "test.network-error.fetch"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.body.limitResponseSize",
+        "source.core.Ky.Ky.#limitResponseSize",
+        "source.errors.ResponseSizeError.ResponseSizeError",
+        "source.errors.ResponseSizeError.ResponseSizeError.constructor",
+        "source.core.Ky.readResponseText"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.body.streamResponse",
+        "source.utils.body.withProgress",
+        "source.core.Ky.readResponseText",
+        "source.utils.body.streamRequest",
+        "source.utils.body.wrappableBody"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+        "source.utils.body.withProgress",
+        "source.utils.body.streamRequest",
+        "source.utils.body.streamResponse",
+        "test-d.hooks.withoutUploadProgress"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.951,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.resolveInput",
+        "source.types.options.Input",
+        "source.utils.merge.appendSearchParameters",
+        "source.core.Ky.applySearchParameters",
+        "source.utils.normalize.normalizeRequestMethod"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.types.hooks.InitHook",
+        "source.types.options.NormalizedOptions",
+        "source.core.Ky.cloneInitHookOptions",
+        "test-d.hooks.restoreDefaultsHook",
+        "source.types.options.InternalOptions"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "source.core.Ky.Ky.#getErrorDataTimeout",
+        "source.errors.TimeoutError.TimeoutError",
+        "source.core.Ky.Ky.#getResponseData",
+        "source.core.Ky.Ky.#throwIfTotalTimeoutExhausted",
+        "source.utils.timeout.timeout"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.434,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-11",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "source.errors.HTTPError",
+        "source.errors.HTTPError.HTTPError",
+        "source.errors.HTTPError.HTTPError.constructor",
+        "source.utils.type-guards.isHTTPError",
+        "source.errors.KyError.KyError"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.659,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-12",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.types.options.NormalizedRetryOptions",
+        "source.utils.normalize.InternalRetryOptions",
+        "test-d.normalized-options.ExpectedNormalizedRetryOptions",
+        "test-d.normalized-options.shouldRetry"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-13",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "source.index.createInstance",
+        "source.types.ky.KyInstance",
+        "source.core.Ky.Ky.create",
+        "source.core.Ky.Ky.constructor",
+        "source.errors.KyError.KyError"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.Error.chain",
+        "src.lib.Chain",
+        "src.error.ErrorImpl.backtrace",
+        "src.error.ErrorImpl.chain"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.351,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.Error.chain",
+        "src.fmt.ErrorImpl.debug",
+        "src.error.Error.backtrace",
+        "src.error.Error.from"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.context.Option.context",
+        "src.error.Error.msg",
+        "src.context.Result.context",
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.error.impl From<E> for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.333,
+       "mrr": 0.111,
+       "ndcg@10": 0.167,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.is",
+        "src.error.Error.downcast",
+        "src.error.impl AsRef<dyn StdError> for Error",
+        "src.lib.Error",
+        "src.error.ErrorImpl.error_mut"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.605,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.fmt.ErrorImpl.debug",
+        "src.error.impl Debug for ErrorImpl<E>",
+        "src.error.impl Debug for Error",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.nightly.impl Debug for MyError"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.726,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.Error.into_boxed_dyn_error",
+        "src.error.Error.from_boxed",
+        "src.context.impl StdError for E",
+        "src.macros.anyhow"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.5,
+       "mrr": 0.167,
+       "ndcg@10": 0.218,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.msg",
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.wrapper.impl Debug for MessageError<M>",
+        "src.error.Error.construct_from_adhoc"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.742,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.into_boxed_dyn_error",
+        "src.wrapper.impl StdError for BoxedError",
+        "src.error.Error.from_boxed",
+        "src.error.object_boxed",
+        "src.wrapper.impl Display for BoxedError"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.913,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.object_drop",
+        "src.error.ErrorImpl.erase",
+        "src.error.impl Drop for Error",
+        "src.error.object_drop_front",
+        "src.error.Error.drop"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.851,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.lib.format_err",
+        "src.error.ErrorImpl.fmt@1016",
+        "src.error.ErrorImpl.fmt",
+        "src.error.Error.fmt",
+        "src.error.Error.fmt@708"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-11",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "src.error.Error.downcast_mut",
+        "src.error.Error.downcast",
+        "src.error.Error.downcast_ref",
+        "src.error.object_downcast",
+        "src.error.context_downcast"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-01",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.http.follow_fake",
+        "lib.urlapi.redirect_url",
+        "lib.http.Curl_http_follow",
+        "src.tool_cb_hdr.write_linked_location",
+        "lib.multi.multi_follow"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.565,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-02",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.smtp.smtp_parse_url_path",
+        "lib.urlapi.parse_scheme",
+        "lib.url.parse_connect_to_string",
+        "lib.imap.imap_parse_url_path",
+        "lib.pop3.pop3_parse_url_path"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.373,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-03",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.cookie.cookie_tailmatch",
+        "lib.cookie.parse_domain",
+        "lib.cookie.bad_domain",
+        "lib.cookie.cookiehash",
+        "lib.proxy.match_host"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-04",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.proxy.proxy_check_noproxy",
+        "lib.proxy.proxy_do_not_proxy",
+        "lib.proxy.proxy_detect_proxy",
+        "lib.vdns.hostip.RESOLV_FAIL",
+        "lib.proxy.Curl_proxy_init_conn"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-05",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.vtls.schannel_verify.cert_get_name_string",
+        "lib.vtls.openssl.ossl_verifyhost",
+        "lib.vtls.hostcheck.hostmatch",
+        "lib.vtls.hostcheck.Curl_cert_hostcheck",
+        "lib.proxy.match_host"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.333,
+       "ndcg@10": 0.518,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-06",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.http_chunks.Curl_chunked_strerror",
+        "lib.http_chunks.cw_chunked_write",
+        "lib.http_chunks.httpchunk_readwrite",
+        "lib.http_chunks.Curl_httpchunk_read",
+        "lib.http_chunks.chunked_reader"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.333,
+       "ndcg@10": 0.532,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-07",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.netrc.Curl_netrc_scan",
+        "lib.netrc.netrc_scan_reset",
+        "lib.netrc.netrc_scan_end_entry",
+        "lib.netrc.netrc_tokenstr",
+        "lib.urlapi.parse_hostname_login"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.627,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-08",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "src.tool_getparam.replace_url_encoded_space_by_plus",
+        "lib.escape.curl_easy_unescape",
+        "lib.urlapi.host_decode",
+        "lib.dict.unescape_word",
+        "lib.http.Curl_http_decode_status"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.512,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-09",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.cf-ip-happy.cf_ip_attempt_connect",
+        "lib.vdns.hostip.ipv6works@308",
+        "lib.cf-ip-happy.cf_ip_attempt_restart",
+        "lib.vdns.hostip.ipv6works",
+        "lib.proxy.cidr6_match"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-10",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.vdns.hostip.hostip_async_new",
+        "lib.vdns.hostip.Curl_resolv_take_result",
+        "lib.vdns.asyn-ares.Curl_async_getaddrinfo",
+        "lib.vdns.hostip4.Curl_ipv4_resolve_r",
+        "lib.vdns.hostip.hostip_resolv_take_result"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.5,
+       "ndcg@10": 0.153,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-11",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.curlx.base64.base64_encode",
+        "lib.mime.encoder_base64_read",
+        "lib.curlx.base64.curlx_base64_encode",
+        "lib.curlx.base64.curlx_base64url_encode",
+        "lib.ldap.ldap_value_needs_base64"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.92,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-12",
+       "category": "behavior",
+       "mode_used": "dense",
+       "top5": [
+        "lib.http.http_statusline",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_on_response",
+        "lib.cf-h1-proxy.on_resp_status",
+        "lib.http.http_may_use_1_1"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-13",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "lib.setopt.curl_easy_setopt",
+        "include.curl.typecheck-gcc.curl_easy_setopt",
+        "include.curl.options.curl_easyoption",
+        "include.curl.curl.curl_easy_setopt",
+        "lib.setopt.setopt_ech"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-14",
+       "category": "identifier",
+       "mode_used": "dense",
+       "top5": [
+        "lib.multi.multi_perform",
+        "lib.multi.curl_multi_perform",
+        "lib.multi.Curl_multi_add_perform",
+        "lib.multi.multi_done",
+        "lib.multi.multi_do"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      }
+     ]
+    },
+    "auto+hints": {
+     "overall": {
+      "n": 51,
+      "recall@5": {
+       "mean": 0.684,
+       "ci95": [
+        0.5866,
+        0.7755
+       ]
+      },
+      "recall@10": {
+       "mean": 0.7657,
+       "ci95": [
+        0.6797,
+        0.848
+       ]
+      },
+      "mrr": {
+       "mean": 0.7768,
+       "ci95": [
+        0.6755,
+        0.866
+       ]
+      },
+      "ndcg@10": {
+       "mean": 0.7093,
+       "ci95": [
+        0.6212,
+        0.7918
+       ]
+      },
+      "success@1": {
+       "mean": 0.5686,
+       "ci95": [
+        0.4314,
+        0.7059
+       ]
+      }
+     },
+     "by_category": {
+      "behavior": {
+       "n": 43,
+       "recall@5": {
+        "mean": 0.6252,
+        "ci95": [
+         0.5174,
+         0.7271
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7221,
+        "ci95": [
+         0.6225,
+         0.8151
+        ]
+       },
+       "mrr": {
+        "mean": 0.7353,
+        "ci95": [
+         0.6163,
+         0.8411
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.6569,
+        "ci95": [
+         0.5635,
+         0.745
+        ]
+       },
+       "success@1": {
+        "mean": 0.4884,
+        "ci95": [
+         0.3488,
+         0.6512
+        ]
+       }
+      },
+      "identifier": {
+       "n": 8,
+       "recall@5": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "recall@10": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "mrr": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.991,
+        "ci95": [
+         0.9775,
+         1.0
+        ]
+       },
+       "success@1": {
+        "mean": 1.0,
+        "ci95": [
+         1.0,
+         1.0
+        ]
+       }
+      }
+     },
+     "by_repository": {
+      "click": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.7179,
+        "ci95": [
+         0.5385,
+         0.8718
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8846,
+        "ci95": [
+         0.8013,
+         0.9615
+        ]
+       },
+       "mrr": {
+        "mean": 0.8397,
+        "ci95": [
+         0.6667,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.754,
+        "ci95": [
+         0.605,
+         0.8947
+        ]
+       },
+       "success@1": {
+        "mean": 0.5385,
+        "ci95": [
+         0.3077,
+         0.7692
+        ]
+       }
+      },
+      "ky": {
+       "n": 13,
+       "recall@5": {
+        "mean": 0.7154,
+        "ci95": [
+         0.5,
+         0.9103
+        ]
+       },
+       "recall@10": {
+        "mean": 0.7346,
+        "ci95": [
+         0.5141,
+         0.9141
+        ]
+       },
+       "mrr": {
+        "mean": 0.6923,
+        "ci95": [
+         0.5,
+         0.8846
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.635,
+        "ci95": [
+         0.4583,
+         0.7972
+        ]
+       },
+       "success@1": {
+        "mean": 0.3846,
+        "ci95": [
+         0.1538,
+         0.6154
+        ]
+       }
+      },
+      "anyhow": {
+       "n": 11,
+       "recall@5": {
+        "mean": 0.5455,
+        "ci95": [
+         0.3636,
+         0.7273
+        ]
+       },
+       "recall@10": {
+        "mean": 0.6061,
+        "ci95": [
+         0.3788,
+         0.8182
+        ]
+       },
+       "mrr": {
+        "mean": 0.7121,
+        "ci95": [
+         0.4545,
+         0.9394
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.6489,
+        "ci95": [
+         0.416,
+         0.8516
+        ]
+       },
+       "success@1": {
+        "mean": 0.6364,
+        "ci95": [
+         0.3636,
+         0.9091
+        ]
+       }
+      },
+      "curl": {
+       "n": 14,
+       "recall@5": {
+        "mean": 0.7321,
+        "ci95": [
+         0.5476,
+         0.9048
+        ]
+       },
+       "recall@10": {
+        "mean": 0.8095,
+        "ci95": [
+         0.6726,
+         0.9286
+        ]
+       },
+       "mrr": {
+        "mean": 0.8476,
+        "ci95": [
+         0.6929,
+         1.0
+        ]
+       },
+       "ndcg@10": {
+        "mean": 0.7841,
+        "ci95": [
+         0.636,
+         0.905
+        ]
+       },
+       "success@1": {
+        "mean": 0.7143,
+        "ci95": [
+         0.4286,
+         0.9286
+        ]
+       }
+      }
+     },
+     "latency_ms": {
+      "p50": 48.44,
+      "p95": 178.6,
+      "max": 185.97
+     },
+     "top5_noise_share": 0.094,
+     "queries": [
+      {
+       "id": "click-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.parser._OptionParser._match_long_opt",
+        "click.exceptions.NoSuchOption",
+        "click.parser._OptionParser._match_short_opt",
+        "click.parser",
+        "click.parser._OptionParser._process_opts"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.668,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.core.Parameter.value_from_envvar",
+        "click.core.Parameter.resolve_envvar_value",
+        "click.core.Option.value_from_envvar",
+        "click.core.Option.resolve_envvar_value",
+        "click.core.Parameter.consume_value"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click._compat.open_stream",
+        "click.utils._LazyFile",
+        "click._compat._AtomicFile",
+        "click._compat",
+        "click._compat._AtomicFile.close"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.679,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click._termui_impl.ProgressBar.time_per_iteration",
+        "click._termui_impl.ProgressBar.make_step",
+        "click._termui_impl.ProgressBar.eta",
+        "click.termui.progressbar",
+        "click._termui_impl.ProgressBar"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.605,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.types.BoolParamType",
+        "click.types.BoolParamType.convert",
+        "click.types.StringParamType.convert",
+        "click.types.Tuple.convert",
+        "click.types.convert_type"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.605,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click._termui_impl.Editor.edit",
+        "click.termui.edit",
+        "click._termui_impl.Editor",
+        "examples.termui.termui.edit",
+        "click._termui_impl"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.879,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.utils.get_app_dir",
+        "click._utils",
+        "click.utils",
+        "examples.aliases.aliases.Config",
+        "click._termui_impl.Editor.edit_files"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.shell_completion.split_arg_string",
+        "click.parser",
+        "click.parser._split_opt",
+        "click.types.ParamType.split_envvar_value",
+        "click.shell_completion.BashComplete.get_completion_args"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+        "click.testing.CliRunner",
+        "tests.test_stream_lifecycle.test_output_isolation_across_invokes",
+        "tests.test_testing.test_exit_code_and_output_from_sys_exit",
+        "tests.test_testing.test_command_standalone_mode_returns_value"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.667,
+       "mrr": 0.167,
+       "ndcg@10": 0.163,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.types.FloatRange",
+        "click.types.IntRange",
+        "click.types._NumberRangeBase",
+        "click.types._NumberRangeBase._clamp",
+        "click.types.FloatRange._clamp"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 0.25,
+       "ndcg@10": 0.257,
+       "success@1": 0.0
+      },
+      {
+       "id": "click-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.termui.echo_via_pager",
+        "click._termui_impl._pipepager",
+        "click._termui_impl._tempfilepager",
+        "examples.termui.termui.pager",
+        "click._termui_impl._PagerWriter"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.946,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-12",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.core.Context.ensure_object",
+        "click.core.Context.find_object",
+        "click.core.Context",
+        "click.core",
+        "click.core.Context._make_sub_context"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "click-13",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "click.decorators.make_pass_decorator",
+        "click.decorators.pass_context",
+        "click.decorators",
+        "click.core.Context.ensure_object",
+        "click.core.Context.find_object"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.Ky.Ky.#calculateRetryDelay",
+        "source.core.Ky.Ky.#calculateDelay",
+        "test.retry.jitter",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "test.retry.delay@430"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.797,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.retry-timing.getRetryTimingHeader",
+        "source.core.retry-timing.RetryTimingHeader",
+        "source.core.retry-timing.calculateRetryTimingDelay",
+        "source.core.retry-timing.RetryTimingDateParts",
+        "source.types.retry.RetryOptions"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.834,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.core.Ky.Ky.#calculateRetryDelay",
+        "test.retry-decisions.shouldRetry",
+        "test.retry.shouldRetry@4549",
+        "test.retry.shouldRetry@3111",
+        "test.retry.shouldRetry@2788"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 1.0,
+       "ndcg@10": 0.726,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.errors.NetworkError.NetworkError",
+        "source.utils.type-guards.isNetworkError",
+        "test.resilience.networkError",
+        "source.utils.is-network-error.isRawNetworkError",
+        "test.network-error.fetch@27"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.53,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.types.ResponsePromise.ResponsePromise",
+        "source.errors.ResponseSizeError.ResponseSizeError",
+        "source.utils.body.limitResponseSize",
+        "source.core.Ky.Ky.#limitResponseSize",
+        "source.utils.body.cancelBody"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.635,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "test.stream.onDownloadProgress@754",
+        "test.response-size.onDownloadProgress@274",
+        "test.response-consumption.onDownloadProgress",
+        "test.stream.onDownloadProgress@1475",
+        "test.response-size.onDownloadProgress"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "test.request-stream-support.onUploadProgress",
+        "test.request-stream-support-runtimes.onUploadProgress",
+        "test.stream.onUploadProgress@898",
+        "test.stream.onUploadProgress@1096",
+        "test.hooks.onUploadProgress"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.types.options.Input",
+        "source.core.Ky.resolveInput",
+        "source.core.Ky.Ky",
+        "source.types.request",
+        "test-d.url-options"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.5,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.types.hooks.Hooks",
+        "source.utils.merge.validateAndMerge",
+        "source.utils.merge.deepMerge",
+        "source.utils.merge.mergeHeaders",
+        "source.utils.merge.mergeHooks"
+       ],
+       "recall@5": 0.8,
+       "recall@10": 0.8,
+       "mrr": 0.5,
+       "ndcg@10": 0.475,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.errors.TimeoutError.TimeoutError",
+        "source.utils.timeout.timeout",
+        "source.core.Ky.Ky.#getErrorDataTimeout",
+        "source.utils.type-guards.isTimeoutError",
+        "source.errors.TimeoutError.TimeoutError.constructor"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.7,
+       "success@1": 0.0
+      },
+      {
+       "id": "ky-11",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.errors.HTTPError.HTTPError",
+        "source.errors.HTTPError",
+        "source.errors.HTTPError.HTTPError.constructor",
+        "source.errors.KyError.KyError",
+        "source.utils.type-guards.isHTTPError"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-12",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.utils.normalize.normalizeRetryOptions",
+        "source.utils.normalize.InternalRetryOptions",
+        "source.types.options.NormalizedRetryOptions",
+        "source.utils.normalize.normalizeRetryMethod",
+        "source.core.constants.retry"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "ky-13",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "source.index.createInstance",
+        "source.core.Ky.Ky",
+        "source.core.Ky.Ky.create",
+        "source.types.ky.KyInstance",
+        "source.types.ky"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.964,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.ErrorImpl.chain",
+        "src.error.Error.chain",
+        "src.lib.Chain",
+        "src.error.ErrorImpl.source",
+        "src.chain.Chain"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 0.5,
+       "ndcg@10": 0.423,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.root_cause",
+        "src.error.Error.chain",
+        "src.lib.Chain",
+        "src.error.ErrorImpl.chain",
+        "src.chain.Chain"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.context.Option.with_context",
+        "src.context.Result.context",
+        "src.context.Option.context",
+        "src.context.Result.with_context",
+        "src.wrapper.impl StdError for MessageError<M>"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.796,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.downcast_ref",
+        "src.error.Error.is",
+        "src.error.ErrorImpl.error",
+        "src.lib.Error",
+        "src.error.impl AsRef<dyn StdError> for Error"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.965,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.fmt@708",
+        "src.error.ErrorImpl.fmt",
+        "src.fmt.ErrorImpl.debug",
+        "src.error.ErrorImpl.fmt@1016",
+        "src.error.Error.fmt"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.333,
+       "mrr": 0.333,
+       "ndcg@10": 0.363,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.lib.Error",
+        "src.error.impl StdError for ErrorImpl<E>",
+        "src.error.Box.from@1032",
+        "src.lib.StdError",
+        "src.context.impl StdError for Error"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.msg",
+        "src.wrapper.MessageError",
+        "src.wrapper.impl StdError for MessageError<M>",
+        "src.wrapper.impl Display for MessageError<M>",
+        "src.wrapper.impl Debug for MessageError<M>"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.796,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.into_boxed_dyn_error",
+        "src.error.object_boxed",
+        "src.context.StdError",
+        "src.wrapper.impl StdError for BoxedError",
+        "src.error.impl From<Error> for Box<dyn StdError + 'static>"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.826,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.object_drop",
+        "src.error.Error.drop",
+        "src.error.ErrorImpl.error",
+        "src.error.ErrorVTable",
+        "src.error.impl Drop for Error"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.969,
+       "success@1": 1.0
+      },
+      {
+       "id": "anyhow-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.macros.bail",
+        "src.macros.anyhow",
+        "src.macros.__anyhow",
+        "src.lib.format_err",
+        "src.error.impl StdError for ErrorImpl<E>"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.0,
+       "mrr": 0.0,
+       "ndcg@10": 0.0,
+       "success@1": 0.0
+      },
+      {
+       "id": "anyhow-11",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "src.error.Error.downcast_mut",
+        "src.error.ErrorImpl.error",
+        "src.error.object_downcast",
+        "src.error.ErrorImpl.error_mut",
+        "src.error.Error.downcast"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-01",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.http.Curl_http_follow",
+        "lib.http.follow_parse_url",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_switch_to_get",
+        "lib.http.http_on_response"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.5,
+       "mrr": 1.0,
+       "ndcg@10": 0.796,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-02",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.urlapi.parseurl",
+        "lib.urlapi.curl_url_set",
+        "src.tool_getparam.parse_url",
+        "lib.smtp.smtp_parse_url_path",
+        "lib.pop3.pop3_parse_url_path"
+       ],
+       "recall@5": 0.5,
+       "recall@10": 0.75,
+       "mrr": 1.0,
+       "ndcg@10": 0.862,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-03",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.cookie.cookie_tailmatch",
+        "lib.cookie.Curl_cookie_getlist",
+        "lib.cookie.Cookie",
+        "lib.cookie.cookie_hash_domain",
+        "lib.vdns.hostip.tailmatch"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-04",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.proxy.proxy_check_noproxy",
+        "lib.proxy.proxy_do_not_proxy",
+        "lib.proxy.proxy_detect_proxy",
+        "lib.proxy.CURL_PROXY_IS_ANY_HTTP",
+        "lib.proxy.CURL_PROXY_IS_HTTP"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-05",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.vtls.hostcheck.Curl_cert_hostcheck",
+        "lib.vtls.hostcheck.hostmatch",
+        "lib.vtls.schannel_verify.Curl_verify_host",
+        "lib.proxy.match_host",
+        "lib.vtls.schannel_verify.Curl_verify_certificate"
+       ],
+       "recall@5": 0.667,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.907,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-06",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.http_chunks.Curl_httpchunk_read",
+        "lib.http_chunks.Curl_chunked_strerror",
+        "lib.http_chunks.cw_chunked_write",
+        "lib.http_chunks.httpchunk_readwrite",
+        "lib.http_chunks.cr_chunked_read"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.631,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-07",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.netrc.netrc_scanner",
+        "lib.netrc.Curl_netrc_scan",
+        "lib.netrc.netrc_scan_end_entry",
+        "lib.netrc.Curl_netrc_init",
+        "lib.netrc.netrc_scan_reset"
+       ],
+       "recall@5": 0.25,
+       "recall@10": 0.5,
+       "mrr": 0.5,
+       "ndcg@10": 0.497,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-08",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.escape.curl_easy_unescape",
+        "lib.escape.Curl_urldecode",
+        "lib.escape.curl_easy_escape",
+        "lib.escape.curl_unescape",
+        "lib.curl_sasl.Curl_sasl_decode_mech"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.987,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-09",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.cf-ip-happy.cf_ip_attempt_connect",
+        "lib.cf-ip-happy.cf_ip_happy_create",
+        "lib.cf-https-connect.cf_hc_create",
+        "lib.curl_share.CURL_SHARE_KEEP_CONNECT",
+        "lib.cf-ip-happy.Curl_cf_ip_happy_insert_after"
+       ],
+       "recall@5": 0.0,
+       "recall@10": 0.25,
+       "mrr": 0.167,
+       "ndcg@10": 0.184,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-10",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.vdns.hostip.Curl_resolv",
+        "lib.vdns.hostip.hostip_resolv_start",
+        "lib.vdns.hostip.Curl_resolv_has_answers",
+        "lib.vdns.hostip.Curl_resolv_https",
+        "lib.vdns.hostip.Curl_resolv_elapsed_ms"
+       ],
+       "recall@5": 0.333,
+       "recall@10": 0.667,
+       "mrr": 1.0,
+       "ndcg@10": 0.807,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-11",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.curlx.base64.base64_encode",
+        "lib.curlx.base64.curlx_base64url_encode",
+        "lib.curlx.base64.curlx_base64_encode",
+        "lib.curlx.base64",
+        "lib.mime.encoder_base64_read"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 0.92,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-12",
+       "category": "behavior",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.http.http_on_response",
+        "lib.http.Curl_http_decode_status",
+        "lib.http.http_on_1xx_response",
+        "lib.http.http_request_version",
+        "lib.http.http_statusline"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 0.2,
+       "ndcg@10": 0.387,
+       "success@1": 0.0
+      },
+      {
+       "id": "curl-13",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.setopt.curl_easy_setopt",
+        "include.curl.curl.curl_easy_setopt",
+        "include.curl.typecheck-gcc.curl_easy_setopt",
+        "lib.setopt.Curl_vsetopt",
+        "include.curl.curl.CURLOPT"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      },
+      {
+       "id": "curl-14",
+       "category": "identifier",
+       "mode_used": "hybrid",
+       "top5": [
+        "lib.multi.curl_multi_perform",
+        "lib.multi.multi_runsingle",
+        "lib.multi.Curl_multi_handle",
+        "lib.multi.Curl_multi_add_perform",
+        "lib.multi.multi_perform"
+       ],
+       "recall@5": 1.0,
+       "recall@10": 1.0,
+       "mrr": 1.0,
+       "ndcg@10": 1.0,
+       "success@1": 1.0
+      }
+     ]
+    },
+    "paired_ndcg": {
+     "dense-keyword": {
+      "delta": 0.3678,
+      "ci95": [
+       0.2826,
+       0.4516
+      ],
+      "wins": 39,
+      "losses": 2
+     },
+     "hybrid-dense": {
+      "delta": -0.2116,
+      "ci95": [
+       -0.2885,
+       -0.1386
+      ],
+      "wins": 4,
+      "losses": 31
+     },
+     "graph-hybrid": {
+      "delta": -0.0077,
+      "ci95": [
+       -0.0195,
+       0.0
+      ],
+      "wins": 0,
+      "losses": 3
+     },
+     "auto-dense": {
+      "delta": 0.0,
+      "ci95": [
+       0.0,
+       0.0
+      ],
+      "wins": 0,
+      "losses": 0
+     },
+     "auto-graph": {
+      "delta": 0.2193,
+      "ci95": [
+       0.1438,
+       0.2978
+      ],
+      "wins": 31,
+      "losses": 4
+     },
+     "auto+hints-auto": {
+      "delta": 0.0127,
+      "ci95": [
+       -0.0826,
+       0.1046
+      ],
+      "wins": 22,
+      "losses": 16
+     }
+    },
+    "query_embedding_ms": {
+     "p50": 4.87,
+     "p95": 5.87
+    },
+    "ann": {
+     "requested": 50,
+     "returned_min": 50,
+     "returned_median": 50,
+     "hnsw_recall_vs_exact_mean": 1.0,
+     "hnsw_recall_vs_exact_min": 1.0
+    }
+   },
+   "context": {
+    "settings": "defaults: max_chunks=8, max_chars=24000, include_code/related/rules",
+    "context_chars": {
+     "p50": 8520,
+     "p95": 24000,
+     "max": 24000
+    },
+    "approx_tokens_p50": 2130,
+    "approx_tokens_note": "chars/4 heuristic, not a tokenizer count",
+    "chunks_per_context_p50": 8,
+    "code_verified_fraction": 1.0,
+    "latency_ms_including_code_fetch": {
+     "p50": 52.97,
+     "p95": 117.42
+    }
+   },
+   "query_plans": {
+    "dense": [
+     "Limit",
+     "Sort",
+     "Index Scan on ix_document_chunks_repository_id"
+    ],
+    "dense_unfiltered": [
+     "Limit",
+     "Index Scan on idx_chunks_embedding_hnsw"
+    ],
+    "keyword": [
+     "Limit",
+     "Index Scan on ix_document_chunks_repository_id"
+    ]
+   },
+   "storage": {
+    "tables": {
+     "document_chunks": {
+      "table_bytes": 67518464,
+      "index_bytes": 56893440,
+      "total_bytes": 124411904
+     },
+     "resources": {
+      "table_bytes": 6488064,
+      "index_bytes": 5808128,
+      "total_bytes": 12296192
+     },
+     "code_edges": {
+      "table_bytes": 5283840,
+      "index_bytes": 2637824,
+      "total_bytes": 7921664
+     },
+     "repositories": {
+      "table_bytes": 16384,
+      "index_bytes": 81920,
+      "total_bytes": 98304
+     },
+     "ingestion_jobs": {
+      "table_bytes": 8192,
+      "index_bytes": 24576,
+      "total_bytes": 32768
+     }
+    },
+    "indexes": {
+     "idx_chunks_embedding_hnsw": 50700288,
+     "idx_resources_embedding_hnsw": 5513216,
+     "idx_chunks_search_text_fts": 3940352,
+     "idx_chunk_repo_symbol": 925696,
+     "idx_chunk_resource_index": 516096,
+     "document_chunks_pkey": 409600,
+     "ix_document_chunks_resource_id": 147456,
+     "idx_chunk_resource": 147456,
+     "ix_document_chunks_repository_id": 106496,
+     "resources_pkey": 65536,
+     "ix_resources_arxiv_id": 32768,
+     "ix_resources_doi": 32768,
+     "ix_resources_is_stale": 32768,
+     "ix_resources_pmid": 32768,
+     "ix_resources_publication_year": 32768,
+     "idx_resources_sparse_updated": 32768,
+     "ix_resources_repository_id": 32768
+    },
+    "footprint_bytes": 144760832,
+    "raw_source_bytes_of_indexed_files": 12414613,
+    "per_chunk_avg_bytes": {
+     "embedding": 3076,
+     "search_text": 346,
+     "semantic_summary": 417,
+     "chunk_metadata": 281,
+     "content_if_stored_on_disk": 804,
+     "content_if_stored_raw": 1769
+    },
+    "chunks": 12376,
+    "counterfactual_content_in_chunks": {
+     "document_chunks_table_bytes_with_content": 74694656,
+     "added_bytes": 7176192,
+     "footprint_with_content_bytes": 151937024,
+     "ratio_full_over_hybrid": 1.05
+    },
+    "ratio_raw_source_over_footprint": 0.086
+   }
+  }
+ },
+ "environment": {
+  "date": "2026-10-30T03:40:35+00:00",
+  "cpu": "arm",
+  "cpus": 18,
+  "memory_gib": 36.0,
+  "python": "3.13.15",
+  "postgres": "17.11 (Homebrew)",
+  "pgvector": "0.8.7",
+  "onnxruntime": "1.31.0",
+  "pharos_commit": "0b017297c0a8402832d5d164f02894f37796ceae",
+  "gpu": "none (CPU only)"
+ }
+}

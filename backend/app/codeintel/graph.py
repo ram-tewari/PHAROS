@@ -28,6 +28,7 @@ from dataclasses import dataclass, field
 _IGNORED_CALLS = frozenset({"__init__", "super", "self", "this", "new", "main", "init"})
 
 _JS_EXTS = (".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs", ".mts", ".cts")
+_TS_FOR_JS = {".js": (".ts", ".tsx"), ".jsx": (".tsx",), ".mjs": (".mts",), ".cjs": (".cts",)}
 
 
 @dataclass
@@ -107,6 +108,9 @@ def _resolve_path_import(src_path: str, spec: str, language: str, files: dict[st
             return []  # package import, not a repo file
         base = posixpath.normpath(posixpath.join(src_dir, spec))
         candidates = [base] + [base + ext for ext in _JS_EXTS] + [f"{base}/index{ext}" for ext in _JS_EXTS]
+        # ESM TypeScript imports name the compiled file: './x.js' means x.ts.
+        stem, ext = posixpath.splitext(base)
+        candidates += [stem + ts for ts in _TS_FOR_JS.get(ext, ())]
         for cand in candidates:
             if cand in files:
                 return [files[cand]]

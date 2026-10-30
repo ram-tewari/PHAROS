@@ -12,10 +12,19 @@ Modes
 ``graph``    ``hybrid`` plus the resolved callers / callees of the top hits
              that retrieval missed, ranked just below the hit that pulled
              them in (no score bonus for chunks already retrieved).
-``auto``     ``graph`` when dense retrieval is available, otherwise
-             ``keyword`` — and the response says so (``mode_used`` and a
+``auto``     ``dense`` when dense retrieval is available, or ``hybrid`` when
+             the caller passes ``hints`` (identifiers it guesses), so their
+             keyword evidence is fused in. Fusing the question's own words
+             costs more than it adds with a code-aware embedder, and
+             granite-embedding-english-r2 already ranks named symbols first
+             (benchmarks: docs/benchmarks/). Without dense retrieval it is
+             ``keyword``, and the response says so (``mode_used`` and a
              warning). Explicitly requested modes never silently degrade:
              they raise :class:`ModeUnavailable` instead.
+
+Tests, docs and examples are down-ranked after fusion (``NOISE_PATH_FACTOR``)
+unless the query asks for them: they repeat the words of the code they
+exercise or describe and crowd out the implementation.
 
 SQLite (unit tests) uses a Python BM25 and Python cosine over the same
 columns, so behaviour can be tested without PostgreSQL. Retrieval quality and
@@ -45,8 +54,15 @@ RRF_K = 60
 CANDIDATES = 50
 GRAPH_SEEDS = 5
 GRAPH_WEIGHTS = {"calls": 0.6, "called_by": 0.5}
-TEST_PATH_FACTOR = 0.85
+NOISE_PATH_FACTOR = 0.7  # tuned on the dev sets (0.85 → 0.7: codeqa_v1 dense 0.669 → 0.686; 0.5 no better)
 _TEST_PATH_RE = re.compile(r"(^|/)(tests?|__tests__|spec)/|(^|/)test_[^/]*$|_test\.[a-z]+$|\.(spec|test)\.[jt]sx?$")
+_DOCS_PATH_RE = re.compile(r"(^|/)(docs?|documentation)/")
+_EXAMPLE_PATH_RE = re.compile(r"(^|/)(_?examples?|samples?|demos?)/")
+_ROLE_INTENT_RE = {
+    "test": re.compile(r"\b(tests?|testing|tested|spec|specs|unit test|fixtures?)\b", re.I),
+    "docs": re.compile(r"\b(docs?|documentation|documented|guide|tutorial)\b", re.I),
+    "example": re.compile(r"\b(examples?|samples?|demos?|usage)\b", re.I),
+}
 
 #: Must match the expression index in migration 0002 / models.DocumentChunk.
 CHUNK_TSVECTOR_SQL = "to_tsvector('simple', coalesce(document_chunks.search_text, ''))"
@@ -130,7 +146,24 @@ def is_test_path(path: str) -> bool:
     return bool(_TEST_PATH_RE.search(path or ""))
 
 
+def path_role(path: str) -> str:
+    """``test``, ``docs``, ``example`` or ``source``."""
+    if is_test_path(path):
+        return "test"
+    if _DOCS_PATH_RE.search(path or ""):
+        return "docs"
+    if _EXAMPLE_PATH_RE.search(path or ""):
+        return "example"
+    return "source"
+
+
+def wanted_roles(query: str) -> set[str]:
+    """Non-source roles the query asks for ("the test for …", "an example of …")."""
+    return {role for role, pattern in _ROLE_INTENT_RE.items() if pattern.search(query)}
+
+
 _IDENTIFIER_SHAPE_RE = re.compile(r"_|\.|[a-z][A-Z]|\(\)")
+
 
 
 def symbol_like_terms(query: str) -> set[str]:
@@ -144,6 +177,7 @@ def symbol_like_terms(query: str) -> set[str]:
     raw = re.findall(r"[A-Za-z_][\w.]*(?:\(\))?", query)
     out: set[str] = set()
     for tok in raw:
+        tok = tok.rstrip(".")  # a sentence's full stop is not a member access
         if _IDENTIFIER_SHAPE_RE.search(tok):
             for part in tok.rstrip("()").split("."):
                 if compound_name(part):
@@ -168,20 +202,27 @@ class Retriever:
     # ── public ─────────────────────────────────────────────────────────
 
     def search(self, query: str, *, mode: str = "auto", k: int = 10,
-               filters: Filters | None = None) -> SearchOutcome:
+               filters: Filters | None = None, hints: list[str] | None = None) -> SearchOutcome:
+        """``hints``: identifiers or keywords the caller guesses (an agent's
+        ``parse_url``, ``redirect``). They feed keyword retrieval and the exact
+        name boost; the question alone is embedded. With hints, ``auto`` is hybrid."""
         if mode not in MODES:
             raise ValueError(f"mode must be one of {MODES}")
         filters = filters or Filters()
         warnings: list[str] = []
         timings: dict[str, float] = {}
         candidates: dict[str, int] = {}
-        terms = query_terms(query)
+        hints = [h.strip() for h in (hints or []) if h and h.strip()][:20]
+        terms = list(dict.fromkeys(query_terms(query) + query_terms(" ".join(hints))))
+        named = " ".join([query, *hints])
 
         effective = mode
         dense_reason = self._dense_unavailable_reason(filters)
         if mode == "auto":
-            effective = "graph" if dense_reason is None else "keyword"
-            if dense_reason is not None:
+            if dense_reason is None:
+                effective = "hybrid" if hints else "dense"
+            else:
+                effective = "keyword"
                 warnings.append(f"dense retrieval unavailable ({dense_reason}); used keyword retrieval only")
         elif mode in ("dense", "hybrid", "graph") and dense_reason is not None:
             raise ModeUnavailable(mode, dense_reason)
@@ -214,10 +255,10 @@ class Retriever:
                 candidates["dense"] = len(dense)
 
         t = time.perf_counter()
-        hits = self._fuse(effective, keyword, dense, terms, query)
+        hits = self._fuse(effective, keyword, dense, terms, named, hints)
         if effective == "graph" and hits:
             hits = self._expand_graph(hits, filters)
-        hits = self._finalize(hits, k)
+        hits = self._finalize(hits, k, wanted_roles(query))
         timings["fuse"] = (time.perf_counter() - t) * 1000
 
         t = time.perf_counter()
@@ -339,8 +380,13 @@ class Retriever:
             scored.sort(key=lambda x: (-x[1], x[0]))
             return scored[:limit]
         # Higher ef_search keeps recall up when filters discard candidates
-        # after the HNSW scan (pgvector post-filters).
+        # after the HNSW scan (pgvector post-filters). pgvector >= 0.8 can
+        # also keep scanning until enough rows pass the filter, which matters
+        # once one database holds many repositories; results are re-sorted
+        # below because the relaxed order is only approximately sorted.
         self.db.execute(text("SELECT set_config('hnsw.ef_search', :ef, true)"), {"ef": str(max(100, limit * 4))})
+        if _supports_iterative_scan(self.db):
+            self.db.execute(text("SELECT set_config('hnsw.iterative_scan', 'relaxed_order', true)"))
         distance = DocumentChunk.embedding.op("<=>", return_type=Float)(
             bindparam("qvec", qvec, type_=EmbeddingVector())
         )
@@ -354,11 +400,14 @@ class Retriever:
             .order_by(distance)
             .limit(limit)
         )
-        return [(str(cid), 1.0 - float(dist)) for cid, dist in self.db.execute(stmt)]
+        rows = sorted(((str(cid), 1.0 - float(dist)) for cid, dist in self.db.execute(stmt)),
+                      key=lambda x: (-x[1], x[0]))
+        return rows
 
     # ── fusion ─────────────────────────────────────────────────────────
 
-    def _fuse(self, mode: str, keyword, dense, terms: list[str], query: str) -> dict[str, Hit]:
+    def _fuse(self, mode: str, keyword, dense, terms: list[str], query: str,
+              hints: list[str] | None = None) -> dict[str, Hit]:
         hits: dict[str, Hit] = {}
 
         def hit(cid: str) -> Hit:
@@ -391,11 +440,14 @@ class Retriever:
         # Exact symbol-name match: the query names the symbol directly
         # (e.g. "verify_password" or "TokenSigner.verify").
         if hits:
-            self._symbol_boost(hits, terms, query)
+            self._symbol_boost(hits, terms, query, hints)
         return hits
 
-    def _symbol_boost(self, hits: dict[str, Hit], terms: list[str], query: str) -> None:
+    def _symbol_boost(self, hits: dict[str, Hit], terms: list[str], query: str,
+                      hints: list[str] | None = None) -> None:
         compounds = symbol_like_terms(query)
+        # A hint is a guessed name even when written in plain words ("parse url").
+        compounds |= {compound_name(part) for h in hints or [] for part in h.split(".") if compound_name(part)}
         if not compounds:
             return
         rows = self.db.execute(
@@ -456,12 +508,13 @@ class Retriever:
             h.evidence.graph.append({"via": seed, "relation": relation})
         return hits
 
-    def _finalize(self, hits: dict[str, Hit], k: int) -> list[Hit]:
+    def _finalize(self, hits: dict[str, Hit], k: int, wanted: set[str] = frozenset()) -> list[Hit]:
         if not hits:
             return []
-        # Mildly down-rank test files (they mirror the code they test and
-        # crowd out implementations); applied after fusion so tests still
-        # surface when they are the only match.
+        # Down-rank tests, docs and examples (they repeat the words of the
+        # code they exercise or describe and crowd out implementations);
+        # applied after fusion so they still surface when they are the only
+        # match, and not at all for roles the query asks for.
         paths = dict(
             self.db.execute(
                 select(DocumentChunk.id, DocumentChunk.chunk_metadata["path"].as_string()).where(
@@ -470,9 +523,10 @@ class Retriever:
             ).all()
         )
         for cid, h in hits.items():
-            if is_test_path(paths.get(uuid.UUID(cid)) or ""):
-                h.score *= TEST_PATH_FACTOR
-                h.evidence.boosts.append("test_path_penalty")
+            role = path_role(paths.get(uuid.UUID(cid)) or "")
+            if role != "source" and role not in wanted:
+                h.score *= NOISE_PATH_FACTOR
+                h.evidence.boosts.append(f"{role}_path_penalty")
         ranked = sorted(hits.values(), key=lambda h: (-h.score, h.chunk_id))
         return ranked[:k]
 
@@ -534,6 +588,19 @@ class Retriever:
             elif t in seeds and s not in seeds:
                 out.append((t, s, {"calls": "called_by", "imports": "imported_by"}.get(etype, etype)))
         return out[:limit]
+
+
+_ITERATIVE_SCAN: dict[str, bool] = {}
+
+
+def _supports_iterative_scan(db: Session) -> bool:
+    """pgvector >= 0.8 (``hnsw.iterative_scan``), checked once per database URL."""
+    key = str(db.get_bind().url)
+    if key not in _ITERATIVE_SCAN:
+        version = db.execute(text("SELECT extversion FROM pg_extension WHERE extname = 'vector'")).scalar()
+        parts = tuple(int(p) for p in re.findall(r"\d+", version or "")[:2])
+        _ITERATIVE_SCAN[key] = parts >= (0, 8)
+    return _ITERATIVE_SCAN[key]
 
 
 def _cosine(a: list[float], b: list[float]) -> float:

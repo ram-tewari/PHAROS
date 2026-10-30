@@ -1,18 +1,21 @@
 # Render Blueprint: PHAROS on free tiers ($0/mo)
 #
-# One free Render web service runs the API *and* the ingestion worker (on a
-# thread, INGEST_WORKER_IN_PROCESS) against a free Neon Postgres. Embeddings
-# are all-MiniLM-L6-v2 on CPU via ONNX, downloaded at build time with pinned
-# hashes (scripts/fetch_onnx_model.py). No Redis: the worker polls Postgres.
+# One free Render web service runs the API against a free Neon Postgres.
+# Queries are embedded with granite-embedding-english-r2 (int8 ONNX, CPU),
+# downloaded at build time with pinned hashes (scripts/fetch_onnx_model.py).
+# Repositories are NOT indexed here: the model needs ~700 MB and far more CPU
+# than the free instance has to embed documents. Submissions are queued, and
+# the owner's Mac drains the queue with the same model straight into Neon
+# (deployment/mac/run-worker.sh, hourly under launchd). No Redis.
 #
 # Free-tier behaviour to expect:
 # - The service sleeps after 15 min without HTTP traffic; the next request
 #   takes ~1 min to wake it. Neon then suspends 5 min later, so neither burns
 #   compute while idle. Jobs left queued while asleep run on the next wake.
-# - 0.1 CPU: indexing psf/requests (~750 chunks) takes a few minutes. A job
-#   interrupted by sleep is re-queued after INGESTION_JOB_STALE_SECONDS.
-# - 512 MB RAM: measured peak ~420 MB with EMBEDDING_ONNX_BATCH_SIZE=4 and
-#   uvicorn (no Gunicorn master). Keep WEB_CONCURRENCY at 1.
+# - A submitted repository is searchable after the Mac's next run (within an
+#   hour while it is awake; `launchctl kickstart` runs it at once).
+# - 512 MB RAM: query embedding adds ~200 MB (the same as MiniLM did); keep
+#   WEB_CONCURRENCY at 1.
 # - No preDeployCommand on free plans, so migrations run in startCommand.
 #
 # Paid setup with a separate worker and the GPU edge machine: render.yaml.
@@ -29,7 +32,7 @@ services:
     healthCheckPath: /health
     buildCommand: >-
       pip install --require-hashes -r requirements-cloud.txt -r requirements-onnx.txt
-      && python scripts/fetch_onnx_model.py
+      && python scripts/fetch_onnx_model.py --model granite-embedding-english-r2-int8
     # --forwarded-allow-ips: trust Render's proxy so redirects keep https.
     startCommand: >-
       alembic -c config/alembic.ini upgrade head
@@ -69,15 +72,16 @@ services:
       - key: EMBEDDING_BACKEND
         value: onnx
       - key: EMBEDDING_ONNX_DIR
-        value: models/all-MiniLM-L6-v2
+        value: models/granite-embedding-english-r2-int8
       - key: EMBEDDING_MODEL_ID
-        value: all-MiniLM-L6-v2-onnx
+        value: granite-embedding-english-r2-int8
       - key: EMBEDDING_ONNX_BATCH_SIZE
         value: 4
       - key: EMBEDDING_ONNX_THREADS
         value: 1
 
+      # Indexing runs on the owner's Mac (see the header); this instance only queues.
       - key: INGEST_WORKER_IN_PROCESS
-        value: true
+        value: false
       - key: WORKER_POLL_INTERVAL
         value: 5

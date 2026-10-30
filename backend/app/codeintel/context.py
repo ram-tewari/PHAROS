@@ -52,6 +52,7 @@ class ContextRequest:
     languages: list[str] | None = None
     path_prefix: str | None = None
     kinds: list[str] | None = None
+    hints: list[str] | None = None  # identifiers / keywords the caller guesses
 
 
 @dataclass
@@ -156,7 +157,7 @@ def assemble_context(db: Session, embedder: Embedder | None, req: ContextRequest
         path_prefix=req.path_prefix,
     )
     retriever = Retriever(db, embedder)
-    outcome = retriever.search(req.query, mode=req.mode, k=req.max_chunks, filters=filters)
+    outcome = retriever.search(req.query, mode=req.mode, k=req.max_chunks, filters=filters, hints=req.hints)
     timings.update({f"retrieval_{k}": v for k, v in outcome.timings_ms.items()})
 
     chunks = [hit_to_dict(h, i) for i, h in enumerate(outcome.hits, start=1)]

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Hourly PHAROS ingestion on this Mac. Install (replace __BACKEND__ with the absolute backend path):
+    sed "s#__BACKEND__#$PWD#g" deployment/mac/com.pharos.mac-worker.plist > ~/Library/LaunchAgents/com.pharos.mac-worker.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pharos.mac-worker.plist
+  Run now: launchctl kickstart gui/$(id -u)/com.pharos.mac-worker
+  Remove:  launchctl bootout gui/$(id -u)/com.pharos.mac-worker
+  Hourly, not continuous: each run wakes the Neon database briefly, and a
+  24/7 poller would keep it awake past the free tier's compute.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.pharos.mac-worker</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/sh</string><string>__BACKEND__/deployment/mac/run-worker.sh</string></array>
+  <key>StartInterval</key><integer>3600</integer>
+  <key>RunAtLoad</key><true/>
+  <key>LowPriorityIO</key><true/>
+  <key>Nice</key><integer>10</integer>
+  <key>StandardOutPath</key><string>/tmp/pharos-mac-worker.log</string>
+  <key>StandardErrorPath</key><string>/tmp/pharos-mac-worker.log</string>
+</dict>
+</plist>

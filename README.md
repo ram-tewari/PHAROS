@@ -24,8 +24,8 @@ returned. Everything is available over a REST API and a native
 |---|---|
 | **Indexing** | Shallow-clones an https repository (GitHub, GitLab or Bitbucket, allowlisted), or a local checkout through the CLI. It walks the committed tree only, skipping vendored, minified, binary and oversized files and symlinks. Each function, method, class and module becomes a chunk. Re-indexing is incremental by blob SHA. |
 | **AST parsing** | Python (stdlib `ast`), plus JavaScript, TypeScript/TSX, Go, Rust, C, C++ and Java (tree-sitter). Other files fall back to line windows, and the fallback is recorded per chunk and per language, never presented as AST output. Repository code is parsed, never executed. |
-| **Embeddings** | Pluggable: `hash` (offline, lexical, not semantic), `onnx` (CPU, e.g. all-MiniLM-L6-v2), `http` (the edge worker's GPU model server) or `sentence-transformers`. Vectors from different models are never compared. |
-| **Retrieval** | `keyword` uses PostgreSQL full-text search over identifiers, paths, signatures and docstrings. `dense` uses pgvector HNSW. `hybrid` is reciprocal-rank fusion plus an exact-symbol boost. `graph` is hybrid plus call-graph neighbours. When a mode cannot run it is reported as unavailable (HTTP 503), not silently degraded. |
+| **Embeddings** | Pluggable: `hash` (offline, lexical, not semantic), `onnx` (CPU; pinned models in `scripts/fetch_onnx_model.py`, default in production granite-embedding-english-r2 int8), `http` (the edge worker's GPU model server) or `sentence-transformers`. Each chunk is embedded from its signature, doc comment, the first 25 lines of its body and its calls. Vectors from different models are never compared. |
+| **Retrieval** | `keyword` uses PostgreSQL full-text search over identifiers, paths, signatures and docstrings. `dense` uses pgvector HNSW. `hybrid` is reciprocal-rank fusion plus an exact-symbol boost. `graph` is hybrid plus call-graph neighbours. The default `auto` is `dense`, or `hybrid` when the caller passes `hints` (identifiers it guesses). Tests, docs and examples are down-ranked unless the query asks for them. When a mode cannot run it is reported as unavailable (HTTP 503), not silently degraded. |
 | **Context** | The top chunks with verified source, their resolved callers and callees, and the repository's coding rules, rendered as Markdown with `path:line` citations inside a character budget. |
 | **Jobs** | Durable ingestion jobs in PostgreSQL: atomic claims, retries with backoff, recovery of stalled workers, cancellation, and a queue cap (HTTP 429). Redis only wakes workers up; they also poll. |
 | **Interfaces** | REST under `/api/v1`, MCP at `/mcp`, and the CLI `python -m app.cli`. Auth is static machine-to-machine bearer tokens with two scopes (admin, read). |
@@ -145,6 +145,9 @@ claude mcp add --transport http pharos http://localhost:8000/mcp \
 | `find_symbol` | Definitions of a (qualified) name with resolved callers and callees |
 | `list_repositories` | Indexed repositories with commit, language coverage and status |
 
+`retrieve_context` and `search_code` take optional `hints`: identifiers or keywords the assistant guesses
+(e.g. `["parse_url", "redirect"]`). They add keyword evidence; the question itself is what gets embedded.
+
 For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding protection).
 
 ## REST API
@@ -155,9 +158,9 @@ For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding pr
 | `GET /api/v1/repositories`, `GET /api/v1/repositories/{id}` | read | Index status, commit, per-language AST/fallback counts, graph stats |
 | `DELETE /api/v1/repositories/{id}` | admin | Remove a repository and its chunks, vectors and edges |
 | `GET /api/v1/ingestion/jobs`, `GET …/{id}`, `POST …/{id}/cancel` | read / admin | Job state machine: queued → running → succeeded, failed or cancelled |
-| `POST /api/v1/search/code` | read | `{"query", "repository"?, "mode"?, "k"?, "languages"?, "kinds"?, "path_prefix"?}` |
+| `POST /api/v1/search/code` | read | `{"query", "repository"?, "mode"?, "k"?, "languages"?, "kinds"?, "path_prefix"?, "hints"?}` |
 | `POST /api/v1/search/symbol` | read | `{"name", "repository"?}`: definitions plus call graph |
-| `POST /api/v1/context/retrieve` | read | `{"query", "repository"?, "max_chunks"?, "max_chars"?, "include_code"?, "profile_id"?}` |
+| `POST /api/v1/context/retrieve` | read | `{"query", "repository"?, "max_chunks"?, "max_chars"?, "include_code"?, "profile_id"?, "hints"?}` |
 | `GET /api/v1/system/status` | read | Embedding backend, available modes, repositories |
 | `GET /health` | public | Liveness |
 
@@ -167,22 +170,24 @@ patterns, monitoring) are still mounted. They are maintained to a lower bar; see
 
 ## Retrieval quality
 
-There are 75 hand-labelled questions over `pallets/flask` 3.0.3 and `spf13/cobra` v1.8.1, all CPU.
-The table uses all-MiniLM-L6-v2 embeddings. Full method, confidence intervals, the hash-model
-run and failure analysis are in the [report](docs/benchmarks/retrieval-2026-10.md).
+Measured on two locked test sets: 101 hand-labelled questions over seven repositories in seven
+languages (click, ky, anyhow, curl, chi, gson, immer), pinned commits, CPU only. The full method,
+the development runs and the failures are in the
+[phase 1 report](docs/benchmarks/retrieval-phase1-2026-10-30.md).
 
-| Mode | Recall@10 | MRR | nDCG@10 | p50 latency |
-|---|---|---|---|---|
-| keyword | 0.649 | 0.477 | 0.488 | 46 ms |
-| dense | **0.838** | **0.661** | **0.675** | 18 ms |
-| hybrid | 0.769 | 0.642 | 0.632 | 39 ms |
-| graph (default `auto`) | 0.769 | 0.641 | 0.631 | 43 ms |
+| | heldout_v1 nDCG@10 | heldout_v2 nDCG@10 | Zero recall@10 |
+|---|---|---|---|
+| Before (MiniLM, `auto` = hybrid + graph) | 0.394 | 0.463 | 29 of 101 |
+| **Now** (granite-embedding-english-r2, `auto` = dense) | **0.697** | **0.726** | 6 of 101 |
+| Now, with the assistant's `hints` | 0.709 | 0.822 | 5 of 101 |
 
-- Semantic dense retrieval beats keyword search clearly: nDCG +0.19, 95% CI [+0.11, +0.27].
-- Keyword and hybrid win on questions that name the identifier.
-- Hybrid is **not** better than dense overall, and graph expansion does not change the
-  ranking (identical top-5 on 73 of 75 questions). It only adds callers and callees as context.
-- The production model (`nomic-embed-text-v1`) and the GPU path were not measured.
+- Paired gains: +0.30 [+0.21, +0.40] and +0.26 [+0.18, +0.35]. Every repository improved.
+- Tests, docs and examples fell from 16–20% of the top five results to under 3%.
+- Questions that name the API scored slightly lower without hints (0.99 → 0.91 on v1), because
+  hybrid used to win those. Hints restore them.
+- The earlier [October benchmark](docs/benchmarks/retrieval-2026-10.md) and
+  [system evaluation](docs/benchmarks/evaluation-2026-10-29.md) explain how the old defaults
+  were found wanting.
 
 **Storage:** pointing at code instead of storing it saves about 5% of the database, not the "17×"
 claimed in older docs. Vectors and the HNSW index dominate, and the index is about 18× the size of
@@ -219,16 +224,16 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
 
 ## Limitations
 
-- **Embeddings:** quality numbers come from a general sentence model (MiniLM) on two repositories
-  and 75 questions written by a single annotator. Chunks are embedded from a summary (signature,
-  docstring, calls), not the body, so behaviour that lives only in a function body is missed.
+- **Embeddings:** quality numbers come from 101 test questions written by a single annotator who
+  also builds the system. Granite needs about 700 MB to embed documents, so on a 512 MB host it can
+  only embed queries; indexing then runs on a bigger machine (`backend/deployment/mac/`).
 - **Call graph:** resolution is conservative. Calls to names defined more than once, such as
   `self.invoke()` in click's `core.py`, are left unlinked, and dynamic dispatch is not followed.
   Resolution covers 35–56% of call sites on the benchmark repositories; most of the rest go to
   the standard library or dependencies.
-- **Scale:** measured up to about 1,600 chunks in one database (two repositories). pgvector 0.6 filters after the HNSW search, so
-  with many repositories in one database a repository-filtered dense query can return fewer than
-  the requested candidates. pgvector ≥ 0.8 iterative scans would fix this; they are not used yet.
+- **Scale:** measured up to about 13,000 chunks in one database (six repositories). On pgvector ≥ 0.8,
+  repository-filtered dense queries use iterative HNSW scans so they keep returning full candidate
+  sets as the database grows; older pgvector filters after the search and can return fewer.
 - **Performance:** keyword ranking recomputes `to_tsvector` for every matched row. Indexing
   writes rows one at a time, at about 140 chunks/s plus embedding time.
 - **GPU / edge worker:** the CUDA image and the edge worker's GPU path are **not validated** in CI.

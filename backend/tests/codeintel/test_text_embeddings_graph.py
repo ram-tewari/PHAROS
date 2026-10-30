@@ -34,6 +34,19 @@ def test_symbol_like_terms_only_for_identifier_shaped_words():
     assert symbol_like_terms("parcel") == {"parcel"}
 
 
+def test_symbol_terms_and_path_roles():
+    from app.codeintel.retrieval import path_role, symbol_like_terms, wanted_roles
+
+    assert {"context", "ensureobject"} <= symbol_like_terms("Context.ensure_object")
+    assert not symbol_like_terms("handle the HTTP version once the status line is parsed.")  # a full stop
+    assert [path_role(p) for p in ("lib/http.c", "tests/test_x.py", "docs/api.md", "docs/examples/a.c",
+                                   "_examples/rest/main.go", "src/demo_utils.ts")] == [
+        "source", "test", "docs", "docs", "example", "source"]
+    assert wanted_roles("show me an example of a retry") == {"example"}
+    assert wanted_roles("which test covers redirects") == {"test"}
+    assert wanted_roles("parse a URL") == set()
+
+
 def test_test_path_detection():
     assert is_test_path("tests/test_cart.py")
     assert is_test_path("pkg/foo_test.go")
@@ -129,3 +142,13 @@ def test_graph_js_relative_imports():
     kinds = {(e.source_id, e.target_id, e.edge_type, e.resolution) for e in edges}
     assert ("1", "2", "imports", "imported_file") in kinds
     assert ("3", "4", "calls", "imported_file") in kinds
+
+
+def test_graph_ts_esm_imports_with_js_extension():
+    nodes = [
+        _node(1, "src/core/Ky.ts", "module", "Ky.ts", "src.core.Ky", language="typescript",
+              imports=["../errors/HTTPError.js"]),
+        _node(2, "src/errors/HTTPError.ts", "module", "HTTPError.ts", "src.errors.HTTPError", language="typescript"),
+    ]
+    edges, _ = build_edges(nodes)
+    assert ("1", "2", "imports") in {(e.source_id, e.target_id, e.edge_type) for e in edges}
