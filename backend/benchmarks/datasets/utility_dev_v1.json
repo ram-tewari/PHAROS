@@ -1,0 +1,1212 @@
+{
+ "name": "pharos-utility-dev",
+ "version": 1,
+ "labeling": "For each repository, walk the default branch's first-parent history back from\na recorded head and keep the most recent commits that a coding assistant could\nplausibly have been asked to make:",
+ "rules": {
+  "tasks_per_repo": 10,
+  "max_source_files": 6,
+  "max_files": 15,
+  "source_lines": [
+   3,
+   400
+  ]
+ },
+ "repositories": [
+  {
+   "name": "flask",
+   "url": "https://github.com/pallets/flask",
+   "language": "python",
+   "branch": "main",
+   "head": "d086db856be187255b8ec61ef409357393020f32",
+   "cutoff_commit": "0292047b22c82921dcf165322d93a0b988328c2e",
+   "cutoff_date": "2026-01-24T19:52:11-08:00",
+   "commits_examined": 38,
+   "rejected": 28,
+   "rejected_by_reason": {
+    "message_too_short": 5,
+    "no_source_files": 8,
+    "source_lines_out_of_range": 2,
+    "revert_release_or_branch_merge": 13
+   }
+  },
+  {
+   "name": "ky",
+   "url": "https://github.com/sindresorhus/ky",
+   "language": "typescript",
+   "branch": "main",
+   "head": "3541888878c4d303a8bc2ad61815f4e048f55a5d",
+   "cutoff_commit": "8a3a9cfecc72f034b5777c7dff913999bb1ad938",
+   "cutoff_date": "2026-10-08T02:13:57+07:00",
+   "commits_examined": 19,
+   "rejected": 9,
+   "rejected_by_reason": {
+    "no_source_files": 2,
+    "source_lines_out_of_range": 1,
+    "too_many_files": 4,
+    "revert_release_or_branch_merge": 1,
+    "message_too_short": 1
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "flask-u01",
+   "repo": "flask",
+   "commit": "4b8bde97d4fa3486e18dce21c3c5f75570d50164",
+   "parent": "0292047b22c82921dcf165322d93a0b988328c2e",
+   "date": "2026-01-24T19:53:11-08:00",
+   "task": "deprecate `should_ignore_error`",
+   "files": [
+    {
+     "path": "CHANGES.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/flask/app.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/flask/sansio/app.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/flask/app.py",
+    "src/flask/sansio/app.py"
+   ],
+   "source_lines": 34
+  },
+  {
+   "id": "flask-u02",
+   "repo": "flask",
+   "commit": "12e95c93b488725f80753f34b2e0d24838ca4646",
+   "parent": "d3b78fd18a8d9e224cb9ef58a23cec9b1ffc9ce9",
+   "date": "2026-02-12T13:07:50-08:00",
+   "task": "fix provide_automatic_options override",
+   "files": [
+    {
+     "path": "CHANGES.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/config.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/flask/sansio/app.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 75,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_blueprints.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_cli.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_views.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 54,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/sansio/app.py"
+   ],
+   "source_lines": 16
+  },
+  {
+   "id": "flask-u03",
+   "repo": "flask",
+   "commit": "a411a2434b09d9cbaa4074232b2c247d591bb655",
+   "parent": "daca74d93a0edc458e618136de7d14803f06bc28",
+   "date": "2026-02-19T08:35:48-08:00",
+   "task": "add back opening session on context push",
+   "files": [
+    {
+     "path": "src/flask/ctx.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/flask/ctx.py"
+   ],
+   "source_lines": 30
+  },
+  {
+   "id": "flask-u04",
+   "repo": "flask",
+   "commit": "c34d6e81fd8e405e6d4178bf24b364918811ef17",
+   "parent": "7b0088693ece1bd3a9238a6fdf56ed8df7a4d43b",
+   "date": "2026-02-19T20:00:34-08:00",
+   "task": "all teardown callbacks are called despite errors",
+   "files": [
+    {
+     "path": "CHANGES.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/appcontext.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/flask/app.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 27,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/flask/ctx.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 21,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/flask/helpers.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 32,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_appctx.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 55,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_blueprints.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 20,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_helpers.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 64,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_testing.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/app.py",
+    "src/flask/ctx.py",
+    "src/flask/helpers.py"
+   ],
+   "source_lines": 80
+  },
+  {
+   "id": "flask-u05",
+   "repo": "flask",
+   "commit": "06ea505ce2b2042af26e96d35ebf159af7c0869d",
+   "parent": "2ac89889f4cc330eabd50f295dcef02828522c69",
+   "date": "2026-05-01T20:31:50-07:00",
+   "task": "separate copy per call",
+   "files": [
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/flask/ctx.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_reqctx.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 94,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 62,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/ctx.py"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "flask-u06",
+   "repo": "flask",
+   "commit": "dcbede0cb00df32e7f1895e19e37d5f40a75d1f6",
+   "parent": "06ea505ce2b2042af26e96d35ebf159af7c0869d",
+   "date": "2026-05-01T20:58:56-07:00",
+   "task": "autoescape selection uses case-insensitive comparison",
+   "files": [
+    {
+     "path": "CHANGES.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/flask/sansio/app.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/flask/sansio/app.py"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "flask-u07",
+   "repo": "flask",
+   "commit": "954f5684e4841aad84a8eec7ace7b81a0d3f6831",
+   "parent": "9fcd34c9f3065640bd1cd86234216ca068633fb9",
+   "date": "2026-05-18T16:35:44-07:00",
+   "task": "update dev dependencies",
+   "files": [
+    {
+     "path": ".pre-commit-config.yaml",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/flask/cli.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 814,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/cli.py"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "flask-u08",
+   "repo": "flask",
+   "commit": "05e9c6bd630ecf4ec0ec884b1fc7901663737bc7",
+   "parent": "514fc6b3e8402e4c646d5284e97a4f0ab50a7c4b",
+   "date": "2026-08-11T12:48:40-07:00",
+   "task": "Fix `.partition(\":\")` usage on potential IPv6 addresses",
+   "files": [
+    {
+     "path": "src/flask/app.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/flask/testing.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_testing.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/app.py",
+    "src/flask/testing.py"
+   ],
+   "source_lines": 13
+  },
+  {
+   "id": "flask-u09",
+   "repo": "flask",
+   "commit": "d8eaaba824655046958d1a97f11780de460c3271",
+   "parent": "3596b1ab61cea85edb8970e83ff61daa073facf8",
+   "date": "2026-08-11T13:19:14-07:00",
+   "task": "add `app.query` route decorator",
+   "files": [
+    {
+     "path": "CHANGES.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/flask/sansio/scaffold.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/sansio/scaffold.py"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "flask-u10",
+   "repo": "flask",
+   "commit": "728c5e440af704a786384159184f695cf04ecbe7",
+   "parent": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+   "date": "2026-10-07T06:56:05-07:00",
+   "task": "drop support for Python 3.10",
+   "files": [
+    {
+     "path": ".github/workflows/tests.yaml",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CHANGES.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/installation.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/flask/cli.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/flask/helpers.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/flask/sessions.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_appctx.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 28,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_config.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_json_tag.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 429,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/flask/cli.py",
+    "src/flask/helpers.py",
+    "src/flask/sessions.py"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "ky-u01",
+   "repo": "ky",
+   "commit": "619c42765fa22b02966f39443fbc28167b707caa",
+   "parent": "8a3a9cfecc72f034b5777c7dff913999bb1ad938",
+   "date": "2026-10-08T02:14:09+07:00",
+   "task": "Name the request that was sent on every `TimeoutError`",
+   "files": [
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/retry.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 39,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts"
+   ],
+   "source_lines": 26
+  },
+  {
+   "id": "ky-u02",
+   "repo": "ky",
+   "commit": "74224d8b277147371ed6a6321e21c775dd941c71",
+   "parent": "619c42765fa22b02966f39443fbc28167b707caa",
+   "date": "2026-10-08T02:14:18+07:00",
+   "task": "Make a non-Error progress-callback throw non-retriable too",
+   "files": [
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/stream.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 24,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts"
+   ],
+   "source_lines": 13
+  },
+  {
+   "id": "ky-u03",
+   "repo": "ky",
+   "commit": "16b5936d6a275ce380c710e52e56c60f88850a3a",
+   "parent": "74224d8b277147371ed6a6321e21c775dd941c71",
+   "date": "2026-10-08T02:14:26+07:00",
+   "task": "Check the callbacks before the constructor uses them and reject an array `hooks`",
+   "files": [
+    {
+     "path": "readme.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/options.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/utils/body.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/utils/merge.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/stream.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/validation.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts",
+    "source/types/options.ts",
+    "source/utils/body.ts",
+    "source/utils/merge.ts"
+   ],
+   "source_lines": 42
+  },
+  {
+   "id": "ky-u04",
+   "repo": "ky",
+   "commit": "6e275943bf7635e49f28d3b96e804ccd2c58f156",
+   "parent": "d4ce7b12c5864a4af1427c573ce31a3c3d9a809b",
+   "date": "2026-10-08T02:14:46+07:00",
+   "task": "Type-check `onDownloadProgress` before the request is sent",
+   "files": [
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/validation.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 29,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "ky-u05",
+   "repo": "ky",
+   "commit": "4cc6698cf35873f288177f4073cbc0bdbbf83374",
+   "parent": "deb5a331d07b82dbc7eed308804626ea7f1d6383",
+   "date": "2026-10-08T02:15:08+07:00",
+   "task": "Recognise a cross-realm `beforeRetry` error and keep the retried error as the cause",
+   "files": [
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 21,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 29,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/main.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 28,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/retry.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 56,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts"
+   ],
+   "source_lines": 21
+  },
+  {
+   "id": "ky-u06",
+   "repo": "ky",
+   "commit": "33462fcbf8f9001fc3d7a08576992098e571c5ff",
+   "parent": "4cc6698cf35873f288177f4073cbc0bdbbf83374",
+   "date": "2026-10-08T02:15:16+07:00",
+   "task": "Reject a nullish hook list instead of treating it as absent",
+   "files": [
+    {
+     "path": "source/types/options.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/utils/merge.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 52,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/types/options.ts",
+    "source/utils/merge.ts"
+   ],
+   "source_lines": 25
+  },
+  {
+   "id": "ky-u07",
+   "repo": "ky",
+   "commit": "692c43575422c7251baea01ef4179100e0215e1b",
+   "parent": "58233f13203747698c99cc94a8b1b20a6c9925bf",
+   "date": "2026-10-08T02:15:41+07:00",
+   "task": "Restore the retry-only marker condition and cover the remaining cases",
+   "files": [
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 311,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/utils/merge.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/body-size.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 106,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 69,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/http-error.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/response-consumption.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/response-size.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/stream.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 68,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/validation.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts",
+    "source/utils/merge.ts"
+   ],
+   "source_lines": 315
+  },
+  {
+   "id": "ky-u08",
+   "repo": "ky",
+   "commit": "55599c89809c83bdae7f56b56ac8e2a5bd57b8d3",
+   "parent": "3ded2aad45a1ef06eef5a91e3d853dd056376bf6",
+   "date": "2026-10-08T02:16:07+07:00",
+   "task": "Run `beforeError` for a `beforeRetry` abort and share the body-wrapping check",
+   "files": [
+    {
+     "path": "readme.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 33,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/index.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/options.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/retry.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/utils/body.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 39,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/retry.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 85,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/stream.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 21,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts",
+    "source/index.ts",
+    "source/types/options.ts",
+    "source/types/retry.ts",
+    "source/utils/body.ts"
+   ],
+   "source_lines": 78
+  },
+  {
+   "id": "ky-u09",
+   "repo": "ky",
+   "commit": "13c8da559c940c4abd9c741a56ea4603c25a0383",
+   "parent": "55599c89809c83bdae7f56b56ac8e2a5bd57b8d3",
+   "date": "2026-10-08T02:16:19+07:00",
+   "task": "Stop surfacing progress callback errors",
+   "files": [
+    {
+     "path": "readme.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 55,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/options.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/utils/body.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 44,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/browser.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 61,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/context.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 22,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/response-size.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 28,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/stream.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 129,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/type-guards.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 19,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts",
+    "source/types/hooks.ts",
+    "source/types/options.ts",
+    "source/utils/body.ts"
+   ],
+   "source_lines": 109
+  },
+  {
+   "id": "ky-u10",
+   "repo": "ky",
+   "commit": "242c32728a4be7eacfa08bca1ae0b209444f83d1",
+   "parent": "d9ddb03b444cbb6c10601003ede9269f3885a665",
+   "date": "2026-10-09T10:36:32+07:00",
+   "task": "Let a `beforeRetry` hook change per-attempt options",
+   "files": [
+    {
+     "path": "readme.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 27,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "source/core/Ky.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 38,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/core/constants.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/index.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 54,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "source/types/options.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test-d/hooks.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 40,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/browser.ts",
+     "old_path": null,
+     "status": "M",
+     "lines": 73,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/retry-options.ts",
+     "old_path": null,
+     "status": "A",
+     "lines": 318,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "source/core/Ky.ts",
+    "source/core/constants.ts",
+    "source/index.ts",
+    "source/types/hooks.ts",
+    "source/types/options.ts",
+    "test-d/hooks.ts"
+   ],
+   "source_lines": 138
+  }
+ ]
+}

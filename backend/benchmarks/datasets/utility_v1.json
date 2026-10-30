@@ -1,0 +1,3353 @@
+{
+ "name": "pharos-utility",
+ "version": 1,
+ "labeling": "For each repository, walk the default branch's first-parent history back from\na recorded head and keep the most recent commits that a coding assistant could\nplausibly have been asked to make:",
+ "rules": {
+  "tasks_per_repo": 20,
+  "max_source_files": 6,
+  "max_files": 15,
+  "source_lines": [
+   3,
+   400
+  ]
+ },
+ "repositories": [
+  {
+   "name": "click",
+   "url": "https://github.com/pallets/click",
+   "language": "python",
+   "branch": "main",
+   "head": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+   "cutoff_commit": "16fc00e2f4a2717a521084f193709a6058afc693",
+   "cutoff_date": "2026-07-02T18:11:47-07:00",
+   "commits_examined": 32,
+   "rejected": 12,
+   "rejected_by_reason": {
+    "revert_release_or_branch_merge": 3,
+    "too_many_files": 1,
+    "no_source_files": 7,
+    "source_lines_out_of_range": 1
+   }
+  },
+  {
+   "name": "requests",
+   "url": "https://github.com/psf/requests",
+   "language": "python",
+   "branch": "main",
+   "head": "3c7baaa05ab4aa49cc819ce3a819d260de19c157",
+   "cutoff_commit": "00600b38f45dc234f825f609cea63d24e7e690af",
+   "cutoff_date": "2026-02-13T13:23:44-07:00",
+   "commits_examined": 94,
+   "rejected": 74,
+   "rejected_by_reason": {
+    "bot": 28,
+    "no_source_files": 31,
+    "too_many_files": 2,
+    "source_lines_out_of_range": 8,
+    "message_too_short": 4,
+    "revert_release_or_branch_merge": 1
+   }
+  },
+  {
+   "name": "cobra",
+   "url": "https://github.com/spf13/cobra",
+   "language": "go",
+   "branch": "main",
+   "head": "adbc8813901bba65827259daa8e22ff94ec1f30e",
+   "cutoff_commit": "ff7c561cf741ac36ab319f528d93e738ae284835",
+   "cutoff_date": "2024-10-12T11:35:01-04:00",
+   "commits_examined": 50,
+   "rejected": 30,
+   "rejected_by_reason": {
+    "no_source_files": 24,
+    "source_lines_out_of_range": 5,
+    "revert_release_or_branch_merge": 1
+   }
+  },
+  {
+   "name": "curl",
+   "url": "https://github.com/curl/curl",
+   "language": "c",
+   "branch": "master",
+   "head": "a5023857679007a9f0abeb5ad279612bff53836c",
+   "cutoff_commit": "64ee53be57de2d01fc328e5d78b7443856e5fee3",
+   "cutoff_date": "2026-10-26T14:31:25+01:00",
+   "commits_examined": 52,
+   "rejected": 32,
+   "rejected_by_reason": {
+    "no_source_files": 24,
+    "too_many_files": 2,
+    "source_lines_out_of_range": 2,
+    "revert_release_or_branch_merge": 1,
+    "bot": 3
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "click-u01",
+   "repo": "click",
+   "commit": "94c191ca6c9598865fc5672b85cf138845b337d5",
+   "parent": "16fc00e2f4a2717a521084f193709a6058afc693",
+   "date": "2026-07-07T20:26:27-07:00",
+   "task": "Add `@custom_version_option`, freeze `@version_option`",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/api.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/utils.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/__init__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/decorators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 52,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/__init__.py",
+    "src/click/decorators.py"
+   ],
+   "source_lines": 53
+  },
+  {
+   "id": "click-u02",
+   "repo": "click",
+   "commit": "a44e9f05edbfcea04b5ec91d4403976a50381c59",
+   "parent": "94c191ca6c9598865fc5672b85cf138845b337d5",
+   "date": "2026-07-07T22:57:12-07:00",
+   "task": "Update documentation following Colorama removal",
+   "files": [
+    {
+     "path": "docs/utils.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/click/termui.py",
+    "src/click/utils.py"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "click-u03",
+   "repo": "click",
+   "commit": "8a4ce842564ae94ab050062db8525196ad476c19",
+   "parent": "8dd4d60eb5ad4532abdd9b2809a7d9e2aa679b87",
+   "date": "2026-07-08T09:05:23-07:00",
+   "task": "Validate `style()` color arguments",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 42,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_utils/test_style.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 59,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/termui.py"
+   ],
+   "source_lines": 42
+  },
+  {
+   "id": "click-u04",
+   "repo": "click",
+   "commit": "8c1a0a7abbc1c36f70d1f65f3604acc46c5ce6ab",
+   "parent": "8a4ce842564ae94ab050062db8525196ad476c19",
+   "date": "2026-07-09T20:14:25-07:00",
+   "task": "Strip all ANSI sequences",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 215,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_formatting.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_style.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/_compat.py"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "click-u05",
+   "repo": "click",
+   "commit": "b67832c2167e5b0ff6764a8c04a0a9087e697b5a",
+   "parent": "8c1a0a7abbc1c36f70d1f65f3604acc46c5ce6ab",
+   "date": "2026-07-09T20:24:08-07:00",
+   "task": "Fix parsing when a parameter is named `help`",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/documentation.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 46,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 82,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_info_dict.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_options.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 36,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/core.py"
+   ],
+   "source_lines": 46
+  },
+  {
+   "id": "click-u06",
+   "repo": "click",
+   "commit": "b551fe85714c906565303fae98136d7c72b252ea",
+   "parent": "b67832c2167e5b0ff6764a8c04a0a9087e697b5a",
+   "date": "2026-07-15T21:54:41-07:00",
+   "task": "Streamline option flag management",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 389,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/click/core.py"
+   ],
+   "source_lines": 389
+  },
+  {
+   "id": "click-u07",
+   "repo": "click",
+   "commit": "7df2f82305f20f1611a9668b38d26933b648d807",
+   "parent": "b551fe85714c906565303fae98136d7c72b252ea",
+   "date": "2026-07-16T16:56:43-07:00",
+   "task": "Add built-in PowerShell shell completion support",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/shell-completion.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 28,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/shell_completion.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 97,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_shell_completion.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/shell_completion.py"
+   ],
+   "source_lines": 97
+  },
+  {
+   "id": "click-u08",
+   "repo": "click",
+   "commit": "333c28d79cd982990ee98eef61ec20ab1a4f38ba",
+   "parent": "7df2f82305f20f1611a9668b38d26933b648d807",
+   "date": "2026-07-17T12:24:58-07:00",
+   "task": "Mark clearly functions private status. Deprecated Python 2 utilities.",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/handling-files.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/utils.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 27,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/__init__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 70,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_deprecations.py",
+     "old_path": null,
+     "status": "A",
+     "lines": 25,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_testing.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_KeepOpenFile.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_LazyFile.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_make_default_short_help.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/__init__.py",
+    "src/click/_termui_impl.py",
+    "src/click/core.py",
+    "src/click/termui.py",
+    "src/click/types.py",
+    "src/click/utils.py"
+   ],
+   "source_lines": 123
+  },
+  {
+   "id": "click-u09",
+   "repo": "click",
+   "commit": "cfa01eeb7894a408af70b29d28c0b24f8680f9fb",
+   "parent": "333c28d79cd982990ee98eef61ec20ab1a4f38ba",
+   "date": "2026-07-20T10:43:21-07:00",
+   "task": "Deprecate `isolated_filesystem` and document its limits",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/testing.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 72,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/upgrade-guides.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/testing.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_arguments.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_basic.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 78,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_deprecations.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_shell_completion.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 41,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_testing.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 79,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_open_file.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 109,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/testing.py"
+   ],
+   "source_lines": 26
+  },
+  {
+   "id": "click-u10",
+   "repo": "click",
+   "commit": "5e906a8afb67242dffdd91404dbf31f469054b15",
+   "parent": "cfa01eeb7894a408af70b29d28c0b24f8680f9fb",
+   "date": "2026-07-22T15:25:16-07:00",
+   "task": "`click.prompt` typing clarifications / improvements",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 73,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 53,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 22,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_prompt.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/typing/typing_prompt.py",
+     "old_path": null,
+     "status": "A",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/termui.py",
+    "src/click/types.py"
+   ],
+   "source_lines": 126
+  },
+  {
+   "id": "click-u11",
+   "repo": "click",
+   "commit": "00e592cea702e0b2caa0dee42489fdb1c22cd845",
+   "parent": "5aa8ac43527f91c4c801a50b485c09576715d340",
+   "date": "2026-07-24T13:26:39-07:00",
+   "task": "Pre-8.5.0 release changelog and doc fixes",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/arguments.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/documentation.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/option-decorators.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/shell-completion.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/utils.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/shell_completion.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/click/_compat.py",
+    "src/click/core.py",
+    "src/click/shell_completion.py",
+    "src/click/termui.py",
+    "src/click/utils.py"
+   ],
+   "source_lines": 14
+  },
+  {
+   "id": "click-u12",
+   "repo": "click",
+   "commit": "9c4dfdaebe0e6b2aabc566eb81f6f10eb5cd6ea1",
+   "parent": "00e592cea702e0b2caa0dee42489fdb1c22cd845",
+   "date": "2026-08-09T10:51:57-07:00",
+   "task": "Sort help args to make them reproducible",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_commands.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/core.py"
+   ],
+   "source_lines": 15
+  },
+  {
+   "id": "click-u13",
+   "repo": "click",
+   "commit": "150d1071d69c5cdad7de78590013ffe56cf9e3bb",
+   "parent": "8b44edfff7d9a6c895fa804148c16b3a0bc9efb5",
+   "date": "2026-08-15T10:56:57-07:00",
+   "task": "Settles progress bar on its final position",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/_termui_impl.py"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "click-u14",
+   "repo": "click",
+   "commit": "fc5c7f45da0a4443f60ba2d322fe4bf829977739",
+   "parent": "150d1071d69c5cdad7de78590013ffe56cf9e3bb",
+   "date": "2026-08-16T16:40:02-07:00",
+   "task": "Fix error reporting on Windows when an error is raised in the pager",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 62,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/_termui_impl.py"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "click-u15",
+   "repo": "click",
+   "commit": "f36d58bbd7f188178de2d4fe1d0292c510375ca7",
+   "parent": "cbd7a4109da16ce58f54c2a618b4c986e3041fcf",
+   "date": "2026-08-17T22:38:45-07:00",
+   "task": "Refactor pager stream handling",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 118,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 63,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_utils/test_echo_via_pager.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/_compat.py",
+    "src/click/_termui_impl.py"
+   ],
+   "source_lines": 120
+  },
+  {
+   "id": "click-u16",
+   "repo": "click",
+   "commit": "61b69e967e525bd502f5bf42def4d551e761fe0e",
+   "parent": "f36d58bbd7f188178de2d4fe1d0292c510375ca7",
+   "date": "2026-08-18T09:24:12-07:00",
+   "task": "Resolve the pager command once, in `_pager_contextmanager`",
+   "files": [
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 151,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/click/_termui_impl.py"
+   ],
+   "source_lines": 151
+  },
+  {
+   "id": "click-u17",
+   "repo": "click",
+   "commit": "2103e157683c5e4cadc8ee1838df526a54bde9a4",
+   "parent": "61b69e967e525bd502f5bf42def4d551e761fe0e",
+   "date": "2026-08-19T08:20:27-07:00",
+   "task": "Forward all user's parameters set in `PAGER` and improve flag detection",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 61,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 172,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/_termui_impl.py"
+   ],
+   "source_lines": 61
+  },
+  {
+   "id": "click-u18",
+   "repo": "click",
+   "commit": "e1fd5946ab26aaf372009eaff1acf947140b40fb",
+   "parent": "2103e157683c5e4cadc8ee1838df526a54bde9a4",
+   "date": "2026-08-19T19:50:19-07:00",
+   "task": "Add support of `pathlib.Path` to `edit`",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/_termui_impl.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/click/termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 27,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_termui.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/typing/typing_edit.py",
+     "old_path": null,
+     "status": "A",
+     "lines": 10,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/_termui_impl.py",
+    "src/click/termui.py"
+   ],
+   "source_lines": 29
+  },
+  {
+   "id": "click-u19",
+   "repo": "click",
+   "commit": "06b2a678741131fd577ce170e23e5ca0aeba0309",
+   "parent": "3cbaa76b6014be7427d1ab06b4af40f01e7c278e",
+   "date": "2026-09-22T21:07:17-07:00",
+   "task": "Deprecate parameter names that are: not a Python identifier, or a Python Keyword, or not lower-cased",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/upgrade-guides.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 94,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_arguments.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 366,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_deprecations.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 146,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_options.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 263,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/core.py"
+   ],
+   "source_lines": 94
+  },
+  {
+   "id": "click-u20",
+   "repo": "click",
+   "commit": "2247b35ea1c47c727d7a06e51fa280e12a863ff6",
+   "parent": "06b2a678741131fd577ce170e23e5ca0aeba0309",
+   "date": "2026-10-04T15:19:53-07:00",
+   "task": "Add `Parameter.spec` and deprecate `human_readable_name`",
+   "files": [
+    {
+     "path": "CHANGES.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/parameters.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 46,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/upgrade-guides.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/click/core.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 133,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_arguments.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_deprecations.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 36,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_options.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/click/core.py"
+   ],
+   "source_lines": 133
+  },
+  {
+   "id": "requests-u01",
+   "repo": "requests",
+   "commit": "5e7cb71cd719394f8fc56ea55da3f58bb22ae2b6",
+   "parent": "00600b38f45dc234f825f609cea63d24e7e690af",
+   "date": "2026-02-13T13:23:44-07:00",
+   "task": "Bump version to dev for test publish",
+   "files": [
+    {
+     "path": "src/requests/__version__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/__version__.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "requests-u02",
+   "repo": "requests",
+   "commit": "b2a1d33f571518ca9a6148e7da787cc5827f897a",
+   "parent": "392b01f26e1cca4a2ada1539a6ae1a1b607ec33a",
+   "date": "2026-03-03T11:46:41-07:00",
+   "task": "Increase chardet upper limit to 8",
+   "files": [
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/requests/__init__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/__init__.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "requests-u03",
+   "repo": "requests",
+   "commit": "e331a288f369973f5de0ec8901c94cae4fa87286",
+   "parent": "753fd08c5eacce0aa0df73fe47e49525c67e0a29",
+   "date": "2026-03-24T22:15:21-07:00",
+   "task": "Remove unused extraction call",
+   "files": [
+    {
+     "path": "src/requests/adapters.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/adapters.py",
+    "src/requests/utils.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "requests-u04",
+   "repo": "requests",
+   "commit": "bc7dd0fc4d56e808bcdd85ac2d797b3107c89259",
+   "parent": "4443b1a847b190010c2972a658924b98b5db6360",
+   "date": "2026-03-30T08:24:49-07:00",
+   "task": "Fix cosmetic header validity parsing regex",
+   "files": [
+    {
+     "path": "src/requests/_internal_utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_requests.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/_internal_utils.py"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "requests-u05",
+   "repo": "requests",
+   "commit": "f0198e6dfc431a2293dc16e1b1e8fcddc910a7f3",
+   "parent": "bc7dd0fc4d56e808bcdd85ac2d797b3107c89259",
+   "date": "2026-03-30T08:27:35-07:00",
+   "task": "Fix malformed value parsing for Content-Type",
+   "files": [
+    {
+     "path": "src/requests/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/utils.py"
+   ],
+   "source_lines": 15
+  },
+  {
+   "id": "requests-u06",
+   "repo": "requests",
+   "commit": "ef439eb779c1eba7cbdeeeb302b11e1e061b4b7d",
+   "parent": "cbce031327be4f1b4b5fd041ff4dcaa8efa2ce53",
+   "date": "2026-04-05T08:31:02-07:00",
+   "task": "Prevent Response self-reference in redirect history",
+   "files": [
+    {
+     "path": "src/requests/sessions.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_requests.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/sessions.py"
+   ],
+   "source_lines": 3
+  },
+  {
+   "id": "requests-u07",
+   "repo": "requests",
+   "commit": "a044b020dea43230585126901684a0f30ec635a8",
+   "parent": "16df2a09173b17a82d607c31a6826b7c5dd0fc57",
+   "date": "2026-04-15T07:56:38-07:00",
+   "task": "Move DigestAuth hash algorithms to use usedforsecurity=False",
+   "files": [
+    {
+     "path": "src/requests/auth.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/auth.py"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "requests-u08",
+   "repo": "requests",
+   "commit": "d2f6bdecc835475c3cfbb83565ea879d7b2712ca",
+   "parent": "a044b020dea43230585126901684a0f30ec635a8",
+   "date": "2026-04-15T08:06:46-07:00",
+   "task": "Clarify decode_unicode behaviour in iter_{content,lines} docstrings",
+   "files": [
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/models.py"
+   ],
+   "source_lines": 9
+  },
+  {
+   "id": "requests-u09",
+   "repo": "requests",
+   "commit": "b684dcb9bbf3aa557d1238e72062c4a29737dd1c",
+   "parent": "dc9dbdfb3434c6e58d48fd102f93e5342308817e",
+   "date": "2026-05-11T09:14:13-07:00",
+   "task": "sessions: fix hooks type",
+   "files": [
+    {
+     "path": "src/requests/_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/sessions.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/_types.py",
+    "src/requests/sessions.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "requests-u10",
+   "repo": "requests",
+   "commit": "3816cfa1abd42dca21b9e837f26c59b246016aaf",
+   "parent": "b684dcb9bbf3aa557d1238e72062c4a29737dd1c",
+   "date": "2026-05-11T10:33:17-07:00",
+   "task": "Parameterize SupportsItems to handle Mapping key invariance",
+   "files": [
+    {
+     "path": "src/requests/_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/_types.py",
+    "src/requests/utils.py"
+   ],
+   "source_lines": 16
+  },
+  {
+   "id": "requests-u11",
+   "repo": "requests",
+   "commit": "a4f9a5999bdb9bf2d6e7c8aa973b28cacb17134f",
+   "parent": "3816cfa1abd42dca21b9e837f26c59b246016aaf",
+   "date": "2026-05-11T12:24:21-07:00",
+   "task": "Port bpo-39057 to Requests",
+   "files": [
+    {
+     "path": "src/requests/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/utils.py"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "requests-u12",
+   "repo": "requests",
+   "commit": "86b378d3f60f828daa13ca50aa82e287ff7b66b4",
+   "parent": "a4f9a5999bdb9bf2d6e7c8aa973b28cacb17134f",
+   "date": "2026-05-11T12:24:34-07:00",
+   "task": "Align Session.get parameters with requests.get",
+   "files": [
+    {
+     "path": "src/requests/sessions.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/sessions.py"
+   ],
+   "source_lines": 11
+  },
+  {
+   "id": "requests-u13",
+   "repo": "requests",
+   "commit": "6404f345e562d962abe6700a1c357ec1e7e18232",
+   "parent": "0b401c76b6e80a4eecf3c690085b2553f6e261ca",
+   "date": "2026-05-12T10:51:01-07:00",
+   "task": "Fix `prepare_body` stream detection for `__getattr__`-based file wrappers\n\n---------",
+   "files": [
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_requests.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/models.py"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "requests-u14",
+   "repo": "requests",
+   "commit": "2144213c307691710c9d665700860fc4993c3035",
+   "parent": "6404f345e562d962abe6700a1c357ec1e7e18232",
+   "date": "2026-05-13T08:42:42-06:00",
+   "task": "Constrain Response.reason to str",
+   "files": [
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/models.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "requests-u15",
+   "repo": "requests",
+   "commit": "5691f596134c2feb121e595c77a0178921fcce61",
+   "parent": "2144213c307691710c9d665700860fc4993c3035",
+   "date": "2026-05-13T08:43:16-06:00",
+   "task": "Update JsonType containers to read-based collections",
+   "files": [
+    {
+     "path": "src/requests/_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/_types.py"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "requests-u16",
+   "repo": "requests",
+   "commit": "e511bc72777a94c45d004e010c597925092e1efe",
+   "parent": "5691f596134c2feb121e595c77a0178921fcce61",
+   "date": "2026-05-13T12:16:50-07:00",
+   "task": "Fix mutability issues with headers input types",
+   "files": [
+    {
+     "path": "src/requests/_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/sessions.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/_types.py",
+    "src/requests/models.py",
+    "src/requests/sessions.py"
+   ],
+   "source_lines": 12
+  },
+  {
+   "id": "requests-u17",
+   "repo": "requests",
+   "commit": "84d10f0be83e8f6aeca8a05230c52216431c4d0b",
+   "parent": "b7b549b54571d03950b16afd2d01bc6ff0348224",
+   "date": "2026-05-14T09:16:25-07:00",
+   "task": "Move Request.headers back to Mapping",
+   "files": [
+    {
+     "path": "src/requests/_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/_types.py",
+    "src/requests/models.py"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "requests-u18",
+   "repo": "requests",
+   "commit": "e50e5945294f79ee9ab4ec69de24d14f9b26a7ae",
+   "parent": "3be097d450ee4ca8a2f9c1a3a58eb61ed19936b0",
+   "date": "2026-06-04T12:20:33-05:00",
+   "task": "Improve static typing of 3rd party imports\n\n* Add missing `typecheck` dependencies\n\n* Fix static typing of `compat.chardet`\n\n* Remove unused `# type: ignore` comments",
+   "files": [
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/requests/__init__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/help.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/requests/__init__.py",
+    "src/requests/compat.py",
+    "src/requests/help.py",
+    "src/requests/models.py"
+   ],
+   "source_lines": 30
+  },
+  {
+   "id": "requests-u19",
+   "repo": "requests",
+   "commit": "6f205ff422bccd5e4c4fc0b64c5f3e7df5181db6",
+   "parent": "661970d171d9c3e12e4c789c4768db647d8c4da0",
+   "date": "2026-06-08T13:52:51-07:00",
+   "task": "Fix `_encode_files` detection for `__getattr__`-based file wrappers",
+   "files": [
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_requests.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/models.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "requests-u20",
+   "repo": "requests",
+   "commit": "6f66281a1d6326b1b9c4ac09ca30de0fc4e6ef43",
+   "parent": "6f205ff422bccd5e4c4fc0b64c5f3e7df5181db6",
+   "date": "2026-06-09T08:45:59-07:00",
+   "task": "Add hasattr checks for remaining protocol isinstance checks",
+   "files": [
+    {
+     "path": "src/requests/_types.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/requests/models.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_requests.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/requests/_types.py",
+    "src/requests/models.py"
+   ],
+   "source_lines": 16
+  },
+  {
+   "id": "cobra-u01",
+   "repo": "cobra",
+   "commit": "5bef9d8d87ad1a1c73e74361bad9e38b3469a58e",
+   "parent": "ff7c561cf741ac36ab319f528d93e738ae284835",
+   "date": "2024-10-12T12:08:27-04:00",
+   "task": "Fix --version help and output for plugins\n\n* Fix --version help with CommandDisplayNameAnnotation\n\nWhen setting Command.Version, a --version option is added. The help\nmessage for the --version command did not consider the command display\nname:\n\n    Flags:\n      -h, --help      help for kubectl plugin\n      -v, --version   version for kubectl-plugin\n\nWith this change the help test is consistent with other flags:\n\n    Flags:\n      -h, --help      help for kubectl plugin\n      -v, --version   version for kubectl plugin\n\n* Make command DisplayName() public\n\nThis allows using the display name in templates or other code that want\nto use the same value.\n\n* Use display name in version template\n\nThe version template used `{{.Name}}` but for plugins you want to use\n`{{.DisplayName}}` to be consistent with other help output.\n\nWith this change will show:\n\n    $ kubectl plugin --version\n    kubectl plugin version 1.0.0",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 32,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "command.go"
+   ],
+   "source_lines": 32
+  },
+  {
+   "id": "cobra-u02",
+   "repo": "cobra",
+   "commit": "5a138f143f25d616c6c195356a6560ed4fbbfdd4",
+   "parent": "3a5efaede9d389703a792e2f7bfe3a64bc82ced9",
+   "date": "2024-11-03T19:45:01-05:00",
+   "task": "Make Powershell completion script work in constrained mode\n\nCreating CompletionResult objects is not allowed in Powershell constrained mode, so return results as strings if constrained mode is enabled\n\nStore results as PsCustomObjects instead of hashtables. This prevents Sort-Object from trying to convert the hashtable to a object, which is blocked in constrained mode.\nPsCustomObjects are created using New-Object to work around https://github.com/PowerShell/PowerShell/issues/20767",
+   "files": [
+    {
+     "path": "powershell_completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "powershell_completions.go"
+   ],
+   "source_lines": 35
+  },
+  {
+   "id": "cobra-u03",
+   "repo": "cobra",
+   "commit": "d1e9d85fcf592461f3bc2f4b6d5e140c4c0aabf8",
+   "parent": "9f9056765ccb3bfb1c72a560b4c6edbff71c0f32",
+   "date": "2024-12-28T17:07:03-05:00",
+   "task": "Make detection for test-binary more universal\n\nWhen running tests in verbose mode (or other options), tests involving\nCobra may fail if the test does not explicitly set Command.args to an\nempty slice; in this case, Cobra defaults to using `os.Args`, which\nwill contain arguments passed to the test (such as `-v` (verbose)).\n\nCommits e5762054c9a6429fa7c234897707d and 1ef0913976db2004980575ed815c3\nimplemented a workaround for this when running (unit) tests for Cobra\nitself, but this check is specifig to Cobra (checking for `cobra.test`),\nand don't work on Windows (which will have a `.exe` extension),\n\nThis patch implements a more universal check, so that users of Cobra\nas a module also benefit from this workaround.\n\ngo1.21 and up provides a `testing.Testing()` utility ([1]); as the Cobra\nmodule still supports Go1.16 and up, an alternative implementation was\nadded for older versions, based on golang.org/x/mod/lazyregexp [2].\n\nBefore this patch:\n\n    go test -c -o foo.test\n\n    ./foo.test -test.run TestNoArgs\n    --- FAIL: TestNoArgs (0.00s)\n        args_test.go:37: Unexpected output: Error: unknown command \"TestNoArgs\" for \"c\"\n            Usage:\n              c [flags]\n\n            Flags:\n              -h, --help   help for c\n\n        args_test.go:40: Unexpected error: unknown command \"TestNoArgs\" for \"c\"\n    FAIL\n\nAfter this patch:\n\n    go test -c -o foo.test\n\n    ./foo.test -test.run TestNoArgs\n    PASS\n\n[1]: https://pkg.go.dev/testing#Testing\n[2]: https://cs.opensource.google/go/x/mod/+/refs/tags/v0.19.0:internal/lazyregexp/lazyre.go;l=66-78",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_go120.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 33,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_go121.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 25,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "command.go",
+    "command_go120.go",
+    "command_go121.go"
+   ],
+   "source_lines": 66
+  },
+  {
+   "id": "cobra-u04",
+   "repo": "cobra",
+   "commit": "0745e5576205cd05fada5bb2e01500d97e1a04be",
+   "parent": "d1e9d85fcf592461f3bc2f4b6d5e140c4c0aabf8",
+   "date": "2024-12-28T17:41:43-05:00",
+   "task": "completion: improve detection for flags that accept multiple values\n\nThe completion code attempts to detect whether a flag can be specified\nmore than once, and therefore should provide completion even if already\nset.\n\nCurrently, this code depends on conventions used in the pflag package,\nwhich uses an \"Array\" or \"Slice\" suffix or for some types a \"stringTo\"\nprefix.\n\nCobra allows custom value types to be used, which may not use the same\nconvention for naming, and therefore currently aren't detected to allow\nmultiple values.\n\nThe pflag module defines a [SliceValue] interface, which is implemented\nby the Slice and Array value types it provides (unfortunately, it's not\ncurrently implemented by the \"stringTo\" values).\n\nThis patch adds a reduced interface based on the [SliceValue] interface\nmentioned above to allow detecting Value-types that accept multiple values.\nCustom types can implement this interface to make completion work for\nthose values.\n\nI deliberately used a reduced interface to keep the requirements for this\ndetection as low as possible, without enforcing the other methods defined\nin the interface (Append, Replace) which may not apply to all custom types.\n\nFuture improvements can likely still be made, considering either implementing\nthe SliceValue interface for the \"stringTo\" values or defining a separate\n\"MapValue\" interface for those types.\n\nPossibly providing the reduced interface as part of the pflag module and\nto export it.\n\n[SliceValue]: https://github.com/spf13/pflag/blob/d5e0c0615acee7028e1e2740a11102313be88de1/flag.go#L193-L203",
+   "files": [
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "completions.go"
+   ],
+   "source_lines": 15
+  },
+  {
+   "id": "cobra-u05",
+   "repo": "cobra",
+   "commit": "6c3c1163c6df19860515103199e880122ba49e80",
+   "parent": "01ffff4eca5a08384ef2b85f39ec0dac192a5f7b",
+   "date": "2025-01-21T20:34:05-05:00",
+   "task": "feat: add CompletionFunc type to help with completions\n\nAlso document that NoFilesCompletion and FixedCompletion can be used with RegisterFlagCompletionFunc.",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 22,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "command.go",
+    "completions.go"
+   ],
+   "source_lines": 24
+  },
+  {
+   "id": "cobra-u06",
+   "repo": "cobra",
+   "commit": "09d5664f34e3f7571560e48ccb74c8904b671e87",
+   "parent": "6c3c1163c6df19860515103199e880122ba49e80",
+   "date": "2025-01-22T21:28:30-05:00",
+   "task": "Add similar whitespace escape logic to bash v2 completions than in other completions",
+   "files": [
+    {
+     "path": "bash_completionsV2.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 75,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "bash_completionsV2.go"
+   ],
+   "source_lines": 75
+  },
+  {
+   "id": "cobra-u07",
+   "repo": "cobra",
+   "commit": "611e16c322e3b0413a9ba4e489fcd98ef904e406",
+   "parent": "09d5664f34e3f7571560e48ccb74c8904b671e87",
+   "date": "2025-01-27T09:43:43-05:00",
+   "task": "Allow linker to perform deadcode elimination for program using Cobra\n\n* Restructure code to let linker perform deadcode elimination step\n\nCobra, in its default configuration, will execute a template to generate\nhelp, usage and version outputs. Text/template execution calls MethodByName\nand MethodByName disables dead code elimination in the Go linker, therefore\nall programs that make use of cobra will be linked with dead code\nelimination disabled, even if they end up replacing the default usage, help\nand version formatters with a custom function and no actual text/template\nevaluations are ever made at runtime.\n\nDead code elimination in the linker helps reduce disk space and memory\nutilization of programs. For example, for the simple example program used by\nTestDeadcodeElimination 40% of the final executable size is dead code. For a\nmore realistic example, 12% of the size of Delve's executable is deadcode.\n\nThis PR changes Cobra so that, in its default configuration, it does not\nautomatically inhibit deadcode elimination by:\n\n1. changing Cobra's default behavior to emit output for usage and help using\n   simple Go functions instead of template execution\n2. quarantining all calls to template execution into SetUsageTemplate,\n   SetHelpTemplate and SetVersionTemplate so that the linker can statically\n   determine if they are reachable",
+   "files": [
+    {
+     "path": "cobra.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "cobra_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 77,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 263,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 58,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "site/content/user_guide.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "cobra.go",
+    "command.go",
+    "completions.go"
+   ],
+   "source_lines": 281
+  },
+  {
+   "id": "cobra-u08",
+   "repo": "cobra",
+   "commit": "41b26ec8bb59dfba580f722201bf371c4f5703dd",
+   "parent": "611e16c322e3b0413a9ba4e489fcd98ef904e406",
+   "date": "2025-01-29T19:28:46-05:00",
+   "task": "Print ActiveHelp for bash along other completions\n\nIn the bash shell we used to print ActiveHelp messages on every\ntab-press. In the example below, notice the \"Command help\" line which is\nActiveHelp:\n\nbash-5.1$ tanzu context u[tab]\nCommand help: Configure and manage contexts for the Tanzu CLI\n\nbash-5.1$ tanzu context u[tab]\nCommand help: Configure and manage contexts for the Tanzu CLI\n\nbash-5.1$ tanzu context u\nunset  (Unset the active context so that it is not used by default.)\nuse    (Set the context to be used by default)\nbash-5.1$ tanzu context u\n\nAbove, on the first [tab] press, only the ActiveHelp is printed.\nOn the second [tab] press, the ActiveHelp is printed again, followed\nby a re-print of the command-line, followed by the completions choices.\n\nThe separation between ActiveHelp and completion choices makes the\nActiveHelp harder to see. Furthermore, I find the double printing of the\nActiveHelp string to look bad.\n\nNote that for zsh, the UX is different and that ActiveHelp messages are\nprinted at the same time as the completion choices.\n\nThis commit aligns the UX for ActiveHelp in bash with the one for zsh:\nif there are other completions to be shown, the ActiveHelp messages are\nprinted at the same time.\n\nNew behaviour:\n1- ActiveHelp is no longer printed on the first [tab] press. This is\n   better aligned with bash's standard approach.\n2- ActiveHelp is printed on the second [tab] press, above the completion\n   choices, with a `--` delimiter.\n3- If there are no completion choices, the `--` delimiter is omitted.\n\nThis behaviour is the same as what is done for zsh (except that for zsh\nthe first [tab] press immediately shows completion choices).\n\nBelow is the above example, but using this commit.\nNotice the more concise and easier to read completion output:\n\nbash-5.1$ tanzu context u[tab][tab]\nCommand help: Configure and manage contexts for the Tanzu CLI\n--\nunset  (Unset the active context so that it is not used by default.)\nuse    (Set the context to be used by default)\nbash-5.1$ tanzu context u",
+   "files": [
+    {
+     "path": "bash_completionsV2.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 75,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "bash_completionsV2.go"
+   ],
+   "source_lines": 75
+  },
+  {
+   "id": "cobra-u09",
+   "repo": "cobra",
+   "commit": "ab5cadcc1bbe224b329726fc5f8b99d6f93e9805",
+   "parent": "4ba5566f5704a9c0d205e1ef3efc4896156d33fa",
+   "date": "2025-02-06T08:25:44-07:00",
+   "task": "Allow to reset the templates to the default\n\nFollow-up to #1956.\n\nThis commit allows a program to reset any of the tree templates to their\ndefault behaviour, as it was possible to do before the change of #1956.",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 24,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "command.go"
+   ],
+   "source_lines": 12
+  },
+  {
+   "id": "cobra-u10",
+   "repo": "cobra",
+   "commit": "8cb30f9ca53a004a6fe88c5cfcc79ac7b24fc638",
+   "parent": "17b6dca2ffaf6113cbd1cf433ec988fa7d63c6f3",
+   "date": "2025-02-09T11:06:07-05:00",
+   "task": "feat: add CompletionWithDesc helper\n\nThe code has also been refactored to use a type alias for completion and a completion helper\n\nUsing a type alias is a non-breaking change and it makes the code more readable and easier to understand.",
+   "files": [
+    {
+     "path": "active_help.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 58,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "site/content/active_help.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "site/content/completions/_index.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 36,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "active_help.go",
+    "command.go",
+    "completions.go"
+   ],
+   "source_lines": 68
+  },
+  {
+   "id": "cobra-u11",
+   "repo": "cobra",
+   "commit": "24ada7fe71e3a3a8741dd52e0a7fc3b97450535a",
+   "parent": "680936a2200be363c61feda8cd29287f0726a48c",
+   "date": "2025-02-15T11:07:02-07:00",
+   "task": "Remove the default \"completion\" cmd if it is alone\n\nWhen a program has no sub-commands, its root command can accept\narguments.  If we add the default \"completion\" command to such programs\nthey will now have a sub-command and will no longer accept arguments.\n\nWhat we do instead for this special case, is only add the \"completion\"\ncommand if it is being called, or if it is being completed itself.\n\nWe want to have the \"completion\" command for such programs because it\nwill allow the completion of flags and of arguments (if provided\nby the program).",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 144,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "site/content/completions/_index.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "command.go",
+    "completions.go"
+   ],
+   "source_lines": 45
+  },
+  {
+   "id": "cobra-u12",
+   "repo": "cobra",
+   "commit": "1995054b003053cc1e404bccfbf6d168e8731509",
+   "parent": "f98cf4216d3cb5235e6e0cd00ee00959deb1dc65",
+   "date": "2025-02-21T07:46:14-05:00",
+   "task": "Flow context to command in SetHelpFunc",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "command_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "command.go"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "cobra-u13",
+   "repo": "cobra",
+   "commit": "4af7b64d31989e78e86d65304f693a6d9c77c932",
+   "parent": "75790e48fb73c8ba027e0163157a86ce8604ca3e",
+   "date": "2025-05-31T08:20:04-04:00",
+   "task": "refactor: apply golangci-lint autofixes, work around false positives",
+   "files": [
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "doc/man_docs.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "doc/md_docs.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "doc/rest_docs.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "doc/yaml_docs.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "completions.go"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "cobra-u14",
+   "repo": "cobra",
+   "commit": "6dec1ae26659a130bdb4c985768d1853b0e1bc06",
+   "parent": "c8289c10302063b9a2e26357e7e0f0bb599f29ce",
+   "date": "2025-05-31T08:36:04-04:00",
+   "task": "The default ShellCompDirective can be customized for a command and its subcommands",
+   "files": [
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 57,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "site/content/completions/_index.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "completions.go"
+   ],
+   "source_lines": 15
+  },
+  {
+   "id": "cobra-u15",
+   "repo": "cobra",
+   "commit": "51d675196729be769ce235b710ab7058b3aad03a",
+   "parent": "3f3b81882534a51628f3286e93c6842d9b2e29ea",
+   "date": "2025-08-31T16:15:08-07:00",
+   "task": "Bump pflag to 1.0.8\n\nIn pflag, we recently made a breaking change in naming to be more inclusive. This change, while doing nothing to address the same uninclusive naming in cobra itself, adjusts to those changes to ensure automatic bumps (if you do them) can continue uninterrupted.",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "go.mod",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "go.sum",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "command.go"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "cobra-u16",
+   "repo": "cobra",
+   "commit": "117698a604b65e80a1ad5b76df67b604bcd992e0",
+   "parent": "e2dd29ddc39acacf3af13013b06e1fe58b5c3599",
+   "date": "2025-11-17T06:48:10-08:00",
+   "task": "refactor: replace several vars with consts",
+   "files": [
+    {
+     "path": "command.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "command.go"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "cobra-u17",
+   "repo": "cobra",
+   "commit": "10d4b48a79be3d4e89e6c45cb59f4d32a3d2ae19",
+   "parent": "88b30ab89da2d0d0abb153818746c5a2d30eccec",
+   "date": "2025-12-06T09:14:39-05:00",
+   "task": "perf: Loop over the bash variable directly instead of starting subprocesses.\n\nToday, the loop is printing the completions one value per line and then\nreading one line to a variable. We can just skip the whole IO rigamarole\nby looping over the completions directly.",
+   "files": [
+    {
+     "path": "bash_completionsV2.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "bash_completionsV2.go"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "cobra-u18",
+   "repo": "cobra",
+   "commit": "61968e893eee2f27696c2fbc8e34fa5c4afaf7c4",
+   "parent": "10d4b48a79be3d4e89e6c45cb59f4d32a3d2ae19",
+   "date": "2025-12-09T21:18:50-05:00",
+   "task": "fix: quote args in fish shell completion\n\n* fix: quote args in fish shell completion\n\nThe arguments used for dynamic completions in fish were missing quotes.\nThis resulted in an error when one of the arguments had a `*` in it\nwhose expansion matched no file. Once the completion got triggered, fish\nerrored with the message `No matches for wildcard [...]`. Don't quote\nthe first argument as that is the name of the binary.\n\n* Protect against arguments that start with --\n\n\n---------",
+   "files": [
+    {
+     "path": "fish_completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "fish_completions.go"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "cobra-u19",
+   "repo": "cobra",
+   "commit": "746ef07158728502482cea9f880a6f4b21ef29a9",
+   "parent": "f2878bab8c96afd6e36968af96343b35dbb82a82",
+   "date": "2026-04-24T13:41:57-07:00",
+   "task": "fix: prevent completions from mutating os.Args via append side effect\n\nWhen getCompletions() checks for interspersed flags, it calls\nappend(finalArgs, \"--\") to temporarily add a \"--\" sentinel. However,\nfinalArgs is a sub-slice of the original args (ultimately derived from\nos.Args[1:] or SetArgs), and if the sub-slice has spare capacity in its\nbacking array, append writes \"--\" into the shared array, corrupting\nthe caller's data.\n\nThis is particularly visible when TraverseChildren is enabled: the\nTraverse method returns sub-slices that share the original backing\narray. A user's ValidArgsFunction inspecting os.Args would then see\n\"--\" where a real argument should be.\n\nCopy trimmedArgs at the top of getCompletions to prevent any future\nappend from accidentally mutating the caller's backing array.",
+   "files": [
+    {
+     "path": "completions.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "completions_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 55,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "completions.go"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "cobra-u20",
+   "repo": "cobra",
+   "commit": "ad460ea8f249db69c943a365fb84f3a59042d54e",
+   "parent": "746ef07158728502482cea9f880a6f4b21ef29a9",
+   "date": "2026-04-25T19:07:41-04:00",
+   "task": "Add cobra unique args validator",
+   "files": [
+    {
+     "path": "args.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "args_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 37,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "site/content/user_guide.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "args.go"
+   ],
+   "source_lines": 13
+  },
+  {
+   "id": "curl-u01",
+   "repo": "curl",
+   "commit": "296e40373fd4bbc893b21041f5f1db973efacbd4",
+   "parent": "64ee53be57de2d01fc328e5d78b7443856e5fee3",
+   "date": "2026-10-26T14:34:38+01:00",
+   "task": "libssh: try the agent and default keys when the key file guess fails\n\nSince c7f67be010 the shared Curl_ssh_setup_pkey() points sshc->priv_key\nat ~/.ssh/id_rsa when the user named no key file and that file exists.\nThe libssh backend then treated the guess like a key the user named:\nwhen it did not authenticate, or could not be loaded, public key auth\nwas over. ssh_userauth_publickey_auto(), which asks ssh-agent and tries\nlibssh's default key files, was only reached when no such file existed.\n\nTwo setups that worked in 8.21.0, and that ssh logs into, failed with\nCURLE_LOGIN_DENIED: an unauthorized ~/.ssh/id_rsa next to an authorized\n~/.ssh/id_ed25519, and a passphrase-protected ~/.ssh/id_rsa whose\npassphrase only the agent knows.\n\nMove the ssh_userauth_publickey_auto() call into its own state,\nSSH_AUTH_PKEY_AUTO. When the guessed key file does not authenticate or\ncannot be loaded, go there if CURLSSH_AUTH_AGENT is allowed (the\ndefault), otherwise on to the remaining methods as before. A key file\nthe user named with CURLOPT_SSH_PRIVATE_KEYFILE keeps the old behavior:\nit is the only key tried, and a file that cannot be loaded still fails\nthe transfer. This matches the libssh2 backend, which continues with\nthe agent after its key file fails.\n\nFollow-up to c7f67be0100967d041450285a30b2bec6cbfad64 #22244",
+   "files": [
+    {
+     "path": "lib/vssh/libssh.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 72,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/vssh/ssh.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/vssh/vssh.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/vssh/libssh.c",
+    "lib/vssh/ssh.h",
+    "lib/vssh/vssh.c"
+   ],
+   "source_lines": 74
+  },
+  {
+   "id": "curl-u02",
+   "repo": "curl",
+   "commit": "f60b3326d7cf25521990c1b0a8189db55f481b93",
+   "parent": "b316b562186ad1a75821a787cb429a3390d7d71b",
+   "date": "2026-10-26T13:50:05Z",
+   "task": "smtp: avoid signed overflow in dot-stuffing",
+   "files": [
+    {
+     "path": "lib/smtp.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/data/test1520",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/libtest/lib1520.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/smtp.c"
+   ],
+   "source_lines": 3
+  },
+  {
+   "id": "curl-u03",
+   "repo": "curl",
+   "commit": "1c2a5760ccf612ec7c7923d2597e8b0e35ea6bd0",
+   "parent": "f60b3326d7cf25521990c1b0a8189db55f481b93",
+   "date": "2026-10-26T15:24:23+01:00",
+   "task": "tool_progress: avoid forward declaration\n\nFollow-up to 64ee53be57de2d01fc328e5d78b7443856e5fee3 #23603",
+   "files": [
+    {
+     "path": "src/tool_progress.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 18,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/tool_progress.c"
+   ],
+   "source_lines": 18
+  },
+  {
+   "id": "curl-u04",
+   "repo": "curl",
+   "commit": "c59de5b822561d0edf166e7933a938bfa55f8da7",
+   "parent": "9e1ed38c1c52b680f4d4cee81b35397fa750d4cf",
+   "date": "2026-10-27T08:34:16+01:00",
+   "task": "lib: drop using `linux/tcp.h` kernel header for the FastOpen feature\n\nRely on POSIX `netinet/tcp.h` header for the `TCP_FASTOPEN_CONNECT`\nmacro (and for `TCP_NODELAY`).\n\n`TCP_FASTOPEN_CONNECT` is defined by:\n- glibc 2.26+ (2017-08-02)\n- musl 1.1.19+ (2018-02-22)\n- bionic (similar time frame)\n\nThis feature requires Linux kernel 4.11+ (2017-05-01), e.g. via\ndebian:buster, which also comes with compatible glibc and musl libs.\n\nFollow-up to 2ac9e4caf7138c9c9150992971530894d7c1e4ba #23601\nFollow-up to 979b012eeb1908e7e3ad13c736fb1dbc73187780 #2056",
+   "files": [
+    {
+     "path": "CMake/unix-cache.cmake",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CMake/win32-cache.cmake",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CMakeLists.txt",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "configure.ac",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "lib/cf-socket.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/curl_config-cmake.h.in",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "lib/setopt.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/cf-socket.c",
+    "lib/setopt.c"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "curl-u05",
+   "repo": "curl",
+   "commit": "dfdae2ee34a36a0474c9c9adb30859f758f6a486",
+   "parent": "c59de5b822561d0edf166e7933a938bfa55f8da7",
+   "date": "2026-10-27T08:48:16+01:00",
+   "task": "http_aws_sigv4: use qsort instead of bubble sort\n\nAnd use a stack buffer instead of malloc when sorting few headers.",
+   "files": [
+    {
+     "path": "lib/http_aws_sigv4.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 73,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/http_aws_sigv4.c"
+   ],
+   "source_lines": 73
+  },
+  {
+   "id": "curl-u06",
+   "repo": "curl",
+   "commit": "de3969f8fe0038c64c0be9dc0eec96cb4f33eb24",
+   "parent": "717ba8e5d30669b7291144c196272f87a4e005d2",
+   "date": "2026-10-27T08:49:43+01:00",
+   "task": "ws: get random masks in batches\n\nEvery frame libcurl sends needs a new 4-byte mask. Each one was fetched\nwith its own Curl_rand() call, and Curl_rand_bytes() fetches only four\nbytes per call to the TLS library, so sending small frames spent most\nof its CPU time in RAND_bytes().\n\n- let Curl_rand_bytes() fill the whole buffer with one\n  Curl_ssl_random() call, unless CURL_ENTROPY forces the bytes, and\n  drop the debug assert that Curl_ssl_random() only gets four bytes\n- keep a 256-byte pool of random bytes in the websocket encoder and\n  take each frame's mask from it, refilling it every 64 frames\n\n./perf wssend, nanoseconds per frame, median of nine runs:\n\n  frame    gcc before/after       clang before/after\n  16 B     1529 / 789   -48%      1501 / 772   -49%\n  125 B    1544 / 807   -48%      1511 / 786   -48%\n  1 KB     1646 / 899   -45%      1576 / 839   -47%\n  16 KB    3549 / 2741  -23%      3143 / 2342  -26%",
+   "files": [
+    {
+     "path": "lib/rand.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/vtls/vtls.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/ws.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/rand.c",
+    "lib/vtls/vtls.c",
+    "lib/ws.c"
+   ],
+   "source_lines": 22
+  },
+  {
+   "id": "curl-u07",
+   "repo": "curl",
+   "commit": "ef7c7b6e1fb7d30398fabac92aa868a92fca8203",
+   "parent": "de3969f8fe0038c64c0be9dc0eec96cb4f33eb24",
+   "date": "2026-10-27T09:40:46+01:00",
+   "task": "peer: extract host name punycoded\n\nSaves this code from having to do it separately, and makes it take\nadvantage of the extra error checking done by the URL API call.\n\nVerify in test 2952 (which doesn't work on Windows)",
+   "files": [
+    {
+     "path": "lib/peer.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/urlapi-int.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/urlapi.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/data/Makefile.am",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/data/test2952",
+     "old_path": null,
+     "status": "A",
+     "lines": 41,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/peer.c",
+    "lib/urlapi-int.h",
+    "lib/urlapi.c"
+   ],
+   "source_lines": 17
+  },
+  {
+   "id": "curl-u08",
+   "repo": "curl",
+   "commit": "4e8000279caa66df9b173f3f15219bacf3b5c615",
+   "parent": "ef7c7b6e1fb7d30398fabac92aa868a92fca8203",
+   "date": "2026-10-27T10:33:50+01:00",
+   "task": "ws: set seen_close only after the whole CLOSE frame\n\nThe flag was set when the CLOSE frame header was parsed. When the\npayload was split over several reads, the transfer stopped receiving\nas soon as the first part had been decoded, and the rest of the status\ncode and reason was never read.\n\nSet the flag once the decoder has passed on the complete frame.\n\nAdd test 2312, which makes the test server deliver the CLOSE payload in\nseparate reads.\n\nFollow-up to ed24670321",
+   "files": [
+    {
+     "path": "lib/ws.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/data/Makefile.am",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/data/test2312",
+     "old_path": null,
+     "status": "A",
+     "lines": 64,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/ws.c"
+   ],
+   "source_lines": 17
+  },
+  {
+   "id": "curl-u09",
+   "repo": "curl",
+   "commit": "939de902967a002e7c8e9716b7821476533d5a19",
+   "parent": "caee991615edc2b0e3a52798f7bb8df275f399a4",
+   "date": "2026-10-27T13:37:06+01:00",
+   "task": "urlapi: copy whole path segments in dedotdotify()\n\nInstead of appending the path to the output buffer one byte at a time,\ncopy everything up to the next slash in one go. Dot-segment handling\nonly triggers at a slash so the result is identical, with far fewer\ndynbuf appends.",
+   "files": [
+    {
+     "path": "lib/urlapi.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/urlapi.c"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "curl-u10",
+   "repo": "curl",
+   "commit": "fdb91591dbd81ae246c3ddc975021834830afe3f",
+   "parent": "5771be8f95e070d00680129d57d502b172e42fa7",
+   "date": "2026-10-27T17:31:26+01:00",
+   "task": "ftplistparser: cap the max amount of wildcard entries\n\nTo avoid mistakes or malicious intent to keep adding to the list.",
+   "files": [
+    {
+     "path": "docs/libcurl/opts/CURLOPT_WILDCARDMATCH.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "lib/ftplistparser.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/ftplistparser.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/ftplistparser.c",
+    "lib/ftplistparser.h"
+   ],
+   "source_lines": 14
+  },
+  {
+   "id": "curl-u11",
+   "repo": "curl",
+   "commit": "705b02e4160bead0f274791bc446fae5d2b2b717",
+   "parent": "f5ac97b5d635112a0baa91efd2b7994668d8147f",
+   "date": "2026-10-27T17:58:31+01:00",
+   "task": "writeout: write JSON strings in chunks instead of buffering them\n\njsonWriteString() collected the escaped string in a dynbuf, which needs\na size limit and can fail to allocate. Both cases lose the value and\nleave an empty string behind, so %{header_json} could output [\"small\",]\nfor a header that needs more than 100000 bytes escaped.\n\nEscape into a small stack buffer and write it whenever it is full. There\nis no limit to pick and nothing left to fail, and an unbuffered stream\nlike stderr still gets one write per chunk rather than one per byte.\nAlso verify large escaped headers in test 1671.",
+   "files": [
+    {
+     "path": "src/tool_writeout_json.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 143,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/data/test1671",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/tool_writeout_json.c"
+   ],
+   "source_lines": 143
+  },
+  {
+   "id": "curl-u12",
+   "repo": "curl",
+   "commit": "e983479ac33806ff42d3fe5ea1a538facd30f19e",
+   "parent": "a24f21f113ec9b8727583321086f1ea04d564698",
+   "date": "2026-10-28T07:47:06+01:00",
+   "task": "tool_writeout_json: work around clang-tidy warning\n\nFollow-up to 705b02e4160bead0f274791",
+   "files": [
+    {
+     "path": "src/tool_writeout_json.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/tool_writeout_json.c"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "curl-u13",
+   "repo": "curl",
+   "commit": "93a99d7b878a8c20bd71bd60be617ec78a9647f9",
+   "parent": "5a5407807ea14027767ce01f9d65ec01644c9958",
+   "date": "2026-10-28T08:54:02+01:00",
+   "task": "lib: make private functions static\n\n- ptrarray: mark three private functions UNITTEST\n- ratelimit: move unused function to unit3216",
+   "files": [
+    {
+     "path": "lib/ptrarray.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 25,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/ptrarray.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/ratelimit.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 18,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/ratelimit.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/unit/unit3211.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/unit/unit3216.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/ptrarray.c",
+    "lib/ptrarray.h",
+    "lib/ratelimit.c",
+    "lib/ratelimit.h"
+   ],
+   "source_lines": 56
+  },
+  {
+   "id": "curl-u14",
+   "repo": "curl",
+   "commit": "6968ebf1006c3fbcb24379f16e085544106849ae",
+   "parent": "56ff7e919f9e469adc03ffd69309bc0b27a796ce",
+   "date": "2026-10-28T13:15:37+01:00",
+   "task": "connection close: additional checks\n\nConnection pool: *never* free a connection that has still transfers\nattached, abort flag set or not.\nCurl_connect: on error, close the selected connection only if\nit was not reused and has no other transfers attached.",
+   "files": [
+    {
+     "path": "lib/conncache.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/url.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/conncache.c",
+    "lib/url.c"
+   ],
+   "source_lines": 15
+  },
+  {
+   "id": "curl-u15",
+   "repo": "curl",
+   "commit": "774d3bff38515beb75c6d86c3e0455f0c8da7c9e",
+   "parent": "58f59bd2b5e50d65b4fa473a1ef6d3ae18e51c79",
+   "date": "2026-10-28T14:02:52+01:00",
+   "task": "connection health check: always on idle connections\n\nRun the health check always on a connection that is not in\nuse by any transfer. Skip the check only for connections\nin use which have already been checked in the last second.",
+   "files": [
+    {
+     "path": "lib/conncache.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/conncache.c"
+   ],
+   "source_lines": 16
+  },
+  {
+   "id": "curl-u16",
+   "repo": "curl",
+   "commit": "25f035ef895cd93945a32b1f374df700c6fcb4e8",
+   "parent": "a395bd86c5a9395d261cd067eefb6f7239b63549",
+   "date": "2026-10-28T14:02:04-04:00",
+   "task": "openssl: block eMudhra certs from Windows ca-native import\n\n- Skip importing eMudhra intermediate and related root certs from the\n  native CA store in Windows.\n\nMicrosoft blocked the bad eMudhra intermediate certificates in\nsupported versions of Windows that receive updates, but may still\ntrust the issuer root certificates which other vendors have removed.\n\nRegardless we skip importing these certificates from the Windows ROOT/CA\nstore. OpenSSL doesn't check Microsoft's blacklist and assuming the\nuser did not provide a CRL file it would otherwise be possible for\nverification to succeed.\n\nNote this change is narrow and meant to address only OpenSSL (and forks)\nwith our ca-native import on Windows. It does not stop OpenSSL from\nusing those bad certificates for verification if they have been trusted\nby other methods. For example, if the user has supplied an outdated\ncertificate bundle (eg prior to 2026-10-20 Mozilla certificate bundle\ncacert.pem or curl-ca-bundle.crt, etc) that contains those certificates,\nthen they could still be trusted.",
+   "files": [
+    {
+     "path": "lib/vtls/openssl.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 39,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/vtls/openssl.c"
+   ],
+   "source_lines": 39
+  },
+  {
+   "id": "curl-u17",
+   "repo": "curl",
+   "commit": "7f351e1163145cf3a81a98bad5b21576e7922479",
+   "parent": "1ab9a5ad44415418435285bf55ea4a28d45b3c63",
+   "date": "2026-10-28T21:32:18+01:00",
+   "task": "ldap: return 'AppleLDAP' version string for Apple's legacy OpenLDAP fork\n\nInstead of querying the library, which does a network turnaround and may\ntake several seconds on some systems. The returned version is also a\nfixed 2.4.28 for all macOS releases as of today. It reflects the\nOpenLDAP version at the time Apple forked it in 2011.\n\nAlso update docs to refer to as 'AppleLDAP' instead of \"Apple's OpenLDAP\nfork\".\n\nFollow-up to 859ce48de12986f5bf846c2800dacab893ff12c1 #19832",
+   "files": [
+    {
+     "path": ".github/scripts/pyspelling.words",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/libcurl/opts/CURLOPT_CAINFO.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/libcurl/opts/CURLOPT_PINNEDPUBLICKEY.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/libcurl/opts/CURLOPT_SSL_VERIFYPEER.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/libcurl/opts/CURLOPT_SSL_VERIFYSTATUS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "lib/ldap.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "lib/ldap.c"
+   ],
+   "source_lines": 9
+  },
+  {
+   "id": "curl-u18",
+   "repo": "curl",
+   "commit": "a7023cafb8912176706f98481e3bab6283ff11fd",
+   "parent": "af34974179cdc8874ba467b80908e1ab8a99478a",
+   "date": "2026-10-29T00:22:25+01:00",
+   "task": "urlapi: make zoneids starting with 25 to work\n\nRegression from 04afd160767d22 shipped in 8.21.0\n\nVerified in test 1560",
+   "files": [
+    {
+     "path": "lib/urlapi.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/libtest/lib1560.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/unit/unit1675.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/urlapi.c"
+   ],
+   "source_lines": 3
+  },
+  {
+   "id": "curl-u19",
+   "repo": "curl",
+   "commit": "f789f356a873895ba5beae425106938518891856",
+   "parent": "2bc780243feea0fc47660bf16534077251e47793",
+   "date": "2026-10-29T09:26:15+01:00",
+   "task": "content_encoding: reject incomplete brotli streams\n\nPass an end-of-input flag through client writer flushes so brotli can\nreject streams that still need input when the transfer completes\n\nKeep ordinary and paused flushes non-final, and allow decoders that\nnever received a response body\n\nAdd test 4271 for the reported payload and --remove-on-error cleanup",
+   "files": [
+    {
+     "path": "lib/content_encoding.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/cw-out.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/cw-pause.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/sendf.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/sendf.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "lib/ws.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/data/Makefile.am",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/data/test4271",
+     "old_path": null,
+     "status": "A",
+     "lines": 54,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/content_encoding.c",
+    "lib/cw-out.c",
+    "lib/cw-pause.c",
+    "lib/sendf.c",
+    "lib/sendf.h",
+    "lib/ws.c"
+   ],
+   "source_lines": 65
+  },
+  {
+   "id": "curl-u20",
+   "repo": "curl",
+   "commit": "a4eed8c7f39c1a24f073f5889623b8fb99b50b1a",
+   "parent": "f789f356a873895ba5beae425106938518891856",
+   "date": "2026-10-29T09:52:26+01:00",
+   "task": "altsvc: percent-decode the protocol-id before mapping\n\nRFC 7838 section 3 defines the Alt-Svc protocol-id as a percent-encoded\nALPN name. A conforming header using http%2F1.1 was silently ignored\nbecause curl matched the encoded token against raw protocol names.\n\nUse Curl_urldecode() in Curl_altsvc_parse() before matching tokens that\ncontain percent signs. Match using the decoded length, free the temporary\nbuffer, and propagate allocation errors. Keep cache-file protocol names\nand unencoded header tokens on the existing raw matching path.\n\nReject decoded control and NUL bytes with REJECT_CTRL. Treat decoder\nformat errors as unknown protocols so other alternatives in the header\nare still processed without aborting the transfer.\n\nExtend unit1654 with uppercase and lowercase escapes, encoded h2,\nmalformed and truncated escapes, encoded control and NUL bytes, empty\ntokens, and valid alternatives before and after rejected tokens. Clear\nthe test origin between cases and run them after the cache save to\npreserve its expected output.",
+   "files": [
+    {
+     "path": "lib/altsvc.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 19,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/unit/unit1654.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 53,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "lib/altsvc.c"
+   ],
+   "source_lines": 19
+  }
+ ]
+}
