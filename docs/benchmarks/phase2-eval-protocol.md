@@ -118,4 +118,27 @@ For every task, Codex proposes the change from the task text and the `retrieve_c
 
 ## Amendments
 
-None yet.
+**1. 30 October 2026, before any test-repository memory existed: the approval gate.**
+
+L2 (Codex) items start `proposed`, and only accepted items reach the assistant. So each comparison
+runs three arms instead of two, all with the same retrieval, prompts and budget:
+
+| Arm | Memory |
+|---|---|
+| A | none |
+| B (production flow) | L1 plus the L2 proposals the owner accepted |
+| C (upper bound) | L1 plus every L2 proposal, as if all were accepted |
+
+How the arms are run and reported:
+- **Run order:**
+  1. The four test repositories are learned at C0, with L1 and L2. L2 gets at most 10 Codex calls per
+     repository.
+  2. The run stops while the owner reviews the L2 proposals.
+  3. The rest of the run uses the owner's decisions as they stand.
+- **Who sees the proposals:** the person running the harness does not read them before the run.
+- **Shared answers:** when arms B and C receive identical context, C reuses B's answer and judge
+  verdict instead of asking again.
+- **Reporting:** B − A is the pass/fail result defined above. C − A is reported next to it, and so are
+  the counts of proposals accepted and rejected.
+- **Precision:** reported for the active memory of arm B, as defined above, and separately for a sample
+  of up to 15 L2 proposals per repository, whatever their review outcome.
