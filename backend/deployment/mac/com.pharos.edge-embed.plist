@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  PHAROS query-embedding server on this Mac, kept running by launchd. Install (from backend/):
+    sed "s#__BACKEND__#$PWD#g" deployment/mac/com.pharos.edge-embed.plist > ~/Library/LaunchAgents/com.pharos.edge-embed.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pharos.edge-embed.plist
+  Remove:  launchctl bootout gui/$(id -u)/com.pharos.edge-embed
+  Publish: tailscale funnel --bg --https=8443 http://127.0.0.1:8790   (undo: tailscale funnel --https=8443 off)
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.pharos.edge-embed</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/sh</string><string>__BACKEND__/deployment/mac/run-embed-server.sh</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ThrottleInterval</key><integer>30</integer>
+  <key>StandardOutPath</key><string>/tmp/pharos-edge-embed.log</string>
+  <key>StandardErrorPath</key><string>/tmp/pharos-edge-embed.log</string>
+</dict>
+</plist>

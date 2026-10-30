@@ -303,11 +303,17 @@ class Settings(BaseSettings):
     MCP_ALLOWED_HOSTS: list[str] = []
 
     # ── Embeddings (app/codeintel/embeddings.py) ───────────────────────────
-    # auto | none | hash | sentence-transformers | http | onnx
+    # auto | none | hash | sentence-transformers | http | onnx | edge-onnx
     # auto = http in CLOUD mode when EDGE_EMBEDDING_URL is set, else none;
     #        sentence-transformers in EDGE mode.
+    # edge-onnx = ask the edge's app.codeintel.edge_server (same ONNX model)
+    #        first; load the local EMBEDDING_ONNX_DIR model only while the edge
+    #        is unreachable. Saves the model's memory on small instances.
     EMBEDDING_BACKEND: str = "auto"
     EDGE_EMBEDDING_URL: str | None = None
+    # edge-onnx: seconds to wait for the edge, and how long to skip it after a failure.
+    EDGE_EMBED_TIMEOUT: float = Field(default=2.5, gt=0)
+    EDGE_EMBED_RETRY_SECONDS: float = Field(default=60.0, ge=0)
     # Bearer token the edge embed server requires (strongly recommended when
     # the server is exposed through Tailscale Funnel or any public URL).
     EDGE_EMBED_TOKEN: SecretStr | None = None

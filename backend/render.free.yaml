@@ -69,8 +69,15 @@ services:
       - key: ALLOWED_ORIGINS
         value: "[]"
 
+      # edge-onnx: the owner's Mac embeds queries (app.codeintel.edge_server, published
+      # with Tailscale Funnel); this instance loads its own copy of the model only while
+      # the Mac is unreachable, which frees ~200 MB most of the time.
       - key: EMBEDDING_BACKEND
-        value: onnx
+        value: edge-onnx
+      - key: EDGE_EMBEDDING_URL  # e.g. https://<mac>.<tailnet>.ts.net:8443
+        sync: false
+      - key: EDGE_EMBED_TOKEN
+        sync: false
       - key: EMBEDDING_ONNX_DIR
         value: models/granite-embedding-english-r2-int8
       - key: EMBEDDING_MODEL_ID
