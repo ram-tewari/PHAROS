@@ -110,6 +110,14 @@ launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pharos.learner.plist
 ```
 
 - **Deterministic miners (L1):** they need no Codex. A run takes seconds per repository.
+- **L2 (Codex):** it runs when the Codex CLI on the Mac is signed in with ChatGPT.
+  - **Inputs:** the repository's contributing, style and internals docs, plus maintainers' public
+    pull-request review comments. The comments are fetched from the GitHub API, optionally with
+    `GIT_CLONE_TOKEN`, and cached under `~/.cache/pharos/learn/`.
+  - **Budget:** at most `LEARNING_MAX_CODEX_CALLS` calls a run (default 40) and
+    `LEARNING_CODEX_CALLS_PER_REPO` per repository (default 10).
+  - **Output:** its items are always `proposed` until accepted.
+  - `--no-codex` skips L2.
 - **Storage:** memory is small; expect a few hundred rows of under 1 KB per repository.
 - **Activation and review:**
   - High-support items activate automatically.

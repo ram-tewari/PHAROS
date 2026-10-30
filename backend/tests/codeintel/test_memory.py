@@ -229,3 +229,98 @@ def test_mcp_memory_tools(learned_api):
     context = _mcp(api, "retrieve_context", {"query": "verify password", "repository": repo.url,
                                              "include_code": False, "include_memory": False})
     assert context["memory"]["items"] == []
+
+
+# ── L2: Codex extraction (fake model) ───────────────────────────────────
+
+class FakeCodex:
+    """Answers with scripted operations; records every prompt."""
+
+    model = "fake-codex"
+
+    def __init__(self, script):
+        self.script = list(script)
+        self.prompts = []
+
+    def complete(self, instructions, prompt, schema):
+        self.prompts.append(prompt)
+        return {"ops": self.script.pop(0)(prompt) if self.script else []}
+
+
+def _m_id(prompt, title_part):
+    import re as _re
+
+    return next(m.group(1) for m in _re.finditer(r"^(M\d+) \[\w+\] (.+)$", prompt, _re.M) if title_part in m.group(2))
+
+
+def test_l2_extraction_is_grounded_gated_and_incremental(session, learned, fixture_repo, embedder, monkeypatch,
+                                                         tmp_path):
+    import app.learning.extract as extract_module
+
+    monkeypatch.setenv("LEARNING_CACHE_DIR", str(tmp_path / "cache"))
+    monkeypatch.setattr(extract_module, "fetch_review_comments", lambda *a, **k: [])
+    repo, _ = learned
+    fixture_repo.write("CONTRIBUTING.md", "# Contributing\n\n## Passwords\n\n"
+                       "Always compare password hashes with hmac.compare_digest, never with ==, so the comparison\n"
+                       "takes constant time. Store hashes produced by hash_password only; reviewers reject any\n"
+                       "other hashing helper. New helpers in shop/auth.py need a test in tests/test_auth.py.\n")
+    head = fixture_repo.commit("docs: contributing guide")
+    CodeIndexer(session, embedder).index(parse_repo_spec(str(fixture_repo.path), allowed_hosts=[], allow_local=True))
+    session.refresh(repo)
+
+    first = FakeCodex([lambda p: [
+        {"op": "add", "kind": "convention", "title": "Compare hashes in constant time", "applies_to": "any change",
+         "body": "Compare password hashes with hmac.compare_digest, never ==.", "evidence": ["D1"],
+         "scope_paths": ["shop/auth.py", "nope/*.py"]},
+        {"op": "add", "title": "Unknown evidence", "body": "Something.", "evidence": ["D9"]},
+        {"op": "add", "title": "One PR", "body": "Rename this variable.", "evidence": ["D1"],
+         "applies_to": "this pull request only"},
+        {"op": "add", "title": "Invented helper", "body": "Use secure_compare_v2() for hashes.", "evidence": ["D1"]},
+        {"op": "patch", "target": "M1", "title": "x", "body": "y", "evidence": ["D1"]},  # M1 is an L1 item
+    ]])
+    stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head,
+                             embedder=embedder, llm=first, max_llm_calls=3)
+    l2 = stats["l2"]
+    assert l2["calls"] == 1 and l2["added"] == 1
+    assert l2["rejected"] == {"uncited_or_unknown_evidence": 1, "one_off": 1, "ungrounded_identifier": 1,
+                              "target_not_l2": 1}
+    item = _item(session, repo, "l2/compare-hashes-in-constant-time")
+    assert item.status == "proposed" and item.tier == "L2"  # the approval gate
+    assert item.scope == {"paths": ["shop/auth.py"]} and item.evidence[0]["path"] == "CONTRIBUTING.md"
+    out = assemble_context(session, embedder, ContextRequest(query="verify password", repository=repo.url,
+                                                             include_code=False))
+    assert item.key not in {i["key"] for i in out["memory"]["items"]}  # proposed items stay out of context
+
+    # Already-read evidence is not sent again; a later run can patch or retire the L2 item.
+    again = FakeCodex([])
+    stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head,
+                             embedder=embedder, llm=again, max_llm_calls=3)
+    assert stats["l2"]["units_new"] == 0 and again.prompts == []
+    set_status(session, item, "accept")
+    session.commit()
+
+    fixture_repo.write("CONTRIBUTING.md", (fixture_repo.path / "CONTRIBUTING.md").read_text()
+                       + "\n## Tokens\n\nSession tokens come from secrets.token_urlsafe and expire after TOKEN_TTL_SECONDS;\n"
+                         "do not add another token generator. Keep TOKEN_TTL_SECONDS at one hour unless a reviewer agrees.\n")
+    head2 = fixture_repo.commit("docs: tokens")
+    CodeIndexer(session, embedder).index(parse_repo_spec(str(fixture_repo.path), allowed_hosts=[], allow_local=True))
+    session.refresh(repo)
+    patcher = FakeCodex([lambda p: [{"op": "patch", "target": _m_id(p, "Compare hashes"), "title":
+                                     "Compare hashes in constant time",
+                                     "body": "Compare password hashes with hmac.compare_digest (constant time).",
+                                     "evidence": ["D1"]}]])
+    stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head2,
+                             embedder=embedder, llm=patcher, max_llm_calls=3)
+    session.refresh(item)
+    # The old section's lines still hash the same, so only the new section is read.
+    assert stats["l2"]["units_new"] >= 1 and stats["l2"]["patched"] == 1
+    assert "constant time" in item.body and item.status == "proposed"  # a model rewrite needs accepting again
+
+    fixture_repo.write("CONTRIBUTING.md", "# Contributing\n\nNothing here any more.\n")
+    head3 = fixture_repo.commit("docs: trim")
+    CodeIndexer(session, embedder).index(parse_repo_spec(str(fixture_repo.path), allowed_hosts=[], allow_local=True))
+    session.refresh(repo)
+    learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head3,
+                     embedder=embedder, llm=FakeCodex([]), max_llm_calls=1)
+    session.refresh(item)
+    assert item.status == "stale" and item.invalidated_at_commit == head3  # its evidence no longer holds

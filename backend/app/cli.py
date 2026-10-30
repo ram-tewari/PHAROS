@@ -320,7 +320,7 @@ def cmd_learn(args) -> int:
 
     from .codeintel.context import resolve_repositories
     from .codeintel.embeddings import get_embedder
-    from .codeintel.runtime import session_scope
+    from .codeintel.runtime import secret, session_scope
     from .learning.history import ensure_mirror, worktree
     from .learning.pipeline import learn_repository
 
@@ -339,9 +339,19 @@ def cmd_learn(args) -> int:
         embedder = None if args.no_embed else get_embedder()
         families = args.family or None
         progress = lambda m: print(m, file=sys.stderr, flush=True)  # noqa: E731
+        llm = None
+        if args.codex:
+            from .learning.llm import CodexCLI
+
+            llm = CodexCLI(effort="low", timeout=420, max_calls=args.max_calls)
+            if not llm.ready():
+                print("error: Codex CLI is not installed or not signed in with ChatGPT (codex login)",
+                      file=sys.stderr)
+                return 1
         with worktree(mirror, commit) as checkout:
             stats = learn_repository(db, repo, checkout=checkout, mirror=mirror, commit=commit, embedder=embedder,
-                                     families=families, progress=progress)
+                                     families=families, llm=llm, max_llm_calls=args.max_calls,
+                                     review_token=secret(get_settings().GIT_CLONE_TOKEN), progress=progress)
     _print({"repository": repo.name, **stats}, True)
     return 0
 
@@ -414,6 +424,8 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--mirror", help="full clone to read history from (default: LEARNING_MIRROR_DIR/<owner>_<repo>)")
     s.add_argument("--family", action="append", help="run only these miners (repeatable)")
     s.add_argument("--no-embed", action="store_true", help="skip embedding the memory items")
+    s.add_argument("--codex", action="store_true", help="also run L2: Codex over docs and review comments")
+    s.add_argument("--max-calls", type=int, default=10, help="Codex call budget for this run (with --codex)")
     s.set_defaults(func=cmd_learn)
 
     s = sub.add_parser("memory", help="show a repository's brief, memory items and playbooks")

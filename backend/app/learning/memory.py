@@ -217,6 +217,8 @@ class MemoryWriter:
             else:
                 before = _snapshot(row)
                 status = self._status(cand, row.status)
+                if cand.tier != "L1" and row.status == "active" and (row.title, row.body) != (cand.title, body):
+                    status = "proposed"  # a model rewrote an accepted item: it needs accepting again
                 same = (row.title, row.body, row.support, row.scope, row.evidence, row.status) == (
                     cand.title, body, cand.support, cand.scope, cand.evidence, status)
                 row.learned_at_commit = self.commit
@@ -239,6 +241,12 @@ class MemoryWriter:
                 self.stats.activated += 1
             elif row.status == "proposed":
                 self.stats.proposed += 1
+
+    def mark_stale(self, row: MemoryItem, reason: str = "") -> None:
+        before = _snapshot(row)
+        row.status, row.invalidated_at_commit = "stale", self.commit
+        self._ledger("item", row.id, "stale", before, _snapshot(row) | ({"reason": reason} if reason else {}))
+        self.stats.staled += 1
 
     def retire(self, families_ran: set[str], derived_keys: set[str], tier: str = "L1") -> None:
         """Mark stale the items of miners that ran this time but no longer derive them."""
