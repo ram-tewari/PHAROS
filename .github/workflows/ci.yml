@@ -39,6 +39,7 @@ jobs:
           ruff check --extend-select I,B,UP --output-format github
           app/codeintel app/modules/code app/shared/auth.py app/shared/db_url.py
           app/shared/vector_type.py app/cli.py benchmarks scripts/demo.py tests/codeintel
+          app/learning app/workers/learning_worker.py tests/learning
       - name: Module isolation
         run: python scripts/check_module_isolation.py
       - name: Secret scan (new findings fail; see .secrets.baseline)

@@ -72,7 +72,7 @@ def _main_modules(snap: Snapshot, limit: int = 6) -> list[str]:
 def compose_brief(snap: Snapshot, items: list[MemoryItem], skills: list[MemorySkill]) -> tuple[str, dict]:
     langs = Counter(c.language for c in snap.source())
     files = Counter()
-    for lang, path in {(c.language, c.path) for c in snap.source()}:
+    for lang, _path in {(c.language, c.path) for c in snap.source()}:
         files[lang] += 1
     header = (f"# {snap.name} — repository brief (commit {snap.commit[:10]})\n"
               "Languages (source): " + ", ".join(f"{lang} {files[lang]} files / {n} symbols"
