@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — edge query embedding
+
+- `EMBEDDING_BACKEND=edge-onnx`: query embeddings come from `app.codeintel.edge_server` on the
+  owner's machine (same ONNX model, bearer token, bounded and rate-limited), with the local model
+  loaded only while the edge is unreachable. Frees ~200 MB on the 512 MB instance.
+  `backend/deployment/mac/` has the launchd agent and the Tailscale Funnel command.
+
 ## Unreleased — retrieval phase 1 (branch `retrieval-phase1`)
 
 Held-out nDCG@10 0.394 → 0.697 and 0.463 → 0.726 (two locked test sets, 101 questions);

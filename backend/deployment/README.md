@@ -10,6 +10,7 @@
 | `setup_edge.sh`, `setup_edge.ps1`, `pharos-edge-worker.service`, `NSSM_WINDOWS_SETUP.md` | Edge worker on a host (systemd / Windows service) running `backend/worker.py` | Not validated in CI |
 | `../render.free.yaml` | The live free deployment: one Render free web service (API only) + Neon free | Deployed from `master` |
 | `mac/run-worker.sh`, `mac/com.pharos.mac-worker.plist` | Indexing for the free deployment, on the owner's Mac (launchd, hourly) | Used with `render.free.yaml` |
+| `mac/run-embed-server.sh`, `mac/com.pharos.edge-embed.plist` | Query embedding for the free deployment, on the owner's Mac (launchd, always on; Tailscale Funnel) | Used with `EMBEDDING_BACKEND=edge-onnx` |
 
 Both blueprints point their auto-deploy at a `main` branch. This repository's default branch is
 `master`, so check which branch the live services actually deploy from before relying on either
@@ -50,3 +51,26 @@ Mac with `python -m app.cli ingest <url> --force`. Vectors of different models
 are never compared. `--branch <full commit SHA>` re-indexes exactly the commit
 the deployment already holds (no content change, so benchmark results stay
 comparable); without it the repository moves to its default branch's head.
+
+### Query embedding on the Mac too (`EMBEDDING_BACKEND=edge-onnx`)
+
+Loading Granite costs the 512 MB instance about 200 MB; production peaked at
+441 MB with it. With `edge-onnx`, production asks the Mac's
+`app.codeintel.edge_server` first and loads its own copy only while the Mac is
+unreachable. It waits `EDGE_EMBED_TIMEOUT` (2.5 s), then skips the Mac for
+`EDGE_EMBED_RETRY_SECONDS` (60 s). Answers from a different model are refused.
+Queries also get embedded on the same CPU architecture as the documents.
+
+```sh
+cd backend
+printf "EDGE_EMBED_TOKEN='%s'\n" "$(python -c 'import secrets; print(secrets.token_hex(32))')" >> ~/.pharos-deploy.env
+sed "s#__BACKEND__#$PWD#g" deployment/mac/com.pharos.edge-embed.plist > ~/Library/LaunchAgents/com.pharos.edge-embed.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pharos.edge-embed.plist
+tailscale funnel --bg --https=8443 http://127.0.0.1:8790     # publishes only this port
+# Render: EMBEDDING_BACKEND=edge-onnx, EDGE_EMBEDDING_URL=https://<mac>.<tailnet>.ts.net:8443, EDGE_EMBED_TOKEN=<same token>
+```
+
+The server listens on loopback only. Funnel gives it a public HTTPS address,
+and every request needs the bearer token. Requests are capped at 16 texts of
+4,000 characters, rate-limited to 10 per second, and processed one at a time.
+Queries are not logged. Undo with `tailscale funnel --https=8443 off`.

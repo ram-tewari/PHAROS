@@ -40,6 +40,7 @@ import logging
 import math
 import os
 import threading
+import time
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 
@@ -363,6 +364,66 @@ class OnnxEmbedder(Embedder):
         return out
 
 
+class EdgeFirstEmbedder(Embedder):
+    """The edge's embed server first, the local ONNX model as the fallback.
+
+    Both run the same model, so their vectors are interchangeable; the edge's
+    ``model_id`` is checked on every answer and a different model is never
+    used. The local model is loaded only when the edge fails (timeout, error,
+    wrong model), and after a failure the edge is skipped for ``retry_after``
+    seconds so a sleeping edge does not add its timeout to every query.
+    """
+
+    def __init__(self, base_url: str, token: str, local: OnnxEmbedder, *, timeout: float = 2.5,
+                 retry_after: float = 60.0):
+        self.base_url = base_url.rstrip("/")
+        self.local = local
+        self.model_id = local.model_id
+        self.timeout = timeout
+        self.retry_after = retry_after
+        self._headers = {"Authorization": f"Bearer {token}"}
+        self._skip_until = 0.0
+        self.edge_calls = self.local_calls = 0
+
+    def _edge(self, texts: list[str]) -> list[list[float]]:
+        import httpx
+
+        resp = httpx.post(f"{self.base_url}/embed/batch", json={"texts": texts}, headers=self._headers,
+                          timeout=self.timeout)
+        if resp.status_code != 200:
+            raise EmbeddingUnavailable(f"edge returned HTTP {resp.status_code}")
+        data = resp.json()
+        if data.get("model_id") != self.model_id:
+            raise EmbeddingUnavailable(f"edge runs {data.get('model_id')!r}, not {self.model_id!r}")
+        vectors = data["embeddings"]
+        if len(vectors) != len(texts):
+            raise EmbeddingUnavailable("edge returned the wrong number of vectors")
+        return [_pad(v, self.dim) for v in vectors]
+
+    def encode_raw(self, texts: list[str]) -> list[list[float]]:
+        if time.monotonic() >= self._skip_until:
+            try:
+                vectors = self._edge(texts)
+                self.edge_calls += 1
+                return vectors
+            except Exception as exc:  # timeout, connection refused, bad answer
+                self._skip_until = time.monotonic() + self.retry_after
+                logger.warning("edge embedding unavailable (%s); using the local model for %ss",
+                               type(exc).__name__, self.retry_after)
+        self.local_calls += 1
+        return self.local.encode_raw(texts)
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return self.encode_raw([self.local.document_prefix + t for t in texts])
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.encode_raw([self.local.query_prefix + text])[0]
+
+    def describe(self) -> dict:
+        return {**super().describe(), "edge": self.base_url, "edge_calls": self.edge_calls,
+                "local_calls": self.local_calls, "local_loaded": self.local._session is not None}
+
+
 def _read_profile(model_dir: str) -> dict:
     path = os.path.join(model_dir, "pharos_model.json")
     if not os.path.isfile(path):
@@ -409,14 +470,20 @@ def get_embedder(settings=None) -> Embedder | None:
             if not settings.EDGE_EMBEDDING_URL:
                 raise ValueError("EMBEDDING_BACKEND=http requires EDGE_EMBEDDING_URL")
             embedder = HttpEmbedder(settings.EDGE_EMBEDDING_URL, settings.EMBEDDING_MODEL_NAME, token)
-        elif backend == "onnx":
+        elif backend in ("onnx", "edge-onnx"):
             if not settings.EMBEDDING_ONNX_DIR:
-                raise ValueError("EMBEDDING_BACKEND=onnx requires EMBEDDING_ONNX_DIR")
+                raise ValueError(f"EMBEDDING_BACKEND={backend} requires EMBEDDING_ONNX_DIR")
             embedder = OnnxEmbedder(
                 settings.EMBEDDING_ONNX_DIR,
                 settings.EMBEDDING_MODEL_ID,
                 batch_size=settings.EMBEDDING_ONNX_BATCH_SIZE,
             )
+            if backend == "edge-onnx":
+                if not settings.EDGE_EMBEDDING_URL or not token:
+                    raise ValueError("EMBEDDING_BACKEND=edge-onnx requires EDGE_EMBEDDING_URL and EDGE_EMBED_TOKEN")
+                embedder = EdgeFirstEmbedder(settings.EDGE_EMBEDDING_URL, token, embedder,
+                                             timeout=settings.EDGE_EMBED_TIMEOUT,
+                                             retry_after=settings.EDGE_EMBED_RETRY_SECONDS)
         else:
             raise ValueError(f"Unknown EMBEDDING_BACKEND {backend!r}")
         _cached[key] = embedder
