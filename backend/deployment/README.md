@@ -74,3 +74,15 @@ The server listens on loopback only. Funnel gives it a public HTTPS address,
 and every request needs the bearer token. Requests are capped at 16 texts of
 4,000 characters, rate-limited to 10 per second, and processed one at a time.
 Queries are not logged. Undo with `tailscale funnel --https=8443 off`.
+
+Measured on production, 30 October, with heldout_v1 (51 queries):
+
+| | Production embeds | Mac embeds (`edge-onnx`) |
+|---|---|---|
+| Peak memory | 441 MB | 137 MB |
+| nDCG@10 | 0.690 | 0.697 (the same as local) |
+| Server time p50 / p95 | 205 / 305 ms | 660 / 837 ms |
+
+Quality now matches local exactly because queries are embedded on the same ARM CPU as the documents.
+The latency is the route from Render through Tailscale's Funnel relay to the Mac. The edge client
+reuses one keep-alive connection, which avoids a new TLS handshake for every query.

@@ -6,6 +6,9 @@
   owner's machine (same ONNX model, bearer token, bounded and rate-limited), with the local model
   loaded only while the edge is unreachable. Frees ~200 MB on the 512 MB instance.
   `backend/deployment/mac/` has the launchd agent and the Tailscale Funnel command.
+  Measured: production peak memory 441 → 137 MB, heldout_v1 0.690 → 0.697 (the same as local),
+  server time p50 205 → 660 ms. The client keeps one connection open to the Mac and retries a
+  dropped one once before falling back.
 
 ## Unreleased — retrieval phase 1 (branch `retrieval-phase1`)
 

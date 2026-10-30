@@ -97,3 +97,37 @@ def test_client_with_a_wrong_token_falls_back(edge):
     local = FakeLocal()
     EdgeFirstEmbedder(edge, "nope", local).embed_query("a")
     assert local.calls == 1
+
+
+def test_client_reuses_one_connection(edge):
+    local = FakeLocal()
+    e = EdgeFirstEmbedder(edge, TOKEN, local)
+    e.embed_query("a")
+    first = e._client
+    e.embed_query("b")
+    assert e._client is first and e.edge_calls == 2 and local.calls == 0
+
+
+def test_client_retries_a_dropped_connection_once_before_falling_back(edge):
+    import httpx
+
+    local = FakeLocal()
+    e = EdgeFirstEmbedder(edge, TOKEN, local)
+    real = e._http()
+
+    class DropsOnce:
+        def __init__(self):
+            self.dropped = False
+
+        def post(self, *args, **kwargs):
+            if not self.dropped:
+                self.dropped = True
+                raise httpx.RemoteProtocolError("server closed the idle connection")
+            return real.post(*args, **kwargs)
+
+        def close(self):
+            pass
+
+    e._client = DropsOnce()
+    e.embed_query("a")
+    assert (e.edge_calls, local.calls) == (1, 0)
