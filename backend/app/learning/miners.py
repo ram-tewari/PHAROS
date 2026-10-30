@@ -688,6 +688,41 @@ def mine_cochange(snap: Snapshot, *, max_items: int = 300, per_file: int = 300) 
     return out
 
 
+TEST_SUPPORT_RE = re.compile(r"(^|/)(helpers?|fixtures?|testdata|conftest\.py$|__snapshots__)(/|$)")
+
+
+def mine_test_homes(snap: Snapshot, *, max_items: int = 300, per_file: int = 300) -> list[Candidate]:
+    """The existing test files a source file's changes add tests to, so a change extends them
+    instead of starting a new test file."""
+    touching: dict[str, list[Commit]] = defaultdict(list)
+    for c in snap.history:
+        if not c.files or len(c.files) > 30:
+            continue
+        for _, p in c.files:
+            p = snap.canonical(p)
+            if p in snap.files and _is_source_path(p) and len(touching[p]) < per_file:
+                touching[p].append(c)
+    out = []
+    for path, commits in sorted(touching.items(), key=lambda kv: -len(kv[1]))[:max_items]:
+        tests = Counter()
+        for c in commits:
+            tests.update({q for _, p in c.files if (q := snap.canonical(p)) in snap.files and path_role(q) == "test"
+                          and not TEST_SUPPORT_RE.search(q)})
+        with_tests = sum(1 for c in commits if any(path_role(snap.canonical(p)) == "test" for _, p in c.files))
+        top = [(p, n) for p, n in tests.most_common(3) if n >= 3 and n / len(commits) >= 0.15]
+        if not top:
+            continue
+        body = (f"Tests for {path} go in the existing " + ", ".join(f"{p} ({n} of {len(commits)} commits)"
+                                                                    for p, n in top) + ".")
+        together = [c for c in commits if top[0][0] in {snap.canonical(p) for _, p in c.files}][:3]
+        evidence = [e for e in [file_evidence(snap.checkout, top[0][0])] if e]
+        evidence += [commit_evidence(c.sha, c.date, c.subject) for c in together]
+        out.append(Candidate(key=f"testhome/{path}", kind="co_change", title=f"Tests for {path}", body=body,
+                             evidence=evidence, support=top[0][1], confidence=top[0][1] / max(with_tests, 1),
+                             source="history", scope={"paths": [path]}, eligible=top[0][1] >= 4))
+    return out
+
+
 def _requirement_names(block: str) -> set[str]:
     """Package names of the quoted requirement strings in ``block`` (markers such as
     ``python_version < '3.10'`` sit inside the outer quotes and are not names)."""
@@ -910,6 +945,7 @@ MINERS: dict[str, Callable[[Snapshot], list[Candidate]]] = {
     "commits": mine_commits,
     "tooling": mine_tooling,
     "cochange": mine_cochange,
+    "testhome": mine_test_homes,
     "history": lambda s: mine_dependencies(s) + mine_moves(s) + mine_origins(s),
 }
 

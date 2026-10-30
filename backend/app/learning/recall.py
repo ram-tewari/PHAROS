@@ -107,6 +107,14 @@ def _overlap(terms: set[str], text: str | None) -> float:
     return len(terms & words) / len(terms)
 
 
+def brief_conventions(text: str, name: str) -> str:
+    """The brief's Conventions section: retrieval already shows the layout and main modules."""
+    for section in text.split("\n## ")[1:]:
+        if section.startswith("Conventions\n"):
+            return f"# {name} conventions\n" + section.split("\n", 1)[1]
+    return ""
+
+
 def memory_for_context(db: Session, repos: list[Repository], chunks: list[dict], query: str) -> dict:
     """Brief + items + playbooks for these retrieved chunks (empty when nothing was learned)."""
     repo_ids = [r.id for r in repos] or list({uuid.UUID(c["repository"]["id"]) for c in chunks})
@@ -117,7 +125,8 @@ def memory_for_context(db: Session, repos: list[Repository], chunks: list[dict],
     for repo in repo_rows[:2]:
         brief = get_brief(db, repo)
         if brief is not None:
-            briefs.append({"repository": repo.name, "commit_sha": brief.commit_sha, "text": brief.text})
+            briefs.append({"repository": repo.name, "commit_sha": brief.commit_sha,
+                           "text": brief_conventions(brief.text, repo.name)})
             in_brief |= set((brief.sections or {}).get("keys", []))
     rank_of_path: dict[str, int] = {}
     for c in chunks:
@@ -133,17 +142,18 @@ def memory_for_context(db: Session, repos: list[Repository], chunks: list[dict],
         if paths:
             ranks = [rank for path, rank in rank_of_path.items() if any(glob_match(g, path) for g in paths)]
             if ranks:
-                scoped.append((min(ranks), -item.confidence, item))
+                scoped.append((not item.key.startswith("testhome/"), min(ranks), -item.confidence, item))
             continue
         langs = (item.scope or {}).get("languages") or []
         if langs and not languages & set(langs):
             continue
         general.append((-_overlap(terms, item.search_text), -item.support, item))
-    scoped.sort(key=lambda t: (t[0], t[1], t[2].key))
+    scoped.sort(key=lambda t: (t[0], t[1], t[2], t[3].key))
     general.sort(key=lambda t: (t[0], t[1], t[2].key))
-    # Items about the retrieved files first; two slots for repository-wide items the query mentions.
+    # Where the retrieved files' tests live, then other items about those files; two slots for
+    # repository-wide items the query mentions.
     relevant_general = [t[2] for t in general if t[0] < 0][:2]
-    picked = [t[2] for t in scoped][:MAX_ITEMS - len(relevant_general)] + relevant_general
+    picked = [t[3] for t in scoped][:MAX_ITEMS - len(relevant_general)] + relevant_general
     skills = []
     for skill in db.execute(select(MemorySkill).where(MemorySkill.repository_id.in_(repo_ids),
                                                       MemorySkill.status == "active")

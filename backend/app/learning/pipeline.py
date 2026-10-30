@@ -138,11 +138,8 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
     grounding = _grounding(snap, repo.url)
     writer = MemoryWriter(db, repo.id, commit, run_id, grounding=grounding)
     writer.apply(candidates)
-    # A family's items are retired only when that family ran: key prefixes map to families.
-    prefixes = {"naming": "naming", "docs": "docs", "typing": "typing", "exceptions": "exceptions",
-                "deprecation": "deprecation", "tests": "tests", "changelog": "changelog", "commits": "commits",
-                "tooling": "tooling", "cochange": "cochange", "history": "history"}
-    writer.retire({prefixes[f] for f in ran}, {c.key for c in candidates})
+    # A family's items are retired only when that family ran: an item's key prefix is its family.
+    writer.retire(ran, {c.key for c in candidates})
     if not families or "playbooks" in families:
         writer.apply_skills(skills)
     # Model-derived items stay only while what they cite still holds (documents can change).

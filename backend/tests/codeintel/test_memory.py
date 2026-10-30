@@ -136,11 +136,15 @@ def test_context_leads_with_memory_for_the_retrieved_files(session, learned, emb
                          include_code=False)
     out = assemble_context(session, embedder, req)
     assert any(c["path"] == "shop/auth.py" for c in out["chunks"])
-    keys = {i["key"] for i in out["memory"]["items"]}
+    items = out["memory"]["items"]
+    keys = {i["key"] for i in items}
+    assert items[0]["key"] == "testhome/shop/auth.py"  # where the retrieved file's tests live, first
+    assert "tests/test_auth.py" in items[0]["body"]
     assert "cochange/shop/auth.py" in keys
     assert not any(k.startswith("history/") for k in keys)  # history only when the query asks
     text = out["context_text"]
-    assert text.index("repository brief") < text.index("Learned about the retrieved code") < text.index("## [1]")
+    assert text.index("conventions\n") < text.index("Learned about the retrieved code") < text.index("## [1]")
+    assert "## Layout" not in text and "## Main modules" not in text  # retrieval already shows those
 
     off = assemble_context(session, embedder, ContextRequest(query=req.query, repository=repo.url,
                                                              include_code=False, include_memory=False))
