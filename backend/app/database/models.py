@@ -1382,6 +1382,207 @@ class IngestionJob(Base):
 
 
 # ============================================================================
+# Learning (Phase 2): repository memory, written on the owner's machine
+# ============================================================================
+
+
+class LearningJob(Base):
+    """Durable learning job: mine one repository's memory at one indexed commit.
+
+    Same state machine and helpers as :class:`IngestionJob`
+    (``app/codeintel/jobs.py``); claimed by ``app/workers/learning_worker.py``
+    on the owner's Mac, never by the API.
+    """
+
+    __tablename__ = "learning_jobs"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="CASCADE"), nullable=False
+    )
+    # The indexed commit to learn from (the repository's last_commit_sha when queued).
+    commit_sha: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    options: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued")
+    attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    error: Mapped[str | None] = mapped_column(Text, nullable=True)
+    error_kind: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    stats: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    worker_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    available_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    __table_args__ = (
+        Index("idx_learning_jobs_status_created", "status", "created_at"),
+        Index(
+            "uq_learning_jobs_active",
+            "repository_id",
+            unique=True,
+            postgresql_where=text("status IN ('queued', 'running')"),
+            sqlite_where=text("status IN ('queued', 'running')"),
+        ),
+    )
+
+
+class MemoryItem(Base):
+    """One fact or convention learned about a repository (semantic memory).
+
+    ``key`` is the item's stable identity within its repository: a miner that
+    derives the same key again patches the item instead of adding a second
+    one. Items are never deleted: when the evidence is gone they become
+    ``stale`` with ``invalidated_at_commit`` set, and a human can ``archive``
+    or ``reject`` them. Every change is written to :class:`MemoryLedger`.
+
+    ``evidence`` is a list of pointers PHAROS can re-check at
+    ``learned_at_commit``: ``{"kind": "code", "path", "start_line",
+    "end_line", "sha256"}`` (hash of those lines), ``{"kind": "file", "path",
+    "blob"}``, or ``{"kind": "commit", "sha", "date", "subject"}``.
+    """
+
+    __tablename__ = "memory_items"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="CASCADE"), nullable=False
+    )
+    key: Mapped[str] = mapped_column(String(255), nullable=False)
+    # convention | co_change | history | fact
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    # {"paths": [glob, ...], "languages": [...]}; empty = the whole repository.
+    scope: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    evidence: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    support: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    # code | history | review | session | human
+    source: Mapped[str] = mapped_column(String(16), nullable=False)
+    # L1 (deterministic miner) | L2 (Codex, grounded) | human
+    tier: Mapped[str] = mapped_column(String(8), nullable=False)
+    # proposed | active | stale | archived | rejected
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="proposed")
+    learned_at_commit: Mapped[str] = mapped_column(String(64), nullable=False)
+    valid_from_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    invalidated_at_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    search_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    embedding: Mapped[List[float] | None] = mapped_column(EmbeddingVector(EMBEDDING_DIM), nullable=True)
+    embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    __table_args__ = (
+        Index("uq_memory_items_repo_key", "repository_id", "key", unique=True),
+        Index("idx_memory_items_repo_status", "repository_id", "status"),
+    )
+
+
+class MemorySkill(Base):
+    """A repository playbook (procedural memory): how a recurring change is made here.
+
+    Progressive disclosure: ``description`` is level 0 (one line, listed),
+    ``body`` level 1 (steps and pitfalls), ``resources`` level 2 (files
+    touched with rates, example commits).
+    """
+
+    __tablename__ = "memory_skills"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="CASCADE"), nullable=False
+    )
+    name: Mapped[str] = mapped_column(String(128), nullable=False)
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    resources: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    scope: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    evidence: Mapped[list] = mapped_column(JSON, nullable=False, default=list)
+    support: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    confidence: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    source: Mapped[str] = mapped_column(String(16), nullable=False)
+    tier: Mapped[str] = mapped_column(String(8), nullable=False)
+    status: Mapped[str] = mapped_column(String(16), nullable=False, default="proposed")
+    learned_at_commit: Mapped[str] = mapped_column(String(64), nullable=False)
+    valid_from_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    invalidated_at_commit: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    search_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp(),
+        onupdate=func.current_timestamp(),
+    )
+
+    __table_args__ = (
+        Index("uq_memory_skills_repo_name", "repository_id", "name", unique=True),
+    )
+
+
+class RepoBrief(Base):
+    """Core memory: a short description of the repository, frozen per indexed commit.
+
+    At most 2,200 characters, so it can always lead ``retrieve_context``.
+    """
+
+    __tablename__ = "repo_briefs"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="CASCADE"), nullable=False
+    )
+    commit_sha: Mapped[str] = mapped_column(String(64), nullable=False)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    sections: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+
+    __table_args__ = (
+        Index("uq_repo_briefs_repo_commit", "repository_id", "commit_sha", unique=True),
+    )
+
+
+class MemoryLedger(Base):
+    """Append-only record of every memory change, for audit and rollback by run."""
+
+    __tablename__ = "memory_ledger"
+
+    id: Mapped[uuid.UUID] = mapped_column(GUID(), primary_key=True, default=uuid.uuid4)
+    repository_id: Mapped[uuid.UUID] = mapped_column(
+        GUID(), ForeignKey("repositories.id", ondelete="CASCADE"), nullable=False
+    )
+    # One learning run (or one admin action) groups its changes.
+    run_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(16), nullable=False)  # item | skill
+    target_id: Mapped[uuid.UUID] = mapped_column(GUID(), nullable=False)
+    # add | patch | stale | activate | reject | archive | restore | rollback
+    action: Mapped[str] = mapped_column(String(16), nullable=False)
+    actor: Mapped[str] = mapped_column(String(64), nullable=False)
+    before: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    after: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
+    )
+
+    __table_args__ = (
+        Index("idx_memory_ledger_repo_created", "repository_id", "created_at"),
+        Index("idx_memory_ledger_run", "run_id"),
+    )
+
+
+# ============================================================================
 # MCP (legacy REST tool sessions, /api/v1/mcp/sessions)
 # ============================================================================
 

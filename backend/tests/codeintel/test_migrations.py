@@ -36,7 +36,8 @@ def test_upgrade_downgrade_upgrade_from_scratch(blank_engine):
     with blank_engine.begin() as conn:
         command.upgrade(_cfg(conn), "head")
     tables = set(inspect(blank_engine).get_table_names())
-    assert {"repositories", "resources", "document_chunks", "code_edges", "ingestion_jobs"} <= tables
+    assert {"repositories", "resources", "document_chunks", "code_edges", "ingestion_jobs", "learning_jobs",
+            "memory_items", "memory_skills", "repo_briefs", "memory_ledger"} <= tables
 
     with blank_engine.begin() as conn:
         command.downgrade(_cfg(conn), "base")
@@ -45,7 +46,7 @@ def test_upgrade_downgrade_upgrade_from_scratch(blank_engine):
     with blank_engine.begin() as conn:
         command.upgrade(_cfg(conn), "head")
         version = conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
-    assert version == "0003_chunk_descriptions"
+    assert version == "0004_learning"
 
 
 def test_models_match_migrations(blank_engine):

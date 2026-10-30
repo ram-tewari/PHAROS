@@ -8,6 +8,9 @@ this question?" with:
   verified against the indexed blob SHA;
 * graph neighbours of the top hits (callers / callees / imports) as compact
   summaries;
+* the repository's learned memory (``app.learning``): its brief, the active
+  conventions and facts scoped to the retrieved files, and matching
+  playbooks — rendered first, so it leads the answer;
 * ACTIVE coding rules learned for the repository (pattern-learning loop);
 * ``context_text``: the same material rendered as Markdown with
   ``path:start-end`` citations, cut to a character budget.
@@ -26,12 +29,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database.models import CodingProfile, DocumentChunk, ProposedRule, Repository, Resource
+from ..learning.recall import memory_for_context
 from .embeddings import Embedder
 from .git_source import web_file_url
 from .retrieval import Filters, Hit, Retriever, repositories_matching
 from .source import SourceRequest, resolve_sources
 
 MODULE_CODE_LINES = 40
+MEMORY_CHARS = 4000  # the memory block's share of the budget (at most a third of it)
 
 
 class RepositoryNotFound(LookupError):
@@ -47,6 +52,7 @@ class ContextRequest:
     include_code: bool = True
     include_related: bool = True
     include_rules: bool = True
+    include_memory: bool = True
     profile_id: str | None = None  # a CodingProfile's rules instead of the repository's
     max_chars: int = 24_000
     languages: list[str] | None = None
@@ -221,8 +227,14 @@ def assemble_context(db: Session, embedder: Embedder | None, req: ContextRequest
             names = [r.name for r in repos] or list({h.repository_name for h in outcome.hits})
             rules = select_rules(db, repositories=urls + names)
 
+    memory: dict = {"briefs": [], "items": [], "skills": []}
+    if req.include_memory and chunks:
+        t = time.perf_counter()
+        memory = memory_for_context(db, repos, chunks, req.query)
+        timings["memory"] = (time.perf_counter() - t) * 1000
+
     budget = _Budget(req.max_chars)
-    context_text = _render(req.query, chunks, related, rules, budget)
+    context_text = _render(req.query, chunks, related, rules, budget, memory)
     timings["total"] = (time.perf_counter() - t0) * 1000
 
     return {
@@ -238,6 +250,7 @@ def assemble_context(db: Session, embedder: Embedder | None, req: ContextRequest
         "chunks": chunks,
         "related": related,
         "rules": rules,
+        "memory": memory,
         "context_text": context_text,
         "stats": {
             "timings_ms": {k: round(v, 2) for k, v in timings.items()},
@@ -277,11 +290,42 @@ def select_rules(db: Session, *, profile_id: str | None = None, repositories: li
         })
     return out
 
-def _render(query: str, chunks: list[dict], related: list[dict], rules: list[dict], budget: _Budget) -> str:
+def _render_memory(memory: dict, limit: int) -> str:
+    """The memory block, at most ``limit`` characters: briefs first, then items, then playbooks."""
+    out = ""
+    for brief in memory.get("briefs", []):
+        out += "\n" + brief["text"].rstrip() + "\n"
+    lines = []
+    for item in memory.get("items", []):
+        cites = ", ".join(_cite(e) for e in item.get("evidence", [])[:2])
+        lines.append(f"- {item['body']}" + (f" [{cites}]" if cites else "") + "\n")
+    if lines:
+        out += "\n## Learned about the retrieved code\n" + "".join(lines)
+    skills = memory.get("skills", [])
+    if skills:
+        out += "\n## Playbooks (get_skill for the steps)\n" + "".join(
+            f"- {s['name']}: {s['description']}\n" for s in skills)
+    return out if len(out) <= limit else out[:limit - 1] + "…"
+
+
+def _cite(evidence: dict) -> str:
+    if evidence.get("kind") == "code":
+        return f"{evidence['path']}:{evidence['start_line']}"
+    if evidence.get("kind") == "commit":
+        return evidence["sha"][:10]
+    return evidence.get("path", "")
+
+
+def _render(query: str, chunks: list[dict], related: list[dict], rules: list[dict], budget: _Budget,
+            memory: dict | None = None) -> str:
     parts: list[str] = []
     header = budget.take(f"# Code context for: {query}\n")
     if header:
         parts.append(header)
+    if memory and (memory.get("briefs") or memory.get("items") or memory.get("skills")):
+        block = budget.take(_render_memory(memory, min(MEMORY_CHARS, max(0, budget.limit // 3))))
+        if block:
+            parts.append(block)
     for c in chunks:
         cite = f"{c['repository']['name']}:{c['path']}:{c['start_line']}-{c['end_line']}"
         title = f"\n## [{c['rank']}] {c['symbol'] or c['path']} ({c['kind']}) — {cite}\n"

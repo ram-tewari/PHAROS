@@ -15,6 +15,10 @@ notifications. Consequences:
 
 Every job ends in exactly one terminal state: ``succeeded``, ``failed`` or
 ``cancelled``.
+
+The queue helpers (:func:`claim`, :func:`next_queued_ids`, :func:`heartbeat`,
+:func:`cancel`, :func:`queue_summary`, :func:`recover_stale`) take the job
+model, so learning jobs (``LearningJob``) share this state machine.
 """
 
 from __future__ import annotations
@@ -29,7 +33,7 @@ from sqlalchemy import func, or_, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..database.models import IngestionJob, Repository
+from ..database.models import IngestionJob, LearningJob, Repository
 from .embeddings import Embedder, EmbeddingUnavailable
 from .git_source import GitError, RepoRef, RepoSpecError
 from .indexer import CodeIndexer
@@ -38,6 +42,8 @@ logger = logging.getLogger(__name__)
 
 ACTIVE = ("queued", "running")
 TERMINAL = ("succeeded", "failed", "cancelled")
+
+JobModel = type[IngestionJob] | type[LearningJob]
 
 
 def utcnow() -> datetime:
@@ -109,19 +115,19 @@ def submit(db: Session, ref: RepoRef, branch: str | None = None, *, force: bool 
     return Submission(job, created=True)
 
 
-def claim(db: Session, job_id: uuid.UUID, worker_id: str) -> IngestionJob | None:
+def claim(db: Session, job_id: uuid.UUID, worker_id: str, model: JobModel = IngestionJob):
     """Atomically move a queued job to running. None if someone else got it."""
     now = utcnow()
     result = db.execute(
-        update(IngestionJob)
+        update(model)
         .where(
-            IngestionJob.id == job_id,
-            IngestionJob.status == "queued",
-            or_(IngestionJob.available_at.is_(None), IngestionJob.available_at <= now),
+            model.id == job_id,
+            model.status == "queued",
+            or_(model.available_at.is_(None), model.available_at <= now),
         )
         .values(
             status="running",
-            attempts=IngestionJob.attempts + 1,
+            attempts=model.attempts + 1,
             worker_id=worker_id,
             started_at=now,
             heartbeat_at=now,
@@ -132,20 +138,20 @@ def claim(db: Session, job_id: uuid.UUID, worker_id: str) -> IngestionJob | None
     db.commit()
     if result.rowcount != 1:
         return None
-    return db.get(IngestionJob, job_id)
+    return db.get(model, job_id)
 
 
-def next_queued_ids(db: Session, limit: int = 10) -> list[uuid.UUID]:
+def next_queued_ids(db: Session, limit: int = 10, model: JobModel = IngestionJob) -> list[uuid.UUID]:
     """Queued jobs that are due (retry backoff elapsed), oldest first."""
     now = utcnow()
     return list(
         db.execute(
-            select(IngestionJob.id)
+            select(model.id)
             .where(
-                IngestionJob.status == "queued",
-                or_(IngestionJob.available_at.is_(None), IngestionJob.available_at <= now),
+                model.status == "queued",
+                or_(model.available_at.is_(None), model.available_at <= now),
             )
-            .order_by(IngestionJob.created_at)
+            .order_by(model.created_at)
             .limit(limit)
         ).scalars()
     )
@@ -156,22 +162,22 @@ def retry_delay_seconds(attempts: int) -> int:
     return min(3600, 30 * 4 ** max(0, attempts - 1))
 
 
-def heartbeat(db: Session, job_id: uuid.UUID) -> None:
-    db.execute(update(IngestionJob).where(IngestionJob.id == job_id).values(heartbeat_at=utcnow()))
+def heartbeat(db: Session, job_id: uuid.UUID, model: JobModel = IngestionJob) -> None:
+    db.execute(update(model).where(model.id == job_id).values(heartbeat_at=utcnow()))
     db.commit()
 
 
-def cancel(db: Session, job_id: uuid.UUID) -> bool:
+def cancel(db: Session, job_id: uuid.UUID, model: JobModel = IngestionJob) -> bool:
     result = db.execute(
-        update(IngestionJob)
-        .where(IngestionJob.id == job_id, IngestionJob.status == "queued")
+        update(model)
+        .where(model.id == job_id, model.status == "queued")
         .values(status="cancelled", finished_at=utcnow())
     )
     db.commit()
     return result.rowcount == 1
 
 
-def queue_summary(db: Session, stale_after_seconds: int) -> dict:
+def queue_summary(db: Session, stale_after_seconds: int, model: JobModel = IngestionJob) -> dict:
     """Worker health as seen from the durable job table.
 
     ``degraded`` when a running job stopped heartbeating, or a queued job has
@@ -181,18 +187,18 @@ def queue_summary(db: Session, stale_after_seconds: int) -> dict:
     cutoff = now - timedelta(seconds=stale_after_seconds)
 
     def count(*where) -> int:
-        return db.execute(select(func.count()).select_from(IngestionJob).where(*where)).scalar_one()
+        return db.execute(select(func.count()).select_from(model).where(*where)).scalar_one()
 
     oldest = db.execute(
-        select(func.min(IngestionJob.created_at)).where(IngestionJob.status == "queued")
+        select(func.min(model.created_at)).where(model.status == "queued")
     ).scalar_one()
     if oldest is not None and oldest.tzinfo is None:
         oldest = oldest.replace(tzinfo=now.tzinfo)
     summary = {
-        "queued": count(IngestionJob.status == "queued"),
-        "running": count(IngestionJob.status == "running"),
-        "stale_running": count(IngestionJob.status == "running", IngestionJob.heartbeat_at < cutoff),
-        "failed_last_24h": count(IngestionJob.status == "failed", IngestionJob.finished_at >= now - timedelta(days=1)),
+        "queued": count(model.status == "queued"),
+        "running": count(model.status == "running"),
+        "stale_running": count(model.status == "running", model.heartbeat_at < cutoff),
+        "failed_last_24h": count(model.status == "failed", model.finished_at >= now - timedelta(days=1)),
         "oldest_queued_seconds": (now - oldest).total_seconds() if oldest is not None else None,
     }
     stuck = summary["stale_running"] > 0 or (
@@ -202,14 +208,14 @@ def queue_summary(db: Session, stale_after_seconds: int) -> dict:
     return summary
 
 
-def recover_stale(db: Session, stale_after_seconds: int) -> list[uuid.UUID]:
+def recover_stale(db: Session, stale_after_seconds: int, model: JobModel = IngestionJob) -> list[uuid.UUID]:
     """Re-queue running jobs whose worker stopped heartbeating.
 
     Returns the ids put back in the queue (callers re-notify them).
     """
     cutoff = utcnow() - timedelta(seconds=stale_after_seconds)
     stale = db.execute(
-        select(IngestionJob).where(IngestionJob.status == "running", IngestionJob.heartbeat_at < cutoff)
+        select(model).where(model.status == "running", model.heartbeat_at < cutoff)
     ).scalars().all()
     requeued = []
     for job in stale:
@@ -225,7 +231,8 @@ def recover_stale(db: Session, stale_after_seconds: int) -> list[uuid.UUID]:
             requeued.append(job.id)
     db.commit()
     if stale:
-        logger.warning("Recovered %d stale ingestion job(s); %d re-queued", len(stale), len(requeued))
+        logger.warning("Recovered %d stale %s(s); %d re-queued", len(stale), model.__tablename__[:-1],
+                       len(requeued))
     return requeued
 
 

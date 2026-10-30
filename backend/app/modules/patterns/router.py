@@ -42,7 +42,12 @@ logger = logging.getLogger(__name__)
 patterns_router = APIRouter(prefix="/api/patterns", tags=["patterns"])
 
 
-@patterns_router.post("/learn", response_model=LearnResponse)
+@patterns_router.post(
+    "/learn",
+    response_model=LearnResponse,
+    deprecated=True,
+    summary="Experimental: Python-only developer profile (superseded by repository memory)",
+)
 async def learn_endpoint(
     request_body: LearnRequest,
     request: Request,
@@ -50,6 +55,13 @@ async def learn_endpoint(
 ) -> LearnResponse:
     """
     Analyze a repository to build a developer coding profile.
+
+    **Experimental and superseded.** The 29 Oct 2026 evaluation found several
+    of its claims wrong (filename-based "patterns", tests averaged with
+    library code, "abandoned" patterns still present). Repository memory
+    (``app.learning``: ``/api/v1/memory/*``, the MCP ``get_repo_brief`` and
+    ``search_memory`` tools) replaces it and will retire it once Phase 2
+    passes its evaluation.
 
     Accepts a local path or remote Git URL, runs AST parsing and
     Git history analysis, and returns the aggregated JSON profile.

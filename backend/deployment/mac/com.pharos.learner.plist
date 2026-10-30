@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  Nightly PHAROS learning on this Mac. Install (replace __BACKEND__ with the absolute backend path):
+    sed "s#__BACKEND__#$PWD#g" deployment/mac/com.pharos.learner.plist > ~/Library/LaunchAgents/com.pharos.learner.plist
+    launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pharos.learner.plist
+  Run now: launchctl kickstart gui/$(id -u)/com.pharos.learner
+  Remove:  launchctl bootout gui/$(id -u)/com.pharos.learner
+  Once a night (03:30, or at the next wake if the Mac was asleep): each run wakes Neon briefly.
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>com.pharos.learner</string>
+  <key>ProgramArguments</key>
+  <array><string>/bin/sh</string><string>__BACKEND__/deployment/mac/run-learner.sh</string></array>
+  <key>StartCalendarInterval</key>
+  <dict><key>Hour</key><integer>3</integer><key>Minute</key><integer>30</integer></dict>
+  <key>LowPriorityIO</key><true/>
+  <key>Nice</key><integer>10</integer>
+  <key>StandardOutPath</key><string>/tmp/pharos-learner.log</string>
+  <key>StandardErrorPath</key><string>/tmp/pharos-learner.log</string>
+</dict>
+</plist>

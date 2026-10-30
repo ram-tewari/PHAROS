@@ -235,7 +235,8 @@ def test_mcp_tools_and_calls(indexed_api):
     })
     assert init.status_code == 200 and init.json()["result"]["serverInfo"]["name"] == "pharos"
     tools = {t["name"] for t in _mcp(indexed_api, "tools/list").json()["result"]["tools"]}
-    assert tools == {"retrieve_context", "search_code", "find_symbol", "list_repositories"}
+    assert tools == {"retrieve_context", "search_code", "find_symbol", "list_repositories", "get_repo_brief",
+                     "search_memory", "list_skills", "get_skill"}
     call = _mcp(indexed_api, "tools/call", {"name": "search_code", "arguments": {"query": "token bucket", "k": 2}})
     payload = json.loads(call.json()["result"]["content"][0]["text"])
     assert payload["results"][0]["symbol"] == "tools.ratelimit.limiter.Bucket"
