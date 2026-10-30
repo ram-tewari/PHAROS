@@ -420,13 +420,22 @@ def open_checkout(ref: RepoRef, *, branch: str | None = None, token: str | None 
     assert ref.clone_url
     temp_dir = tempfile.mkdtemp(prefix="pharos_ingest_")
     git_dir = os.path.join(temp_dir, "repo.git")
-    args = ["git", "clone", "--bare", "--depth", "1", "--single-branch", "--no-tags", "--quiet"]
-    if branch:
-        args += ["--branch", branch]
-    args += ["--", ref.clone_url, git_dir]
+    env = _git_env(_auth_config(ref, token))
     try:
-        _run(args, timeout=timeout, env=_git_env(_auth_config(ref, token)))
-        commit = _run(["git", f"--git-dir={git_dir}", "rev-parse", "--verify", "HEAD^{commit}"], timeout=30).strip()
+        if branch and _SHA_RE.match(branch):
+            # A full commit SHA pins the exact tree (reproducible re-indexing);
+            # `clone --branch` only takes branch and tag names.
+            _run(["git", "init", "--bare", "--quiet", git_dir], timeout=30)
+            _run(["git", f"--git-dir={git_dir}", "fetch", "--depth", "1", "--no-tags", "--quiet", "--",
+                  ref.clone_url, branch], timeout=timeout, env=env)
+            target = "FETCH_HEAD^{commit}"
+        else:
+            args = ["git", "clone", "--bare", "--depth", "1", "--single-branch", "--no-tags", "--quiet"]
+            if branch:
+                args += ["--branch", branch]
+            _run([*args, "--", ref.clone_url, git_dir], timeout=timeout, env=env)
+            target = "HEAD^{commit}"
+        commit = _run(["git", f"--git-dir={git_dir}", "rev-parse", "--verify", target], timeout=30).strip()
     except Exception:
         shutil.rmtree(temp_dir, ignore_errors=True)
         raise

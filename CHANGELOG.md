@@ -25,7 +25,9 @@ see `docs/benchmarks/retrieval-phase1-2026-10-30.md`.
 - `scripts/fetch_onnx_model.py --model …`: several pinned models, each with a `pharos_model.json`
   profile (pooling, prefixes, maximum length) that `OnnxEmbedder` reads.
 - `pharos describe` and migration `0003_chunk_descriptions`: Codex-written function descriptions,
-  grounded and cached per blob SHA, folded into embeddings (built, not yet measured).
+  grounded and cached per blob SHA, folded into embeddings (dev pilot: no measurable gain on
+  codeqa_v1, Δ +0.001; not run on the deployment).
+- Indexing a full commit SHA (`--branch <sha>`) fetches exactly that commit.
 - `app.learning.llm.CodexCLI`: a hardened `codex exec` adapter for jobs on the owner's machine.
 - Benchmarks: `--local-checkouts` and `--hints` in `retrieval_eval`, `prod_eval.py`,
   `make_synthetic.py`, the locked `heldout_v2` set and the synthetic `dev_synth_v1` set.

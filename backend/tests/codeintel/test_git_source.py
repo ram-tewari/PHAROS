@@ -124,3 +124,24 @@ def test_raw_urls_pin_the_commit():
     )
     assert git_source.raw_file_url("https://gitlab.com/g/p", sha, "a.go") == f"https://gitlab.com/g/p/-/raw/{sha}/a.go"
     assert git_source.raw_file_url("file:///tmp/x", sha, "a.go") is None
+
+
+def test_a_full_commit_sha_is_fetched_not_cloned(monkeypatch):
+    from app.codeintel import git_source
+
+    calls = []
+
+    def fake_run(args, **kwargs):
+        calls.append(args)
+        return "a" * 40 + "\n" if "rev-parse" in args else ""
+
+    monkeypatch.setattr(git_source, "_run", fake_run)
+    ref = parse_repo_spec("github.com/acme/widgets", allowed_hosts=["github.com"])
+    pinned = git_source.open_checkout(ref, branch="a" * 40)
+    assert pinned.commit == "a" * 40
+    assert calls[0][:3] == ["git", "init", "--bare"]
+    assert "fetch" in calls[1] and calls[1][-1] == "a" * 40 and "clone" not in calls[1]
+    assert calls[2][-1] == "FETCH_HEAD^{commit}"
+    calls.clear()
+    git_source.open_checkout(ref, branch="main")
+    assert calls[0][:2] == ["git", "clone"] and "--branch" in calls[0]
