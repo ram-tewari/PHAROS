@@ -1,0 +1,772 @@
+{
+ "dataset": "pharos-heldout",
+ "version": 1,
+ "base_url": "https://pharos-new-free-20261029.onrender.com",
+ "wake_seconds": 0.2,
+ "k": 10,
+ "modes": {
+  "auto": {
+   "overall": {
+    "recall@5": {
+     "mean": 0.6814,
+     "ci95": [
+      0.5833,
+      0.7729
+     ]
+    },
+    "recall@10": {
+     "mean": 0.7745,
+     "ci95": [
+      0.683,
+      0.8578
+     ]
+    },
+    "mrr": {
+     "mean": 0.7505,
+     "ci95": [
+      0.6514,
+      0.842
+     ]
+    },
+    "ndcg@10": {
+     "mean": 0.6966,
+     "ci95": [
+      0.5972,
+      0.7812
+     ]
+    },
+    "success@1": {
+     "mean": 0.549,
+     "ci95": [
+      0.4118,
+      0.6863
+     ]
+    }
+   },
+   "queries": [
+    {
+     "id": "click-01",
+     "mode_used": "dense",
+     "top3": [
+      "click.core.Option._infer_flag_kind",
+      "click.exceptions.NoSuchOption.__init__",
+      "click.parser._OptionParser._match_short_opt"
+     ],
+     "recall@5": 0.25,
+     "recall@10": 0.5,
+     "mrr": 0.5,
+     "ndcg@10": 0.386,
+     "success@1": 0.0
+    },
+    {
+     "id": "click-02",
+     "mode_used": "dense",
+     "top3": [
+      "click.core.Parameter.value_from_envvar",
+      "click.core.Parameter.resolve_envvar_value",
+      "click.core.Option.value_from_envvar"
+     ],
+     "recall@5": 0.75,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.987,
+     "success@1": 1.0
+    },
+    {
+     "id": "click-03",
+     "mode_used": "dense",
+     "top3": [
+      "click._termui_impl._PagerWriter.close",
+      "click._compat._AtomicFile.close",
+      "click._termui_impl._tempfilepager"
+     ],
+     "recall@5": 0.333,
+     "recall@10": 0.333,
+     "mrr": 0.5,
+     "ndcg@10": 0.351,
+     "success@1": 0.0
+    },
+    {
+     "id": "click-04",
+     "mode_used": "dense",
+     "top3": [
+      "click._termui_impl.ProgressBar.time_per_iteration",
+      "click._termui_impl.ProgressBar.eta",
+      "click._termui_impl.ProgressBar.make_step"
+     ],
+     "recall@5": 0.667,
+     "recall@10": 0.667,
+     "mrr": 1.0,
+     "ndcg@10": 0.7,
+     "success@1": 0.0
+    },
+    {
+     "id": "click-05",
+     "mode_used": "dense",
+     "top3": [
+      "click.types.BoolParamType.str_to_bool",
+      "click.types.BoolParamType.convert",
+      "click.utils.make_str"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "click-06",
+     "mode_used": "dense",
+     "top3": [
+      "click._termui_impl.Editor.get_editor",
+      "click.termui.edit",
+      "click._termui_impl.Editor.edit_files"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.708,
+     "success@1": 0.0
+    },
+    {
+     "id": "click-07",
+     "mode_used": "dense",
+     "top3": [
+      "click.utils.get_app_dir",
+      "click.testing.CliRunner.isolated_filesystem",
+      "click.types.Path.__init__"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "click-08",
+     "mode_used": "dense",
+     "top3": [
+      "click.shell_completion.split_arg_string",
+      "click.shell_completion.BashComplete.get_completion_args",
+      "click.core.Command.parse_args"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "click-09",
+     "mode_used": "dense",
+     "top3": [
+      "tests.test_abort_interrupt._exit_code",
+      "tests.test_stream_lifecycle.test_getvalue_after_isolation_exit",
+      "tests.test_testing.test_isolated_runner"
+     ],
+     "recall@5": 0.0,
+     "recall@10": 0.0,
+     "mrr": 0.0,
+     "ndcg@10": 0.0,
+     "success@1": 0.0
+    },
+    {
+     "id": "click-10",
+     "mode_used": "dense",
+     "top3": [
+      "click.types.FloatRange._clamp",
+      "click.types._NumberRangeBase._clamp",
+      "click.types.IntRange._clamp"
+     ],
+     "recall@5": 0.75,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.701,
+     "success@1": 0.0
+    },
+    {
+     "id": "click-11",
+     "mode_used": "dense",
+     "top3": [
+      "click.termui.echo_via_pager",
+      "click._termui_impl._pipepager",
+      "click._termui_impl._PagerWriter"
+     ],
+     "recall@5": 0.5,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.956,
+     "success@1": 1.0
+    },
+    {
+     "id": "click-12",
+     "mode_used": "dense",
+     "top3": [
+      "click.core.Context.ensure_object",
+      "click.core.Context",
+      "click.core.Context.scope"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "click-13",
+     "mode_used": "dense",
+     "top3": [
+      "click.decorators.make_pass_decorator",
+      "click.decorators.pass_meta_key",
+      "click.decorators.password_option"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-01",
+     "mode_used": "dense",
+     "top3": [
+      "source.core.Ky.Ky.#calculateDelay",
+      "source.core.Ky.Ky.#calculateRetryDelay",
+      "source.core.retry-timing.calculateRetryTimingDelay"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-02",
+     "mode_used": "dense",
+     "top3": [
+      "source.core.retry-timing.getRetryTimingHeader",
+      "source.core.retry-timing.calculateRetryTimingDelay",
+      "source.core.retry-timing.RetryTimingHeader"
+     ],
+     "recall@5": 0.5,
+     "recall@10": 0.75,
+     "mrr": 1.0,
+     "ndcg@10": 0.894,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-03",
+     "mode_used": "dense",
+     "top3": [
+      "source.core.constants.retry",
+      "source.utils.normalize.normalizeRetryOptions",
+      "source.core.Ky.Ky.#retryFromError"
+     ],
+     "recall@5": 0.667,
+     "recall@10": 0.667,
+     "mrr": 0.5,
+     "ndcg@10": 0.466,
+     "success@1": 0.0
+    },
+    {
+     "id": "ky-04",
+     "mode_used": "dense",
+     "top3": [
+      "source.utils.is-network-error.isRawNetworkError",
+      "source.errors.NetworkError.NetworkError",
+      "source.utils.type-guards.isNetworkError"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.964,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-05",
+     "mode_used": "dense",
+     "top3": [
+      "source.utils.body.limitResponseSize",
+      "source.core.Ky.Ky.#limitResponseSize",
+      "source.errors.ResponseSizeError.ResponseSizeError"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-06",
+     "mode_used": "dense",
+     "top3": [
+      "source.utils.body.streamResponse",
+      "source.utils.body.withProgress",
+      "source.core.Ky.readResponseText"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-07",
+     "mode_used": "dense",
+     "top3": [
+      "source.core.Ky.Ky.#wrapRequestWithUploadProgress",
+      "source.utils.body.withProgress",
+      "source.utils.body.streamRequest"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.951,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-08",
+     "mode_used": "dense",
+     "top3": [
+      "source.core.Ky.resolveInput",
+      "source.types.options.Input",
+      "source.utils.merge.appendSearchParameters"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-09",
+     "mode_used": "dense",
+     "top3": [
+      "source.types.hooks.InitHook",
+      "source.types.options.NormalizedOptions",
+      "source.core.Ky.cloneInitHookOptions"
+     ],
+     "recall@5": 0.0,
+     "recall@10": 0.0,
+     "mrr": 0.0,
+     "ndcg@10": 0.0,
+     "success@1": 0.0
+    },
+    {
+     "id": "ky-10",
+     "mode_used": "dense",
+     "top3": [
+      "source.core.Ky.Ky.#getErrorDataTimeout",
+      "source.errors.TimeoutError.TimeoutError",
+      "source.core.Ky.Ky.#getResponseData"
+     ],
+     "recall@5": 0.667,
+     "recall@10": 0.667,
+     "mrr": 0.5,
+     "ndcg@10": 0.434,
+     "success@1": 0.0
+    },
+    {
+     "id": "ky-11",
+     "mode_used": "dense",
+     "top3": [
+      "source.errors.HTTPError",
+      "source.errors.HTTPError.HTTPError",
+      "source.errors.HTTPError.HTTPError.constructor"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 0.5,
+     "ndcg@10": 0.659,
+     "success@1": 0.0
+    },
+    {
+     "id": "ky-12",
+     "mode_used": "dense",
+     "top3": [
+      "source.utils.normalize.normalizeRetryOptions",
+      "source.types.options.NormalizedRetryOptions",
+      "source.utils.normalize.InternalRetryOptions"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "ky-13",
+     "mode_used": "dense",
+     "top3": [
+      "source.index.createInstance",
+      "source.types.ky.KyInstance",
+      "source.core.Ky.Ky.create"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.964,
+     "success@1": 1.0
+    },
+    {
+     "id": "anyhow-01",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.Error.root_cause",
+      "src.error.Error.chain",
+      "src.lib.Chain"
+     ],
+     "recall@5": 0.333,
+     "recall@10": 0.333,
+     "mrr": 0.5,
+     "ndcg@10": 0.351,
+     "success@1": 0.0
+    },
+    {
+     "id": "anyhow-02",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.Error.root_cause",
+      "src.error.Error.chain",
+      "src.fmt.ErrorImpl.debug"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "anyhow-03",
+     "mode_used": "dense",
+     "top3": [
+      "src.context.Option.context",
+      "src.error.Error.msg",
+      "src.context.Result.context"
+     ],
+     "recall@5": 0.0,
+     "recall@10": 0.333,
+     "mrr": 0.111,
+     "ndcg@10": 0.167,
+     "success@1": 0.0
+    },
+    {
+     "id": "anyhow-04",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.Error.is",
+      "src.error.Error.downcast",
+      "src.error.impl AsRef<dyn StdError> for Error"
+     ],
+     "recall@5": 0.667,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.605,
+     "success@1": 0.0
+    },
+    {
+     "id": "anyhow-05",
+     "mode_used": "dense",
+     "top3": [
+      "src.fmt.ErrorImpl.debug",
+      "src.error.impl Debug for ErrorImpl<E>",
+      "src.error.impl Debug for Error"
+     ],
+     "recall@5": 0.333,
+     "recall@10": 0.333,
+     "mrr": 1.0,
+     "ndcg@10": 0.726,
+     "success@1": 1.0
+    },
+    {
+     "id": "anyhow-06",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.impl StdError for ErrorImpl<E>",
+      "src.error.Error.into_boxed_dyn_error",
+      "src.error.Error.from_boxed"
+     ],
+     "recall@5": 0.0,
+     "recall@10": 0.5,
+     "mrr": 0.167,
+     "ndcg@10": 0.218,
+     "success@1": 0.0
+    },
+    {
+     "id": "anyhow-07",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.Error.msg",
+      "src.wrapper.impl StdError for MessageError<M>",
+      "src.wrapper.impl Display for MessageError<M>"
+     ],
+     "recall@5": 0.5,
+     "recall@10": 0.5,
+     "mrr": 1.0,
+     "ndcg@10": 0.742,
+     "success@1": 1.0
+    },
+    {
+     "id": "anyhow-08",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.Error.into_boxed_dyn_error",
+      "src.wrapper.impl StdError for BoxedError",
+      "src.error.Error.from_boxed"
+     ],
+     "recall@5": 0.5,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.913,
+     "success@1": 1.0
+    },
+    {
+     "id": "anyhow-09",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.object_drop",
+      "src.error.ErrorImpl.erase",
+      "src.error.impl Drop for Error"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.851,
+     "success@1": 1.0
+    },
+    {
+     "id": "anyhow-10",
+     "mode_used": "dense",
+     "top3": [
+      "src.lib.format_err",
+      "src.error.ErrorImpl.fmt@1016",
+      "src.error.ErrorImpl.fmt"
+     ],
+     "recall@5": 0.0,
+     "recall@10": 0.0,
+     "mrr": 0.0,
+     "ndcg@10": 0.0,
+     "success@1": 0.0
+    },
+    {
+     "id": "anyhow-11",
+     "mode_used": "dense",
+     "top3": [
+      "src.error.Error.downcast_mut",
+      "src.error.Error.downcast",
+      "src.error.Error.downcast_ref"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-01",
+     "mode_used": "dense",
+     "top3": [
+      "lib.http.follow_fake",
+      "lib.urlapi.redirect_url",
+      "lib.http.Curl_http_follow"
+     ],
+     "recall@5": 0.5,
+     "recall@10": 1.0,
+     "mrr": 0.333,
+     "ndcg@10": 0.565,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-02",
+     "mode_used": "dense",
+     "top3": [
+      "lib.smtp.smtp_parse_url_path",
+      "lib.urlapi.parse_scheme",
+      "lib.url.parse_connect_to_string"
+     ],
+     "recall@5": 0.25,
+     "recall@10": 0.5,
+     "mrr": 0.5,
+     "ndcg@10": 0.373,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-03",
+     "mode_used": "dense",
+     "top3": [
+      "lib.cookie.cookie_tailmatch",
+      "lib.cookie.parse_domain",
+      "lib.cookie.bad_domain"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-04",
+     "mode_used": "dense",
+     "top3": [
+      "lib.proxy.proxy_check_noproxy",
+      "lib.proxy.proxy_do_not_proxy",
+      "lib.proxy.proxy_detect_proxy"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-05",
+     "mode_used": "dense",
+     "top3": [
+      "lib.vtls.schannel_verify.cert_get_name_string",
+      "lib.vtls.openssl.ossl_verifyhost",
+      "lib.vtls.hostcheck.hostmatch"
+     ],
+     "recall@5": 0.667,
+     "recall@10": 0.667,
+     "mrr": 0.333,
+     "ndcg@10": 0.518,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-06",
+     "mode_used": "dense",
+     "top3": [
+      "lib.http_chunks.Curl_chunked_strerror",
+      "lib.http_chunks.cw_chunked_write",
+      "lib.http_chunks.httpchunk_readwrite"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 0.333,
+     "ndcg@10": 0.532,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-07",
+     "mode_used": "dense",
+     "top3": [
+      "lib.netrc.Curl_netrc_scan",
+      "lib.netrc.netrc_scan_reset",
+      "lib.netrc.netrc_scan_end_entry"
+     ],
+     "recall@5": 0.25,
+     "recall@10": 0.75,
+     "mrr": 1.0,
+     "ndcg@10": 0.627,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-08",
+     "mode_used": "dense",
+     "top3": [
+      "src.tool_getparam.replace_url_encoded_space_by_plus",
+      "lib.escape.curl_easy_unescape",
+      "lib.urlapi.host_decode"
+     ],
+     "recall@5": 0.333,
+     "recall@10": 0.667,
+     "mrr": 0.5,
+     "ndcg@10": 0.512,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-09",
+     "mode_used": "dense",
+     "top3": [
+      "lib.cf-ip-happy.cf_ip_attempt_connect",
+      "lib.vdns.hostip.ipv6works@308",
+      "lib.cf-ip-happy.cf_ip_attempt_restart"
+     ],
+     "recall@5": 0.0,
+     "recall@10": 0.0,
+     "mrr": 0.0,
+     "ndcg@10": 0.0,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-10",
+     "mode_used": "dense",
+     "top3": [
+      "lib.vdns.hostip.hostip_async_new",
+      "lib.vdns.hostip.Curl_resolv_take_result",
+      "lib.vdns.asyn-ares.Curl_async_getaddrinfo"
+     ],
+     "recall@5": 0.333,
+     "recall@10": 0.333,
+     "mrr": 0.5,
+     "ndcg@10": 0.153,
+     "success@1": 0.0
+    },
+    {
+     "id": "curl-11",
+     "mode_used": "dense",
+     "top3": [
+      "lib.curlx.base64.base64_encode",
+      "lib.mime.encoder_base64_read",
+      "lib.curlx.base64.curlx_base64_encode"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 0.92,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-12",
+     "mode_used": "dense",
+     "top3": [
+      "lib.http.http_statusline",
+      "lib.http.http_on_1xx_response",
+      "lib.http.http_on_response"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-13",
+     "mode_used": "dense",
+     "top3": [
+      "lib.setopt.curl_easy_setopt",
+      "include.curl.typecheck-gcc.curl_easy_setopt",
+      "include.curl.options.curl_easyoption"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 1.0,
+     "ndcg@10": 1.0,
+     "success@1": 1.0
+    },
+    {
+     "id": "curl-14",
+     "mode_used": "dense",
+     "top3": [
+      "lib.multi.multi_perform",
+      "lib.multi.curl_multi_perform",
+      "lib.multi.Curl_multi_add_perform"
+     ],
+     "recall@5": 1.0,
+     "recall@10": 1.0,
+     "mrr": 0.5,
+     "ndcg@10": 0.631,
+     "success@1": 0.0
+    }
+   ],
+   "client_ms": {
+    "p50": 418.52,
+    "p95": 571.98
+   },
+   "server_ms": {
+    "p50": 220.64,
+    "p95": 278.7
+   }
+  }
+ }
+}
