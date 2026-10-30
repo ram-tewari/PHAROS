@@ -28,9 +28,11 @@ from ..codeintel.embeddings import Embedder
 from ..codeintel.retrieval import path_role
 from ..database.models import CodeEdge, DocumentChunk, LearningJob, MemoryItem, MemorySkill, RepoBrief, Repository
 from .brief import compose_brief
-from .history import HistoryError, ensure_mirror, load_history, worktree
+from .extract import extract
+from .history import HistoryError, _git, ensure_mirror, load_history, mirror_name, worktree
 from .memory import MemoryWriter, check_evidence
 from .miners import MINERS, Chunk, Snapshot, mine_playbooks, tracked_files
+from .reviews import check_review
 
 logger = logging.getLogger(__name__)
 
@@ -66,12 +68,20 @@ def load_snapshot(db: Session, repo: Repository, checkout: Path, mirror: Path, c
     return snap
 
 
-def _grounding(snap: Snapshot) -> Callable[[dict], bool]:
+def _grounding(snap: Snapshot, url: str) -> Callable[[dict], bool]:
     known = {c.sha for c in snap.history}
+    origin = url
+    if not url.startswith("https://"):
+        try:
+            origin = _git(snap.mirror, "remote", "get-url", "origin").strip()
+        except HistoryError:
+            pass
 
     def check(evidence: dict) -> bool:
         if evidence.get("kind") == "commit" and evidence.get("sha") in known:
             return True
+        if evidence.get("kind") == "review":
+            return check_review(evidence, mirror_name(origin)) or check_review(evidence, mirror_name(url))
         return check_evidence(evidence, snap.checkout, snap.mirror)
 
     return check
@@ -94,9 +104,14 @@ def embed_items(db: Session, repository_id, embedder: Embedder | None, batch: in
 
 def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: Path, commit: str,
                      embedder: Embedder | None = None, run_id: str | None = None,
-                     families: list[str] | None = None,
+                     families: list[str] | None = None, llm=None, max_llm_calls: int = 10,
+                     review_token: str | None = None,
                      progress: Callable[[str], None] = lambda _m: None) -> dict:
-    """Mine ``repo`` at ``commit`` (``checkout`` must be that commit's tree) and update its memory."""
+    """Mine ``repo`` at ``commit`` (``checkout`` must be that commit's tree) and update its memory.
+
+    With ``llm`` (a ``CodexCLI``), L2 extraction runs after the deterministic
+    miners, spending at most ``max_llm_calls`` calls on evidence it has not read.
+    """
     run_id = run_id or f"learn-{uuid.uuid4().hex[:16]}"
     t0 = time.perf_counter()
     snap = load_snapshot(db, repo, checkout, mirror, commit)
@@ -120,7 +135,8 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
         by_family[family] = len(found)
         timings[family] = round(time.perf_counter() - t, 2)
     skills = mine_playbooks(snap) if not families or "playbooks" in families else []
-    writer = MemoryWriter(db, repo.id, commit, run_id, grounding=_grounding(snap))
+    grounding = _grounding(snap, repo.url)
+    writer = MemoryWriter(db, repo.id, commit, run_id, grounding=grounding)
     writer.apply(candidates)
     # A family's items are retired only when that family ran: key prefixes map to families.
     prefixes = {"naming": "naming", "docs": "docs", "typing": "typing", "exceptions": "exceptions",
@@ -129,7 +145,21 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
     writer.retire({prefixes[f] for f in ran}, {c.key for c in candidates})
     if not families or "playbooks" in families:
         writer.apply_skills(skills)
+    # Model-derived items stay only while what they cite still holds (documents can change).
+    for row in db.execute(select(MemoryItem).where(MemoryItem.repository_id == repo.id, MemoryItem.tier == "L2",
+                                                   MemoryItem.status.in_(("active", "proposed")))).scalars():
+        if not all(grounding(e) for e in row.evidence or []):
+            writer.mark_stale(row, reason="evidence no longer holds")
     db.flush()
+    l2 = None
+    if llm is not None and (not families or "l2" in families):
+        t = time.perf_counter()
+        writer.actor = "codex"
+        l2 = vars(extract(db, snap, repo, writer, llm, max_calls=max_llm_calls, token=review_token))
+        writer.actor = "learner"
+        timings["l2"] = round(time.perf_counter() - t, 2)
+        progress(f"{repo.name}: L2 {l2['calls']} calls, {l2['added']} proposed, {l2['patched']} patched, "
+                 f"rejected {l2['rejected']}")
     embedded = embed_items(db, repo.id, embedder)
     items = db.execute(select(MemoryItem).where(MemoryItem.repository_id == repo.id,
                                                 MemoryItem.status == "active")).scalars().all()
@@ -146,7 +176,7 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
     timings["total"] = round(time.perf_counter() - t0, 2)
     stats = {"run_id": run_id, "commit": commit, "candidates": len(candidates), "skills": len(skills),
              "by_family": by_family, **writer.stats.as_dict(), "embedded": embedded, "brief_chars": len(text),
-             "timings_s": timings}
+             "l2": l2, "timings_s": timings}
     progress(f"{repo.name}: {stats['added']} added, {stats['patched']} patched, {stats['staled']} stale, "
              f"{stats['activated']} active, {stats['proposed']} proposed")
     return stats
@@ -189,7 +219,8 @@ def queue_unlearned(db: Session) -> list[LearningJob]:
 
 
 def run_learning_job(db: Session, job: LearningJob, embedder: Embedder | None, *,
-                     mirror_root: Path | None = None) -> LearningJob:
+                     mirror_root: Path | None = None, llm=None, max_llm_calls: int = 10,
+                     review_token: str | None = None) -> LearningJob:
     """Execute a claimed learning job to a terminal (or re-queued) state. Never raises."""
     job_id = job.id
     try:
@@ -203,7 +234,8 @@ def run_learning_job(db: Session, job: LearningJob, embedder: Embedder | None, *
                                local_path=repo.local_path if repo.source_type == "local" else None)
         with worktree(mirror, commit) as checkout:
             stats = learn_repository(db, repo, checkout=checkout, mirror=mirror, commit=commit, embedder=embedder,
-                                     run_id=f"job-{job_id}",
+                                     run_id=f"job-{job_id}", llm=llm, max_llm_calls=max_llm_calls,
+                                     review_token=review_token,
                                      progress=lambda m: jobs.heartbeat(db, job_id, LearningJob) or logger.info(m))
     except Exception as exc:  # noqa: BLE001 - a job records every failure
         db.rollback()

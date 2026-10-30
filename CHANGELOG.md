@@ -32,6 +32,20 @@ Evaluation protocol locked first: `docs/benchmarks/phase2-eval-protocol.md`. Not
   - `app.workers.learning_worker --once`.
   - `deployment/mac/run-learner.sh` with `com.pharos.learner.plist`, to run nightly; not installed.
 
+- **L2 extraction** (`app/learning/extract.py`, `app/learning/reviews.py`, `pharos learn --codex`):
+  - **Input:** Codex reads the repository's contributing, style and internals documents, plus public
+    pull-request review comments that maintainers left before the learned commit.
+  - **Output:** it proposes add, patch or retire operations on memory.
+  - **Grounding:** it may cite only evidence ids PHAROS issued. Any identifier it mentions must
+    appear in that evidence. It never rewrites a deterministic item. One-off advice about a single
+    PR is dropped.
+  - **Gate:** results start `proposed`, so a human accepts them. A model rewrite of an accepted item
+    needs accepting again. An item whose cited lines change goes stale.
+  - **Budget:** evidence already read is cached by hash. The worker's budget is
+    `LEARNING_MAX_CODEX_CALLS` (default 40 a night) and `LEARNING_CODEX_CALLS_PER_REPO` (default 10).
+- `benchmarks/phase2_eval.py`: runs the locked Phase 2 protocol. It resumes from a checkpoint, so no
+  Codex call is spent twice.
+
 ### Changed
 
 - `POST /api/patterns/learn` (Python-only profiles) is marked deprecated and experimental.
