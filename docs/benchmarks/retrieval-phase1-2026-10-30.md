@@ -93,11 +93,12 @@ These are single-process measurements. Production has 512 MB with the app alread
 
 - **Routing identifier-shaped queries to hybrid** helped with MiniLM (+0.01) but cost 0.01 with Granite, which already ranks named symbols first. Removed.
 - **Hints overstate their value on famous code.** The dev gain was +0.10 to +0.22, mostly on flask and cobra, which Codex knows from training. On the locked sets it was +0.01 and +0.10. Treat hints as a bonus whose size depends on how well the calling model knows the repository.
-- **Contextual descriptions** (`pharos describe`): built and tested, not yet measured. The pilot was skipped to ship sooner.
-  - Each description is one or two sentences per function, written by Codex on the owner's Mac.
-  - They are cached per git blob SHA and symbol (migration `0003_chunk_descriptions`).
-  - Any description that names an identifier the code lacks is rejected.
-  - It is the obvious next lever for the remaining misses.
+- **Contextual descriptions** (`pharos describe`) showed no measurable gain in a dev pilot.
+  - What it does: Codex writes one or two sentences per function on the owner's Mac. They are cached per git blob SHA and symbol (migration `0003_chunk_descriptions`), and any description that names an identifier the code lacks is rejected.
+  - The pilot described all 181 undocumented source functions in flask (125) and cobra (56) on the Granite index. That took 16 Codex calls and 173k input tokens; none were rejected.
+  - codeqa_v1 moved from 0.802 to 0.804: Δ +0.001 [−0.008, +0.011], 8 better / 7 worse.
+  - The descriptions read correctly, but codeqa_v1 targets documented APIs, so it cannot show a benefit. The remaining misses are in less-documented code, so a fair test needs a dev set over undocumented functions, such as C code like curl's.
+  - Not run on the deployment.
 - **Stored `tsvector` column:** deferred. It would duplicate `search_text` inside Neon's 0.5 GB to save about 10 ms per keyword query.
 - **pgvector iterative scan** (`hnsw.iterative_scan = relaxed_order` on pgvector ≥ 0.8): enabled as insurance. A read-only check on production data found no candidate shortfall today (50 of 50 returned, exact recall 1.0).
 
@@ -135,6 +136,23 @@ Production therefore only embeds queries, and the owner's Mac indexes into Neon 
 - A submitted repository is searchable after the Mac's next run.
 
 Switching the live deployment requires re-indexing every repository with the new model.
+
+## Production check (after deploying, 30 October)
+
+All six production repositories were re-embedded with Granite on the owner's Mac, pinned to the commits production already held. heldout_v1 was then scored against the live service with `benchmarks/prod_eval.py`:
+
+| | heldout_v1 nDCG@10 | Recall@10 | MRR | Server p50 / p95 | Client p50 / p95 (US East to Oregon) |
+|---|---|---|---|---|---|
+| Local (PostgreSQL 17 on the Mac) | 0.697 | 0.775 | 0.751 | 12 / 28 ms | — |
+| Production (Render free + Neon free) | 0.690 | 0.759 | 0.757 | 205 / 305 ms | 418 / 591 ms |
+
+- **Why production differs slightly:** 19 of 51 questions differ, by rank swaps between near-tied candidates, in both directions. Documents are embedded on the Mac's ARM CPU and queries on Render's x86 CPU, and int8 ONNX arithmetic differs slightly between the two. The −0.007 is inside the noise.
+- **Query embedding on 0.1 CPU:** p50 96 ms, with about 4 s to load the model on the first query after a wake.
+- **Memory:** production peaked at **441 MB of 512** during the run. That is less headroom than intended; turning off ONNX Runtime's memory arena is the next thing to measure.
+- **End-to-end ingestion:**
+  1. `pallets/itsdangerous` was submitted to production and stayed `queued`, as intended.
+  2. The Mac's launchd worker indexed it in 28 s (155 chunks).
+  3. Production then answered a question about it with dense retrieval, ranking `Signer.verify_signature` first.
 
 ## Method notes and caveats
 

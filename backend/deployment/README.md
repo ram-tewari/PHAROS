@@ -47,4 +47,6 @@ Changing the embedding model on a live deployment: deploy the new
 `EMBEDDING_MODEL_ID` (search falls back to keyword with a warning, because the
 stored vectors belong to the old model), then re-index every repository on the
 Mac with `python -m app.cli ingest <url> --force`. Vectors of different models
-are never compared.
+are never compared. `--branch <full commit SHA>` re-indexes exactly the commit
+the deployment already holds (no content change, so benchmark results stay
+comparable); without it the repository moves to its default branch's head.

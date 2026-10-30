@@ -182,6 +182,8 @@ the development runs and the failures are in the
 | Now, with the assistant's `hints` | 0.709 | 0.822 | 5 of 101 |
 
 - Paired gains: +0.30 [+0.21, +0.40] and +0.26 [+0.18, +0.35]. Every repository improved.
+- Production (Render free + Neon free) scores 0.690 on heldout_v1, against 0.697 locally. Search
+  takes p50 205 ms and p95 305 ms on the server.
 - Tests, docs and examples fell from 16–20% of the top five results to under 3%.
 - Questions that name the API scored slightly lower without hints (0.99 → 0.91 on v1), because
   hybrid used to win those. Hints restore them.
