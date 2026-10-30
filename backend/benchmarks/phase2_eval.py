@@ -72,11 +72,13 @@ JUDGE_BATCH = 4
 QA_JUDGE_BATCH = 10
 PRECISION_BATCH = 10
 
-PROPOSE_INSTRUCTIONS = """You are a software engineer making a change in the repository described below. You
-cannot open files: work only from the context PHAROS retrieved for the change request. Decide which existing
-files you would modify (or delete) and which new files you would create, as repository-relative paths, including
-tests, documentation and changelogs where this repository would expect them. Then give the new or changed
-code for each file (only the parts that change). Follow the repository's own conventions."""
+PROPOSE_INSTRUCTIONS = """You are a software engineer making a change in the repository described below. The
+context PHAROS retrieved for the change request is all you get: there are no tools and no file access, so do
+not try to inspect anything. Always give your best concrete attempt from the context, even when it is
+incomplete; an empty answer is never acceptable. List the existing files you would modify (or delete) and the
+new files you would create, as repository-relative paths, including tests, documentation and changelogs where
+this repository would expect them. Then give the new or changed code for each file (only the parts that
+change). Follow the repository's own conventions."""
 
 PROPOSE_SCHEMA = {
     "type": "object",
