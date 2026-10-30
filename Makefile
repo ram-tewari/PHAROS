@@ -60,7 +60,8 @@ test-pg:
 # New/rewritten code: the full rule set in ruff.toml plus import order,
 # bugbear and pyupgrade. Legacy modules are not style-gated yet.
 STRICT_PATHS := app/codeintel app/modules/code app/shared/auth.py app/shared/db_url.py \
-  app/shared/vector_type.py app/cli.py benchmarks scripts/demo.py tests/codeintel
+  app/shared/vector_type.py app/cli.py benchmarks scripts/demo.py tests/codeintel \
+  app/learning app/workers/learning_worker.py tests/learning
 lint:
 	$(RUN) ruff check app alembic benchmarks scripts tests --select E9,F63,F7,F82
 	$(RUN) ruff check --extend-select I,B,UP $(STRICT_PATHS)

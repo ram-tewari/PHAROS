@@ -11,6 +11,7 @@
 | `../render.free.yaml` | The live free deployment: one Render free web service (API only) + Neon free | Deployed from `master` |
 | `mac/run-worker.sh`, `mac/com.pharos.mac-worker.plist` | Indexing for the free deployment, on the owner's Mac (launchd, hourly) | Used with `render.free.yaml` |
 | `mac/run-embed-server.sh`, `mac/com.pharos.edge-embed.plist` | Query embedding for the free deployment, on the owner's Mac (launchd, always on; Tailscale Funnel) | Used with `EMBEDDING_BACKEND=edge-onnx` |
+| `mac/run-learner.sh`, `mac/com.pharos.learner.plist` | Repository memory for the free deployment, on the owner's Mac (launchd, nightly) | Not installed yet |
 
 Both blueprints point their auto-deploy at a `main` branch. This repository's default branch is
 `master`, so check which branch the live services actually deploy from before relying on either
@@ -86,3 +87,32 @@ Measured on production, 30 October, with heldout_v1 (51 queries):
 Quality now matches local exactly because queries are embedded on the same ARM CPU as the documents.
 The latency is the route from Render through Tailscale's Funnel relay to the Mac. The edge client
 reuses one keep-alive connection, which avoids a new TLS handshake for every query.
+
+### Learning on the Mac too (repository memory)
+
+Memory is learned where the history is: on the Mac, never in production.
+- **What a run does:** a run reads the index from Neon. For each repository whose indexed commit has
+  no brief yet, it does the following:
+  - Fetches a full mirror into `LEARNING_MIRROR_DIR` (default `~/.cache/pharos/git/<owner>_<repo>`).
+  - Checks out the indexed commit in a temporary worktree and runs the miners.
+  - Writes memory items, playbooks and a brief back to Neon.
+- **Production's part:** production only reads them, through `retrieve_context`, the MCP memory
+  tools and `/api/v1/memory/*`.
+
+```sh
+cd backend
+deployment/mac/run-learner.sh            # learn every repository that needs it, once
+python -m app.cli learn pallets/click    # one repository, now (reads DATABASE_URL)
+python -m app.cli memory pallets/click   # brief, items and playbooks
+# nightly at 03:30 (or at the next wake):
+sed "s#__BACKEND__#$PWD#g" deployment/mac/com.pharos.learner.plist > ~/Library/LaunchAgents/com.pharos.learner.plist
+launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.pharos.learner.plist
+```
+
+- **Deterministic miners (L1):** they need no Codex. A run takes seconds per repository.
+- **Storage:** memory is small; expect a few hundred rows of under 1 KB per repository.
+- **Activation and review:**
+  - High-support items activate automatically.
+  - Everything else waits as `proposed` until a human accepts it with
+    `PATCH /api/v1/memory/items/{id}?action=accept`.
+  - Every change is in `memory_ledger`, with the run id.

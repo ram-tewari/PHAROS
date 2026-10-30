@@ -55,6 +55,7 @@ READ_ONLY_POST_PATHS = frozenset(
         "/mcp",  # native MCP server: every registered tool is read-only
         "/mcp/",
         "/api/v1/mcp/context/retrieve",
+        "/api/v1/memory/search",
         "/api/search/search",
         "/api/search/search/advanced",
         "/api/search/search/evaluate",

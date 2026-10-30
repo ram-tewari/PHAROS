@@ -315,6 +315,70 @@ def cmd_describe(args) -> int:
     return 0
 
 
+def cmd_learn(args) -> int:
+    from pathlib import Path
+
+    from .codeintel.context import resolve_repositories
+    from .codeintel.embeddings import get_embedder
+    from .codeintel.runtime import session_scope
+    from .learning.history import ensure_mirror, worktree
+    from .learning.pipeline import learn_repository
+
+    with session_scope() as db:
+        repos = resolve_repositories(db, args.repo)
+        if len(repos) != 1:
+            print(f"error: {args.repo!r} matches {len(repos)} repositories", file=sys.stderr)
+            return 1
+        repo = repos[0]
+        commit = repo.last_commit_sha
+        if not commit:
+            print("error: the repository has not been indexed", file=sys.stderr)
+            return 1
+        mirror = Path(args.mirror) if args.mirror else ensure_mirror(
+            repo.url, commit, local_path=repo.local_path if repo.source_type == "local" else None)
+        embedder = None if args.no_embed else get_embedder()
+        families = args.family or None
+        progress = lambda m: print(m, file=sys.stderr, flush=True)  # noqa: E731
+        with worktree(mirror, commit) as checkout:
+            stats = learn_repository(db, repo, checkout=checkout, mirror=mirror, commit=commit, embedder=embedder,
+                                     families=families, progress=progress)
+    _print({"repository": repo.name, **stats}, True)
+    return 0
+
+
+def cmd_memory(args) -> int:
+    from sqlalchemy import select
+
+    from .codeintel.context import resolve_repositories
+    from .codeintel.runtime import session_scope
+    from .database.models import MemoryItem, MemorySkill
+    from .learning.recall import get_brief, item_to_dict, skill_to_dict
+
+    with session_scope() as db:
+        repos = resolve_repositories(db, args.repo)
+        ids = [r.id for r in repos]
+        stmt = select(MemoryItem).where(MemoryItem.repository_id.in_(ids)).order_by(MemoryItem.key)
+        if args.status:
+            stmt = stmt.where(MemoryItem.status == args.status)
+        if args.kind:
+            stmt = stmt.where(MemoryItem.kind == args.kind)
+        items = db.execute(stmt).scalars().all()
+        skills = db.execute(select(MemorySkill).where(MemorySkill.repository_id.in_(ids))).scalars().all()
+        if args.json:
+            _print({"items": [item_to_dict(i, full=True) for i in items],
+                    "skills": [skill_to_dict(s, level=2) for s in skills]}, True)
+            return 0
+        for repo in repos:
+            brief = get_brief(db, repo)
+            print(brief.text if brief else f"# {repo.name}: no brief yet")
+        for item in items:
+            print(f"[{item.status:8}] {item.tier} {item.key}  (support {item.support}, {item.confidence:.0%})")
+            print(f"           {item.body}")
+        for skill in skills:
+            print(f"[{skill.status:8}] skill {skill.name}: {skill.description}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="pharos", description="Pharos code-intelligence CLI")
     sub = p.add_subparsers(dest="cmd", required=True)
@@ -344,6 +408,20 @@ def build_parser() -> argparse.ArgumentParser:
     s.add_argument("--include-documented", action="store_true", help="also functions that have a doc comment")
     s.add_argument("--max-calls", type=int, default=200, help="Codex call budget for this run")
     s.set_defaults(func=cmd_describe)
+
+    s = sub.add_parser("learn", help="mine a repository's memory at its indexed commit (owner's machine only)")
+    s.add_argument("repo", help="indexed repository id, URL or name")
+    s.add_argument("--mirror", help="full clone to read history from (default: LEARNING_MIRROR_DIR/<owner>_<repo>)")
+    s.add_argument("--family", action="append", help="run only these miners (repeatable)")
+    s.add_argument("--no-embed", action="store_true", help="skip embedding the memory items")
+    s.set_defaults(func=cmd_learn)
+
+    s = sub.add_parser("memory", help="show a repository's brief, memory items and playbooks")
+    s.add_argument("repo")
+    s.add_argument("--status", choices=["proposed", "active", "stale", "archived", "rejected"])
+    s.add_argument("--kind", choices=["convention", "co_change", "history", "fact"])
+    s.add_argument("--json", action="store_true")
+    s.set_defaults(func=cmd_memory)
 
     s = sub.add_parser("symbol", help="find a definition and its callers / callees")
     s.add_argument("name")

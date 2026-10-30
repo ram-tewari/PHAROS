@@ -1,5 +1,41 @@
 # Changelog
 
+## Unreleased — learning phase 2, stage 1: deterministic repository memory
+
+Evaluation protocol locked first: `docs/benchmarks/phase2-eval-protocol.md`. Not evaluated yet.
+
+### Added
+
+- **Repository memory** (`app/learning/`, migration `0004_learning`):
+  - `memory_items`: facts and conventions with evidence (lines with a hash, a file blob, or a commit),
+    support counts, scope (path globs, languages), and status `proposed → active → stale → archived`.
+  - `memory_skills`: playbooks.
+  - `repo_briefs`: a brief of at most 2,200 characters, frozen per indexed commit.
+  - `memory_ledger`: append-only, so a run can be rolled back.
+  - `learning_jobs`: the ingestion job state machine, shared through `app/codeintel/jobs.py`.
+- **L1 miners**, all deterministic. They use source files only (`path_role`), the index for every
+  language, and the full git history with renames followed:
+  - naming and C prefixes; docs and Sphinx directives; Python typing; exception hierarchies;
+  - deprecation pattern; test layout; changelog habit; commit style; tooling;
+  - co-change per file; dropped dependencies and runtime versions; directory moves; file origins;
+  - "add a new X" playbooks.
+  - High-support items activate automatically; everything else is proposed.
+- **`retrieve_context` leads with memory:** the brief, the items scoped to the retrieved files, and
+  matching playbooks, in at most a third of the budget. `include_memory=false` turns it off. Ranking
+  is unchanged.
+- **MCP tools:** `get_repo_brief`, `search_memory`, `list_skills` and `get_skill`.
+- **REST:** `/api/v1/memory/{brief,search,items,skills}` with the read token. With the admin token,
+  `PATCH /api/v1/memory/items/{id}?action=accept|reject|archive|restore` and
+  `POST /api/v1/repositories/{id}/learn`.
+- **Mac:**
+  - CLI: `pharos learn <repo>` and `pharos memory <repo>`.
+  - `app.workers.learning_worker --once`.
+  - `deployment/mac/run-learner.sh` with `com.pharos.learner.plist`, to run nightly; not installed.
+
+### Changed
+
+- `POST /api/patterns/learn` (Python-only profiles) is marked deprecated and experimental.
+
 ## Unreleased — edge query embedding
 
 - `EMBEDDING_BACKEND=edge-onnx`: query embeddings come from `app.codeintel.edge_server` on the

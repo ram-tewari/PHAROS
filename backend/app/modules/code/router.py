@@ -13,6 +13,14 @@ POST     /api/v1/ingestion/jobs/{id}/cancel  admin   cancel a queued job
 POST     /api/v1/search/code                 read    chunk-level code search
 POST     /api/v1/search/symbol               read    definition lookup + call graph
 POST     /api/v1/context/retrieve            read    assistant context assembly
+POST     /api/v1/repositories/{id}/learn     admin   queue a learning job (run on the Mac)
+GET      /api/v1/learning/jobs               read    recent learning jobs
+GET      /api/v1/memory/brief                read    a repository's brief (core memory)
+POST     /api/v1/memory/search               read    search active memory items
+GET      /api/v1/memory/items                read    memory items by status / kind
+PATCH    /api/v1/memory/items/{id}           admin   accept / reject / archive / restore
+GET      /api/v1/memory/skills               read    playbooks (level 0)
+GET      /api/v1/memory/skills/{name}        read    one playbook (levels 1-2)
 GET      /api/v1/system/status               read    backends, grammars, config
 =======  ==================================  ======  ==============================
 """
@@ -44,7 +52,17 @@ from ...codeintel.runtime import secret
 from ...codeintel.source import resolve_sources
 from ...codeintel.symbols import chunk_ref, find_symbol, repository_summary, symbol_graph
 from ...config.settings import get_settings
-from ...database.models import CodeEdge, DocumentChunk, IngestionJob, Repository, Resource
+from ...database.models import (
+    CodeEdge,
+    DocumentChunk,
+    IngestionJob,
+    LearningJob,
+    MemoryItem,
+    Repository,
+    Resource,
+)
+from ...learning import recall
+from ...learning.memory import set_status
 from ...shared.auth import require_admin, token_problems
 from ...shared.database import get_sync_db
 from .schemas import (
@@ -52,6 +70,7 @@ from .schemas import (
     ContextResponse,
     JobOut,
     JobSubmitted,
+    MemorySearchRequest,
     RepositoryOut,
     RepositorySubmit,
     SearchRequest,
@@ -290,6 +309,12 @@ def system_status(db: Session = Depends(get_sync_db)):
         "chunks": db.execute(select(func.count(DocumentChunk.id)).where(DocumentChunk.repository_id.isnot(None))).scalar_one(),
         "jobs_queued": db.execute(select(func.count(IngestionJob.id)).where(IngestionJob.status == "queued")).scalar_one(),
         "jobs_running": db.execute(select(func.count(IngestionJob.id)).where(IngestionJob.status == "running")).scalar_one(),
+        "memory_items_active": db.execute(
+            select(func.count(MemoryItem.id)).where(MemoryItem.status == "active")).scalar_one(),
+        "memory_items_proposed": db.execute(
+            select(func.count(MemoryItem.id)).where(MemoryItem.status == "proposed")).scalar_one(),
+        "learning_jobs_queued": db.execute(
+            select(func.count(LearningJob.id)).where(LearningJob.status == "queued")).scalar_one(),
     }
     return {
         "mode": settings.MODE,
@@ -300,3 +325,95 @@ def system_status(db: Session = Depends(get_sync_db)):
         "index": counts,
         "config_warnings": token_problems(),
     }
+
+
+# ── learning and memory ─────────────────────────────────────────────────
+
+def _repo_ids(db: Session, repository: str | None) -> list[uuid.UUID]:
+    try:
+        return [r.id for r in resolve_repositories(db, repository)]
+    except RepositoryNotFound as exc:
+        raise HTTPException(status_code=404, detail={"error": "repository_not_found", "detail": str(exc)}) from exc
+
+
+def _learning_job_out(job: LearningJob) -> dict:
+    return {"id": str(job.id), "repository_id": str(job.repository_id), "commit_sha": job.commit_sha,
+            "status": job.status, "attempts": job.attempts, "error": job.error, "error_kind": job.error_kind,
+            "stats": job.stats, "created_at": job.created_at, "finished_at": job.finished_at}
+
+
+@router.post("/repositories/{repo_id}/learn", status_code=status.HTTP_202_ACCEPTED)
+def queue_learning(repo_id: uuid.UUID, db: Session = Depends(get_sync_db), _=Depends(require_admin)):
+    """Queue a learning job at the repository's indexed commit. The Mac's learning worker runs it."""
+    from ...learning.pipeline import submit_learning
+
+    repo = _get_repo(db, repo_id)
+    if not repo.last_commit_sha:
+        raise HTTPException(status_code=409, detail={"error": "not_indexed", "detail": "index the repository first"})
+    job, created = submit_learning(db, repo)
+    return {"created": created, "job": _learning_job_out(job)}
+
+
+@router.get("/learning/jobs")
+def list_learning_jobs(limit: int = Query(20, ge=1, le=200), db: Session = Depends(get_sync_db)):
+    rows = db.execute(select(LearningJob).order_by(LearningJob.created_at.desc()).limit(limit)).scalars()
+    return [_learning_job_out(j) for j in rows]
+
+
+@router.get("/memory/brief")
+def memory_brief(repository: str = Query(..., min_length=1), db: Session = Depends(get_sync_db)):
+    """The repository brief (≤ 2,200 characters, frozen per indexed commit)."""
+    out = []
+    for repo_id in _repo_ids(db, repository):
+        repo = db.get(Repository, repo_id)
+        brief = recall.get_brief(db, repo)
+        out.append({"repository": repo.name, "commit_sha": brief.commit_sha if brief else None,
+                    "indexed_commit": repo.last_commit_sha, "text": brief.text if brief else None})
+    return {"briefs": out}
+
+
+@router.post("/memory/search")
+def memory_search(body: MemorySearchRequest, db: Session = Depends(get_sync_db)):
+    ids = _repo_ids(db, body.repository) if body.repository else None
+    return {"query": body.query,
+            "results": recall.search_memory(db, get_embedder(), body.query, ids, k=body.k, kinds=body.kinds)}
+
+
+@router.get("/memory/items")
+def memory_items(repository: str | None = None, status_: str = Query("active", alias="status"),
+                 kind: str | None = None, limit: int = Query(100, ge=1, le=1000),
+                 db: Session = Depends(get_sync_db)):
+    stmt = select(MemoryItem).where(MemoryItem.status == status_).order_by(MemoryItem.key).limit(limit)
+    if repository:
+        stmt = stmt.where(MemoryItem.repository_id.in_(_repo_ids(db, repository)))
+    if kind:
+        stmt = stmt.where(MemoryItem.kind == kind)
+    return {"items": [recall.item_to_dict(i, full=True) for i in db.execute(stmt).scalars()]}
+
+
+@router.patch("/memory/items/{item_id}")
+def review_memory_item(item_id: uuid.UUID, action: str = Query(..., pattern="^(accept|reject|archive|restore)$"),
+                       db: Session = Depends(get_sync_db), _=Depends(require_admin)):
+    """A human decision on a memory item. Learning runs never override it."""
+    item = db.get(MemoryItem, item_id)
+    if item is None:
+        raise HTTPException(status_code=404, detail="memory item not found")
+    set_status(db, item, action)
+    db.commit()
+    return recall.item_to_dict(item, full=True)
+
+
+@router.get("/memory/skills")
+def memory_skills(repository: str | None = None, db: Session = Depends(get_sync_db)):
+    ids = _repo_ids(db, repository) if repository else None
+    return {"skills": recall.list_skills(db, ids)}
+
+
+@router.get("/memory/skills/{name}")
+def memory_skill(name: str, repository: str | None = None, level: int = Query(1, ge=0, le=2),
+                 db: Session = Depends(get_sync_db)):
+    ids = _repo_ids(db, repository) if repository else None
+    skill = recall.get_skill(db, ids, name, level)
+    if skill is None:
+        raise HTTPException(status_code=404, detail="skill not found")
+    return skill

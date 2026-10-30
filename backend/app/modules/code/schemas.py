@@ -136,6 +136,9 @@ class ContextRequestIn(BaseModel):
     include_code: bool = True
     include_related: bool = True
     include_rules: bool = True
+    include_memory: bool = Field(
+        True, description="Lead with the repository's learned memory: brief, conventions and playbooks"
+    )
     profile_id: str | None = Field(
         None, max_length=64, description="Apply this CodingProfile's rules instead of the repository's"
     )
@@ -175,8 +178,16 @@ class ContextResponse(BaseModel):
     chunks: list[ContextChunk]
     related: list[RelatedChunk]
     rules: list[dict]
+    memory: dict = Field(default_factory=dict, description="briefs, items and skills shown in context_text")
     context_text: str
     stats: dict
+
+
+class MemorySearchRequest(BaseModel):
+    query: str = Field(..., min_length=1, max_length=4000)
+    repository: str | None = None
+    k: int = Field(8, ge=1, le=50)
+    kinds: list[str] | None = Field(None, description="convention | co_change | history | fact")
 
 
 class SymbolRequest(BaseModel):

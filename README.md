@@ -26,7 +26,8 @@ returned. Everything is available over a REST API and a native
 | **AST parsing** | Python (stdlib `ast`), plus JavaScript, TypeScript/TSX, Go, Rust, C, C++ and Java (tree-sitter). Other files fall back to line windows, and the fallback is recorded per chunk and per language, never presented as AST output. Repository code is parsed, never executed. |
 | **Embeddings** | Pluggable: `hash` (offline, lexical, not semantic), `onnx` (CPU; pinned models in `scripts/fetch_onnx_model.py`, default in production granite-embedding-english-r2 int8), `http` (the edge worker's GPU model server) or `sentence-transformers`. Each chunk is embedded from its signature, doc comment, the first 25 lines of its body and its calls. Vectors from different models are never compared. |
 | **Retrieval** | `keyword` uses PostgreSQL full-text search over identifiers, paths, signatures and docstrings. `dense` uses pgvector HNSW. `hybrid` is reciprocal-rank fusion plus an exact-symbol boost. `graph` is hybrid plus call-graph neighbours. The default `auto` is `dense`, or `hybrid` when the caller passes `hints` (identifiers it guesses). Tests, docs and examples are down-ranked unless the query asks for them. When a mode cannot run it is reported as unavailable (HTTP 503), not silently degraded. |
-| **Context** | The top chunks with verified source, their resolved callers and callees, and the repository's coding rules, rendered as Markdown with `path:line` citations inside a character budget. |
+| **Context** | The top chunks with verified source, their resolved callers and callees, the repository's learned memory and its coding rules, rendered as Markdown with `path:line` citations inside a character budget. |
+| **Memory** (Phase 2, stage 1) | Learned per indexed commit, on the owner's machine, from the index and the full git history. No LLM is involved at this stage. It covers conventions (naming, docs, typing, errors, deprecation, tests, changelog, commit style, tooling), which files change together, history (dropped dependencies, runtime versions, moves, file origins) and "add a new X" playbooks. A brief of at most 2,200 characters leads `retrieve_context`. Every item cites evidence that can be re-checked; items are never deleted, only marked stale. **Not evaluated yet:** [protocol](docs/benchmarks/phase2-eval-protocol.md). |
 | **Jobs** | Durable ingestion jobs in PostgreSQL: atomic claims, retries with backoff, recovery of stalled workers, cancellation, and a queue cap (HTTP 429). Redis only wakes workers up; they also poll. |
 | **Interfaces** | REST under `/api/v1`, MCP at `/mcp`, and the CLI `python -m app.cli`. Auth is static machine-to-machine bearer tokens with two scopes (admin, read). |
 
@@ -144,6 +145,9 @@ claude mcp add --transport http pharos http://localhost:8000/mcp \
 | `search_code` | Chunk pointers (path, lines, symbol) with retrieval evidence (keyword/dense rank, graph hops) |
 | `find_symbol` | Definitions of a (qualified) name with resolved callers and callees |
 | `list_repositories` | Indexed repositories with commit, language coverage and status |
+| `get_repo_brief` | The repository brief: layout, main modules, strongest conventions and playbooks |
+| `search_memory` | Learned conventions, co-changes and history facts, each with its evidence |
+| `list_skills` / `get_skill` | Playbooks for recurring changes. Level 1 has the steps; level 2 adds every file with its rate and example commits |
 
 `retrieve_context` and `search_code` take optional `hints`: identifiers or keywords the assistant guesses
 (e.g. `["parse_url", "redirect"]`). They add keyword evidence; the question itself is what gets embedded.
@@ -161,6 +165,9 @@ For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding pr
 | `POST /api/v1/search/code` | read | `{"query", "repository"?, "mode"?, "k"?, "languages"?, "kinds"?, "path_prefix"?, "hints"?}` |
 | `POST /api/v1/search/symbol` | read | `{"name", "repository"?}`: definitions plus call graph |
 | `POST /api/v1/context/retrieve` | read | `{"query", "repository"?, "max_chunks"?, "max_chars"?, "include_code"?, "profile_id"?, "hints"?}` |
+| `GET /api/v1/memory/brief?repository=`, `GET /api/v1/memory/items`, `POST /api/v1/memory/search`, `GET /api/v1/memory/skills[/{name}]` | read | Repository memory |
+| `PATCH /api/v1/memory/items/{id}?action=accept\|reject\|archive\|restore` | admin | A human decision on a memory item. Learning never overrides it. |
+| `POST /api/v1/repositories/{id}/learn`, `GET /api/v1/learning/jobs` | admin / read | Queue learning, which the Mac's learning worker runs |
 | `GET /api/v1/system/status` | read | Embedding backend, available modes, repositories |
 | `GET /health` | public | Liveness |
 
@@ -239,6 +246,10 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
 - **Performance:** keyword ranking recomputes `to_tsvector` for every matched row. Indexing
   writes rows one at a time, at about 140 chunks/s plus embedding time.
 - **GPU / edge worker:** the CUDA image and the edge worker's GPU path are **not validated** in CI.
+- **Repository memory** is new and not yet evaluated. Its precision, grounding and usefulness are
+  defined in a locked [protocol](docs/benchmarks/phase2-eval-protocol.md) that has not been run.
+  - It is learned only on a machine with full git mirrors (`pharos learn`, or the learning worker).
+  - The older `POST /api/patterns/learn` profiles are Python-only, partly wrong, and marked deprecated.
 - **Legacy modules** (papers/PDFs, resource graph, planning, monitoring) predate the code index.
   Notably:
   - document-graph entity extraction has no offline extractor and reports `unavailable`;
@@ -268,7 +279,8 @@ backend/
   app/modules/code/   /api/v1 code-intelligence endpoints
   app/modules/mcp/    native MCP server (/mcp) and the legacy REST tool router
   app/modules/…       legacy modules (resources, search, graph, planning, patterns, …)
-  app/workers/        ingest_worker (CPU), main_worker (edge/GPU)
+  app/learning/       repository memory: miners, history, brief, recall (Phase 2)
+  app/workers/        ingest_worker (CPU), learning_worker (Mac), main_worker (edge/GPU)
   alembic/            migrations (squashed 2026-10; history in alembic/archive)
   benchmarks/         retrieval benchmark harness, dataset and results
   tests/codeintel/    tests for the core, parametrised over SQLite and PostgreSQL
