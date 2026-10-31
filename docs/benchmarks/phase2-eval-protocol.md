@@ -142,3 +142,26 @@ How the arms are run and reported:
   the counts of proposals accepted and rejected.
 - **Precision:** reported for the active memory of arm B, as defined above, and separately for a sample
   of up to 15 L2 proposals per repository, whatever their review outcome.
+
+**2. 31 October 2026, after learning at C0 and before any proposal was read: who reviews L2.**
+
+The owner delegated the L2 review to Claude, who also runs the harness. This replaces Amendment 1's
+rule that the person running the harness does not read the proposals. To keep arm B from being tuned
+to the test tasks, the review follows a fixed rule, committed before any proposal was opened:
+
+- **Each proposal is judged on its own text and cited evidence only.** The reviewer does not open
+  `utility_v1.json` or `repoqa_v1.json` during the review and does not consider which tasks an item
+  might help.
+- **Accept** a proposal when all of these hold:
+  1. its cited evidence (document section or maintainer review comment) states or clearly implies the
+     claim;
+  2. it is a lasting convention, constraint or fact about the repository that a contributor would need
+     in more than one change, not advice about one pull request;
+  3. it is specific to this repository: it is not general programming advice;
+  4. it does not merely repeat an L1 item.
+- **Reject** everything else, including proposals whose claim goes beyond their evidence.
+- The counts accepted and rejected per repository are reported with the results, and arm C (every
+  proposal) is unaffected by the review.
+
+The primary measure is unchanged: source-file recall, as locked. All-file recall stays a secondary
+measure. The owner did not choose to amend it, so dev results did not change what counts as passing.
