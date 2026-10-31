@@ -18,4 +18,6 @@ export LEARNING_MIRROR_DIR="${LEARNING_MIRROR_DIR:-$HOME/.cache/pharos/git}"
 
 cd "$BACKEND"
 "$PYTHON" scripts/fetch_onnx_model.py --model "$EMBEDDING_MODEL_ID" "$EMBEDDING_ONNX_DIR" >/dev/null
-exec "$PYTHON" -m app.workers.learning_worker --once
+# caffeinate keeps the Mac from idle-sleeping mid-run (a sleeping Mac stalls Codex and drops the
+# database connection); it ends with the worker.
+exec /usr/bin/caffeinate -i "$PYTHON" -m app.workers.learning_worker --once
