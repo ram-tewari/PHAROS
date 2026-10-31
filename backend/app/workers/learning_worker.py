@@ -13,6 +13,10 @@ L2 (Codex) runs when the CLI is signed in, within one budget for the whole
 run: ``LEARNING_MAX_CODEX_CALLS`` (default 40, the owner's nightly limit),
 at most ``LEARNING_CODEX_CALLS_PER_REPO`` (default 10) per repository.
 ``--no-codex`` runs the deterministic miners only.
+
+A scheduled run can start in a brief dark wake, when the network is not up
+yet, or meet Neon still cold: it waits for the database (up to
+``LEARNING_DB_WAIT_SECONDS``, default 600) before doing anything.
 """
 
 from __future__ import annotations
@@ -21,6 +25,10 @@ import argparse
 import logging
 import os
 import sys
+import time
+
+from sqlalchemy import text
+from sqlalchemy.exc import DBAPIError
 
 from ..codeintel import jobs
 from ..codeintel.embeddings import get_embedder
@@ -32,6 +40,23 @@ from ..learning.pipeline import queue_unlearned, run_learning_job
 logger = logging.getLogger("pharos.learning_worker")
 
 STALE_SECONDS = 3600
+
+
+def wait_for_database(timeout: float, *, sleep=time.sleep, clock=time.time) -> bool:
+    """Retry ``SELECT 1`` with backoff until it answers or ``timeout`` seconds (wall clock) pass."""
+    deadline, delay = clock() + timeout, 5.0
+    while True:
+        try:
+            with session_scope() as db:
+                db.execute(text("SELECT 1"))
+            return True
+        except DBAPIError as exc:
+            if clock() + delay > deadline:
+                logger.error("database unreachable for %.0fs: %s", timeout, str(exc).splitlines()[0])
+                return False
+            logger.warning("database not reachable yet, retrying in %.0fs", delay)
+            sleep(delay)
+            delay = min(delay * 2, 60.0)
 
 
 def make_llm(enabled: bool):
@@ -73,6 +98,8 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
     if not args.once:
         parser.error("only --once is supported: schedule it (launchd) instead of polling the database")
+    if not wait_for_database(float(os.getenv("LEARNING_DB_WAIT_SECONDS", "600"))):
+        return 1
     if not args.no_queue:
         with session_scope() as db:
             queued = queue_unlearned(db)
