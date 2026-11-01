@@ -60,12 +60,20 @@ def glob_match(pattern: str, path: str) -> bool:
     return bool(_glob_re(pattern).match(path))
 
 
+def _compact(evidence: dict) -> dict:
+    """A tally without its rows (``GET /memory/items`` returns them in full)."""
+    if evidence.get("kind") != "tally":
+        return evidence
+    return evidence | {"groups": [{"label": g["label"], "count": g["count"]} for g in evidence.get("groups", [])]}
+
+
 def item_to_dict(item: MemoryItem, *, full: bool = False) -> dict:
+    evidence = item.evidence or []
     out = {
         "id": str(item.id), "key": item.key, "kind": item.kind, "title": item.title, "body": item.body,
         "scope": item.scope or {}, "support": item.support, "confidence": item.confidence,
         "source": item.source, "tier": item.tier, "status": item.status,
-        "evidence": item.evidence or [], "learned_at_commit": item.learned_at_commit,
+        "evidence": evidence if full else [_compact(e) for e in evidence], "learned_at_commit": item.learned_at_commit,
     }
     if full:
         out |= {"valid_from_commit": item.valid_from_commit, "invalidated_at_commit": item.invalidated_at_commit,

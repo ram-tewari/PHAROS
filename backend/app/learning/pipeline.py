@@ -30,7 +30,7 @@ from ..database.models import CodeEdge, DocumentChunk, LearningJob, MemoryItem, 
 from .brief import compose_brief
 from .extract import extract
 from .history import HistoryError, _git, ensure_mirror, load_history, mirror_name, worktree
-from .memory import MemoryWriter, check_evidence
+from .memory import MemoryWriter, check_diff, check_evidence, check_tally, commits_at
 from .miners import MINERS, Chunk, Snapshot, mine_playbooks, tracked_files
 from .reviews import check_review
 
@@ -77,9 +77,39 @@ def _grounding(snap: Snapshot, url: str) -> Callable[[dict], bool]:
         except HistoryError:
             pass
 
+    by_prefix = {c.sha[:12]: c for c in snap.history}
+    big: dict[str, tuple] = {}  # commits too large to keep a file list: read from git
+
+    def files_of(sha: str, added: bool) -> set[str] | None:
+        c = by_prefix.get(sha[:12])
+        if c is None:
+            return None
+        if c.files:
+            return {c.recorded(p) for s, p in c.files if not added or s == "A"}
+        if c.sha[:12] not in big:
+            big.update(commits_at(snap.mirror, snap.commit, {c.sha}))
+        return big.get(c.sha[:12], (set(), set(), set()))[2 if added else 0]
+
+    def commit_paths(sha: str) -> set[str] | None:
+        return files_of(sha, False)
+
+    def commit_renames(sha: str) -> set[tuple[str, str]] | None:
+        c = by_prefix.get(sha[:12])
+        return None if c is None else set(c.renames)
+
+    def line_at(path: str, n: int) -> str | None:
+        lines = snap.lines(path)
+        return lines[n - 1] if 1 <= n <= len(lines) else None
+
     def check(evidence: dict) -> bool:
         if evidence.get("kind") == "commit" and evidence.get("sha") in known:
             return True
+        if evidence.get("kind") == "tally":
+            return check_tally(evidence, commit_paths=commit_paths, commit_renames=commit_renames,
+                               commit_added=lambda s: files_of(s, True), line_at=line_at,
+                               exists=lambda p: p in snap.files)
+        if evidence.get("kind") == "diff":
+            return evidence.get("sha") in known and check_diff(evidence, snap.mirror)
         if evidence.get("kind") == "review":
             return check_review(evidence, mirror_name(origin)) or check_review(evidence, mirror_name(url))
         return check_evidence(evidence, snap.checkout, snap.mirror)

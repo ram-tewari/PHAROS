@@ -122,10 +122,13 @@ QA_JUDGE_SCHEMA = {"type": "object", "properties": {"grades": {"type": "array", 
     "required": ["grades"]}
 
 PRECISION_INSTRUCTIONS = """You audit memory items a tool learned about a software repository. Each item is a claim
-plus the evidence it cites (source lines, commits, review comments). Percentages and counts were computed by the
-tool over the whole git history; you cannot recompute them, so judge whether the cited evidence is consistent
-with the claim and whether anything shown contradicts it. Verdict: supported, partly (some of the claim is not
-backed or is overstated), unsupported (not backed, or contradicted)."""
+plus the evidence it cites: source lines, commits (message and changed files), the lines a commit changed, review
+comments, and tallies. A tally lists everything a count was taken over (every commit counted, with the claimed
+files it touched as that commit named them, or the exceptions to a convention) and how a renamed path got its
+current name. Check the claim's counts, percentages and names against the tallies where they are given; a
+count shown only by examples is not established. Verdict: supported (the evidence establishes the whole claim,
+including its numbers), partly (some of the claim is not established or is overstated), unsupported (not
+backed, or contradicted)."""
 PRECISION_SCHEMA = {"type": "object", "properties": {"audits": {"type": "array", "items": {"type": "object", "properties": {
     "id": {"type": "string"}, "verdict": {"type": "string", "enum": ["supported", "partly", "unsupported"]},
     "reason": {"type": "string"}}, "required": ["id", "verdict", "reason"]}}}, "required": ["audits"]}
@@ -241,9 +244,12 @@ def file_scores(task: dict, proposal: dict) -> dict:
     proposed |= {c["path"].lstrip("./") for c in proposal.get("changes") or [] if c.get("path")}
     real_all = {f["path"] for f in task["files"]}
     real_src = {f["path"] for f in task["files"] if f["source"] and f["status"] != "A"}
+    # companions: the tests, docs, changelogs and configuration the commit changed that existed at the parent
+    real_companion = {f["path"] for f in task["files"] if not f["source"] and f["status"] != "A"}
     hit_all = proposed & real_all
     return {
         "source_recall": len(proposed & real_src) / len(real_src) if real_src else None,
+        "companion_recall": len(proposed & real_companion) / len(real_companion) if real_companion else None,
         "all_recall": len(hit_all) / len(real_all),
         "precision": len(hit_all) / len(proposed) if proposed else 0.0,
         "proposed": len(proposed),
@@ -265,9 +271,34 @@ def sign_test(wins: int, losses: int) -> float:
     return min(1.0, 2 * p)
 
 
+def render_tally(ev: dict, worktree: Path, limit: int = 16000) -> str:
+    out = [f"Tally: {ev['label']} ({ev['total']} in all)"]
+    for name in ev.get("names", []):  # first, so a long tally never cuts them off
+        hops = "; ".join(f"renamed {h['from']} -> {h['to']} in {h['sha'][:10]} ({h['date']})"
+                         for h in name["renames"]) or "same root changelog in a new format"
+        out.append(f"  {name['recorded']} is today's {name['now']}: {hops}")
+    for group in ev.get("groups", []):
+        rows = group.get("rows", [])
+        shown = f", listed: {len(rows)}" if len(rows) < group["count"] else ""
+        out.append(f"  {group['label']}: {group['count']}{shown}")
+        for row in rows:
+            if "sha" in row:
+                added = f" (added: {', '.join(row['added'])})" if row.get("added") else ""
+                out.append(f"    {row['sha'][:10]} {row['date']} {row['subject'][:60]} | {', '.join(row['paths']) or '-'}"
+                           f"{added}")
+            elif "line" in row:
+                lines = (worktree / row["path"]).read_text(errors="replace").splitlines()
+                text = lines[row["line"] - 1].strip() if row["line"] <= len(lines) else ""
+                out.append(f"    {row['path']}:{row['line']}: {text[:120]}")
+            else:
+                out.append(f"    {row['path']}")
+    text = "\n".join(out)
+    return text if len(text) <= limit else text[:limit] + "\n  [...]"
+
+
 def evidence_text(item: dict, worktree: Path, cache_name: str) -> str:
     parts = []
-    for ev in item["evidence"][:4]:
+    for ev in item["evidence"][:8]:
         if ev["kind"] == "code":
             lines = (worktree / ev["path"]).read_text(errors="replace").splitlines()
             a, b = max(1, ev["start_line"] - 5), min(len(lines), ev["end_line"] + 5)
@@ -275,7 +306,12 @@ def evidence_text(item: dict, worktree: Path, cache_name: str) -> str:
         elif ev["kind"] == "file":
             parts.append(f"file {ev['path']} exists")
         elif ev["kind"] == "commit":
-            parts.append(git(worktree, "show", "--stat", "--format=%h %cs %s", ev["sha"])[:1200])
+            parts.append(git(worktree, "show", "--stat", "--format=%h %cs %s%n%n%b", ev["sha"])[:1500])
+        elif ev["kind"] == "diff":
+            changed = [f"-{line}" for line in ev["removed"]] + [f"+{line}" for line in ev["added"]]
+            parts.append(f"{ev['sha'][:10]} {ev['date']} {ev['subject']}: in {ev['path']}\n" + "\n".join(changed))
+        elif ev["kind"] == "tally":
+            parts.append(render_tally(ev, worktree))
         elif ev["kind"] == "review":
             cached = json.loads((cache_dir(cache_name) / "review_comments.json").read_text())
             c = next((c for c in cached if c["url"] == ev["url"]), None)
@@ -302,12 +338,14 @@ def main(argv=None) -> int:
     ap.add_argument("--apply-review", help="apply a reviewed checkbox file ([x] accept, [ ] reject), then stop")
     ap.add_argument("--repos", nargs="*", help="only these repositories")
     ap.add_argument("--max-tasks", type=int, help="at most this many tasks per repository (dev runs)")
+    ap.add_argument("--precision-only", action="store_true",
+                    help="learn, check grounding and audit precision only: no Repo QA, utility or judge calls")
     args = ap.parse_args(argv)
 
     if "bench" not in args.database_url.rsplit("/", 1)[-1]:
         raise SystemExit("refusing a database whose name does not contain 'bench'")
     dataset = json.loads(Path(args.dataset).read_text())
-    qa = json.loads(Path(args.qa).read_text()) if args.qa else {"questions": []}
+    qa = json.loads(Path(args.qa).read_text()) if args.qa and not args.precision_only else {"questions": []}
     engine = create_engine(args.database_url)
     factory = sessionmaker(bind=engine, autoflush=False, expire_on_commit=False)
     if args.export_review:
@@ -412,7 +450,8 @@ def main(argv=None) -> int:
                        "precision_sample", name)
                 ck.put(pack(random.Random(SEED).sample(l2, min(L2_SAMPLE, len(l2)))), "l2_sample", name)
 
-        tasks = sorted((t for t in dataset["tasks"] if t["repo"] == name), key=lambda t: t["date"])
+        tasks = [] if args.precision_only else sorted((t for t in dataset["tasks"] if t["repo"] == name),
+                                                      key=lambda t: t["date"])
         for task in tasks[:args.max_tasks] if args.max_tasks else tasks:
             if all(ck.get("utility", task["id"], arm) for arm in arms):
                 continue
@@ -587,7 +626,10 @@ def _utility_report(data: dict, tasks: list[dict], other: str) -> dict:
     src = [t for t in tasks if data["utility"][t["id"]]["A"]["scores"]["source_recall"] is not None]
     out = {"tasks": len(tasks), "tasks_with_existing_source": len(src),
            "copied_from_B": sum(bool(data["utility"][t["id"]][other].get("same_as")) for t in tasks)}
-    for metric, ts in (("source_recall", src), ("all_recall", tasks), ("precision", tasks)):
+    companion = [t for t in tasks if data["utility"][t["id"]]["A"]["scores"].get("companion_recall") is not None]
+    out["tasks_with_existing_companions"] = len(companion)
+    for metric, ts in (("source_recall", src), ("companion_recall", companion), ("all_recall", tasks),
+                       ("precision", tasks)):
         a, m = col(metric, "A", ts), col(metric, other, ts)
         out[metric] = {"A": round(sum(a) / len(a), 4), other: round(sum(m) / len(m), 4),
                        f"{other}_minus_A": paired_delta(m, a)} if ts else None

@@ -7,6 +7,7 @@ same way (a playbook).
 """
 
 import json
+import subprocess
 
 import pytest
 from sqlalchemy import func, select
@@ -34,7 +35,7 @@ def _grow_history(repo) -> None:
         repo.write("CHANGES.md", (repo.path / "CHANGES.md").read_text() + f"- Change {i}. #{i + 2}\n")
         if i < 6:
             repo.write("tests/test_auth.py", (repo.path / "tests/test_auth.py").read_text()
-                       + f"\n\ndef test_helper_{i}():\n    assert True\n")
+                       + f"\n\ndef test_helper_{i}():\n    assert helper_{i}(1) == {1 + i}\n")
         repo.commit(f"auth: add helper {i}")
     init = (repo.path / "shop" / "__init__.py").read_text()
     for i in range(5):
@@ -87,6 +88,65 @@ def test_learning_mines_grounded_memory_and_a_brief(session, learned, fixture_re
     ledger = session.execute(select(func.count()).select_from(MemoryLedger)
                              .where(MemoryLedger.run_id == stats["run_id"])).scalar_one()
     assert ledger == stats["added"]
+
+
+def test_counts_carry_a_tally_that_rechecks(session, learned, fixture_repo):
+    repo, _ = learned
+    cochange = _item(session, repo, "cochange/shop/auth.py")
+    assert cochange.body.startswith("Files that changed in the same commit as shop/auth.py (share of its last 9")
+    tally = next(e for e in cochange.evidence if e["kind"] == "tally")
+    rows = tally["groups"][0]["rows"]
+    assert tally["total"] == 9 and len(rows) == 9  # every counted commit, not examples
+    assert sum("CHANGES.md" in r["paths"] for r in rows) == 8
+    assert sum("tests/test_auth.py" in r["paths"] for r in rows) == 6
+    assert check_evidence(tally, fixture_repo.path, fixture_repo.path)
+
+    forged = json.loads(json.dumps(tally))
+    forged["groups"][0]["rows"][0]["paths"].append("shop/cart.py")  # a file that commit did not touch
+    assert not check_evidence(forged, fixture_repo.path, fixture_repo.path)
+    forged = json.loads(json.dumps(tally))
+    forged["groups"][0]["rows"][0]["sha"] = "0" * 12
+    assert not check_evidence(forged, fixture_repo.path, fixture_repo.path)
+
+    # A test home is a test file that uses the code, counted over focused commits only (not the 16-file initial one).
+    testhome = _item(session, repo, "testhome/shop/auth.py")
+    assert "tests/test_auth.py (uses helper_0; changed with shop/auth.py in 6 of its last 8 commits" in testhome.body
+    assert testhome.evidence[0]["kind"] == "code" and testhome.evidence[0]["path"] == "tests/test_auth.py"
+
+    typing_item = _item(session, repo, "typing/python/annotations")
+    if typing_item is not None:
+        groups = next(e for e in typing_item.evidence if e["kind"] == "tally")["groups"]
+        assert all(len(g["rows"]) <= g["count"] for g in groups)
+
+
+def test_origins_follow_renames_and_test_homes_need_the_code(session, fixture_repo, embedder):
+    fixture_repo.write("shop/legacy.py", "".join(f"def {n}() -> int:\n    return {i}\n\n\n"
+                                                 for i, n in enumerate(["alpha_one", "beta_two", "gamma_three"])))
+    fixture_repo.commit("Add legacy helpers")
+    subprocess.run(["git", "-C", str(fixture_repo.path), "mv", "shop/legacy.py", "shop/helpers.py"], check=True)
+    fixture_repo.commit("Rename legacy to helpers")
+    for i in range(4):  # a test file that changes alongside but never uses the code is not its test home
+        helpers = (fixture_repo.path / "shop/helpers.py").read_text()
+        fixture_repo.write("shop/helpers.py", helpers + f"def delta_{i}() -> int:\n    return {i}\n\n\n")
+        misc = (fixture_repo.path / "tests/test_misc.py").read_text() if i else ""
+        fixture_repo.write("tests/test_misc.py", misc + f"def test_misc_{i}():\n    assert True\n\n\n")
+        fixture_repo.commit(f"helpers: add delta {i}")
+    ref = parse_repo_spec(str(fixture_repo.path), allowed_hosts=[], allow_local=True)
+    CodeIndexer(session, embedder).index(ref)
+    repo = session.execute(select(Repository).where(Repository.url == ref.canonical_url)).scalar_one()
+    stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path,
+                             commit=repo.last_commit_sha, embedder=embedder)
+    assert stats["ungrounded"] == 0
+
+    origin = _item(session, repo, "history/origin/shop/helpers.py")
+    assert "was added as shop/legacy.py in" in origin.body and "renamed to shop/helpers.py in" in origin.body
+    tally = next(e for e in origin.evidence if e["kind"] == "tally")
+    assert tally["names"][0]["renames"][0]["from"] == "shop/legacy.py"
+    assert all(check_evidence(e, fixture_repo.path, fixture_repo.path) for e in origin.evidence)
+    forged = json.loads(json.dumps(tally))
+    forged["groups"][0]["rows"][0]["added"] = ["shop/auth.py"]  # that commit did not add it
+    assert not check_evidence(forged, fixture_repo.path, fixture_repo.path)
+    assert _item(session, repo, "testhome/shop/helpers.py") is None
 
 
 def test_relearning_is_incremental_and_respects_human_decisions(session, learned, fixture_repo, embedder):

@@ -1,5 +1,43 @@
 # Changelog
 
+## Unreleased — learning phase 2: evidence that proves the claim
+
+The locked evaluation found most memory items true but not established by their evidence (55% audited
+precision). This change makes each claim checkable from what it cites:
+
+### Changed
+
+- **Counts come with a tally** (new `tally` evidence) listing everything that was counted, and the
+  grounding check re-verifies it:
+  - co-change, changelog habit and test homes list every counted commit, with the claimed files it
+    touched;
+  - naming, docs, typing and exception conventions list the exceptions, or the smaller side of the
+    split;
+  - tooling lists the configuration line behind each fact.
+- **Renamed paths show the renames.** An origin says "added as `click/helpers.py` in …; renamed to …",
+  and a commit tally names each file as that commit recorded it, with the renames to today's name.
+- **Removed dependencies and runtime versions cite the lines that changed** (new `diff` evidence) and
+  the manifest at the learned commit.
+- **Test homes:** a test file counts only when it changed in the source file's focused commits (at most
+  10 files) *and* uses the source file's code at the learned commit. That line is cited.
+- **Wording:** co-change no longer says "usually" for shares as low as 20%. Exception hierarchies say
+  which base the classes derive from, not how errors are raised.
+- **Retrieval and search:** `retrieve_context` and `search_memory` return tallies without their rows.
+  `GET /api/v1/memory/items` keeps them in full.
+
+- **Dev result** (flask and ky, 60 active items, the stricter judge): precision 52/60 (86.7%) on the first
+  pass, then 59/60 (98.3%) after four fixes found on those same items. Grounding is 100%. These are
+  development numbers, tuned on the items they measure; protocol v2 tests them on new data.
+
+### Added
+
+- `phase2_eval.py`:
+  - `--precision-only`;
+  - companion-file recall, the existing non-source files a commit changed;
+  - a judge prompt that checks counts against tallies.
+- [Draft protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md), not locked: companion-file recall as the
+  primary utility measure, on four repositories no phase has used.
+
 ## Unreleased — learning phase 2: test homes and a leaner memory block
 
 ### Added
