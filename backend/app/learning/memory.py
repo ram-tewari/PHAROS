@@ -61,9 +61,130 @@ def commit_evidence(sha: str, date: str, subject: str) -> dict:
     return {"kind": "commit", "sha": sha, "date": date[:10], "subject": subject[:200]}
 
 
+TALLY_ROWS = 80
+
+
+def tally_evidence(label: str, total: int, groups: list[tuple[str, int, list[dict]]],
+                   names: list[dict] | None = None) -> dict:
+    """Everything a count was taken over, so the claim can be checked from its evidence alone.
+
+    ``groups`` are (label, count, rows). A row is a commit (``sha`` (12 characters), date, subject and
+    the claimed ``paths`` as that commit recorded them), a symbol (``path``, ``line``, ``name``) or a
+    file (``path``). At most ``TALLY_ROWS`` rows are kept; ``count`` is always the full number.
+    ``names`` connect a recorded path to its current name through the renames in between:
+    ``{"recorded", "now", "renames": [{"sha", "date", "from", "to"}]}``."""
+    return {"kind": "tally", "label": label, "total": total,
+            "groups": [{"label": g, "count": n, "rows": rows[:TALLY_ROWS]} for g, n, rows in groups],
+            "names": names or []}
+
+
+def diff_evidence(sha: str, date: str, subject: str, path: str, *, removed: Iterable[str] = (),
+                  added: Iterable[str] = ()) -> dict:
+    """Lines one commit removed from or added to ``path`` (a dropped dependency, a version bump)."""
+    return {"kind": "diff", "sha": sha, "date": date[:10], "subject": subject[:200], "path": path,
+            "removed": list(removed), "added": list(added)}
+
+
+def same_changelog(a: str, b: str) -> bool:
+    """A root changelog that changed format keeps its identity (``CHANGES.rst`` is today's ``CHANGES.md``)."""
+    return "/" not in a and "/" not in b and a.split(".", 1)[0].lower() == b.split(".", 1)[0].lower()
+
+
+def check_tally(evidence: dict, *, commit_paths, commit_renames, commit_added, line_at, exists) -> bool:
+    """Re-check a tally. ``commit_paths(sha12)`` is the set of paths a commit recorded (None when it is
+    not in the history), ``commit_renames(sha12)`` its (old, new) renames, ``commit_added(sha12)`` the
+    paths it added, ``line_at(path, n)`` line n of a file at the commit (None when out of range) and
+    ``exists(path)`` whether a file is there."""
+    for group in evidence.get("groups", []):
+        if len(group.get("rows", [])) > group.get("count", 0):
+            return False
+        for row in group["rows"]:
+            if "sha" in row:
+                paths = commit_paths(row["sha"])
+                if paths is None or not set(row.get("paths", [])) <= paths:
+                    return False
+                if row.get("added") and not set(row["added"]) <= (commit_added(row["sha"]) or set()):
+                    return False
+            elif "line" in row:
+                text = line_at(row["path"], row["line"])
+                if text is None or row["name"] not in text:
+                    return False
+            elif not exists(row["path"]):
+                return False
+    for name in evidence.get("names", []):
+        current = name["recorded"]
+        for hop in name.get("renames", []):
+            if hop["from"] != current or (hop["from"], hop["to"]) not in (commit_renames(hop["sha"]) or set()):
+                return False
+            current = hop["to"]
+        if current != name["now"] and not same_changelog(current, name["now"]):
+            return False
+    return True
+
+
+def commits_at(mirror: Path, head: str, shas: set[str]) -> dict[str, tuple[set[str], set[tuple[str, str]], set[str]]]:
+    """sha[:12] -> (recorded paths, renames, added paths) for those of ``shas`` reachable from ``head``."""
+    if not shas:
+        return {}
+    reachable = {s[:12] for s in _git(mirror, "rev-list", head).split()}
+    out = {}
+    raw = _git(mirror, "show", "-M", "--name-status", "--format=%x1e%H", *sorted(s for s in shas if s in reachable))
+    for record in raw.split("\x1e"):
+        if not record.strip():
+            continue
+        sha, _, body = record.partition("\n")
+        paths, renames, added = set(), set(), set()
+        for line in body.splitlines():
+            parts = line.split("\t")
+            if len(parts) == 3 and parts[0][:1] in "RC":
+                paths.add(parts[2])
+                if parts[0][:1] == "R":
+                    renames.add((parts[1], parts[2]))
+            elif len(parts) >= 2:
+                paths.add(parts[1])
+                if parts[0][:1] == "A":
+                    added.add(parts[1])
+        out[sha.strip()[:12]] = (paths, renames, added)
+    return out
+
+
+def _line_at(checkout: Path, path: str, n: int) -> str | None:
+    try:
+        lines = (checkout / path).read_text(encoding="utf-8", errors="replace").splitlines()
+    except OSError:
+        return None
+    return lines[n - 1] if 1 <= n <= len(lines) else None
+
+
+def check_diff(evidence: dict, mirror: Path) -> bool:
+    """Did that commit really remove and add those lines in that file?"""
+    try:
+        diff = set(_git(mirror, "show", "-M", "--diff-merges=first-parent", "--format=", evidence["sha"], "--",
+                        evidence["path"]).splitlines())
+    except HistoryError:
+        return False
+    return (all(f"-{line}" in diff for line in evidence.get("removed", []))
+            and all(f"+{line}" in diff for line in evidence.get("added", [])))
+
+
 def check_evidence(evidence: dict, checkout: Path, mirror: Path) -> bool:
     """Does this pointer still hold at the checkout's commit (or in its history)?"""
     kind = evidence.get("kind")
+    if kind == "tally":
+        try:
+            head = _git(checkout, "rev-parse", "HEAD").strip()
+            shas = ({r["sha"] for g in evidence.get("groups", []) for r in g.get("rows", []) if "sha" in r}
+                    | {h["sha"] for n in evidence.get("names", []) for h in n.get("renames", [])})
+            commits = commits_at(mirror, head, shas)
+        except HistoryError:
+            return False
+        return check_tally(evidence, commit_paths=lambda s: (commits.get(s[:12]) or (None,))[0],
+                           commit_renames=lambda s: (commits.get(s[:12]) or (None, None))[1],
+                           commit_added=lambda s: (commits.get(s[:12]) or (None, None, None))[2],
+                           line_at=lambda p, n: _line_at(checkout, p, n), exists=lambda p: (checkout / p).is_file())
+    if kind == "diff":
+        reachable = check_evidence({"kind": "commit", "sha": evidence["sha"]}, checkout, mirror)
+        return reachable and check_diff(evidence, mirror)
     if kind == "code":
         fresh = code_evidence(checkout, evidence["path"], evidence["start_line"], evidence["end_line"])
         return bool(fresh and fresh["sha256"] == evidence["sha256"])
@@ -88,6 +209,10 @@ def cite(evidence: dict) -> str:
         return evidence["path"]
     if evidence.get("kind") == "commit":
         return f"{evidence['sha'][:10]} ({evidence.get('date', '')})"
+    if evidence.get("kind") == "diff":
+        return f"{evidence['sha'][:10]} {evidence['path']}"
+    if evidence.get("kind") == "tally":
+        return f"counted: {evidence['label']}"[:100]
     return "?"
 
 

@@ -38,6 +38,11 @@ class Commit:
     # (status letter, path at this commit's time mapped to its name at the learned commit)
     files: list[tuple[str, str]] = field(default_factory=list)
     renames: list[tuple[str, str]] = field(default_factory=list)  # (old, new) as recorded
+    names: dict[str, str] = field(default_factory=dict)  # name at the learned commit -> path as recorded here
+
+    def recorded(self, path: str) -> str:
+        """``path`` (its name at the learned commit) as this commit recorded it."""
+        return self.names.get(path, path)
 
 
 def _git(cwd: Path, *args: str, timeout: float = 600) -> str:
@@ -128,8 +133,13 @@ def load_history(mirror: Path, commit: str, *, max_commits: int | None = None) -
                     entry.renames.append((old, new))
                 if len(lines) <= MAX_FILES_PER_COMMIT:
                     entry.files.append((status, current))
+                    if current != new:
+                        entry.names[current] = new
             elif len(parts) >= 2 and len(lines) <= MAX_FILES_PER_COMMIT:
-                entry.files.append((status, alias.get(parts[1], parts[1])))
+                current = alias.get(parts[1], parts[1])
+                entry.files.append((status, current))
+                if current != parts[1]:
+                    entry.names[current] = parts[1]
         commits.append(entry)
     return commits
 

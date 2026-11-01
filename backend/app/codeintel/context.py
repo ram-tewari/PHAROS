@@ -297,7 +297,7 @@ def _render_memory(memory: dict, limit: int) -> str:
         out += "\n" + brief["text"].rstrip() + "\n"
     lines = []
     for item in memory.get("items", []):
-        cites = ", ".join(_cite(e) for e in item.get("evidence", [])[:2])
+        cites = ", ".join([c for e in item.get("evidence", []) if (c := _cite(e))][:2])
         lines.append(f"- {item['body']}" + (f" [{cites}]" if cites else "") + "\n")
     if lines:
         out += "\n## Learned about the retrieved code\n" + "".join(lines)
@@ -311,8 +311,10 @@ def _render_memory(memory: dict, limit: int) -> str:
 def _cite(evidence: dict) -> str:
     if evidence.get("kind") == "code":
         return f"{evidence['path']}:{evidence['start_line']}"
-    if evidence.get("kind") == "commit":
+    if evidence.get("kind") in ("commit", "diff"):
         return evidence["sha"][:10]
+    if evidence.get("kind") == "tally":
+        return ""  # the full list stays in the item's evidence; the context cites a file or commit
     return evidence.get("path", "")
 
 

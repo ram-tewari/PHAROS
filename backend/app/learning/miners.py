@@ -8,7 +8,11 @@ same way. Rules shared by all of them:
 * conventions are measured on **source** files only (``path_role``), never
   averaged with tests, docs or examples;
 * every item says how many cases support it, and cites evidence PHAROS can
-  re-check (lines with a hash, a file blob, or a commit);
+  re-check (lines with a hash, a file blob, a commit, the lines a commit
+  changed, or a tally);
+* a count is backed by a tally of what was counted (every commit, or the
+  exceptions to a convention), and a path that was renamed carries the
+  renames, so the claim can be checked from its evidence alone;
 * an item is ``eligible`` to auto-activate only when its own rule holds
   (typically ≥ 90 % agreement over ≥ 20 cases, or an exact git event);
 * nothing is called removed or abandoned unless it is absent at the
@@ -26,11 +30,22 @@ from pathlib import Path, PurePosixPath
 
 from ..codeintel.retrieval import path_role
 from .history import Commit, HistoryError, _git, commit_messages, commits_touching, file_at
-from .memory import Candidate, SkillCandidate, code_evidence, commit_evidence, file_evidence
+from .memory import (
+    Candidate,
+    SkillCandidate,
+    code_evidence,
+    commit_evidence,
+    diff_evidence,
+    file_evidence,
+    same_changelog,
+    tally_evidence,
+)
 
 MIN_CASES = 20
 STRONG = 0.9
 MAX_EXAMPLES = 4
+WINDOW = 60  # co-change and test homes count over a file's last 60 commits, all listed in the tally
+FOCUSED = 10  # test homes count only commits of at most this many files
 
 
 @dataclass
@@ -61,6 +76,23 @@ class Snapshot:
     history: list[Commit] = field(default_factory=list)
     callers: Counter = field(default_factory=Counter)  # resolved incoming call edges per file
     _lines: dict[str, list[str]] = field(default_factory=dict)
+    _forward: dict[str, tuple[Commit, str]] | None = None
+
+    def name_link(self, recorded: str, now: str) -> dict | None:
+        """The renames that turned ``recorded`` into ``now``, for a tally's ``names``; None if none connect."""
+        if self._forward is None:
+            self._forward = {}
+            for c in self.history:  # newest first: keep each name's latest rename
+                for old, new in c.renames:
+                    self._forward.setdefault(old, (c, new))
+        hops, current = [], recorded
+        while current != now and not same_changelog(current, now) and current in self._forward and len(hops) < 10:
+            c, new = self._forward[current]
+            hops.append({"sha": c.sha[:12], "date": c.date[:10], "from": current, "to": new})
+            current = new
+        if current != now and not same_changelog(current, now):
+            return None
+        return {"recorded": recorded, "now": now, "renames": hops}
 
     def lines(self, path: str) -> list[str]:
         if path not in self._lines:
@@ -97,6 +129,50 @@ class Snapshot:
 
 def _pct(n: int, d: int) -> str:
     return f"{100 * n / d:.0f}%" if d else "0%"
+
+
+def _symbols(snap: Snapshot, chunks: list[Chunk]) -> list[dict]:
+    """Tally rows (path, definition line, name) for chunks, in file order."""
+    rows = []
+    for c in sorted(chunks, key=lambda c: (c.path, c.start)):
+        lines = snap.lines(c.path)
+        line = next((i for i in range(c.start, min(c.end, c.start + 40) + 1)
+                     if i <= len(lines) and c.name in lines[i - 1]), None)
+        if line:
+            rows.append({"path": c.path, "line": line, "name": c.name})
+    return rows
+
+
+def _minority(snap: Snapshot, yes: tuple[str, list[Chunk]], no: tuple[str, list[Chunk]]) -> tuple:
+    """The smaller side of a split as a tally group: listing it establishes the other side's count."""
+    label, chunks = min(yes, no, key=lambda side: len(side[1]))
+    return label, len(chunks), _symbols(snap, chunks)
+
+
+def _commit_tally(snap: Snapshot, label: str, commits: list[Commit], claimed: list[str]) -> dict:
+    """Every counted commit with the claimed files it touched, named as that commit recorded them."""
+    wanted, rows, names = set(claimed), [], {}
+    for c in commits:
+        paths = []
+        for _, p in c.files:
+            now = snap.canonical(p)
+            if now in wanted:
+                raw = c.recorded(p)
+                paths.append(raw)
+                if raw != now:
+                    names.setdefault(raw, now)
+        rows.append({"sha": c.sha[:12], "date": c.date[:10], "subject": c.subject[:80], "paths": sorted(set(paths))})
+    links = [link for raw, now in sorted(names.items()) if (link := snap.name_link(raw, now))]
+    return tally_evidence(label, len(commits), [(label, len(commits), rows)], links)
+
+
+def _line_evidence(snap: Snapshot, path: str, start: int, end: int, needle: str | re.Pattern) -> dict | None:
+    """Code evidence for the first line in ``start..end`` of ``path`` that contains ``needle``."""
+    lines = snap.lines(path)
+    for i in range(max(1, start), min(end, len(lines)) + 1):
+        if (needle.search(lines[i - 1]) if isinstance(needle, re.Pattern) else needle in lines[i - 1]):
+            return code_evidence(snap.checkout, path, i, i)
+    return None
 
 
 def _spread(chunks: list[Chunk], k: int = MAX_EXAMPLES) -> list[Chunk]:
@@ -144,23 +220,34 @@ def mine_naming(snap: Snapshot) -> list[Candidate]:
         if len(styled) < MIN_CASES:
             continue
         counts = Counter(s for _, s in styled)
+        words = _KIND_WORDS[kind]
+        extra = []
         if lang == "go" and kind != "macro":
             mixed = counts["camelCase"] + counts["PascalCase"]
-            exported = sum(1 for c in chunks if c.name[:1].isupper())
-            body = (f"Go {_KIND_WORDS[kind]} use MixedCaps, never underscores: {mixed} of {len(styled)} multi-part "
+            exported = [c for c in chunks if c.name[:1].isupper()]
+            body = (f"Go {words} use MixedCaps, never underscores: {mixed} of {len(styled)} multi-part "
                     f"names ({_pct(mixed, len(styled))}). Exported names start upper-case "
-                    f"({exported} of {len(chunks)} {_KIND_WORDS[kind]} are exported).")
+                    f"({len(exported)} of {len(chunks)} {words} are exported).")
             top, n = "MixedCaps", mixed
+            extra.append(_minority(snap, (f"exported, of all {len(chunks)} {words}", exported),
+                                   (f"not exported, of all {len(chunks)} {words}",
+                                    [c for c in chunks if not c.name[:1].isupper()])))
         else:
             top, n = counts.most_common(1)[0]
-            body = (f"{lang.capitalize()} {_KIND_WORDS[kind]} in source files are {top}: {n} of {len(styled)} "
+            body = (f"{lang.capitalize()} {words} in source files are {top}: {n} of {len(styled)} "
                     f"multi-part names ({_pct(n, len(styled))}).")
-            if lang == "python":
-                private = sum(1 for c in chunks if c.name.startswith("_") and not c.name.startswith("__"))
-                body += f" Private helpers start with an underscore ({private} of {len(chunks)})."
+            private = [c for c in chunks if c.name.startswith("_") and not c.name.startswith("__")]
+            if lang == "python" and private:
+                body += f" Private helpers start with an underscore ({len(private)} of {len(chunks)})."
+                extra.append((f"private helpers (leading underscore), of all {len(chunks)} {words}", len(private),
+                              _symbols(snap, private)))
         share = n / len(styled)
-        examples = [c for c, s in styled if s == top or (top == "MixedCaps" and s in ("camelCase", "PascalCase"))]
+        fits = {"camelCase", "PascalCase"} if top == "MixedCaps" else {top}
+        examples = [c for c, s in styled if s in fits]
+        others = [c for c, s in styled if s not in fits]
         evidence = [e for c in _spread(examples) if (e := snap.evidence_at(c, c.name))]
+        evidence.append(tally_evidence(f"{lang} {words} with multi-part names in source files", len(styled),
+                                       [(f"not {top}", len(others), _symbols(snap, others)), *extra]))
         out.append(Candidate(
             key=f"naming/{lang}/{kind}", kind="convention", title=f"{lang} {_KIND_WORDS[kind]}: {top}",
             body=body + " Examples: " + ", ".join(c.name for c in _spread(examples)) + ".",
@@ -226,27 +313,36 @@ def mine_docs(snap: Snapshot) -> list[Candidate]:
         share = len(documented) / len(chunks)
         body = (f"Public {lang} functions, methods and classes are documented: {len(documented)} of {len(chunks)} "
                 f"({_pct(len(documented), len(chunks))}) have a doc comment.")
-        evidence_from = documented
+        evidence = [e for c in _spread(documented, 2) if (e := snap.evidence_at(c, c.name, span=3))]
+        groups = [_minority(snap, ("documented", documented), ("not documented",
+                                                                [c for c in chunks if not c.docstring]))]
         if lang == "python":
             styles = {
-                "reST field lists (:param x:)": sum(":param" in c.docstring or ":return" in c.docstring
-                                                    for c in documented),
-                "Google style (Args:/Returns:)": sum("Args:" in c.docstring or "Returns:" in c.docstring
-                                                     for c in documented),
-                "NumPy style (Parameters ----)": sum("Parameters --" in c.docstring for c in documented),
+                "reST field lists (:param x:)": (":param", ":return"),
+                "Google style (Args:/Returns:)": ("Args:", "Returns:"),
+                "NumPy style (Parameters ----)": ("Parameters\n", "Returns\n"),
             }
-            style, n = max(styles.items(), key=lambda kv: kv[1])
-            if n >= 10:
-                body += f" Docstrings use {style} ({n})."
+            using = {s: [c for c in documented if any(m in c.docstring for m in marks)] for s, marks in styles.items()}
+            style, users = max(using.items(), key=lambda kv: len(kv[1]))
+            if len(users) >= 10:
+                body += f" Docstrings use {style} ({len(users)})."
+                mark = styles[style][0].strip()
+                evidence += [e for c in _spread(users, 2) if (e := _line_evidence(snap, c.path, c.start, c.end, mark))]
+                groups.append((f"docstrings in {style}", len(users), _symbols(snap, users)))
             directives = Counter(m for c in documented for m in _DIRECTIVE_RE.findall(c.docstring))
             if sum(directives.values()) >= 5:
                 body += (" API history is recorded in docstrings with Sphinx directives: "
                          + ", ".join(f".. {d}:: ({n})" for d, n in directives.most_common()) + ".")
-                evidence_from = [c for c in documented if _DIRECTIVE_RE.search(c.docstring)]
+                marked = [c for c in documented if _DIRECTIVE_RE.search(c.docstring)]
+                evidence += [e for c in _spread(marked, 2)
+                             if (e := _line_evidence(snap, c.path, c.start, c.end, _DIRECTIVE_RE))]
         elif lang == "go":
-            named = sum(c.docstring.startswith(c.name) for c in documented)
-            body += f" Doc comments start with the symbol's name ({named} of {len(documented)})."
-        evidence = [e for c in _spread(evidence_from) if (e := snap.evidence_at(c, c.name, span=3))]
+            named = [c for c in documented if c.docstring.startswith(c.name)]
+            body += f" Doc comments start with the symbol's name ({len(named)} of {len(documented)})."
+            groups.append(_minority(snap, ("doc comment starts with the name", named),
+                                    ("doc comment does not start with the name",
+                                     [c for c in documented if not c.docstring.startswith(c.name)])))
+        evidence.append(tally_evidence(f"public {lang} functions, methods and classes", len(chunks), groups))
         out.append(Candidate(key=f"docs/{lang}", kind="convention", title=f"{lang} documentation",
                              body=body, evidence=evidence, support=len(documented), confidence=share,
                              source="code", scope={"languages": [lang]}, eligible=share >= 0.6))
@@ -287,6 +383,12 @@ def mine_python_typing(snap: Snapshot) -> list[Candidate]:
                 f"({_pct(annotated, len(params))}) are annotated.")
         evidence = [e for c in _spread([c for c in funcs if "->" in c.signature])
                     if (e := snap.evidence_at(c, c.name))]
+        bare = [c for c in funcs if any(":" not in p for p in _params(c.signature))]
+        evidence.append(tally_evidence("Python functions and methods in source files", len(funcs), [
+            _minority(snap, ("with a return type", [c for c in funcs if "->" in c.signature]),
+                      ("without a return type", [c for c in funcs if "->" not in c.signature])),
+            (f"functions with unannotated parameters ({len(params) - annotated} parameters in all)", len(bare),
+             _symbols(snap, bare))]))
         out.append(Candidate(key="typing/python/annotations", kind="convention", title="Python type hints",
                              body=body, evidence=evidence, support=returns, confidence=share, source="code",
                              scope={"languages": ["python"]}, eligible=share >= STRONG))
@@ -302,10 +404,14 @@ def mine_python_typing(snap: Snapshot) -> list[Candidate]:
         if share >= 0.5:
             evidence = [e for path, i in with_future[:: max(1, len(with_future) // MAX_EXAMPLES)][:MAX_EXAMPLES]
                         if (e := code_evidence(snap.checkout, path, i, i))]
+            have = {p for p, _ in with_future}
+            without = [{"path": p} for p in modules if p not in have]
+            evidence.append(tally_evidence("Python source modules", len(modules),
+                                           [("modules without it", len(without), without)]))
             out.append(Candidate(
                 key="typing/python/future-annotations", kind="convention",
                 title="from __future__ import annotations",
-                body=(f"Python source modules start with `from __future__ import annotations`: {len(with_future)} "
+                body=(f"Python source modules import `from __future__ import annotations` at the top: {len(with_future)} "
                       f"of {len(modules)} ({_pct(len(with_future), len(modules))})."),
                 evidence=evidence, support=len(with_future), confidence=share, source="code",
                 scope={"languages": ["python"]}, eligible=share >= STRONG and len(with_future) >= 5))
@@ -352,13 +458,18 @@ def mine_exceptions(snap: Snapshot) -> list[Candidate]:
                 if name not in descendants and any(b in descendants for b in bases[name]):
                     descendants.add(name)
                     grew = True
-        body = (f"Errors are raised as subclasses of {root} (defined in {by_name[root].path}, base "
-                f"{', '.join(bases[root]) or '-'}), not bare built-in errors: {len(descendants) - 1} of the "
-                f"{len(exc)} {lang} exception classes derive from it ({k} of them live in {home}/).")
+        body = (f"The project's exception classes derive from {root} (defined in {by_name[root].path}, base "
+                f"{', '.join(bases[root]) or '-'}): {len(descendants) - 1} of the {len(exc)} {lang} exception "
+                f"classes in source do ({k} of the {len(exc)} live in {home}/).")
         if roots[1:4]:
             body += " Other bases: " + ", ".join(f"{name} ({k})" for name, k in roots[1:4]) + "."
         ev_chunks = [by_name[root]] + _spread([by_name[x] for x in descendants if x != root], 3)
         evidence = [e for c in ev_chunks if (e := snap.evidence_at(c, c.name))]
+        derived = [by_name[x] for x in descendants if x != root]
+        rest = [by_name[x] for x in exc if x not in descendants]
+        evidence.append(tally_evidence(f"{lang} exception classes in source (each row is its class line)", len(exc), [
+            (f"derive from {root}", len(derived), _symbols(snap, derived)),
+            ("other exception classes", len(rest), _symbols(snap, rest))]))
         out.append(Candidate(key=f"exceptions/{lang}", kind="convention", title=f"{lang} exception hierarchy",
                              body=body, evidence=evidence, support=len(descendants) - 1,
                              confidence=(len(descendants) - 1) / len(exc), source="code",
@@ -407,6 +518,9 @@ def mine_deprecation(snap: Snapshot) -> list[Candidate]:
                 body += f" Messages say the old name 'will be removed in {phrase}' ({n} of {len(sites)})."
             evidence = [e for path, line in sites[:: max(1, len(sites) // MAX_EXAMPLES)][:MAX_EXAMPLES]
                         if (e := code_evidence(snap.checkout, path, line, min(line + 4, len(snap.lines(path)))))]
+            rows = [{"path": p, "line": i, "name": "warnings.warn("} for p, i in sites]
+            evidence.append(tally_evidence("Python DeprecationWarning sites in source", len(sites),
+                                           [("warnings.warn(..., DeprecationWarning) calls", len(sites), rows)]))
             out.append(Candidate(key="deprecation/python", kind="convention", title="How Python APIs are deprecated",
                                  body=body, evidence=evidence, support=len(sites),
                                  confidence=max(levels.values(), default=len(sites)) / len(sites), source="code",
@@ -420,6 +534,8 @@ def mine_deprecation(snap: Snapshot) -> list[Candidate]:
                  if needle in line]
         if len(sites) >= 3:
             evidence = [e for p, i in sites[:MAX_EXAMPLES] if (e := code_evidence(snap.checkout, p, i, i))]
+            evidence.append(tally_evidence(f"{lang} deprecation markers in source", len(sites), [
+                (f"lines with {needle}", len(sites), [{"path": p, "line": i, "name": needle} for p, i in sites])]))
             out.append(Candidate(key=f"deprecation/{lang}", kind="convention", title=f"How {lang} APIs are deprecated",
                                  body=f"{sentence} ({len(sites)} sites).", evidence=evidence, support=len(sites),
                                  confidence=1.0, source="code", scope={"languages": [lang]},
@@ -456,14 +572,22 @@ def mine_tests(snap: Snapshot) -> list[Candidate]:
     if not top:
         return []
     body = "Tests live in " + "; ".join(f"{pat} ({n} files)" for pat, n in top) + f" ({len(tests)} test files)."
+    shown = {pat for pat, _ in top}
+    others = [p for p in tests if _test_pattern(p) not in shown]
+    groups = [(pat, n, [{"path": p} for p in tests if _test_pattern(p) == pat]) for pat, n in top]
+    groups.append(("other test files", len(others), [{"path": p} for p in others]))
     py_tests = [c for c in snap.chunks if c.role == "test" and c.language == "python" and c.name.startswith("test")
                 and c.kind in ("function", "method")]
     if len(py_tests) >= 20:
-        module_level = sum(c.kind == "function" for c in py_tests)
-        body += (f" Python tests are {'module-level pytest functions' if module_level * 2 >= len(py_tests) else 'methods on test classes'}"
-                 f" ({module_level} of {len(py_tests)} are module-level).")
-    examples = [p for pat, _ in top[:2] for p in tests if _test_pattern(p) == pat][:MAX_EXAMPLES]
+        functions = [c for c in py_tests if c.kind == "function"]
+        body += (f" Python tests are {'module-level pytest functions' if len(functions) * 2 >= len(py_tests) else 'methods on test classes'}"
+                 f" ({len(functions)} of {len(py_tests)} are module-level).")
+        groups.append(_minority(snap, (f"module-level test functions, of all {len(py_tests)} tests", functions),
+                                (f"test methods on classes, of all {len(py_tests)} tests",
+                                 [c for c in py_tests if c.kind != "function"])))
+    examples = [next(p for p in tests if _test_pattern(p) == pat) for pat, _ in top]
     evidence = [e for p in examples if (e := file_evidence(snap.checkout, p))]
+    evidence.append(tally_evidence(f"test files ({len(tests)})", len(tests), groups))
     share = top[0][1] / len(tests)
     return [Candidate(key="tests/layout", kind="convention", title="Where tests live", body=body, evidence=evidence,
                       support=top[0][1], confidence=share, source="code", eligible=share >= 0.5 and top[0][1] >= 5)]
@@ -483,7 +607,7 @@ def mine_changelog(snap: Snapshot) -> list[Candidate]:
     logs = sorted(p for p in snap.files if "/" not in p and CHANGELOG_RE.match(p))
     if not logs or not snap.history:
         return []
-    source_commits = [c for c in snap.history if c.files and any(_is_source_path(p) for _, p in c.files)][:300]
+    source_commits = [c for c in snap.history if c.files and any(_is_source_path(p) for _, p in c.files)][:100]
     if len(source_commits) < 10:
         return []
     best = None
@@ -515,6 +639,8 @@ def mine_changelog(snap: Snapshot) -> list[Candidate]:
         body += f" It was renamed from {old} in {c.sha[:10]} ({c.date[:10]})."
     evidence = [e for e in [file_evidence(snap.checkout, log)] if e]
     evidence += [commit_evidence(c.sha, c.date, c.subject) for c in hits[:3]]
+    evidence.append(_commit_tally(snap, f"the last {len(source_commits)} commits that touch source", source_commits,
+                                  [log]))
     return [Candidate(key="changelog/entries", kind="convention", title=f"Changelog: {log}", body=body,
                       evidence=evidence, support=len(hits), confidence=share, source="history",
                       eligible=len(hits) >= 10)]
@@ -581,10 +707,17 @@ def _toml_value(text: str, section: str, key: str) -> str | None:
 def mine_tooling(snap: Snapshot) -> list[Candidate]:
     found: list[str] = []
     evidence: list[dict] = []
+    rows: list[dict] = []  # the line behind each fact, or the file when the fact is that it exists
 
-    def cite(path: str) -> None:
-        if (e := file_evidence(snap.checkout, path)):
-            evidence.append(e)
+    def cite(path: str, needle: str | re.Pattern | None = None) -> None:
+        if needle is None:
+            rows.append({"path": path})
+            return
+        for i, line in enumerate(snap.lines(path), start=1):
+            m = needle.search(line) if isinstance(needle, re.Pattern) else (needle if needle in line else None)
+            if m:
+                rows.append({"path": path, "line": i, "name": m if isinstance(m, str) else m.group(0)})
+                return
 
     if "pyproject.toml" in snap.files:
         text = "\n".join(snap.lines("pyproject.toml"))
@@ -592,19 +725,22 @@ def mine_tooling(snap: Snapshot) -> list[Candidate]:
                  if re.search(rf"^\[tool\.{t}(\.|\])", text, re.M)]
         if tools:
             found.append("pyproject configures " + ", ".join(tools))
+            for t in tools:
+                cite("pyproject.toml", f"[tool.{t}")
             length = _toml_value(text, "tool.ruff", "line-length") or _toml_value(text, "tool.black", "line-length")
             if length:
                 found.append(f"line length {length}")
-            cite("pyproject.toml")
+                cite("pyproject.toml", "line-length")
     if ".pre-commit-config.yaml" in snap.files:
         hooks = re.findall(r"-\s+id:\s*([\w.-]+)", "\n".join(snap.lines(".pre-commit-config.yaml")))
         if hooks:
             found.append("pre-commit hooks: " + ", ".join(dict.fromkeys(hooks)))
-            cite(".pre-commit-config.yaml")
+            for hook in dict.fromkeys(hooks):
+                cite(".pre-commit-config.yaml", re.compile(rf"id:\s*{re.escape(hook)}(?![\w.-])"))
     if "tox.ini" in snap.files:
         env = re.search(r"^envlist\s*=\s*(.+(?:\n\s+.+)*)", "\n".join(snap.lines("tox.ini")), re.M)
         found.append("tox" + (f" (envs: {' '.join(env.group(1).split())[:80]})" if env else ""))
-        cite("tox.ini")
+        cite("tox.ini", "envlist" if env else None)
     for name in (".golangci.yml", ".golangci.yaml"):
         if name in snap.files:
             found.append("golangci-lint (" + name + ")")
@@ -617,25 +753,30 @@ def mine_tooling(snap: Snapshot) -> list[Candidate]:
         scripts = pkg.get("scripts") or {}
         if scripts:
             found.append("npm scripts: " + ", ".join(f"{k}: `{v}`" for k, v in list(scripts.items())[:4])[:300])
-            cite("package.json")
+            for k in list(scripts)[:4]:
+                cite("package.json", f'"{k}"')
     if "Makefile" in snap.files:
         targets = [t for t in re.findall(r"^([a-z][\w-]*):", "\n".join(snap.lines("Makefile")), re.M)
                    if t in ("all", "fmt", "format", "lint", "test", "check", "checksrc")]
         if targets:
             found.append("Makefile targets: " + ", ".join(dict.fromkeys(targets)))
-            cite("Makefile")
+            for t in dict.fromkeys(targets):
+                cite("Makefile", f"{t}:")
     if ".editorconfig" in snap.files:
         width = re.search(r"max_line_length\s*=\s*(\d+)", "\n".join(snap.lines(".editorconfig")))
         if width:
             found.append(f".editorconfig max_line_length {width.group(1)}")
-            cite(".editorconfig")
+            cite(".editorconfig", "max_line_length")
     if ".clang-format" in snap.files:
         width = re.search(r"ColumnLimit:\s*(\d+)", "\n".join(snap.lines(".clang-format")))
         found.append(".clang-format" + (f" (ColumnLimit {width.group(1)})" if width else ""))
-        cite(".clang-format")
+        cite(".clang-format", "ColumnLimit" if width else None)
     if "scripts/checksrc.pl" in snap.files:
         found.append("scripts/checksrc.pl checks source style")
         cite("scripts/checksrc.pl")
+    if rows:
+        evidence.append(tally_evidence("tooling configuration", len(rows),
+                                       [("the line (or file) behind each fact", len(rows), rows)]))
     style_docs = sorted(p for p in snap.files if re.search(r"(CODE_STYLE|CODING_STYLE|STYLE|CONTRIBUTING)\.(md|rst)$",
                                                            p, re.I) and path_role(p) in ("docs", "source"))
     for path in style_docs[:4]:
@@ -650,23 +791,29 @@ def mine_tooling(snap: Snapshot) -> list[Candidate]:
     if not found:
         return []
     return [Candidate(key="tooling/summary", kind="fact", title="Formatting, lint and test tooling",
-                      body="Tooling: " + "; ".join(found) + ".", evidence=evidence, support=len(evidence),
-                      confidence=1.0, source="code", eligible=bool(evidence))]
+                      body="Tooling: " + "; ".join(found) + ".", evidence=evidence,
+                      support=len(rows) + sum(e["kind"] == "code" for e in evidence), confidence=1.0, source="code",
+                      eligible=bool(evidence))]
 
 
 # ── history: co-change, dependencies, moves, origins ───────────────────
 
-def mine_cochange(snap: Snapshot, *, max_items: int = 300, per_file: int = 300) -> list[Candidate]:
+def _touching(snap: Snapshot, max_files: int, per_file: int) -> dict[str, list[Commit]]:
+    """Each source file's latest commits of at most ``max_files`` files, newest first."""
     touching: dict[str, list[Commit]] = defaultdict(list)
     for c in snap.history:
-        if not c.files or len(c.files) > 30:
+        if not c.files or len(c.files) > max_files:
             continue
         for _, p in c.files:
             p = snap.canonical(p)
             if p in snap.files and _is_source_path(p) and len(touching[p]) < per_file:
                 touching[p].append(c)
+    return touching
+
+
+def mine_cochange(snap: Snapshot, *, max_items: int = 300, per_file: int = WINDOW) -> list[Candidate]:
     out = []
-    for path, commits in sorted(touching.items(), key=lambda kv: -len(kv[1]))[:max_items]:
+    for path, commits in sorted(_touching(snap, 30, per_file).items(), key=lambda kv: -len(kv[1]))[:max_items]:
         if len(commits) < 8:
             continue
         partners = Counter()
@@ -676,12 +823,14 @@ def mine_cochange(snap: Snapshot, *, max_items: int = 300, per_file: int = 300) 
         if not top:
             continue
         top = top[:6]
-        body = (f"When {path} changes, these files usually change in the same commit (of its last {len(commits)} "
-                "commits): " + ", ".join(f"{p} {_pct(n, len(commits))}" for p, n in top) + ".")
+        body = (f"Files that change with {path} in the same commit (share of its last {len(commits)} commits): "
+                + ", ".join(f"{p} {_pct(n, len(commits))}" for p, n in top) + ".")
         lead = top[0][0]
-        together = [c for c in commits if lead in {snap.canonical(p) for _, p in c.files}][:3]
+        together = [c for c in commits if lead in {snap.canonical(p) for _, p in c.files}][:2]
         evidence = [e for e in [file_evidence(snap.checkout, path)] if e]
         evidence += [commit_evidence(c.sha, c.date, c.subject) for c in together]
+        evidence.append(_commit_tally(snap, f"the last {len(commits)} commits that changed {path}", commits,
+                                      [p for p, _ in top]))
         out.append(Candidate(key=f"cochange/{path}", kind="co_change", title=f"Changes with {path}", body=body,
                              evidence=evidence, support=top[0][1], confidence=top[0][1] / len(commits),
                              source="history", scope={"paths": [path]}, eligible=top[0][1] >= 5))
@@ -691,34 +840,67 @@ def mine_cochange(snap: Snapshot, *, max_items: int = 300, per_file: int = 300) 
 TEST_SUPPORT_RE = re.compile(r"(^|/)(helpers?|fixtures?|testdata|conftest\.py$|__snapshots__)(/|$)")
 
 
-def mine_test_homes(snap: Snapshot, *, max_items: int = 300, per_file: int = 300) -> list[Candidate]:
-    """The existing test files a source file's changes add tests to, so a change extends them
-    instead of starting a new test file."""
-    touching: dict[str, list[Commit]] = defaultdict(list)
-    for c in snap.history:
-        if not c.files or len(c.files) > 30:
-            continue
-        for _, p in c.files:
-            p = snap.canonical(p)
-            if p in snap.files and _is_source_path(p) and len(touching[p]) < per_file:
-                touching[p].append(c)
+_GENERIC_NAMES = {"close", "write", "flush", "parse", "value", "values", "items", "update", "start", "reset", "setup",
+                  "string", "format", "result", "check", "build", "error", "name", "main", "init", "test", "tests"}
+
+
+def _distinctive(name: str) -> bool:
+    """Not a plain word: several parts (``has_level_handler``, ``replaceOption``) or a capitalised type name."""
+    core = name.strip("_")
+    return "_" in core or core[:1].isupper() or any(ch.isupper() for ch in core[1:])
+
+
+def _code_names(chunks: list[Chunk], defined_in: dict[str, set[str]]) -> list[str]:
+    """Names a test would use to exercise this code: distinctive, and defined in this source file only."""
+    return sorted({c.name for c in chunks if c.kind in ("function", "method", "class", "macro") and len(c.name) >= 5
+                   and not c.name.startswith("__") and c.name.lower() not in _GENERIC_NAMES
+                   and _distinctive(c.name) and len(defined_in[c.name]) == 1})
+
+
+def mine_test_homes(snap: Snapshot, *, max_items: int = 300, per_file: int = WINDOW) -> list[Candidate]:
+    """The existing test files that a source file's tests live in, so a change extends them
+    instead of starting a new test file.
+
+    A test file counts for a source file when it changed in at least 3 (and 15 %) of the source file's
+    latest focused commits (at most ``FOCUSED`` files, so repository-wide sweeps do not count), and at
+    the learned commit it uses the source file's code (a function or class name defined in no other source
+    file).
+    The evidence is that line and every counted commit."""
+    by_path: dict[str, list[Chunk]] = defaultdict(list)
+    defined_in: dict[str, set[str]] = defaultdict(set)
+    for c in snap.source():
+        by_path[c.path].append(c)
+        defined_in[c.name].add(c.path)
     out = []
-    for path, commits in sorted(touching.items(), key=lambda kv: -len(kv[1]))[:max_items]:
+    for path, commits in sorted(_touching(snap, FOCUSED, per_file).items(), key=lambda kv: -len(kv[1]))[:max_items]:
+        names = _code_names(by_path.get(path, []), defined_in)
+        if not names:
+            continue
+        uses = re.compile(r"(?<![\w$])(" + "|".join(map(re.escape, names[:300])) + r")(?![\w$])")
         tests = Counter()
         for c in commits:
             tests.update({q for _, p in c.files if (q := snap.canonical(p)) in snap.files and path_role(q) == "test"
                           and not TEST_SUPPORT_RE.search(q)})
-        with_tests = sum(1 for c in commits if any(path_role(snap.canonical(p)) == "test" for _, p in c.files))
-        top = [(p, n) for p, n in tests.most_common(3) if n >= 3 and n / len(commits) >= 0.15]
+        top = []
+        for test, n in tests.most_common(6):
+            if n < 3 or n / len(commits) < 0.15:
+                break
+            hit = next(((i, m.group(1)) for i, line in enumerate(snap.lines(test), start=1)
+                        if (m := uses.search(line))), None)
+            if hit:
+                top.append((test, n, *hit))
+            if len(top) == 3:
+                break
         if not top:
             continue
-        body = (f"Tests for {path} go in the existing " + ", ".join(f"{p} ({n} of {len(commits)} commits)"
-                                                                    for p, n in top) + ".")
-        together = [c for c in commits if top[0][0] in {snap.canonical(p) for _, p in c.files}][:3]
-        evidence = [e for e in [file_evidence(snap.checkout, top[0][0])] if e]
-        evidence += [commit_evidence(c.sha, c.date, c.subject) for c in together]
+        body = (f"Existing tests that use {path}'s code: "
+                + ", ".join(f"{t} (uses {name}; in the same commit in {n} of {path}'s last {len(commits)} commits "
+                            f"of at most {FOCUSED} files)" for t, n, _, name in top) + ".")
+        evidence = [e for t, _, line, _ in top[:2] if (e := code_evidence(snap.checkout, t, line, line))]
+        evidence.append(_commit_tally(snap, f"the last {len(commits)} commits of at most {FOCUSED} files that changed "
+                                            f"{path}", commits, [t for t, *_ in top]))
         out.append(Candidate(key=f"testhome/{path}", kind="co_change", title=f"Tests for {path}", body=body,
-                             evidence=evidence, support=top[0][1], confidence=top[0][1] / max(with_tests, 1),
+                             evidence=evidence, support=top[0][1], confidence=top[0][1] / len(commits),
                              source="history", scope={"paths": [path]}, eligible=top[0][1] >= 4))
     return out
 
@@ -775,6 +957,41 @@ def _author_commit(mirror: Path, before: str, version: tuple, manifest: str) -> 
     return (real, date, subject, *version[3:])
 
 
+def _diff_lines(mirror: Path, shas: list[str], manifest: str, pattern: re.Pattern) -> tuple | None:
+    """(sha, removed, added): the manifest lines matching ``pattern`` that the first of ``shas`` to touch
+    them removed and added, or None."""
+    for sha in shas:
+        try:
+            diff = _git(mirror, "show", "-M", "--diff-merges=first-parent", "--format=", sha, "--",
+                        manifest).splitlines()
+        except HistoryError:
+            continue
+        removed = [line[1:] for line in diff if line.startswith("-") and not line.startswith("---")
+                   and pattern.search(line[1:])]
+        added = [line[1:] for line in diff if line.startswith("+") and not line.startswith("+++")
+                 and pattern.search(line[1:])]
+        if removed or added:
+            return sha, removed[:3], added[:3]
+    return None
+
+
+_RUNTIME_LINE = {"Python": re.compile(r"requires-python|python_requires"), "Go": re.compile(r"^go\s+\d"),
+                 "Node.js": re.compile(r'"node"\s*:')}
+_DEPS_START = {"pyproject.toml": re.compile(r"^dependencies\s*=\s*\["), "setup.py": re.compile(r"install_requires"),
+               "go.mod": re.compile(r"^require\s*\("), "package.json": re.compile(r'^\s*"dependencies"\s*:')}
+
+
+def _deps_block(snap: Snapshot, manifest: str) -> dict | None:
+    """Code evidence for the dependency list in ``manifest`` at the learned commit (up to 60 lines)."""
+    lines = snap.lines(manifest)
+    start = next((i for i, line in enumerate(lines, start=1) if _DEPS_START[manifest].search(line)), None)
+    if start is None:
+        return None
+    end = next((i for i in range(start, min(len(lines), start + 60) + 1)
+                if re.match(r"^\s*[\])}]", lines[i - 1]) and i > start), min(len(lines), start + 60))
+    return code_evidence(snap.checkout, manifest, start, end)
+
+
 _MANIFESTS: dict[str, tuple[Callable[[str], tuple[set[str], str | None]], str]] = {
     "pyproject.toml": (_deps_python, "Python"), "setup.py": (_deps_python, "Python"),
     "go.mod": (_deps_go, "Go"), "package.json": (_deps_npm, "Node.js"),
@@ -803,27 +1020,44 @@ def mine_dependencies(snap: Snapshot) -> list[Candidate]:
         runtime_changes = []
         for prev, cur in zip(versions, versions[1:], strict=False):
             gone = {dep for dep in prev[3] - cur[3] if dep not in current_deps}
+            main = cur  # the mainline commit (perhaps a merge) where the manifest changed
             if gone or (prev[4] != cur[4] and cur[4]):
                 cur = _author_commit(snap.mirror, prev[0], cur, manifest)
             for dep in gone:
-                removed[dep] = cur
+                removed[dep] = (cur, main)
             if prev[4] != cur[4] and cur[4]:
-                runtime_changes.append((prev[4], cur))
-        for dep, (sha, date, subject, *_rest) in sorted(removed.items()):
+                runtime_changes.append((prev[4], cur, main))
+        block = _deps_block(snap, manifest)
+        for dep, ((sha, date, subject, *_rest), main) in sorted(removed.items()):
+            evidence = [commit_evidence(sha, date, subject)]
+            change = _diff_lines(snap.mirror, [sha, main[0]], manifest,
+                                 re.compile(rf"(?<![\w.-]){re.escape(dep)}(?![\w-])", re.I))
+            if change and change[1]:
+                where = (sha, date, subject) if change[0] == sha else main[:3]
+                evidence.append(diff_evidence(*where, manifest, removed=change[1]))
+            if block:
+                evidence.append(block)
             out.append(Candidate(
                 key=f"history/dependency-removed/{dep}", kind="history", title=f"{dep} is no longer a dependency",
                 body=f"{dep} was removed from {manifest} in {sha[:10]} ({date[:10]}): '{subject}'. It is not a "
                      f"dependency at the indexed commit.",
-                evidence=[commit_evidence(sha, date, subject)], support=1, confidence=1.0, source="history",
+                evidence=evidence, support=1, confidence=1.0, source="history",
                 scope={"paths": [manifest]}, eligible=True))
         if runtime_changes and current_runtime:
             recent = runtime_changes[-3:]
             steps = "; ".join(f"{old or '?'} -> {new[4]} in {new[0][:10]} ({new[1][:10]}, '{new[2][:80]}')"
-                              for old, new in reversed(recent))
+                              for old, new, _ in reversed(recent))
+            evidence = [e for e in [_line_evidence(snap, manifest, 1, len(snap.lines(manifest)),
+                                                   _RUNTIME_LINE[runtime])] if e]
+            for _, new, main in reversed(recent):
+                evidence.append(commit_evidence(new[0], new[1], new[2]))
+                if (change := _diff_lines(snap.mirror, [new[0], main[0]], manifest, _RUNTIME_LINE[runtime])):
+                    where = new[:3] if change[0] == new[0] else main[:3]
+                    evidence.append(diff_evidence(*where, manifest, removed=change[1], added=change[2]))
             out.append(Candidate(
                 key=f"history/runtime/{runtime.lower()}", kind="history", title=f"Supported {runtime} versions",
                 body=f"{runtime} requirement in {manifest} is {current_runtime}. Recent changes, newest first: {steps}.",
-                evidence=[commit_evidence(n[0], n[1], n[2]) for _, n in reversed(recent)], support=len(recent),
+                evidence=evidence, support=len(recent),
                 confidence=1.0, source="history", scope={"paths": [manifest]}, eligible=True))
     return out
 
@@ -832,6 +1066,7 @@ def mine_moves(snap: Snapshot) -> list[Candidate]:
     out = []
     for c in snap.history:
         groups: dict[tuple[str, str], int] = Counter()
+        moved: dict[tuple[str, str], list[str]] = defaultdict(list)
         for old, new in c.renames:
             o, n = PurePosixPath(old).parts, PurePosixPath(new).parts
             k = 0
@@ -839,14 +1074,21 @@ def mine_moves(snap: Snapshot) -> list[Candidate]:
                 k += 1
             if k == 0 or k == len(o) and k == len(n):
                 continue
-            groups[("/".join(o[:len(o) - k]) or ".", "/".join(n[:len(n) - k]) or ".")] += 1
+            group = ("/".join(o[:len(o) - k]) or ".", "/".join(n[:len(n) - k]) or ".")
+            groups[group] += 1
+            moved[group].append(new)
         for (src, dst), count in groups.items():
             if count < 5 or (dst != "." and not any(p.startswith(dst + "/") for p in snap.files)):
                 continue
             out.append(Candidate(
                 key=f"history/move/{src}->{dst}"[:255], kind="history", title=f"{src}/ moved to {dst}/",
                 body=f"{count} files moved from {src}/ to {dst}/ in {c.sha[:10]} ({c.date[:10]}): '{c.subject}'.",
-                evidence=[commit_evidence(c.sha, c.date, c.subject)], support=count, confidence=1.0,
+                evidence=[commit_evidence(c.sha, c.date, c.subject),
+                          tally_evidence(f"files moved from {src}/ to {dst}/", count, [
+                              ("moved, under their new names", count,
+                               [{"sha": c.sha[:12], "date": c.date[:10], "subject": c.subject[:80],
+                                 "paths": sorted(moved[(src, dst)])}])])],
+                support=count, confidence=1.0,
                 source="history", eligible=True))
     return out
 
@@ -854,18 +1096,30 @@ def mine_moves(snap: Snapshot) -> list[Candidate]:
 def mine_origins(snap: Snapshot, *, max_items: int = 300) -> list[Candidate]:
     sizes = Counter(c.path for c in snap.source())
     candidates = {p for p, n in sizes.items() if n >= 3}
-    origin: dict[str, Commit] = {}
+    origin: dict[str, tuple[Commit, str]] = {}
     for c in snap.history:  # newest first: the last "A" seen is the oldest
         for status, p in c.files:
-            p = snap.canonical(p)
-            if status == "A" and p in candidates:
-                origin[p] = c
+            now = snap.canonical(p)
+            if status == "A" and now in candidates:
+                origin[now] = (c, c.recorded(p))
     out = []
-    for path, c in sorted(origin.items(), key=lambda kv: -sizes[kv[0]])[:max_items]:
+    for path, (c, added_as) in sorted(origin.items(), key=lambda kv: -sizes[kv[0]])[:max_items]:
+        body = f"{path} was added in {c.sha[:10]} ({c.date[:10]}): '{c.subject}'."
+        links = []
+        if added_as != path:
+            link = snap.name_link(added_as, path)
+            if link is None:
+                continue  # the renames do not connect; say nothing rather than something unprovable
+            hops = "; ".join(f"renamed to {h['to']} in {h['sha'][:10]} ({h['date']})" for h in link["renames"])
+            body = f"{path} was added as {added_as} in {c.sha[:10]} ({c.date[:10]}): '{c.subject}'; {hops}."
+            links.append(link)
+        row = {"sha": c.sha[:12], "date": c.date[:10], "subject": c.subject[:80], "paths": [added_as],
+               "added": [added_as]}
+        evidence = [commit_evidence(c.sha, c.date, c.subject),
+                    tally_evidence(f"how {path} began", 1, [("the commit that added it", 1, [row])], links)]
         out.append(Candidate(
-            key=f"history/origin/{path}"[:255], kind="history", title=f"Origin of {path}",
-            body=f"{path} was added in {c.sha[:10]} ({c.date[:10]}): '{c.subject}'.",
-            evidence=[commit_evidence(c.sha, c.date, c.subject)], support=1, confidence=1.0, source="history",
+            key=f"history/origin/{path}"[:255], kind="history", title=f"Origin of {path}", body=body,
+            evidence=evidence, support=1, confidence=1.0, source="history",
             scope={"paths": [path]}, eligible=True))
     return out
 
