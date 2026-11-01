@@ -21,6 +21,12 @@ hashed and locked in docs/benchmarks/phase2-eval-protocol.md::
 
     python benchmarks/make_utility_tasks.py --mirrors ~/.cache/pharos/git \\
         --out benchmarks/datasets/utility_v1.json
+
+``--v2`` builds version 2 (docs/benchmarks/phase2-eval-protocol-v2.md): four
+other repositories, and one more rule fixed before any of their tasks was
+read: a task's commit must also change a companion file (anything that is not
+a source file: tests, docs, changelog, configuration) that existed at its
+parent.
 """
 
 from __future__ import annotations
@@ -43,6 +49,14 @@ REPOSITORIES = [
     {"name": "requests", "url": "https://github.com/psf/requests", "mirror": "psf_requests", "language": "python"},
     {"name": "cobra", "url": "https://github.com/spf13/cobra", "mirror": "spf13_cobra", "language": "go"},
     {"name": "curl", "url": "https://github.com/curl/curl", "mirror": "curl_curl", "language": "c"},
+]
+# Version 2's test repositories: used by no earlier phase (protocol v2).
+V2_REPOSITORIES = [
+    {"name": "attrs", "url": "https://github.com/python-attrs/attrs", "mirror": "python-attrs_attrs",
+     "language": "python"},
+    {"name": "rich", "url": "https://github.com/Textualize/rich", "mirror": "Textualize_rich", "language": "python"},
+    {"name": "echo", "url": "https://github.com/labstack/echo", "mirror": "labstack_echo", "language": "go"},
+    {"name": "libuv", "url": "https://github.com/libuv/libuv", "mirror": "libuv_libuv", "language": "c"},
 ]
 # Development repositories (tuning only; never the locked test set).
 DEV_REPOSITORIES = [
@@ -105,7 +119,7 @@ def changed_files(mirror: Path, commit: str, parent: str) -> list[dict]:
     return out
 
 
-def select(repo: dict, mirror: Path, head: str, n: int) -> tuple[list[dict], dict]:
+def select(repo: dict, mirror: Path, head: str, n: int, *, companion: bool = False) -> tuple[list[dict], dict]:
     rows = git(mirror, "log", "--first-parent", "--format=%H%x00%P%x00%an <%ae>%x00%cI%x00%B%x1e", head)
     seen = rejected = 0
     reasons: dict[str, int] = {}
@@ -135,6 +149,8 @@ def select(repo: dict, mirror: Path, head: str, n: int) -> tuple[list[dict], dic
                 reason = "source_lines_out_of_range"
             elif len(task_text(message)) < 20:
                 reason = "message_too_short"
+            elif companion and not any(not f["source"] and f["status"] != "A" for f in files):
+                reason = "no_existing_companion"  # last, so it counts commits eligible otherwise
         if reason:
             rejected += 1
             reasons[reason] = reasons.get(reason, 0) + 1
@@ -165,22 +181,24 @@ def main(argv=None) -> int:
     ap.add_argument("--out", required=True)
     ap.add_argument("-n", type=int, default=TASKS_PER_REPO)
     ap.add_argument("--dev", action="store_true", help="the development repositories instead of the test ones")
+    ap.add_argument("--v2", action="store_true", help="version 2: its repositories and the companion-file rule")
     args = ap.parse_args(argv)
     mirrors = Path(args.mirrors).expanduser()
     dataset = {
         "name": "pharos-utility-dev" if args.dev else "pharos-utility",
-        "version": 1,
+        "version": 2 if args.v2 else 1,
         "labeling": __doc__.split("\n\n")[1].strip(),
         "rules": {"tasks_per_repo": args.n, "max_source_files": MAX_SOURCE_FILES, "max_files": MAX_FILES,
-                  "source_lines": [MIN_SOURCE_LINES, MAX_SOURCE_LINES]},
+                  "source_lines": [MIN_SOURCE_LINES, MAX_SOURCE_LINES]}
+        | ({"existing_companion_file": True} if args.v2 else {}),
         "repositories": [],
         "tasks": [],
     }
-    for repo in DEV_REPOSITORIES if args.dev else REPOSITORIES:
+    for repo in DEV_REPOSITORIES if args.dev else V2_REPOSITORIES if args.v2 else REPOSITORIES:
         mirror = mirrors / repo["mirror"]
         branch = git(mirror, "symbolic-ref", "--short", "HEAD").strip()
         head = git(mirror, "rev-parse", "HEAD").strip()
-        tasks, stats = select(repo, mirror, head, args.n)
+        tasks, stats = select(repo, mirror, head, args.n, companion=args.v2)
         cutoff = tasks[0]["parent"]
         dataset["repositories"].append({
             "name": repo["name"], "url": repo["url"], "language": repo["language"], "branch": branch,

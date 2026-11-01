@@ -1,10 +1,11 @@
-# Phase 2 (learning) evaluation protocol, version 2 — DRAFT, not locked
+# Phase 2 (learning) evaluation protocol, version 2 — locked on merge
 
-> **Status: draft.** This file becomes binding when it is committed with the hashes of `utility_v2.json`
-> and `repoqa_v2.json` filled in. Until then nothing in it has been measured, and no v2 task or question
-> exists. Version 1 ([protocol](phase2-eval-protocol.md), [result](phase2-memory-2026-11-01.md)) stays as
-> it is. This version is a new test on new data, not a rerun of version 1, so its results are reported
-> next to version 1's, never in place of them.
+> **Status:** the data is built and hashed below. The protocol becomes binding when the pull request that
+> adds this file is merged after the owner's review. Nothing in it has been measured yet.
+>
+> Version 1 ([protocol](phase2-eval-protocol.md), [result](phase2-memory-2026-11-01.md)) stays as it is.
+> This version is a new test on new data, not a rerun of version 1, so its results are reported next to
+> version 1's, never in place of them. Changes after results exist go under Amendments, as in version 1.
 
 ## Why there is a version 2
 
@@ -25,7 +26,26 @@ Version 1 failed on two measures.
   [+0.041, +0.138], but that was seen on test data after the fact, so it cannot count as a pass there.
 - Version 2 makes the hypothesis primary and tests it on data nobody has seen.
 
-## Data (to be built after this file is reviewed, before any memory for these repositories exists)
+## Locked data
+
+| File | What | SHA-256 |
+|---|---|---|
+| [`utility_v2.json`](../../backend/benchmarks/datasets/utility_v2.json) | 80 utility tasks, 20 real commits each from attrs, rich, echo and libuv | `52c5dcd7c9e56a99fb5718e61f6103fb20306427f474d1fae604a0a6020cb411` |
+| [`repoqa_v2.json`](../../backend/benchmarks/datasets/repoqa_v2.json) | 30 hand-written questions: 14 conventions, 7 history, 7 procedures, 2 abstentions | `12dfb08be9843466178e9e9c3bb7e59f953db7856f4eca4a46398048db59c133` |
+
+| Repository | Language | C0 | C0 date | Removed by the companion rule |
+|---|---|---|---|---|
+| python-attrs/attrs | Python | `000c5634` | 2025-07-28 | 6 of 26 otherwise-eligible commits |
+| Textualize/rich | Python | `1b2dada1` | 2024-08-26 | 5 of 25 |
+| labstack/echo | Go | `a9ede66a` | 2026-06-13 | 11 of 31 |
+| libuv/libuv | C | `7140827e` | 2026-09-01 | 18 of 38 |
+
+In all, the companion rule removed 40 of 120 otherwise-eligible commits (33%). The tasks were built by
+`make_utility_tasks.py --v2` from full clones fetched on 1 November 2026. No task has been read: only the
+counts above were looked at. The Repo QA questions were written from each repository's source and
+history at C0, without reading the tasks, and before any memory existed for these repositories.
+
+## How the data was chosen
 
 **Repositories.** Four that no phase has used for tuning or testing:
 - **Not allowed:** flask, ky, anyhow, jq, click, requests, cobra, curl, chi, gson, immer and
@@ -36,8 +56,18 @@ Version 1 failed on two measures.
   - an existing test suite;
   - a changelog or release-notes file;
   - public pull-request reviews.
-- **Proposed:** encode/httpx, python-attrs/attrs, urfave/cli and libuv/libuv. The owner confirms or
-  replaces them before anything is built.
+- **Chosen by the owner:** attrs, rich, echo and libuv. The first proposal, httpx and urfave/cli, was
+  replaced after a check against the criteria, before anything was built:
+  - httpx had one commit in 2026;
+  - urfave/cli has no maintained changelog (its `docs/CHANGELOG.md` changed once since 2025).
+- **Checked on 1 November 2026:**
+
+  | Repository | Non-merge commits | In 2026 | Review comments | Changelog |
+  |---|---|---|---|---|
+  | attrs | 1,834 | 114 | about 1,400 | towncrier fragments into `CHANGELOG.md` |
+  | rich | 3,387 | 116 | about 700 | `CHANGELOG.md`, 66 changes since 2025 |
+  | echo | 1,772 | 147 | about 800 | `CHANGELOG.md`, 19 changes since 2025 |
+  | libuv | 5,723 | 215 | about 9,400 | `ChangeLog`, written at each release |
 
 **Utility tasks (`utility_v2.json`, 80 tasks, 20 per repository).**
 - **Selection:** the same rules and script as version 1 (`make_utility_tasks.py`), with one more rule,
@@ -92,7 +122,12 @@ Every choice above is checked on flask and ky (`utility_dev_v1.json`) before thi
 - the judge standard;
 - the companion-recall computation in the harness.
 
-The development numbers are recorded in the pull request that locks this file.
+Development numbers ([#14](https://github.com/ram-tewari/PHAROS/pull/14)):
+- **Precision, stricter judge:** 52/60 (86.7%) on the first pass. After four fixes found on those same
+  items it was 59/60 (98.3%), which is optimistic.
+- **Grounding:** 100%.
+- **Companion-file recall:** measured on the earlier dev answers, A 0.232 → B 0.455, +0.223
+  [+0.040, +0.426], 8 tasks better and 1 worse (15 tasks).
 
 ## Budget
 

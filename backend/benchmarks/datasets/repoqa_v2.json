@@ -1,0 +1,478 @@
+{
+ "name": "pharos-repoqa",
+ "version": 2,
+ "created": "2026-11-01",
+ "labeling": "Phase 2 Repo QA, version 2 (protocol v2): the same format and scoring as version 1, for attrs, rich, echo and libuv. Written by hand from git history and source at each repository's utility_v2 cutoff commit (C0), before any memory was learned for these repositories and without reading the utility_v2 tasks. Each answer is scored against its key_facts: 'correct' when every key fact is stated, 'partial' when at least one is, 'wrong' otherwise; a confident claim that contradicts a key fact counts as wrong. Abstention questions are correct when the answer says the repository does not do the thing.",
+ "repositories": [
+  {
+   "name": "attrs",
+   "url": "https://github.com/python-attrs/attrs",
+   "commit": "000c563473400aa086f6486a9c38ace0e77ea219"
+  },
+  {
+   "name": "rich",
+   "url": "https://github.com/Textualize/rich",
+   "commit": "1b2dada1c9fa6f16ec319a8d370458c8bde203f7"
+  },
+  {
+   "name": "echo",
+   "url": "https://github.com/labstack/echo",
+   "commit": "a9ede66a5a7196411131beb1ee801e75bbaf7ac6"
+  },
+  {
+   "name": "libuv",
+   "url": "https://github.com/libuv/libuv",
+   "commit": "7140827e36ecf4a63bbb2246def36802b0127d74"
+  }
+ ],
+ "questions": [
+  {
+   "id": "attrs-q01",
+   "repo": "attrs",
+   "category": "convention",
+   "question": "How does attrs record a changelog entry for a pull request?",
+   "answer": "As a towncrier news fragment in changelog.d named after the pull request and its type, for example changelog.d/42.change.md (types: change, deprecation, breaking). The fragments are compiled into CHANGELOG.md at release time; CHANGELOG.md is not edited by hand.",
+   "key_facts": [
+    "a news fragment file in changelog.d",
+    "named <pr number>.<change|deprecation|breaking>.md",
+    "towncrier compiles the fragments into CHANGELOG.md on release"
+   ],
+   "evidence": [
+    ".github/CONTRIBUTING.md:203-245",
+    "pyproject.toml:276-305"
+   ]
+  },
+  {
+   "id": "attrs-q02",
+   "repo": "attrs",
+   "category": "convention",
+   "question": "How are assertions written in attrs' tests?",
+   "answer": "With the expected value on the left and the actual value on the right (assert expected == actual), and with an empty line before the block of asserts.",
+   "key_facts": [
+    "expected value on the left: assert expected == actual",
+    "an empty line before the asserts"
+   ],
+   "evidence": [
+    ".github/CONTRIBUTING.md:124-133"
+   ]
+  },
+  {
+   "id": "attrs-q03",
+   "repo": "attrs",
+   "category": "convention",
+   "question": "What docstring style does attrs use, and how does it mark API changes in docstrings?",
+   "answer": "PEP 257 with the triple quotes on their own lines and Napoleon (Google-style) sections such as Args:, Returns: and Raises:. New or changed public APIs are tagged with '.. versionadded:: YY.N.0' or '.. versionchanged:: YY.N.0', using CalVer.",
+   "key_facts": [
+    "Napoleon / Google-style sections (Args:, Returns:)",
+    "triple quotes on separate lines",
+    "versionadded / versionchanged with a CalVer version"
+   ],
+   "evidence": [
+    ".github/CONTRIBUTING.md:170-197"
+   ]
+  },
+  {
+   "id": "attrs-q04",
+   "repo": "attrs",
+   "category": "convention",
+   "question": "What line length and test coverage does attrs require?",
+   "answer": "Ruff enforces PEP 8 with a line length of 79 characters, and CI requires 100% test coverage (a '# pragma: no cover' only by agreement).",
+   "key_facts": [
+    "79-character lines (Ruff)",
+    "100% coverage required in CI"
+   ],
+   "evidence": [
+    ".github/CONTRIBUTING.md:39-43",
+    ".github/CONTRIBUTING.md:116"
+   ]
+  },
+  {
+   "id": "attrs-q05",
+   "repo": "attrs",
+   "category": "history",
+   "question": "When did attrs add the `attrs` namespace (`import attrs`), and in which release did it ship?",
+   "answer": "In December 2021 (PR #887, 'Add attrs namespace'); it shipped in attrs 21.3.0, released 2021-12-28.",
+   "key_facts": [
+    "PR #887 / December 2021",
+    "released in 21.3.0"
+   ],
+   "evidence": [
+    "commit e734558 (Add attrs namespace (#887))",
+    "CHANGELOG.md:314-330"
+   ]
+  },
+  {
+   "id": "attrs-q06",
+   "repo": "attrs",
+   "category": "history",
+   "question": "What is the oldest Python version attrs supports, and when was Python 3.7 dropped?",
+   "answer": "Python 3.9 (requires-python >= 3.9, set in May 2025). Python 3.7 was dropped in August 2024 (PR #1340).",
+   "key_facts": [
+    "requires Python >= 3.9",
+    "Python 3.7 dropped in August 2024 / PR #1340"
+   ],
+   "evidence": [
+    "pyproject.toml:13",
+    "commit a8e24b0 (Drop Python 3.7 (#1340))",
+    "commit 00f6ac4 (Use a fully locked test environment (#1349))"
+   ]
+  },
+  {
+   "id": "attrs-q07",
+   "repo": "attrs",
+   "category": "procedure",
+   "question": "When you add a feature to attrs, how do you make sure the property-based tests exercise it?",
+   "answer": "Add it to the Hypothesis testing strategy in tests/strategies.py.",
+   "key_facts": [
+    "the Hypothesis strategy",
+    "tests/strategies.py"
+   ],
+   "evidence": [
+    ".github/CONTRIBUTING.md:139"
+   ]
+  },
+  {
+   "id": "attrs-q08",
+   "repo": "attrs",
+   "category": "procedure",
+   "question": "If a pull request adds or changes a public attrs API, what has to be updated besides the implementation?",
+   "answer": "The type stubs (the .pyi files), the docstring's versionadded/versionchanged tag, tests and docs (a hard rule), and a news fragment in changelog.d for user-visible changes.",
+   "key_facts": [
+    "the .pyi type stubs",
+    "a versionadded/versionchanged tag",
+    "a changelog.d news fragment"
+   ],
+   "evidence": [
+    ".github/CONTRIBUTING.md:30-37",
+    ".github/CONTRIBUTING.md:121",
+    ".github/CONTRIBUTING.md:195"
+   ]
+  },
+  {
+   "id": "rich-q01",
+   "repo": "rich",
+   "category": "convention",
+   "question": "How is rich's changelog organised, and how does an entry refer to its pull request?",
+   "answer": "CHANGELOG.md follows Keep a Changelog: an '## Unreleased' section, then '## [X.Y.Z] - date' sections, each with '### Added', '### Changed' and '### Fixed' lists. Entries end with the full URL of the GitHub pull request or issue.",
+   "key_facts": [
+    "CHANGELOG.md in Keep a Changelog format",
+    "Unreleased / versioned sections with Added, Changed, Fixed",
+    "entries end with the GitHub PR or issue URL"
+   ],
+   "evidence": [
+    "CHANGELOG.md:1-30"
+   ]
+  },
+  {
+   "id": "rich-q02",
+   "repo": "rich",
+   "category": "convention",
+   "question": "What formatting and type-checking rules does rich expect from new code?",
+   "answer": "Code is formatted with black (make format / make format-check) and fully type-annotated, checked with mypy (make typecheck). Names should avoid abbreviations.",
+   "key_facts": [
+    "black formatting",
+    "type annotations checked with mypy"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:46",
+    "CONTRIBUTING.md:79-100"
+   ]
+  },
+  {
+   "id": "rich-q03",
+   "repo": "rich",
+   "category": "convention",
+   "question": "How does a custom class make itself renderable by rich, and how can it report its width?",
+   "answer": "It implements __rich_console__(self, console, options), yielding (or returning) renderables or Segments; it can also implement __rich_measure__(self, console, options) returning a Measurement of its minimum and maximum width.",
+   "key_facts": [
+    "implement __rich_console__(console, options)",
+    "yields renderables or Segments",
+    "__rich_measure__ returns a Measurement"
+   ],
+   "evidence": [
+    "docs/source/protocol.rst:27-80",
+    "rich/measure.py:100-110"
+   ]
+  },
+  {
+   "id": "rich-q04",
+   "repo": "rich",
+   "category": "procedure",
+   "question": "Besides the code change, which files does a first-time contributor update in a rich pull request?",
+   "answer": "CHANGELOG.md, with a short description of the change, and CONTRIBUTORS.md, adding their name.",
+   "key_facts": [
+    "CHANGELOG.md",
+    "CONTRIBUTORS.md"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:121-130",
+    ".github/pull_request_template.md"
+   ]
+  },
+  {
+   "id": "rich-q05",
+   "repo": "rich",
+   "category": "history",
+   "question": "How did rich stop depending on Colorama for Windows, and in which release?",
+   "answer": "Colorama was replaced by rich's own win32 renderer in rich 12.0.0 (2022-03-10), PR #1993.",
+   "key_facts": [
+    "replaced by a win32 renderer",
+    "rich 12.0.0 (March 2022) / PR #1993"
+   ],
+   "evidence": [
+    "CHANGELOG.md:403-412"
+   ]
+  },
+  {
+   "id": "rich-q06",
+   "repo": "rich",
+   "category": "history",
+   "question": "When did rich raise its minimum Python version to 3.7?",
+   "answer": "In rich 13.0.0 (2022-12-30), PR #2567; pyproject says python >= 3.7.0 since October 2022.",
+   "key_facts": [
+    "Python 3.7",
+    "rich 13.0.0 (December 2022) / PR #2567"
+   ],
+   "evidence": [
+    "CHANGELOG.md:208-224",
+    "commit db7fc1a6 (Bump the minimum Python dependency to 3.7)"
+   ]
+  },
+  {
+   "id": "rich-q07",
+   "repo": "rich",
+   "category": "abstention",
+   "question": "Which directory holds rich's towncrier news fragments?",
+   "answer": "None: rich does not use towncrier or news fragments; contributors edit CHANGELOG.md directly.",
+   "key_facts": [
+    "rich does not use news fragments; entries go straight into CHANGELOG.md"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:121-124"
+   ]
+  },
+  {
+   "id": "echo-q01",
+   "repo": "echo",
+   "category": "convention",
+   "question": "How is a configurable middleware structured in echo's middleware package?",
+   "answer": "Each has a config struct (e.g. CORSConfig) with a Skipper field, a constructor XWithConfig(config) that returns an echo.MiddlewareFunc, and a (config XConfig) ToMiddleware() method returning (echo.MiddlewareFunc, error). A middleware is a func(next echo.HandlerFunc) echo.HandlerFunc.",
+   "key_facts": [
+    "an XConfig struct with a Skipper",
+    "XWithConfig(config) returns echo.MiddlewareFunc",
+    "ToMiddleware() returns (MiddlewareFunc, error)"
+   ],
+   "evidence": [
+    "middleware/cors.go:15-20",
+    "middleware/cors.go:140-150"
+   ]
+  },
+  {
+   "id": "echo-q02",
+   "repo": "echo",
+   "category": "convention",
+   "question": "How are echo's CHANGELOG entries written?",
+   "answer": "Under a '## vX.Y.Z - YYYY-MM-DD' heading, grouped by bold labels such as **Security** and **Enhancements**; each entry is a bullet ending 'by @author in <pull request URL>'.",
+   "key_facts": [
+    "## vX.Y.Z - date headings",
+    "bold group labels (Security, Enhancements)",
+    "entries end 'by @author in <PR URL>'"
+   ],
+   "evidence": [
+    "CHANGELOG.md:1-20"
+   ]
+  },
+  {
+   "id": "echo-q03",
+   "repo": "echo",
+   "category": "convention",
+   "question": "Which assertion library do echo's tests use, and where do test files live?",
+   "answer": "github.com/stretchr/testify (assert), with *_test.go files next to the code they test.",
+   "key_facts": [
+    "stretchr/testify assert",
+    "*_test.go files beside the code"
+   ],
+   "evidence": [
+    "go.mod:5-9",
+    "echo_test.go"
+   ]
+  },
+  {
+   "id": "echo-q04",
+   "repo": "echo",
+   "category": "history",
+   "question": "What were the main breaking changes in echo v5.0.0, and when was it released?",
+   "answer": "v5.0.0 was released on 2026-01-18. Context became a concrete struct (*echo.Context) instead of an interface, the old logging interface was replaced by log/slog, and many signatures were rearranged; the module path is github.com/labstack/echo/v5.",
+   "key_facts": [
+    "released 2026-01-18",
+    "Context changed from an interface to a struct",
+    "logging uses log/slog"
+   ],
+   "evidence": [
+    "CHANGELOG.md:92",
+    "API_CHANGES_V5.md:1-40"
+   ]
+  },
+  {
+   "id": "echo-q05",
+   "repo": "echo",
+   "category": "procedure",
+   "question": "In echo v5.1, how do you restore v4's behaviour of Context.RealIP()?",
+   "answer": "Set the instance's IP extractor to the legacy one: e.IPExtractor = echo.LegacyIPExtractor().",
+   "key_facts": [
+    "e.IPExtractor = echo.LegacyIPExtractor()"
+   ],
+   "evidence": [
+    "CHANGELOG.md:21-35"
+   ]
+  },
+  {
+   "id": "echo-q06",
+   "repo": "echo",
+   "category": "procedure",
+   "question": "What checks should pass before submitting a change to echo, and how are the tools installed?",
+   "answer": "make check (the default target) runs lint (staticcheck and golint), go vet and the tests with the race detector; make init installs golint and staticcheck.",
+   "key_facts": [
+    "make check",
+    "lint (staticcheck, golint), vet and race tests",
+    "make init installs the tools"
+   ],
+   "evidence": [
+    "Makefile:4-23"
+   ]
+  },
+  {
+   "id": "echo-q07",
+   "repo": "echo",
+   "category": "abstention",
+   "question": "Which third-party logging library (logrus or zap) does echo's core module depend on?",
+   "answer": "Neither: the core module's only direct dependencies are testify, golang.org/x/net and golang.org/x/time, and v5 logs through the standard library's log/slog.",
+   "key_facts": [
+    "no third-party logging dependency; it uses log/slog"
+   ],
+   "evidence": [
+    "go.mod:5-9",
+    "API_CHANGES_V5.md:14"
+   ]
+  },
+  {
+   "id": "libuv-q01",
+   "repo": "libuv",
+   "category": "convention",
+   "question": "How are public and internal symbols named in libuv?",
+   "answer": "Public symbols and types are prefixed uv_ (UV_ for macros); internal non-static functions are prefixed uv__.",
+   "key_facts": [
+    "public: uv_ (UV_ for macros)",
+    "internal non-static: uv__"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:58-63"
+   ]
+  },
+  {
+   "id": "libuv-q02",
+   "repo": "libuv",
+   "category": "convention",
+   "question": "What indentation and line length does libuv's C code use?",
+   "answer": "Two spaces, no tabs, and lines wrapped at 80 characters (no trailing whitespace, LF endings).",
+   "key_facts": [
+    "two spaces, no tabs",
+    "80-character lines"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:64-67"
+   ]
+  },
+  {
+   "id": "libuv-q03",
+   "repo": "libuv",
+   "category": "convention",
+   "question": "Where does platform-specific code and its declarations go in libuv?",
+   "answer": "Unix code in src/unix with declarations in include/uv/unix.h; Windows code in src/win with public declarations in include/uv/win.h.",
+   "key_facts": [
+    "src/unix and include/uv/unix.h",
+    "src/win and include/uv/win.h"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:50-56"
+   ]
+  },
+  {
+   "id": "libuv-q04",
+   "repo": "libuv",
+   "category": "convention",
+   "question": "How should a libuv commit message be formatted?",
+   "answer": "A first line of at most 50 characters prefixed with the changed subsystem ('subsystem: change'), a blank second line, and the body wrapped at 72 columns.",
+   "key_facts": [
+    "'subsystem: description' first line",
+    "first line 50 characters or less",
+    "body wrapped at 72 columns"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:97-104"
+   ]
+  },
+  {
+   "id": "libuv-q05",
+   "repo": "libuv",
+   "category": "procedure",
+   "question": "How do you add a new test file to libuv's test suite?",
+   "answer": "Implement the test with TEST_IMPL(name) in a file under test/, declare and register it in test/test-list.h (TEST_DECLARE and TEST_ENTRY), and add the file to uv_test_sources in CMakeLists.txt and test_run_tests_SOURCES in Makefile.am.",
+   "key_facts": [
+    "register the test in test/test-list.h",
+    "add the file to uv_test_sources in CMakeLists.txt",
+    "add the file to test_run_tests_SOURCES in Makefile.am"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:138-146",
+    "test/test-list.h:24-30"
+   ]
+  },
+  {
+   "id": "libuv-q06",
+   "repo": "libuv",
+   "category": "procedure",
+   "question": "Should a libuv bug fix target the stable branch or master, and what is not accepted on stable?",
+   "answer": "Bug fixes go to the stable branch and new features to master. The stable branch is effectively frozen: patches that change the API/ABI or the run-time behaviour of applications are rejected.",
+   "key_facts": [
+    "bug fixes: stable branch; features: master",
+    "no API/ABI or behaviour changes on stable"
+   ],
+   "evidence": [
+    "CONTRIBUTING.md:17-24"
+   ]
+  },
+  {
+   "id": "libuv-q07",
+   "repo": "libuv",
+   "category": "history",
+   "question": "Which C standard does libuv build with, and since when?",
+   "answer": "C11, since 'build: switch from c90 to c11' (PR #4743, March 2025), shipped in libuv 1.51.0; before that it built as C90.",
+   "key_facts": [
+    "C11",
+    "switched from C90 in PR #4743 (March 2025) / libuv 1.51.0"
+   ],
+   "evidence": [
+    "CMakeLists.txt:21-23",
+    "commit bb706f5f (build: switch from c90 to c11 (#4743))",
+    "ChangeLog:269-330"
+   ]
+  },
+  {
+   "id": "libuv-q08",
+   "repo": "libuv",
+   "category": "history",
+   "question": "What is libuv's minimum supported Windows version, and when was Windows 8 dropped?",
+   "answer": "Windows 10. Windows 8 support was dropped in November 2024 (PR #4624), released in libuv 1.50.0.",
+   "key_facts": [
+    "Windows 10 or later",
+    "Windows 8 dropped in PR #4624 (November 2024) / libuv 1.50.0"
+   ],
+   "evidence": [
+    "SUPPORTED_PLATFORMS.md:7",
+    "commit 14644080 (win: drop support for windows 8 (#4624))",
+    "ChangeLog:359-400"
+   ]
+  }
+ ]
+}
