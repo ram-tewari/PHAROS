@@ -1,0 +1,3853 @@
+{
+ "name": "pharos-utility",
+ "version": 2,
+ "labeling": "For each repository, walk the default branch's first-parent history back from\na recorded head and keep the most recent commits that a coding assistant could\nplausibly have been asked to make:",
+ "rules": {
+  "tasks_per_repo": 20,
+  "max_source_files": 6,
+  "max_files": 15,
+  "source_lines": [
+   3,
+   400
+  ],
+  "existing_companion_file": true
+ },
+ "repositories": [
+  {
+   "name": "attrs",
+   "url": "https://github.com/python-attrs/attrs",
+   "language": "python",
+   "branch": "main",
+   "head": "c8bb9bfaa2843e7844b5bb13bed4370b51feec4f",
+   "cutoff_commit": "000c563473400aa086f6486a9c38ace0e77ea219",
+   "cutoff_date": "2025-07-28T15:30:10Z",
+   "commits_examined": 180,
+   "rejected": 160,
+   "rejected_by_reason": {
+    "no_source_files": 126,
+    "source_lines_out_of_range": 11,
+    "bot": 12,
+    "message_too_short": 4,
+    "no_existing_companion": 6,
+    "too_many_files": 1
+   }
+  },
+  {
+   "name": "rich",
+   "url": "https://github.com/Textualize/rich",
+   "language": "python",
+   "branch": "main",
+   "head": "9d8f9a372cc5916fd4781fec207ced7ddac2f08f",
+   "cutoff_commit": "1b2dada1c9fa6f16ec319a8d370458c8bde203f7",
+   "cutoff_date": "2024-08-26T16:14:23+01:00",
+   "commits_examined": 129,
+   "rejected": 109,
+   "rejected_by_reason": {
+    "no_source_files": 56,
+    "message_too_short": 24,
+    "no_existing_companion": 5,
+    "too_many_files": 4,
+    "source_lines_out_of_range": 14,
+    "revert_release_or_branch_merge": 6
+   }
+  },
+  {
+   "name": "echo",
+   "url": "https://github.com/labstack/echo",
+   "language": "go",
+   "branch": "master",
+   "head": "7af8fac5354e53294c8d14fdd7dd4006dbaffd52",
+   "cutoff_commit": "a9ede66a5a7196411131beb1ee801e75bbaf7ac6",
+   "cutoff_date": "2026-06-13T13:22:39-07:00",
+   "commits_examined": 81,
+   "rejected": 61,
+   "rejected_by_reason": {
+    "no_source_files": 33,
+    "source_lines_out_of_range": 11,
+    "no_existing_companion": 11,
+    "revert_release_or_branch_merge": 6
+   }
+  },
+  {
+   "name": "libuv",
+   "url": "https://github.com/libuv/libuv",
+   "language": "c",
+   "branch": "v1.x",
+   "head": "7228e05f3e407ed3fa59edba920b8cd825b5d83d",
+   "cutoff_commit": "7140827e36ecf4a63bbb2246def36802b0127d74",
+   "cutoff_date": "2026-09-01T19:15:09+02:00",
+   "commits_examined": 73,
+   "rejected": 53,
+   "rejected_by_reason": {
+    "no_existing_companion": 18,
+    "too_many_files": 2,
+    "no_source_files": 12,
+    "bot": 15,
+    "source_lines_out_of_range": 5,
+    "revert_release_or_branch_merge": 1
+   }
+  }
+ ],
+ "tasks": [
+  {
+   "id": "attrs-u01",
+   "repo": "attrs",
+   "commit": "5bab46deb916520b153892d73400978ccb08ef96",
+   "parent": "000c563473400aa086f6486a9c38ace0e77ea219",
+   "date": "2025-07-29T10:34:14+02:00",
+   "task": "Allow deep_iterable and deep_mapping take lists/tuples\n\n* Allow deep_iterable and deep_mapping take lists/tuples\n\n\n* Fix docstring",
+   "files": [
+    {
+     "path": "src/attr/validators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 27,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/validators.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_validators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 32,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/typing_example.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/validators.py",
+    "src/attr/validators.pyi"
+   ],
+   "source_lines": 41
+  },
+  {
+   "id": "attrs-u02",
+   "repo": "attrs",
+   "commit": "61e8179545c7968b600baf8083abee9f72028aa7",
+   "parent": "199cd548e11197147b9e7438e13c11c621b7b173",
+   "date": "2025-07-30T16:09:49Z",
+   "task": "Allow forward-references on 3.14\n\n* Request stringified annotations\n\n* Add test\n\n* ruff: mark test_forward_references as 3.14\n\n* Use FORWARDREF instead\n\nSee\nhttps://github.com/python/cpython/blob/9d3b53c47fab9ebf1f40d6f21b7d1ad391c14cd7/Lib/dataclasses.py#L989-L990\n\n* Fix comment\n\n* Apply docstring standard\n\n* Add news fragment\n\nUnite with the other one to avoid confusion.\n\n* Temporal form\n\n* Flesh out test\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1446.change.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "changelog.d/1451.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/conftest.py",
+     "old_path": "conftest.py",
+     "status": "R",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_forward_references.py",
+     "old_path": null,
+     "status": "A",
+     "lines": 22,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/_compat.py"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "attrs-u03",
+   "repo": "attrs",
+   "commit": "6e3786c599279f24e91b0d57ef448f7a85d7a69f",
+   "parent": "af349876f4fb5df2b71a3f4878239b775bc89230",
+   "date": "2025-08-04T06:46:47Z",
+   "task": "Make `kw_only=True` behavior consistent with dataclasses\n\n* initial change\n\n* move comment\n\n* fix docs\n\n* Apply suggestions from code review\n\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* Add changelog\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* Address comments\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1457.breaking.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 28,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/__init__.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 34,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_next_gen.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attrs/__init__.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 202,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/__init__.pyi",
+    "src/attr/_make.py",
+    "src/attr/_next_gen.py",
+    "src/attrs/__init__.pyi"
+   ],
+   "source_lines": 85
+  },
+  {
+   "id": "attrs-u04",
+   "repo": "attrs",
+   "commit": "ce358ed0e6c4bf38a46efa51cc03a02164e2795d",
+   "parent": "19175d91df292e9d0722ecb6575043f1d124a123",
+   "date": "2025-08-29T14:53:19Z",
+   "task": "Fix `attrs.field(converter=...)` type annotations\n\n* Fix `attrs.field(converter=...)` type annotations\n\n    Converters can currently be specified as `_ConverterType`,\n    `list[_ConverterType]`, or `tuple[_ConverterType]`. The last of\n    these does not mean \"tuple of `_ConverterType` instances\" as was\n    likely intended; it specifies a tuple with exactly one\n    `_ConverterType` element. The correct form for a `tuple` with any\n    number of instances is `tuple[_ConverterType, ...]`.\n\n* Add to `changelog.d`\n\n* Add regression test for PR 1461\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* Update changelog.d/1461.change.md\n\n* Update tests/test_pyright.py\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1461.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attrs/__init__.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_pyright.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 33,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attrs/__init__.pyi"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "attrs-u05",
+   "repo": "attrs",
+   "commit": "7369ad9f4b273e400478c8e65399d826ab3f3b32",
+   "parent": "57f0d5441c9deaac44aebbbf45e38e477651e4f2",
+   "date": "2025-09-08T13:42:31Z",
+   "task": "Improve performance of asdict in the common case\n\n* Improve performance of asdict in the common case\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* fix for python 3.9\n\n* fix for python3.9\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* coverage\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* docstring\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* add benchmark for asdict\n\n* Remove now-redundant benchmark\n\n* Fix test docstring\n\n* Add news fragment\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1463.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/_funcs.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 39,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_funcs.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/_funcs.py"
+   ],
+   "source_lines": 39
+  },
+  {
+   "id": "attrs-u06",
+   "repo": "attrs",
+   "commit": "1315e42fe51743fe1c3529da6792dcda2ef6cc1f",
+   "parent": "6ef8d73dd728cdebf939b3a2cd694af57d1f6b5d",
+   "date": "2025-09-08T15:47:27Z",
+   "task": "Improve performance of attr.astuple\n\n* Improve performance of attr.astuple\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* Add news fragment\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1469.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/_funcs.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_funcs.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/_funcs.py"
+   ],
+   "source_lines": 11
+  },
+  {
+   "id": "attrs-u07",
+   "repo": "attrs",
+   "commit": "b1dc8f673579137e14e44afdf0e40e4b4f1b9e3c",
+   "parent": "c53a61190cefa92960ec15e79124b6c7eb3fe742",
+   "date": "2025-09-28T17:35:47+02:00",
+   "task": "Split out Mypy-dependent typing examples, add more type checkers\n\n* Split out Mypy-dependant typing examples, add more type checkers\n\n* Add explanation\n\n* link",
+   "files": [
+    {
+     "path": ".github/workflows/ci.yml",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "tox.ini",
+     "old_path": null,
+     "status": "M",
+     "lines": 21,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "typing-examples/README.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 7,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "typing-examples/baseline_examples.py",
+     "old_path": null,
+     "status": "A",
+     "lines": 177,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "typing-examples/mypy_examples.py",
+     "old_path": "tests/typing_example.py",
+     "status": "R",
+     "lines": 95,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 77,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "typing-examples/baseline_examples.py",
+    "typing-examples/mypy_examples.py"
+   ],
+   "source_lines": 272
+  },
+  {
+   "id": "attrs-u08",
+   "repo": "attrs",
+   "commit": "4737f0e6c77f2bd4501322b1b5d1e265181849b9",
+   "parent": "f8f7a2e9aa8f0a8c7da01290622b0969facea86c",
+   "date": "2025-09-28T18:38:05+02:00",
+   "task": "Run Pyright in strict mode",
+   "files": [
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "typing-examples/baseline_examples.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "typing-examples/baseline_examples.py"
+   ],
+   "source_lines": 12
+  },
+  {
+   "id": "attrs-u09",
+   "repo": "attrs",
+   "commit": "862696afb52fb7c0d47d45e05ec4feb844c11001",
+   "parent": "f3bcc37c3d2dc3199715f825a86b748c3b3805f9",
+   "date": "2026-03-07T09:20:01Z",
+   "task": "Resolve field aliases before calling field_transformer\n\n* Resolve field aliases before calling field_transformer\n\nPreviously, field_transformer received attributes with alias=None for\nfields without an explicit alias. The default alias (e.g., stripping\nleading underscores) was only resolved after the transformer ran, making\nit impossible for transformers to access or use alias values.\n\nThis moves alias resolution to before the field_transformer call, so\ntransformers receive fully populated Attribute objects. A second pass\nafter the transformer handles any new fields the transformer may have\nadded.\n\nAdditionally, Attribute.evolve() now automatically updates the alias\nwhen the name changes, if the alias was auto-generated (matching the\ndefault for the old name). Explicit aliases are preserved.\n\n\n* Fix CI failures: update doctest, add changelog, fix coverage\n\n- Update extending.md doctest to reflect that field_transformer now\n  receives pre-resolved aliases (use alias == name.lstrip(\"_\") instead\n  of `not field.alias` to detect auto-generated aliases)\n- Add changelog entry for #1479\n- Add test_hook_new_field_without_alias to cover the post-transformer\n  alias resolution path (line 496 of _make.py)\n\n* Fix pre-commit\n\n* Change is neat but breaking\n\nPoint change at PR, not bug.\n\n* Handle default alias detection explicitly\n\n* Fix docs build\n\n* We actually load 25.3-style\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1509.breaking.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/extending.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 53,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_functional.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_hooks.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 146,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 99,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/utils.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/_make.py"
+   ],
+   "source_lines": 53
+  },
+  {
+   "id": "attrs-u10",
+   "repo": "attrs",
+   "commit": "ce89f5d11feb0805da9ed10bb165238cc959f1bb",
+   "parent": "eccd966d80aff5196efc959316961cfa780439f9",
+   "date": "2026-03-14T14:14:10+01:00",
+   "task": "Fix message passing in frozen errors\n\nFollow common exception workflows instead of working around it.",
+   "files": [
+    {
+     "path": "src/attr/exceptions.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_functional.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/exceptions.py"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "attrs-u11",
+   "repo": "attrs",
+   "commit": "af9c510912ce604a94896cc35c27368d5baf6ae6",
+   "parent": "ab7f8b2f4c0f747d5b1575247ce35e5adaad182e",
+   "date": "2026-03-14T14:23:53Z",
+   "task": "Fix validators.disabled() to save/restore state on nesting\n\n* Fix validators.disabled() to save/restore previous state on nesting\n\n* Add news fragment\n\n* Add test\n\n* Add versionchanged tag\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1513.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/validators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_validators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/validators.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "attrs-u12",
+   "repo": "attrs",
+   "commit": "48b8611c27779811d161200e17de8da24aae7feb",
+   "parent": "3a68d4913221abc6f8ad3be50937f7ae49300a98",
+   "date": "2026-03-14T17:51:51Z",
+   "task": "Add instance support to attrs.fields()\n\n* Add instance support to attrs.fields()\n\n\n* fix pr#",
+   "files": [
+    {
+     "path": "changelog.d/1529.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/api.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/attr/__init__.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_mypy.yml",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/__init__.pyi",
+    "src/attr/_make.py"
+   ],
+   "source_lines": 17
+  },
+  {
+   "id": "attrs-u13",
+   "repo": "attrs",
+   "commit": "0f758fe54a8742110f730ebbaf146e79f3937c8d",
+   "parent": "57b314c0dc8e0b80c0ed8f61c0be81965137ea41",
+   "date": "2026-04-16T20:20:58Z",
+   "task": "Expose converter as a decorator\n\n* Expose converter as a decorator\n\n* Update docs/init.md\n\n* Update docs/init.md\n\n* Update src/attr/_make.py\n\n* Update src/attr/_make.py\n\n* Update src/attr/_make.py\n\n* Add missing import\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/240.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/init.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 54,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_mypy.yml",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/_make.py"
+   ],
+   "source_lines": 26
+  },
+  {
+   "id": "attrs-u14",
+   "repo": "attrs",
+   "commit": "6851ab593cd25f3c14393e9355d57d22bec2a074",
+   "parent": "ca0f04585d3fb132c6e2f6baa9d7d966d8036760",
+   "date": "2026-07-31T09:41:48Z",
+   "task": "Defer imports on the cold import path\n\n* Defer imports and preserve module introspection\n\n* Reduce cold import overhead\n\n* Make more use-centric\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1547.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/__init__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 18,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_funcs.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attrs/__init__.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_import.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 23,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/__init__.py",
+    "src/attr/_compat.py",
+    "src/attr/_funcs.py",
+    "src/attr/_make.py",
+    "src/attrs/__init__.py"
+   ],
+   "source_lines": 50
+  },
+  {
+   "id": "attrs-u15",
+   "repo": "attrs",
+   "commit": "c5baf90dbc3fdb23628ad59e92986c01bae57f4f",
+   "parent": "97f8d175656bc03c373a1c9038048a4d312c307c",
+   "date": "2026-08-01T11:07:03+02:00",
+   "task": "Add typing examples for Pyrefly's new attrs support\n\n* Add typing examples for Pyrefly's new attrs support\n\n* Add another (currently failing) example\n\n* update\n\n* move comment\n\n* Update to latest pyrefly\n\n* Pyrefly 1.2.0 final is out",
+   "files": [
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "tox.ini",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "typing-examples/pyrefly.py",
+     "old_path": null,
+     "status": "A",
+     "lines": 394,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 143,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "typing-examples/pyrefly.py"
+   ],
+   "source_lines": 394
+  },
+  {
+   "id": "attrs-u16",
+   "repo": "attrs",
+   "commit": "4b5b295bb815bf845fa3570bf63781a88212db40",
+   "parent": "d3a98cf05ab15769003dcca3eae91cdd6504b83b",
+   "date": "2026-08-01T12:07:54Z",
+   "task": "Make on_setattr hooks accept generators\n\n* Make on_setattr hooks accept generators\n\n* Adjust documentation of public APIs using on_setattr\n\n* Create a changelog file\n\n* [pre-commit.ci] auto fixes from pre-commit.com hooks\n\nfor more information, see https://pre-commit.ci\n\n* Update changelog.d/1592.change.md\n\n\n* Fix version added comments\n\n* Remove the changelog Sphinx cross-reference\n\n* Optimize: only check corouting when generating method\n\n* docs\n\n* Tighten generator contract\n\n* Polish docstrings\n\n* Add type hints\n\n* Add example\n\n* Rephrase\n\n* fix math\n\n* be more explicit\n\n* align\n\n* Add missing lazy import\n\n* Make inspect import lazy\n\n* Create a lazy/caching generator detector\n\n* Make generator detection lazy\n\n* Use in setters too\n\n* Don't check pipe hooks for generators\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1592.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/examples.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 24,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "docs/init.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/attr/_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 27,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 34,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/_next_gen.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/setters.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attrs/__init__.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_compat.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_setattr.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 184,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "typing-examples/baseline.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "src/attr/_compat.py",
+    "src/attr/_make.py",
+    "src/attr/_next_gen.py",
+    "src/attr/setters.py",
+    "src/attrs/__init__.pyi",
+    "typing-examples/baseline.py"
+   ],
+   "source_lines": 95
+  },
+  {
+   "id": "attrs-u17",
+   "repo": "attrs",
+   "commit": "5aa76a4450c311d87eda43946ec0ecd743572649",
+   "parent": "f616f732c6c5f87a8f7a762176422baed250a6be",
+   "date": "2026-08-01T12:40:48Z",
+   "task": "Add `ne` validator\n\n* Fix inconsistent formatting for Args and Raises docstrings\n\n* Add `ne` validator\n\nThis change adds a validator that raises `ValueError` if the\ninitializer is called with a number equal to *val*.\n\nAn example use case. I want a field that is a signed `int` of any\nvalue except for zero. I could do the following.\n\n```python\nattrs.field(\n    validator=attrs.validators.or_(\n        attrs.validators.le(-1),\n        attrs.validators.ge(1),\n    )\n)\n```\n\nWith this proposed `ne` validator I could do.\n\n```python\nattrs.field(validator=attrs.validators.ne(0))\n```\n\n* Fix news fragments\n\n---------",
+   "files": [
+    {
+     "path": "changelog.d/1571.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/api.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/attr/validators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 32,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/attr/validators.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_validators.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/validators.py",
+    "src/attr/validators.pyi"
+   ],
+   "source_lines": 33
+  },
+  {
+   "id": "attrs-u18",
+   "repo": "attrs",
+   "commit": "f53fc5440d7f86aac4328aec7a563eb48634177f",
+   "parent": "f38b8a3f1625060aa4245930822c34c11c252f83",
+   "date": "2026-08-02T13:46:58+02:00",
+   "task": "Stop evolve dunders from being modified\n\n* Stop evolve dunders from being modified\n\n* Better name, test both ways",
+   "files": [
+    {
+     "path": "changelog.d/1606.change.md",
+     "old_path": null,
+     "status": "A",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attr/_make.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_functional.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attr/_make.py"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "attrs-u19",
+   "repo": "attrs",
+   "commit": "3bb6382a7ca4ebe681386e3c6b8106993a4d194f",
+   "parent": "1ea13ff576c14907280d080c33fa5d25f968f30e",
+   "date": "2026-08-07T07:25:37+02:00",
+   "task": "Document/test copy.replace\n\nyay Pyrefly",
+   "files": [
+    {
+     "path": "README.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/types.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "typing_tests/baseline.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "typing_tests/pyrefly.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "typing_tests/baseline.py",
+    "typing_tests/pyrefly.py"
+   ],
+   "source_lines": 13
+  },
+  {
+   "id": "attrs-u20",
+   "repo": "attrs",
+   "commit": "c8bb9bfaa2843e7844b5bb13bed4370b51feec4f",
+   "parent": "ee66e7274852438cc23d4240a1a9cd632fda8b52",
+   "date": "2026-10-24T21:26:20Z",
+   "task": "Set ``slots_default`` for better ty support",
+   "files": [
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/attrs/__init__.pyi",
+     "old_path": null,
+     "status": "M",
+     "lines": 22,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "uv.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 73,
+     "role": "source",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/attrs/__init__.pyi"
+   ],
+   "source_lines": 22
+  },
+  {
+   "id": "rich-u01",
+   "repo": "rich",
+   "commit": "035f3ea790f5dc6451ce7f15b41f452e6ea523d3",
+   "parent": "1b2dada1c9fa6f16ec319a8d370458c8bde203f7",
+   "date": "2024-08-26T16:40:48+01:00",
+   "task": "Fix some typos and update one example",
+   "files": [
+    {
+     "path": "CONTRIBUTORS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/source/progress.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "examples/downloader.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "example",
+     "source": false
+    },
+    {
+     "path": "rich/live.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rich/progress.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "rich/live.py",
+    "rich/progress.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "rich-u02",
+   "repo": "rich",
+   "commit": "b1397be1e79fc3ac6d7fd4f66474fbe6d5e820bf",
+   "parent": "035f3ea790f5dc6451ce7f15b41f452e6ea523d3",
+   "date": "2024-08-26T16:48:11+01:00",
+   "task": "Handle dataclasses with Python 3.13 default repr",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CONTRIBUTORS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/pretty.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "rich/pretty.py"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "rich-u03",
+   "repo": "rich",
+   "commit": "dc7a195acd480326c2449ec0829726ecd91e0c68",
+   "parent": "b6f2f7aa5b27f612f391cd28212aff51ad0d42d1",
+   "date": "2024-08-26T17:01:30+01:00",
+   "task": "fix for missing field in dataclass",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/pretty.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_pretty.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 20,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/pretty.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "rich-u04",
+   "repo": "rich",
+   "commit": "22c2cffd8e88181ad1162ca9098d190ec28c6996",
+   "parent": "9ec419154102acce7363e3958bec6c261864d7fb",
+   "date": "2024-09-06T10:56:57+01:00",
+   "task": "fix infinite loop in append",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/text.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "rich-u05",
+   "repo": "rich",
+   "commit": "4101991898ee7a09fe1706daca24af5e1e054862",
+   "parent": "d0de442c08df8793c5ff36d9ad322ca5c47fc38c",
+   "date": "2024-09-11T11:29:27+01:00",
+   "task": "WIP report fine grained error locations",
+   "files": [
+    {
+     "path": ".github/workflows/pythonpackage.yml",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "poetry.lock",
+     "old_path": null,
+     "status": "M",
+     "lines": 209,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/default_styles.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rich/syntax.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rich/traceback.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 80,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_traceback.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/default_styles.py",
+    "rich/syntax.py",
+    "rich/traceback.py"
+   ],
+   "source_lines": 98
+  },
+  {
+   "id": "rich-u06",
+   "repo": "rich",
+   "commit": "b0661de34bab35af9b4b1d3ba8e28b186b225e84",
+   "parent": "d5dcc74d0255d3dbcbb9f0bba208bdde2e40ec54",
+   "date": "2024-09-30T15:14:41+01:00",
+   "task": "Fix the return type of `Progress.__enter__`",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/progress.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "rich/progress.py"
+   ],
+   "source_lines": 7
+  },
+  {
+   "id": "rich-u07",
+   "repo": "rich",
+   "commit": "68ead314716f08ffad7458e73b08bdfe4a1c0038",
+   "parent": "ee46ccd301c311d93cafd82c4eac9066f06646dd",
+   "date": "2024-09-30T15:36:42+01:00",
+   "task": "Fix auto detection of terminal size on Windows",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CONTRIBUTORS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/console.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "rich/console.py"
+   ],
+   "source_lines": 14
+  },
+  {
+   "id": "rich-u08",
+   "repo": "rich",
+   "commit": "7008364deddf330c470e7c30cc9b3d0fd9f1601d",
+   "parent": "68ead314716f08ffad7458e73b08bdfe4a1c0038",
+   "date": "2024-09-30T15:39:42+01:00",
+   "task": "highlight_regex in rich.text.Text Now Expects a Compiled Regular Expression (re.compile) Has Been Passed",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CONTRIBUTORS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 53,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/text.py"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "rich-u09",
+   "repo": "rich",
+   "commit": "0f2f51b872d14588de3a65968f5cdde6fb5694a3",
+   "parent": "8b84ee998ab51967a7649b47b11412717e89db7e",
+   "date": "2024-10-04T12:49:13+01:00",
+   "task": "Segment.split_cells fix",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/segment.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_segment.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/segment.py"
+   ],
+   "source_lines": 35
+  },
+  {
+   "id": "rich-u10",
+   "repo": "rich",
+   "commit": "2a282af76d3f7a731e1c23145e13977044150f1e",
+   "parent": "2809954800af15b4027364cebf82390fe23dc194",
+   "date": "2025-06-19T15:39:18+01:00",
+   "task": "Fix traceback recursion",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/traceback.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 45,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_traceback.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 24,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/traceback.py"
+   ],
+   "source_lines": 45
+  },
+  {
+   "id": "rich-u11",
+   "repo": "rich",
+   "commit": "3b70db5a2997de191f7db3e422dbe4da35ca1c95",
+   "parent": "26af5f5eb4a499422f8294148c9165a517dd80ed",
+   "date": "2025-06-23T17:02:53+01:00",
+   "task": "TTY_INTERACTIVE env var",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "docs/source/console.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "rich/console.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rich/diagnose.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_console.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 25,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/console.py",
+    "rich/diagnose.py"
+   ],
+   "source_lines": 13
+  },
+  {
+   "id": "rich-u12",
+   "repo": "rich",
+   "commit": "21b3800894f6a81d3f68a0e34796be67e3ccd39f",
+   "parent": "7d36119f8378b36129502c3281a7faffef837e02",
+   "date": "2025-06-24T13:18:52+01:00",
+   "task": "fix(panel): fix title missing panel background",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/panel.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_panel.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 48,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/panel.py"
+   ],
+   "source_lines": 7
+  },
+  {
+   "id": "rich-u13",
+   "repo": "rich",
+   "commit": "9e18b96652f37293121b04017fb6aa95af21b013",
+   "parent": "fe55a131c2780fa856464ad04d7d6dc8a1079b72",
+   "date": "2026-01-23T11:31:32Z",
+   "task": "fix for padding width",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/table.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_columns.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_table.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 24,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/table.py"
+   ],
+   "source_lines": 16
+  },
+  {
+   "id": "rich-u14",
+   "repo": "rich",
+   "commit": "12eeb42c96a7a953865b19da204dea6fe658713b",
+   "parent": "ffc639a3738e79ad73d35db09a70c338b35045a6",
+   "date": "2026-01-23T11:47:26Z",
+   "task": "Handle unusual __qualname__ in inspect",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "CONTRIBUTORS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/_inspect.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_inspect.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/_inspect.py"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "rich-u15",
+   "repo": "rich",
+   "commit": "1c159fe588351125ae2fc7a6563156f6949cfada",
+   "parent": "abd5a2afc41ff1196fe4d901b8784bb08acf3140",
+   "date": "2026-01-23T11:51:51Z",
+   "task": "DOCS: Add example to Align docstring",
+   "files": [
+    {
+     "path": "CONTRIBUTORS.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/align.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "rich/align.py"
+   ],
+   "source_lines": 14
+  },
+  {
+   "id": "rich-u16",
+   "repo": "rich",
+   "commit": "05ff970926cbd0b5d0acb6fc18cdbd1fc971e582",
+   "parent": "05a6b9b17a7c778756187f15d6d4bf693db6345f",
+   "date": "2026-01-23T13:44:59Z",
+   "task": "don't strip whitespace when soft_wrap is True",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 18,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/text.py"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "rich-u17",
+   "repo": "rich",
+   "commit": "3286095ff8b70e093dbbc4136ff7ba7d51944bec",
+   "parent": "05ff970926cbd0b5d0acb6fc18cdbd1fc971e582",
+   "date": "2026-01-23T15:33:07Z",
+   "task": "fix background style with soft wrap",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/console.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rich/segment.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 31,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_segment.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_text.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/console.py",
+    "rich/segment.py"
+   ],
+   "source_lines": 45
+  },
+  {
+   "id": "rich-u18",
+   "repo": "rich",
+   "commit": "2f56d4d1d22d901b444cfc731230e0f715498256",
+   "parent": "c595fa95068dd2c5095d25446b2f0571bc0b3995",
+   "date": "2026-01-24T12:16:29Z",
+   "task": "Update to markdown styles",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "FAQ.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "questions/jupyter.question.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/default_styles.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 20,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rich/markdown.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/_card_render.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_markdown.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "tests/test_markdown_no_hyperlinks.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/default_styles.py",
+    "rich/markdown.py"
+   ],
+   "source_lines": 70
+  },
+  {
+   "id": "rich-u19",
+   "repo": "rich",
+   "commit": "0752ff047295131d98f24284e1d949300cd6f4c1",
+   "parent": "1d402e0c59f8765e420a5a4440eb2fca7465d1ae",
+   "date": "2026-02-01T16:19:20Z",
+   "task": "Fix ZWJ and edge cases",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "pyproject.toml",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/cells.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_cells.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/cells.py"
+   ],
+   "source_lines": 26
+  },
+  {
+   "id": "rich-u20",
+   "repo": "rich",
+   "commit": "7338cb9dafd0d0e916585f191ae505b3e602bb51",
+   "parent": "27701029082052c6541031b6f139097230253900",
+   "date": "2026-02-19T17:04:17Z",
+   "task": "fix for infinite loop in split_graphemes",
+   "files": [
+    {
+     "path": "CHANGELOG.md",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "rich/cells.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 45,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "tests/test_cells.py",
+     "old_path": null,
+     "status": "M",
+     "lines": 38,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rich/cells.py"
+   ],
+   "source_lines": 45
+  },
+  {
+   "id": "echo-u01",
+   "repo": "echo",
+   "commit": "b1d65e40fef366f2e1a70ca7c172f5057df7024b",
+   "parent": "a9ede66a5a7196411131beb1ee801e75bbaf7ac6",
+   "date": "2026-06-14T06:08:07-07:00",
+   "task": "perf: optimize core hot paths (chain, context, binding, responses)\n\nCompile middleware chains once, zero-copy String/HTML/JSONP writes, reuse delayedStatusWriter + context store map, single-key QueryParam fast path, per-type bind metadata cache, precomputed HSTS header, pooled request-ID buffers. No public API changes. Also de-flakes TestStartConfig_WithListenerNetwork (ephemeral port).",
+   "files": [
+    {
+     "path": "bind.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 86,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "bind_cache_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 31,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "context.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 114,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "dispatch_pool_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 101,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "echo.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 45,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/randomstring_bench_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "middleware/randomstring_concurrent_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 37,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "middleware/secure.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 25,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/util.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 29,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "perf_bench_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 146,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "query_fastpath_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 66,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "server_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 15,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "bind.go",
+    "context.go",
+    "echo.go",
+    "middleware/secure.go",
+    "middleware/util.go"
+   ],
+   "source_lines": 299
+  },
+  {
+   "id": "echo-u02",
+   "repo": "echo",
+   "commit": "8d1ae9d3360a71672418856d58753af25f2c3986",
+   "parent": "c9477eb5b5126ae933f2729af852d1be3f5845ae",
+   "date": "2026-06-14T07:04:59-07:00",
+   "task": "fix(static): reject encoded path separators that bypass route-level middleware",
+   "files": [
+    {
+     "path": "echo.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 20,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "echo_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "internal/pathutil/pathutil.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 30,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "internal/pathutil/pathutil_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 27,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "middleware/static.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/static_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 29,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "static_encoded_separator_test.go",
+     "old_path": null,
+     "status": "A",
+     "lines": 76,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "echo.go",
+    "internal/pathutil/pathutil.go",
+    "middleware/static.go"
+   ],
+   "source_lines": 59
+  },
+  {
+   "id": "echo-u03",
+   "repo": "echo",
+   "commit": "cc07fa957464a7c288859083b3008ca970c68a6e",
+   "parent": "78c3d9543be665b4bb9ed5ece3ac829108e3efa5",
+   "date": "2026-06-22T09:44:54-07:00",
+   "task": "perf(json): pooled-buffer JSON deserialize\n\n* perf(json): reuse pooled buffer for JSON deserialization\n\nDefaultJSONSerializer.Deserialize used json.NewDecoder(body).Decode(),\nwhich allocates a decoder and its internal read buffer on every JSON\nrequest. Read the body into a capped pooled buffer and decode with\njson.Unmarshal instead; Unmarshal does not retain the input slice, so the\nbuffer is safe to reuse. The pool drops oversized buffers (>64 KiB) so a\nlarge body cannot pin memory.\n\nBenchmarkBind_JSON: 1008 B -> 312 B/op (-69%), 9 -> 7 allocs, ~12% faster.\n\nBehavioral note: json.Unmarshal is stricter than Decode \u2014 it rejects\ntrailing data after the JSON value and reports \"unexpected end of JSON\ninput\" for truncated bodies (both still 400 Bad Request). Two bind tests\nasserting the old \"unexpected EOF\" message are updated to match.\n\nAlso add a general ServeHTTP/JSON benchmark suite (perf_bench_test.go):\nBenchmarkBind_JSON now builds the request once and resets a reusable body\ninstead of calling httptest.NewRequest inside the loop (which dominated\nthe old measurement), plus BenchmarkJSONSerialize/Deserialize and the\nrouting benchmarks used to measure both this and the companion router PR.\n\n\n* test(json): cover pooled-buffer Deserialize behaviors\n\nAdd correctness coverage for the new pooled-buffer JSON deserializer,\naddressing gaps surfaced in review:\n\n- RejectsTrailingData: documents that json.Unmarshal rejects content after\n  the first top-level value (a behavior change from streaming json.Decoder).\n- PooledBufferReuse: long body followed by a short one must not leak stale\n  bytes through the reused buffer.\n- PooledBufferConcurrent: many goroutines decoding distinct bodies; under\n  -race this catches any aliasing/missing-reset regression (data bleed).\n- LargeBodyThenNormal: exercises the >64 KiB buffer-cap path and that the\n  oversized buffer does not corrupt the next request.\n- BodyReadError: a failing body read surfaces as 400, matching prior behavior.\n\n\n---------",
+   "files": [
+    {
+     "path": "bind_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "json.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 36,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "json_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 118,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "perf_bench_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 61,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "json.go"
+   ],
+   "source_lines": 36
+  },
+  {
+   "id": "echo-u04",
+   "repo": "echo",
+   "commit": "abbb92edbb1fdeeee5fb354e875320b3b131dfd5",
+   "parent": "11aa3714cd0e6e9d170974009f599a58171cdc94",
+   "date": "2026-07-08T10:32:24+03:00",
+   "task": "feat: add support for HTTP QUERY method\n\nAdd first-class support for the QUERY HTTP method (RFC 10008) so it can\nbe registered with dedicated helpers instead of the generic `Add`.\n\nQUERY is not (yet) part of the `net/http` standard library, so it is\ndefined in Echo the same way the existing non-standard PROPFIND and\nREPORT methods are handled:\n\n- add the `QUERY` method constant\n- add `Echo.QUERY` and `Group.QUERY` route helpers\n- give QUERY a dedicated field in `routeMethods` and wire it into\n  `set`, `find`, `updateAllowHeader` and `isHandler`\n- bind URL query parameters for QUERY (like GET/DELETE/HEAD), since\n  QUERY is semantically a GET carrying its query in the body",
+   "files": [
+    {
+     "path": "bind.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "bind_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "echo.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "echo_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "group.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "group_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 18,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "router.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 9,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "router_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "bind.go",
+    "echo.go",
+    "group.go",
+    "router.go"
+   ],
+   "source_lines": 27
+  },
+  {
+   "id": "echo-u05",
+   "repo": "echo",
+   "commit": "222be90c0e074f62161e6c2076793ee892fc111d",
+   "parent": "030f1b31bd6ddb1cc0d5a74b9f4f6fb89e748dc1",
+   "date": "2026-07-12T22:22:55+03:00",
+   "task": "AutoHandleHEAD enables automatic handling of HTTP HEAD requests by falling back to the corresponding GET route",
+   "files": [
+    {
+     "path": "echo_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 319,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "response.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 107,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "response_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 290,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "router.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 73,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "response.go",
+    "router.go"
+   ],
+   "source_lines": 180
+  },
+  {
+   "id": "echo-u06",
+   "repo": "echo",
+   "commit": "34f3f425100f94b500ced2e8799470e32bba877e",
+   "parent": "70b31c2ca5131f4eda9c56d78294e8a0573f8645",
+   "date": "2026-07-16T21:57:01+03:00",
+   "task": "docs: correct Any godoc to reflect true arbitrary-method matching",
+   "files": [
+    {
+     "path": "echo.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "echo_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 14,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "router.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "echo.go",
+    "router.go"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "echo-u07",
+   "repo": "echo",
+   "commit": "48128ab391f2ec9ea9679d59a472a97edaa08160",
+   "parent": "34f3f425100f94b500ced2e8799470e32bba877e",
+   "date": "2026-07-16T22:01:26+03:00",
+   "task": "fix(static): preserve matched handler 404s",
+   "files": [
+    {
+     "path": "middleware/static.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/static_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "middleware/static.go"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "echo-u08",
+   "repo": "echo",
+   "commit": "8148ea9fe6989037ab19656228c23a540629f48d",
+   "parent": "bba3d12e6688eeb711b8de2484819dd6578be65c",
+   "date": "2026-07-21T19:01:22+03:00",
+   "task": "Implicitly registered group routes should be allowed overwritten in default routes. fix issue #3047",
+   "files": [
+    {
+     "path": "echo.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "group.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "group_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 71,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "route.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "router.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "echo.go",
+    "group.go",
+    "route.go",
+    "router.go"
+   ],
+   "source_lines": 21
+  },
+  {
+   "id": "echo-u09",
+   "repo": "echo",
+   "commit": "79b496800f75fe4a83835719842847a9d5b25c3e",
+   "parent": "ed8bbe4b6cbf519766c99e492b9cc427404b3719",
+   "date": "2026-07-23T08:02:09+03:00",
+   "task": "fix(middleware): match gzip Content-Encoding case-insensitively\n\n* fix(middleware): match gzip Content-Encoding case-insensitively\n\nProxies and clients may send Content-Encoding: Gzip or GZIP. Exact string\ncompare skipped decompression. Trim and EqualFold against \"gzip\".\n\n* fix(middleware): keep gzip match to EqualFold only\n\nDrop TrimSpace so the change is strictly RFC 9110 case-insensitivity\nfor content codings, per review discussion.",
+   "files": [
+    {
+     "path": "middleware/decompress.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/decompress_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "middleware/decompress.go"
+   ],
+   "source_lines": 10
+  },
+  {
+   "id": "echo-u10",
+   "repo": "echo",
+   "commit": "a45f07d7e4e0655424f56bc9964f395c7d6dc0ec",
+   "parent": "79b496800f75fe4a83835719842847a9d5b25c3e",
+   "date": "2026-07-23T08:27:31+03:00",
+   "task": "fix: resolve RealIP for bare RemoteAddr without port\n\nRealIP and LegacyIPExtractor discarded the address when net.SplitHostPort\nfailed (e.g. bare IPv4/IPv6 without :port). Reuse extractIP so behavior\nmatches ExtractIPDirect.",
+   "files": [
+    {
+     "path": "context.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "context_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 12,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "ip.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "context.go",
+    "ip.go"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "echo-u11",
+   "repo": "echo",
+   "commit": "05489dc1730161df26b72d1ae2a3ba6fb8178fc7",
+   "parent": "a0a3b53f802cf172a12f36a833b120e623c5cd29",
+   "date": "2026-08-04T08:11:58+03:00",
+   "task": "fix(middleware): classify CORS preflight per Fetch standard\n\nOnly OPTIONS requests that include both Origin and\nAccess-Control-Request-Method are treated as CORS preflights.\n\nPreviously every OPTIONS request was short-circuited, so non-CORS\nOPTIONS handlers (and OPTIONS without ACR-Method) never ran (#2534).",
+   "files": [
+    {
+     "path": "middleware/cors.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 36,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/cors_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 100,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "middleware/cors.go"
+   ],
+   "source_lines": 36
+  },
+  {
+   "id": "echo-u12",
+   "repo": "echo",
+   "commit": "4ec116dc9b5bff1da7513c0dc86095d0e8ce9654",
+   "parent": "05489dc1730161df26b72d1ae2a3ba6fb8178fc7",
+   "date": "2026-08-20T09:30:07+03:00",
+   "task": "fix(middleware): reject CSRF TokenLookup that produces no extractors",
+   "files": [
+    {
+     "path": "middleware/csrf.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/csrf_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "middleware/csrf.go"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "echo-u13",
+   "repo": "echo",
+   "commit": "df5edd9146e40342726d71cbb71300b7fea096d0",
+   "parent": "90702e71a7cde342da70b1f97e8e6420c509f939",
+   "date": "2026-09-11T08:12:32+03:00",
+   "task": "fix(rfc9457): do not mutate a shared ProblemError\n\n* fix(rfc9457): do not mutate a shared ProblemError\n\n* test(rfc9457): check the sentinel after a single request",
+   "files": [
+    {
+     "path": "rfc9457.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 20,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "rfc9457_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 19,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "rfc9457.go"
+   ],
+   "source_lines": 20
+  },
+  {
+   "id": "echo-u14",
+   "repo": "echo",
+   "commit": "bc4028f1d7cc373823de8b6eb057cd4a9d5fc85c",
+   "parent": "ba97b3f4a978f855b5b4a9c66cc69ea7e6fdb4d2",
+   "date": "2026-09-29T11:17:06-07:00",
+   "task": "static: harden dot-segment check for backslashes, test non-validating custom fs.FS\n\n* static: test that a non-validating custom fs.FS cannot escape its root, fix comment\n\n* static: reject backslash dot segments, cover unescaping and group routes in tests\n\n* static: test backslash hardening on every OS, add default-config vectors, fix comments",
+   "files": [
+    {
+     "path": "echo.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "echo_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 77,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "middleware/static.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 21,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/static_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 90,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "echo.go",
+    "middleware/static.go"
+   ],
+   "source_lines": 34
+  },
+  {
+   "id": "echo-u15",
+   "repo": "echo",
+   "commit": "b59b347c95f78066152782c21e3c315088b49c79",
+   "parent": "bc4028f1d7cc373823de8b6eb057cd4a9d5fc85c",
+   "date": "2026-09-29T12:45:18-07:00",
+   "task": "fix(middleware): prevent BodyLimit bypass\n\nCap reads at the configured limit, preserve 413 through binding, and keep each request reader for its lifetime. Refs #3071; v4 backport remains pending.",
+   "files": [
+    {
+     "path": "bind.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 19,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "json.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/body_limit.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 62,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/body_limit_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 204,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "bind.go",
+    "json.go",
+    "middleware/body_limit.go"
+   ],
+   "source_lines": 84
+  },
+  {
+   "id": "echo-u16",
+   "repo": "echo",
+   "commit": "eadbef28df3b293a7e7b39977ac949c5907fa559",
+   "parent": "b59b347c95f78066152782c21e3c315088b49c79",
+   "date": "2026-09-29T13:28:31-07:00",
+   "task": "fix(router): keep escaped colon and parameter routes reachable\n\nDistinguish parameter markers without reserving a path byte; cover both route orders through ServeHTTP. Refs #3111; v4 backport in #3132.",
+   "files": [
+    {
+     "path": "router.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 41,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "router_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 100,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "router.go"
+   ],
+   "source_lines": 41
+  },
+  {
+   "id": "echo-u17",
+   "repo": "echo",
+   "commit": "bbc6de8ac782ea57c17de2dce22d7c31fb74ffea",
+   "parent": "99c395d846e079d4cffd29de9298d1dd829e8b04",
+   "date": "2026-10-05T12:10:08-07:00",
+   "task": "fix(bind): honor OpenAPI date, date-time and date-time-local format tags\n\nSwag and OpenAPI put format names such as `format:\"date-time\"` on `time.Time` fields. Echo treated those names as Go time layouts, so valid input failed to bind.\n\n- `date-time` uses the same RFC3339 decoding as an untagged `time.Time`.\n- `date-time-local` accepts `2006-01-02T15:04:05` with optional fractional seconds, rejects time-zone suffixes, and assigns UTC.\n- `date` accepts `2006-01-02` and assigns UTC.\n- Other `format` values are still Go layouts. Slice fields, JSON/XML decoding, and custom unmarshalers are unchanged.",
+   "files": [
+    {
+     "path": "bind.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 22,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "bind_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 175,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "bind.go"
+   ],
+   "source_lines": 22
+  },
+  {
+   "id": "echo-u18",
+   "repo": "echo",
+   "commit": "4f7bea5d2ad253d2d0fddb1382ae25be040a3d8b",
+   "parent": "40c22f4bc57d4ea6aa323928c037c947890fe81c",
+   "date": "2026-10-05T19:52:10-07:00",
+   "task": "fix(router): grow PathValues for contexts created before a route with more params\n\nAdding a route with more path params after Echo has served requests panicked with \"index out of range\" on the next request that matched it, with both DefaultRouter and ConcurrentRouter. Pooled Contexts keep the PathValues capacity they were created with. DefaultRouter.Route detected the short capacity but allocated a zero-length slice and then set values by index.\n\nThe Context's PathValues are now grown at full length in that branch and kept, so later requests do not grow them again. The Router contract documents that Route must handle such Contexts.",
+   "files": [
+    {
+     "path": "echo_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 30,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "router.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 13,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "router_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "router.go"
+   ],
+   "source_lines": 13
+  },
+  {
+   "id": "echo-u19",
+   "repo": "echo",
+   "commit": "8fd0e184dd390ffdf082f5eda247c3ab41d5d290",
+   "parent": "3882266a3641a36fc2111b48cd597adab1c1ecea",
+   "date": "2026-10-12T08:06:44-07:00",
+   "task": "feat(context): add ValidateCtx\n\n* feat: pass request context to context-aware validators\n\n* feat: make context-aware validation explicit\n\n* test(context): cover request replacement in ValidateCtx\n\nDocument context-aware validation precedence, embedded wrapper responsibilities, and cancellation handling.\n\n---------",
+   "files": [
+    {
+     "path": "context.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "context_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 131,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "context.go"
+   ],
+   "source_lines": 26
+  },
+  {
+   "id": "echo-u20",
+   "repo": "echo",
+   "commit": "f9d7e77210f87dd4212cc257dac7090fbf70b721",
+   "parent": "0996992ca96fc8ce5524e57bb4c40c2455a98c66",
+   "date": "2026-10-22T15:44:02-07:00",
+   "task": "fix(middleware): reject empty tokens in CSRF validation\n\nsubtle.ConstantTimeCompare treats two empty byte slices as equal, so\nvalidateCSRFToken(\"\", \"\") returns true. Extractors in extractor.go\ntreat a present-but-empty query/form/header value as successfully\nextracted, so an attacker can supply an empty client token with no\nspecial access. If the stored cookie token is ever empty (e.g. an\napp clears it to \"\" instead of expiring it, or CookieSecure is false\nand the cookie is overwritten over plain HTTP), CSRF validation is\nbypassed entirely. Reject empty tokens before the comparison.",
+   "files": [
+    {
+     "path": "middleware/csrf.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "middleware/csrf_test.go",
+     "old_path": null,
+     "status": "M",
+     "lines": 10,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "middleware/csrf.go"
+   ],
+   "source_lines": 3
+  },
+  {
+   "id": "libuv-u01",
+   "repo": "libuv",
+   "commit": "162e4c0124ff8fe87af0269c33efa07889ed92da",
+   "parent": "7140827e36ecf4a63bbb2246def36802b0127d74",
+   "date": "2026-09-01T23:17:31+02:00",
+   "task": "linux: support cancelling io_uring file requests",
+   "files": [
+    {
+     "path": "src/threadpool.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/unix/internal.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/unix/linux.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 46,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-threadpool-cancel.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 99,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/threadpool.c",
+    "src/unix/internal.h",
+    "src/unix/linux.c"
+   ],
+   "source_lines": 51
+  },
+  {
+   "id": "libuv-u02",
+   "repo": "libuv",
+   "commit": "c07e87d4cee9062f38463baef224d9369e20b7f9",
+   "parent": "e15526ade343bdfc7cdaaeb0a51b9bba656533ce",
+   "date": "2026-09-16T20:24:16+02:00",
+   "task": "freebsd: don't use long AF_UNIX socket paths\n\nFreeBSD defines SOCK_MAXADDRLEN but clamps Unix socket paths to the\nsize of sockaddr_un.sun_path.",
+   "files": [
+    {
+     "path": "docs/src/pipe.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/unix/pipe.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-pipe-getsockname.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/pipe.c"
+   ],
+   "source_lines": 5
+  },
+  {
+   "id": "libuv-u03",
+   "repo": "libuv",
+   "commit": "840404ce8ba7cc0204be52389a6cfff9f2c90fb6",
+   "parent": "b05973ed36b2de7ca51a3dca9cfa9160b42fe34d",
+   "date": "2026-09-24T16:33:47+02:00",
+   "task": "2026.09.24, Version 1.53.0 (Stable)\n\nChanges since version 1.52.1:\n\n* unix: fix pedantic compiler warnings (Ben Noordhuis)\n\n* win: fix const correctness compiler error (apocelipes)\n\n* doc: clarify handle close behavior of uv_spawn (Ben Noordhuis)\n\n* doc: name function crosslinks consistently (Ben Noordhuis)\n\n* win: fix const correctness warning (Ben Noordhuis)\n\n* win: fix off-by-one in utf-16 to wtf-8 conversion (locus-x64)\n\n* udp: validate nbufs in send functions (Oren)\n\n* unix: improve handling of uv_async_send mistakes (Jameson Nash)\n\n* unix,stream: verify uv_try_write2 handle (cui)\n\n* test,win: fix race in test runner (Jameson Nash)\n\n* unix,tty: don't drain when setting the TTY mode (Gabriel Baraldi)\n\n* inet: prefer sizeof with parenthesis (Juan Jos\u00e9 Arboleda)\n\n* test: remove unused headers and use newer ASSERT macros (Juan Jos\u00e9\n  Arboleda)\n\n* doc: Add textual images into libuv man page (Stacey Marshall)\n\n* darwin: replace EV_OOBAND handling with EVFILT_EXCEPT + NOTE_OOB (Juan\n  Jos\u00e9 Arboleda)\n\n* docs: add copybutton sphinx extension (HArsil)\n\n* doc: fix threading bugs in progress example (PRANAV KUMAR)\n\n* unix: support long path names in pipe.c (Edigleysson Silva (Edy))\n\n* win: fix some compiler warnings (Benjamin Gilbert)\n\n* docs: fix broken and redirected links (Jameson Nash)\n\n* doc: remove random reference to libev (Ben Noordhuis)\n\n* process: better validation for process->pid usage (Jameson Nash)\n\n* unix: check return value of fcntl call (Ben Noordhuis)\n\n* test: fix -Wunused-function warning (Ben Noordhuis)\n\n* linux: close streams without an extra read (Jameson Nash)\n\n* unix: enforce recvmmsg buffer size requirements (Ben Noordhuis)\n\n* android: fix termux build (BarryLhm)\n\n* io: make libuv 64-bit safe (Jameson Nash)\n\n* win,pipe: skip IOCP for pipe handles (Jameson Nash)\n\n* win: use WSA_FLAG_NO_HANDLE_INHERIT in all WSASocketW (Jameson Nash)\n\n* unix: use posix_spawn instead of fork (Jameson Nash)\n\n* test: use correct type for uv_fileno arguments (Sa\u00fal Ibarra Corretg\u00e9)\n\n* misc: revise security vulnerability reporting instructions (Jameson\n  Nash)\n\n* win: fix watch loop logic (Stefan Stojanovic)\n\n* win: properly initialize OSVERSIONINFOW (Santiago Gimeno)\n\n* misc: fix error code returned from uv_wtf8_length_as_utf16 (Ryan\n  Liptak)\n\n* stream: fix server stop accepting after uv_accept() error (ivinx)\n\n* unix,ibmi: abort on process_title_mutex init failure (Juan Jos\u00e9\n  Arboleda)\n\n* unix,stream: fix getsockopt error handling in connect (Juan Jos\u00e9\n  Arboleda)\n\n* unix: treat futimens() as best-effort in copyfile (skooch)\n\n* unix: free statxbuf on iouring statx fallback (Santiago Gimeno)\n\n* aix,ibmi: fix undeclared identifiers (SRAVANI GUNDEPALLI)\n\n* unix: fix uv__udp_recvmsg crash (theanarkh)\n\n* win: use PROC_THREAD_ATTRIBUTE_HANDLE_LIST in uv_spawn (Jameson Nash)\n\n* unix: avoid duplicate recvmmsg terminal callback (Isaac Elbaz)\n\n* win: fix spawn process with no argument (sturcotte06)\n\n* unix: handle cloexec failure in kqueue init (Juan Jos\u00e9 Arboleda)\n\n* unix: remove UV_HANDLE_READING flag (Edigleysson Silva (Edy))\n\n* src: use INET6_ADDRSTRLEN for IPv6 address buffer (orbisai0security)\n\n* test: include pty.h for GNU Hurd (J\u00e9r\u00e9my Lal)\n\n* test: skip recvmsg unreachable test when no ipv6 (Santiago Gimeno)\n\n* win: fix race condition in uv_async_send (Jameson Nash)\n\n* unix,fs: fix busyloop in big copyfile (Jameson Nash)\n\n* process,unix: avoid off-by-one in uv__spawn_resolve_and_spawn (Jameson\n  Nash)\n\n* test: check that sizeof is constant (Jameson Nash)\n\n* async: make seq_cst the default (Jameson Nash)\n\n* Reland \"linux: eliminate a read on eventfd per wakeup\" (Jameson Nash)\n\n* win,process: skip dump silently if no valid folder can be determined\n  (Jameson Nash)\n\n* win: handle short path mismatch with a fallback in fs events (Joyee\n  Cheung)\n\n* unix,udp: handle msg_hdr.msg_namelen=0 on recvmmsg (Santiago Gimeno)\n\n* ci: lock down permissions and pin action SHAs (Alb3e3)\n\n* docs: ignore unstable ncurses linkcheck URL (Alb3e3)\n\n* unix: handle EINTR in uv_resident_set_memory (Nandan Acharya)\n\n* build(deps): bump reactivecircus/android-emulator-runner\n  (dependabot[bot])\n\n* build(deps): bump actions/setup-python from 6.2.0 to 6.3.0\n  (dependabot[bot])\n\n* unix: return EINVAL for invalid tty modes (Samuel Williams)\n\n* ci: use VS 18 / 2026 in Windows Server 2025 (Sa\u00fal Ibarra Corretg\u00e9)\n\n* win: fix use of wrong constant in tcp code (Ben Noordhuis)\n\n* unix: fix UV_FS_O_DIRECT on more linux architectures (Archkon)\n\n* doc: add UB warning to threading documentation (Ben Noordhuis)\n\n* build(deps): bump reactivecircus/android-emulator-runner\n  (dependabot[bot])\n\n* sunos: use getrandom(2) for uv_random (Petr Sumbera)\n\n* unix,poll: fix callback event bits on error/hangup (Yuki Ibe)\n\n* haiku: build tests with libbsd (J\u00e9r\u00f4me Duval)\n\n* unix: fix static declaration in nested block for AIX and IBM i PASE\n  (sravani1510)\n\n* win: fix unique named pipes to work inside Windows AppContainer (Russ\n  Cox)\n\n* build(deps): bump actions/setup-python from 6.3.0 to 7.0.0\n  (dependabot[bot])\n\n* build(deps): bump actions/checkout from 6.0.3 to 7.0.0\n  (dependabot[bot])\n\n* stream: Implement cancellation support for uv_write_t (Keno Fischer)\n\n* unix: handle trailing empty write buffers (Alb3e3)\n\n* stream: handle cancel write after close (Tyler Gibbs)\n\n* build(deps): bump actions/checkout from 7.0.0 to 7.0.1\n  (dependabot[bot])\n\n* test: don't generate io_uring variants of loopless fs tests (Jameson\n  Nash)\n\n* test: close the loop in udp_recvmsg_unreachable_error{,6} (Jameson\n  Nash)\n\n* linux: use scaling_max_freq in uv_cpu_info() (James Ross)\n\n* win: fix leak if uv_loop_init fails (Jameson Nash)\n\n* solaris: fix build and test failures, add CI (Petr Sumbera)\n\n* test: improve fs event filename assertion (Petr Sumbera)\n\n* build(deps): bump vmactions/solaris-vm from 1.3.7 to 1.3.8\n  (dependabot[bot])\n\n* build(deps): bump actions/checkout from 6.0.3 to 7.0.1\n  (dependabot[bot])\n\n* win: fix crash when closing a pipe after a failed bind (Yury\n  Semikhatsky)\n\n* darwin: report physical footprint as rss (Jarred Sumner)\n\n* test: close file descriptors leaked by tests (Jameson Nash)\n\n* unix: short-circuit no-op event mask changes in uv__io_stop (Shelley\n  Vohr)\n\n* unix,process: never shrink the stdio socket pair buffers (Shelley\n  Vohr)\n\n* build(deps): bump vmactions/solaris-vm from 1.3.8 to 1.3.9\n  (dependabot[bot])\n\n* linux: fix tcc build (Ben Noordhuis)\n\n* aix: canonicalize fs event path with realpath() (Milad Fa)\n\n* openbsd: use fork instead of posix_spawn (Ben Noordhuis)\n\n* freebsd,netbsd,openbsd: add build CI (neil)\n\n* win,fs: suppress CRT assertion on close (Yi\u011fit Tanr\u0131verdi)\n\n* unix: drain tty reads on POLLHUP without POLLIN (Santiago Gimeno)\n\n* doc: fix on guide filesystem.rst (Viacheslav Muravyev)\n\n* linux: support cancelling io_uring file requests (hunterinvariants)\n\n* build: distribute Windows long path manifest (Yi\u011fit Tanr\u0131verdi)\n\n* netbsd: free cpu times on sysctl failure (cui fliter)\n\n* build(deps): bump vmactions/netbsd-vm from 1.4.8 to 1.4.9\n  (dependabot[bot])\n\n* freebsd: don't fail uv_cpu_info() when hw.clockrate is missing (Piotr\n  Kubaj)\n\n* build(deps): bump vmactions/netbsd-vm from 1.4.9 to 1.5.0\n  (dependabot[bot])\n\n* build(deps): bump vmactions/solaris-vm from 1.3.9 to 1.4.0\n  (dependabot[bot])\n\n* build(deps): bump vmactions/freebsd-vm from 1.5.5 to 1.5.6\n  (dependabot[bot])\n\n* unix: fix warning in OpenBSD code (Brad Smith)\n\n* test: lower number of iterations (Ben Noordhuis)\n\n* openbsd: update EVFILT_USER comment (Brad Smith)\n\n* freebsd: don't use long AF_UNIX socket paths (Juan Jos\u00e9 Arboleda)\n\n* openbsd: use getexecpath in uv_exepath if present (Brad Smith)\n\n* build(deps): bump vmactions/freebsd-vm from 1.5.6 to 1.5.7\n  (dependabot[bot])\n\n* win: reserve explicit thread stack size (Zuohui Yang)",
+   "files": [
+    {
+     "path": ".mailmap",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "AUTHORS",
+     "old_path": null,
+     "status": "M",
+     "lines": 33,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "ChangeLog",
+     "old_path": null,
+     "status": "M",
+     "lines": 244,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "configure.ac",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "include/uv/version.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "include/uv/version.h"
+   ],
+   "source_lines": 8
+  },
+  {
+   "id": "libuv-u04",
+   "repo": "libuv",
+   "commit": "9be264a4efa515dcb6ced36267dac7a03f308be3",
+   "parent": "eb6238c6d5f4dd23efa026ab393366ec03eab496",
+   "date": "2026-09-24T16:46:45+02:00",
+   "task": "Now working on version 1.53.1",
+   "files": [
+    {
+     "path": "configure.ac",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "include/uv/version.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    }
+   ],
+   "source_files": [
+    "include/uv/version.h"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "libuv-u05",
+   "repo": "libuv",
+   "commit": "2b4b918d3381100854250c89d5159d4206daafb7",
+   "parent": "abe835d41317b55b16260990821f89b4ee9e437b",
+   "date": "2026-09-28T18:01:57+08:00",
+   "task": "fs-poll: discard stopped polling contexts on restart",
+   "files": [
+    {
+     "path": "src/fs-poll.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 18,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-fs-poll.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 103,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/fs-poll.c"
+   ],
+   "source_lines": 18
+  },
+  {
+   "id": "libuv-u06",
+   "repo": "libuv",
+   "commit": "ae3860b718d8fa88f72258e1e7634fc859e9930e",
+   "parent": "2b4b918d3381100854250c89d5159d4206daafb7",
+   "date": "2026-09-30T16:42:02+08:00",
+   "task": "fix(unix): preserve parent fds during spawn remapping",
+   "files": [
+    {
+     "path": "src/unix/process.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 39,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/run-tests.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-spawn.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/process.c"
+   ],
+   "source_lines": 39
+  },
+  {
+   "id": "libuv-u07",
+   "repo": "libuv",
+   "commit": "f3d4bbc02d6ec97d139f47858165d7d938c18852",
+   "parent": "ae3860b718d8fa88f72258e1e7634fc859e9930e",
+   "date": "2026-09-30T16:42:02+08:00",
+   "task": "fix(unix): preserve inherited nonblocking descriptors",
+   "files": [
+    {
+     "path": "src/unix/process.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 7,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-spawn.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 89,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/process.c"
+   ],
+   "source_lines": 7
+  },
+  {
+   "id": "libuv-u08",
+   "repo": "libuv",
+   "commit": "22e333a5158d9e4df4c15b2e1c5e1db4e904add1",
+   "parent": "93e4151e43f43b2f4dd6abccdab94e87436e0610",
+   "date": "2026-09-30T16:57:56+08:00",
+   "task": "unix: preserve directories after cancelled close",
+   "files": [
+    {
+     "path": "docs/src/fs.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/unix/fs.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-threadpool-cancel.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 50,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/fs.c"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "libuv-u09",
+   "repo": "libuv",
+   "commit": "ee6e76580c7cd5eaefc605fb919e06ada96f9010",
+   "parent": "22e333a5158d9e4df4c15b2e1c5e1db4e904add1",
+   "date": "2026-09-30T17:13:03+08:00",
+   "task": "unix: preserve watcher state when resizing fails",
+   "files": [
+    {
+     "path": "src/unix/core.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 6,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-loop-oom.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 119,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/core.c"
+   ],
+   "source_lines": 6
+  },
+  {
+   "id": "libuv-u10",
+   "repo": "libuv",
+   "commit": "9ac5b3cee0f32be7c81afa646b678e343ec14085",
+   "parent": "ee6e76580c7cd5eaefc605fb919e06ada96f9010",
+   "date": "2026-09-30T17:17:17+08:00",
+   "task": "darwin: release fsevents path allocations",
+   "files": [
+    {
+     "path": "src/unix/fsevents.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 116,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/fsevents.c"
+   ],
+   "source_lines": 17
+  },
+  {
+   "id": "libuv-u11",
+   "repo": "libuv",
+   "commit": "e13942bb84d74fc0f2fe017c6f1b6389aa9900bd",
+   "parent": "9ac5b3cee0f32be7c81afa646b678e343ec14085",
+   "date": "2026-09-30T10:01:31-04:00",
+   "task": "win: allow uv_try_write() from a write callback",
+   "files": [
+    {
+     "path": "src/win/tcp.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 22,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-tcp-try-write.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 103,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/win/tcp.c"
+   ],
+   "source_lines": 22
+  },
+  {
+   "id": "libuv-u12",
+   "repo": "libuv",
+   "commit": "f9bd3d40fe43472ef33250733c0fd44e2c2785e6",
+   "parent": "485969863fe3146a5df4aab478b6372e581a9f0b",
+   "date": "2026-09-30T10:13:17-04:00",
+   "task": "darwin: release process title CF strings",
+   "files": [
+    {
+     "path": "CMakeLists.txt",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "source",
+     "source": false
+    },
+    {
+     "path": "src/unix/darwin-proctitle.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 90,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-process-title.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 112,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/darwin-proctitle.c"
+   ],
+   "source_lines": 90
+  },
+  {
+   "id": "libuv-u13",
+   "repo": "libuv",
+   "commit": "55024ad023c4ede4c54a0e8af6dc957a3f355c00",
+   "parent": "68759fd7db065ccce69bb8e0e6b70f0e4b2265e3",
+   "date": "2026-09-30T10:16:45-04:00",
+   "task": "win: report EOF on Ctrl+Z in tty line mode",
+   "files": [
+    {
+     "path": "src/win/tty.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 16,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-tty.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 109,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/win/tty.c"
+   ],
+   "source_lines": 16
+  },
+  {
+   "id": "libuv-u14",
+   "repo": "libuv",
+   "commit": "e00b6417f7d729ff9742dadf2205d68057c9c654",
+   "parent": "55024ad023c4ede4c54a0e8af6dc957a3f355c00",
+   "date": "2026-09-30T10:34:51-04:00",
+   "task": "darwin: close select fallback fd\n\nThe Darwin select fallback keeps the original stream descriptor in\n`s->fd` while the I/O watcher uses a socketpair. Stream cleanup joins\nthe selector thread and closes the socketpair, but did not close that\noriginal descriptor.",
+   "files": [
+    {
+     "path": "src/unix/stream.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 3,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-osx-select.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 48,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/stream.c"
+   ],
+   "source_lines": 3
+  },
+  {
+   "id": "libuv-u15",
+   "repo": "libuv",
+   "commit": "cc6d059a0e57148a66758b1530b447f40f0fe6e6",
+   "parent": "3c49c90404c08789fbedc8f2bdb2f10eee0e9554",
+   "date": "2026-09-30T14:57:01-04:00",
+   "task": "win: don't fail fs event watch on locked files\n\nuv_fs_event_start() opens the path with FILE_LIST_DIRECTORY to tell\nfiles and directories apart. On a file that is FILE_READ_DATA, so the\nopen takes part in the sharing check and fails with\nERROR_SHARING_VIOLATION when some other process has the file open\nwithout FILE_SHARE_READ: a compiler emitting an object file, an\ninstaller, a virus scanner. Up to 1.51.0 the type was determined with\nGetFileAttributesW(), which never opened the path, so watching such a\nfile used to work.\n\nProbe the type with FILE_READ_ATTRIBUTES instead. It is all that\nGetFileInformationByHandle() needs and it stays out of the sharing\ncheck. Then open what is actually watched, the path itself when it is a\ndirectory and its parent otherwise, and check the type of that handle\ntoo.\n\nMetadata still never comes from a path lookup, so the race fixed in\n#4948 stays fixed, and the directory case gains the same post-open check\nthe file case already had.\n\nThe file branch still opens the parent by name and keeps its post-open\ndirectory check; Win32 has no relative open short of NtCreateFile.",
+   "files": [
+    {
+     "path": "src/win/fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 57,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 38,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/win/fs-event.c"
+   ],
+   "source_lines": 57
+  },
+  {
+   "id": "libuv-u16",
+   "repo": "libuv",
+   "commit": "954c1d1887bfdb223b2b0dc2201199f938902e68",
+   "parent": "ae6475b807818a35d88ff09ad0a949489415d222",
+   "date": "2026-10-05T20:26:58-04:00",
+   "task": "Reland \"win: don't fail fs event watch on locked files\"\n\nThis reverts commit 7a02ab5f400e6f0fdbf63253cc640df19c60f484, with fixes so that\nReOpenFile works as documented by calling the internal NtCreateFile operation\ndirectly instead.\n\nReOpenFile() cannot reopen a directory handle: it unconditionally asks the\nkernel for a non-directory file, so the underlying NtCreateFile() call fails\nwith STATUS_FILE_IS_A_DIRECTORY, which Windows' NTSTATUS-to- Win32 mapping\nreports as the misleading ERROR_ACCESS_DENIED. This broke every directory watch\n(uv_fs_event_start() on a directory), which is why CI failed across all Windows\nconfigurations and the fix for #5272 had to be reverted.\n\nAdd uv__reopen_file(), a small wrapper around NtCreateFile() that reopens a\nhandle relative to itself (RootDirectory set to the handle, name left empty).\nThis achieves the same thing ReOpenFile() does for files, but also works for\ndirectories, and keeps the original fix's goal of never resolving the path a\nsecond time (so a concurrent rename cannot swap the watched directory out from\nunder us).\n\nVerified on native Windows (cross-compiled with mingw, run via WSL2 interop)\nthat the previous revision reproduces the exact CI failure (`error: -4048`,\nUV_EPERM from ReOpenFile()'s ERROR_ACCESS_DENIED) on every directory-watching\nfs_event test, and that this fix resolves all of them with no regressions\nelsewhere in the suite.\n\nI've asked Microsoft to fix `ReOpenFile`, but that would take a long time, if\nthey ever do: https://github.com/MicrosoftDocs/sdk-api/pull/2262",
+   "files": [
+    {
+     "path": "src/win/fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 98,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/win/winapi.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 8,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/win/winapi.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 35,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 38,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/win/fs-event.c",
+    "src/win/winapi.c",
+    "src/win/winapi.h"
+   ],
+   "source_lines": 141
+  },
+  {
+   "id": "libuv-u17",
+   "repo": "libuv",
+   "commit": "ec1928832534e18b2941d0ec629623a3e390cec4",
+   "parent": "eb497c582f5c0887add4d4658c7801e4ef412e10",
+   "date": "2026-10-09T23:41:27+02:00",
+   "task": "idna: reject invalid continuation bytes\n\nThe continuation-byte check combines high bits with XOR, allowing\ninvalid bytes to cancel each other out. E2 41 42 is decoded as U+2042\nand successfully converted to IDNA instead of being rejected.\n\nValidate each continuation byte before decoding the code point while\npreserving valid-input behavior and cursor advancement on errors.\n\nAdd decoder, IDNA and synchronous/asynchronous getaddrinfo regressions.",
+   "files": [
+    {
+     "path": "src/idna.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-getaddrinfo.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 38,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-idna.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 26,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/idna.c"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "libuv-u18",
+   "repo": "libuv",
+   "commit": "84318be9a4568f1ea3c897c0db0d3504d2b8ebde",
+   "parent": "ec1928832534e18b2941d0ec629623a3e390cec4",
+   "date": "2026-10-10T18:06:22+08:00",
+   "task": "unix: unregister write request on allocation failure",
+   "files": [
+    {
+     "path": "src/unix/stream.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-pipe-write.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 71,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-tcp-reuseport.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/stream.c"
+   ],
+   "source_lines": 4
+  },
+  {
+   "id": "libuv-u19",
+   "repo": "libuv",
+   "commit": "d6d3959f0806f5881622c463ce76ae5e1a534b5b",
+   "parent": "ad0679ae37afe4ea415772b5a86020032d5db2f8",
+   "date": "2026-10-15T21:25:28-04:00",
+   "task": "win: use a 64 KB buffer for recursive fs events\n\nA recursive uv_fs_event_t reports changes for a whole tree through one\nReadDirectoryChangesW buffer, which libuv has always set at 4 KB. The system\ndiscards everything in it when it overflows, and the callback gets a NULL\nfilename.\n\nThis is easy to hit. libuv only issues the next read once the callbacks for the\nprevious batch have returned, so the loop is often busy with the consumer's\nresponse to earlier changes, and about 13 file writes arriving in that window\nare enough to overflow it. Installing a package into node_modules overflows\nmore often than not.\n\nGive recursive handles 64 KB instead. Each change is a 12-byte record plus its\nrelative path in UTF-16, so creating and writing a file with a 50-character\npath costs about 310 bytes, and 64 KB holds about 210 such files. 64 KB is also\nthe largest size that works on network shares: larger sizes are accepted by the\ncall, but the read then fails with ERROR_INVALID_PARAMETER.\n\nNon-recursive watches keep 4 KB. The system matches each handle's buffer with\nits own buffer of the same size, and programs that watch directories one at a\ntime can hold thousands of handles. Flat watches also have shorter relative\npaths, and an overflow there costs a single directory listing to recover from.\n\nThe system keeps the buffer size and the recursive setting from the first call\non a handle, so every call has to pass the same size. Store the recursive bit\nin a new flag. This also fixes the re-arm, which tested UV_FS_EVENT_RECURSIVE\nagainst the handle flags, where that bit is UV_HANDLE_ACTIVE, and so always\nasked for a recursive watch. That was harmless because the system ignores the\nchange.",
+   "files": [
+    {
+     "path": "docs/src/fs_event.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/uv-common.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 5,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/win/fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 32,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-fs-event.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 83,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/uv-common.h",
+    "src/win/fs-event.c"
+   ],
+   "source_lines": 37
+  },
+  {
+   "id": "libuv-u20",
+   "repo": "libuv",
+   "commit": "19bbf90e1a7a1526da6daa1c79eec2e3ff8b6c55",
+   "parent": "9bfe869b1774371e09a2bbf3d8a07f3a607e352c",
+   "date": "2026-10-23T21:12:10+02:00",
+   "task": "darwin: add LaunchServices process title opt-out\n\nAllow applications to skip LaunchServices registration and display name\nupdates by setting UV_PROCESS_TITLE_USE_LAUNCH_SERVICES=0 at startup\nKeep the default enabled to preserve Activity Monitor behavior.\n\nCapture the setting in uv_setup_args so concurrent title updates do not\nread the environment, and retain argv updates and thread naming when\nLaunchServices is disabled.\n\nAdd regression coverage for value parsing, repeated updates and setting\nchanges after initialization, and document the opt-out.",
+   "files": [
+    {
+     "path": "docs/src/misc.rst",
+     "old_path": null,
+     "status": "M",
+     "lines": 11,
+     "role": "docs",
+     "source": false
+    },
+    {
+     "path": "src/unix/darwin-proctitle.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 17,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/unix/internal.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 1,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "src/unix/proctitle.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 4,
+     "role": "source",
+     "source": true
+    },
+    {
+     "path": "test/test-list.h",
+     "old_path": null,
+     "status": "M",
+     "lines": 2,
+     "role": "test",
+     "source": false
+    },
+    {
+     "path": "test/test-process-title.c",
+     "old_path": null,
+     "status": "M",
+     "lines": 62,
+     "role": "test",
+     "source": false
+    }
+   ],
+   "source_files": [
+    "src/unix/darwin-proctitle.c",
+    "src/unix/internal.h",
+    "src/unix/proctitle.c"
+   ],
+   "source_lines": 22
+  }
+ ]
+}
