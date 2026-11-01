@@ -182,9 +182,12 @@ def index(factory, embedder, path: Path) -> Repository:
 
 
 def _activate_l2(db, repository_id) -> None:
-    """Arm C: every L2 proposal counts as accepted, inside the caller's transaction (rolled back)."""
+    """Arm C: every L2 proposal counts as accepted, inside the caller's transaction (rolled back).
+
+    Rejected ones too: applying the review moves unticked proposals to ``rejected``, and arm C must not
+    depend on the review (in the first locked run it did, so C was identical to B)."""
     db.execute(update(MemoryItem).where(MemoryItem.repository_id == repository_id, MemoryItem.tier == "L2",
-                                        MemoryItem.status == "proposed").values(status="active"))
+                                        MemoryItem.status.in_(("proposed", "rejected"))).values(status="active"))
 
 
 def context(factory, embedder, repo: Repository, query: str, arm: str) -> dict:

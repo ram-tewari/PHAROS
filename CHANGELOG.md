@@ -17,8 +17,17 @@
   (8 tasks better, 1 worse), and the commits' test files found went from 3 to 9 of 31. Source-file
   recall did not change (0.643 → 0.611, one task worse).
 
+### Evaluated
+
+- The locked Phase 2 evaluation ran once: [results](docs/benchmarks/phase2-memory-2026-11-01.md). It
+  fails the protocol: source-file recall B − A is −0.004 [−0.035, +0.031], and audited precision is 55% (target
+  90%). Repo QA 5 → 14 of 30 correct (p = 0.012), all-file recall +0.089 and file precision +0.140, both
+  significant. Grounding 100%.
+
 ### Fixed
 
+- `phase2_eval.py` arm C (every L2 proposal) now includes proposals the review rejected. It activated
+  nothing in the locked run, so C equalled B.
 - Learning a single new miner family no longer fails with a `KeyError` when its items are retired.
 
 ## Unreleased — learning phase 2, stage 1: deterministic repository memory
