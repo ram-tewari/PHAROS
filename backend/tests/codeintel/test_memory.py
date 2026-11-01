@@ -93,7 +93,7 @@ def test_learning_mines_grounded_memory_and_a_brief(session, learned, fixture_re
 def test_counts_carry_a_tally_that_rechecks(session, learned, fixture_repo):
     repo, _ = learned
     cochange = _item(session, repo, "cochange/shop/auth.py")
-    assert cochange.body.startswith("Files that changed in the same commit as shop/auth.py (share of its last 9")
+    assert cochange.body.startswith("Files that change with shop/auth.py in the same commit (share of its last 9")
     tally = next(e for e in cochange.evidence if e["kind"] == "tally")
     rows = tally["groups"][0]["rows"]
     assert tally["total"] == 9 and len(rows) == 9  # every counted commit, not examples
@@ -110,7 +110,7 @@ def test_counts_carry_a_tally_that_rechecks(session, learned, fixture_repo):
 
     # A test home is a test file that uses the code, counted over focused commits only (not the 16-file initial one).
     testhome = _item(session, repo, "testhome/shop/auth.py")
-    assert "tests/test_auth.py (uses helper_0; changed with shop/auth.py in 6 of its last 8 commits" in testhome.body
+    assert "tests/test_auth.py (uses helper_0; in the same commit in 6 of shop/auth.py's last 8 commits" in testhome.body
     assert testhome.evidence[0]["kind"] == "code" and testhome.evidence[0]["path"] == "tests/test_auth.py"
 
     typing_item = _item(session, repo, "typing/python/annotations")

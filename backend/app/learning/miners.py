@@ -823,7 +823,7 @@ def mine_cochange(snap: Snapshot, *, max_items: int = 300, per_file: int = WINDO
         if not top:
             continue
         top = top[:6]
-        body = (f"Files that changed in the same commit as {path} (share of its last {len(commits)} commits): "
+        body = (f"Files that change with {path} in the same commit (share of its last {len(commits)} commits): "
                 + ", ".join(f"{p} {_pct(n, len(commits))}" for p, n in top) + ".")
         lead = top[0][0]
         together = [c for c in commits if lead in {snap.canonical(p) for _, p in c.files}][:2]
@@ -894,7 +894,7 @@ def mine_test_homes(snap: Snapshot, *, max_items: int = 300, per_file: int = WIN
         if not top:
             continue
         body = (f"Existing tests that use {path}'s code: "
-                + ", ".join(f"{t} (uses {name}; changed with {path} in {n} of its last {len(commits)} commits "
+                + ", ".join(f"{t} (uses {name}; in the same commit in {n} of {path}'s last {len(commits)} commits "
                             f"of at most {FOCUSED} files)" for t, n, _, name in top) + ".")
         evidence = [e for t, _, line, _ in top[:2] if (e := code_evidence(snap.checkout, t, line, line))]
         evidence.append(_commit_tally(snap, f"the last {len(commits)} commits of at most {FOCUSED} files that changed "
