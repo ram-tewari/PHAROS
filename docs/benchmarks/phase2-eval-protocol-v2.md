@@ -1,7 +1,8 @@
 # Phase 2 (learning) evaluation protocol, version 2 — locked on merge
 
-> **Status:** the data is built and hashed below. The protocol becomes binding when the pull request that
-> adds this file is merged after the owner's review. Nothing in it has been measured yet.
+> **Status:** locked on merge of [#15](https://github.com/ram-tewari/PHAROS/pull/15). The run was stopped
+> before it finished, so it has no verdict: see Amendment 1 and the
+> [partial results](phase2-memory-v2-partial-2026-11-01.md).
 >
 > Version 1 ([protocol](phase2-eval-protocol.md), [result](phase2-memory-2026-11-01.md)) stays as it is.
 > This version is a new test on new data, not a rerun of version 1, so its results are reported next to
@@ -137,3 +138,11 @@ About 300 to 440 Codex calls, separate from the nightly learning budget:
 - up to about 140 for arm C, which runs only where its context differs from B's.
 
 The owner approves the run before it starts.
+
+## Amendments
+
+1. **The run was stopped (1 November 2026).** The owner cancelled the locked run at 66 of 80 scored tasks
+   (A and B), after every Repo QA answer but before the judge, Repo QA grading and the precision audits. No
+   score had been read at that point. The protocol's pass/fail needs all 80 tasks and the precision audit,
+   so this run has no verdict. Its [partial results](phase2-memory-v2-partial-2026-11-01.md) are reported
+   as they stand. No target, measure or dataset changed.

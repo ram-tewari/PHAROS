@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — learning phase 2: stopped v2 evaluation
+
+### Evaluated
+- Protocol v2 was stopped at 66 of 80 tasks with no verdict. Companion-file recall B − A was +0.143
+  [+0.062, +0.223], but +0.063 [−0.036, +0.165] without rich. Precision, Repo QA and the judge were not
+  measured. Report: `docs/benchmarks/phase2-memory-v2-partial-2026-11-01.md`.
+
+### Added
+- `benchmarks/phase2_v2_partial.py` reproduces those numbers from the checkpoint.
+
 ## Unreleased — documentation
 
 ### Changed
