@@ -21,8 +21,9 @@ returned. Everything is available over a REST API and a native
 - **Repository memory:** correct answers to repository questions rose from 5 to 14 of 30
   (McNemar p = 0.012). The same evaluation **failed its primary measure and its precision target**,
   and the [report](docs/benchmarks/phase2-memory-2026-11-01.md) says so. A
-  [second protocol](docs/benchmarks/phase2-eval-protocol-v2.md) was locked afterwards on new data, but
-  that run was stopped before scoring, so it has no result.
+  [second protocol](docs/benchmarks/phase2-eval-protocol-v2.md) was locked afterwards on new data. That
+  run was stopped early, so it has no verdict. Its [partial results](docs/benchmarks/phase2-memory-v2-partial-2026-11-01.md)
+  show a gain in finding related tests and docs that mostly comes from one repository.
 
 > **Status:** beta, single maintainer. The core path is tested end to end on SQLite and PostgreSQL,
 > covering clone → AST → embed → index → retrieve → context. Retrieval quality is measured on a
@@ -260,8 +261,9 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
 - **Repository memory** did not pass its first locked evaluation: 55% of audited items were fully
   supported by their evidence (target 90%), and source-file recall did not improve. The
   [report](docs/benchmarks/phase2-memory-2026-11-01.md) has the numbers. Evidence that proves counted
-  claims was added afterwards. [Protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md) defines a
-  test of it on new repositories, but that run was stopped before scoring and has no result.
+  claims was added afterwards, but its precision is still unmeasured, because the
+  [protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md) run was
+  [stopped early](docs/benchmarks/phase2-memory-v2-partial-2026-11-01.md).
   - It is learned only on a machine with full git mirrors (`pharos learn`, or the learning worker).
   - The older `POST /api/patterns/learn` profiles are Python-only, partly wrong, and marked deprecated.
 - **Legacy modules** (papers/PDFs, resource graph, planning, monitoring) predate the code index.
