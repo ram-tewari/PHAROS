@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased — documentation
+
+### Changed
+- README: the headline results are stated up front, including the failed memory evaluation; the
+  memory row and limitations describe the evaluated system; the MCP URL has its trailing slash; the
+  status of `frontend/` and `pharos-cli/` is stated.
+
 ## Unreleased — learning phase 2: evidence that proves the claim
 
 The locked evaluation found most memory items true but not established by their evidence (55% audited

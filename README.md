@@ -13,6 +13,16 @@ Source is read from git at the indexed commit and checked against the blob SHA b
 returned. Everything is available over a REST API and a native
 [MCP](https://modelcontextprotocol.io) endpoint.
 
+**Measured results.** The quality numbers below come from locked test sets, each run once after tuning:
+
+- **Retrieval:** nDCG@10 rose from 0.394 to 0.697 and from 0.463 to 0.726 on two held-out sets
+  covering seven repositories in seven languages, on CPU only. Search takes p95 305 ms on a free
+  hosting tier. See [Retrieval quality](#retrieval-quality).
+- **Repository memory:** correct answers to repository questions rose from 5 to 14 of 30
+  (McNemar p = 0.012). The same evaluation **failed its primary measure and its precision target**,
+  and the [report](docs/benchmarks/phase2-memory-2026-11-01.md) says so. A
+  [second protocol](docs/benchmarks/phase2-eval-protocol-v2.md) was locked afterwards on new data.
+
 > **Status:** beta, single maintainer. The core path is tested end to end on SQLite and PostgreSQL,
 > covering clone → AST → embed → index → retrieve → context. Retrieval quality is measured on a
 > small hand-labelled benchmark ([results](docs/benchmarks/retrieval-2026-10.md)). Read
@@ -27,9 +37,9 @@ returned. Everything is available over a REST API and a native
 | **Embeddings** | Pluggable: `hash` (offline, lexical, not semantic), `onnx` (CPU; pinned models in `scripts/fetch_onnx_model.py`, default in production granite-embedding-english-r2 int8), `http` (the edge worker's GPU model server) or `sentence-transformers`. Each chunk is embedded from its signature, doc comment, the first 25 lines of its body and its calls. Vectors from different models are never compared. |
 | **Retrieval** | `keyword` uses PostgreSQL full-text search over identifiers, paths, signatures and docstrings. `dense` uses pgvector HNSW. `hybrid` is reciprocal-rank fusion plus an exact-symbol boost. `graph` is hybrid plus call-graph neighbours. The default `auto` is `dense`, or `hybrid` when the caller passes `hints` (identifiers it guesses). Tests, docs and examples are down-ranked unless the query asks for them. When a mode cannot run it is reported as unavailable (HTTP 503), not silently degraded. |
 | **Context** | The top chunks with verified source, their resolved callers and callees, the repository's learned memory and its coding rules, rendered as Markdown with `path:line` citations inside a character budget. |
-| **Memory** (Phase 2, stage 1) | Learned per indexed commit, on the owner's machine, from the index and the full git history. No LLM is involved at this stage. It covers conventions (naming, docs, typing, errors, deprecation, tests, changelog, commit style, tooling), which files change together, history (dropped dependencies, runtime versions, moves, file origins) and "add a new X" playbooks. A brief of at most 2,200 characters leads `retrieve_context`. Every item cites evidence that can be re-checked; items are never deleted, only marked stale. **Evaluated once** ([results](docs/benchmarks/phase2-memory-2026-11-01.md)): it does not pass. It makes repository Q&A much better (5 → 14 of 30 correct) and file choices more complete, but not source-file recall, and 55% of audited items are fully supported by their cited evidence. |
+| **Memory** (Phase 2) | Learned per indexed commit, on the owner's machine, from the index and the full git history. Deterministic miners produce most of it. An optional Codex pass adds rules from documentation and maintainers' reviews, and those stay proposals until accepted. The server never calls an LLM. It covers conventions (naming, docs, typing, errors, deprecation, tests, changelog, commit style, tooling), which files change together, history (dropped dependencies, runtime versions, moves, file origins) and "add a new X" playbooks. A brief of at most 2,200 characters leads `retrieve_context`. Every item cites evidence that can be re-checked; items are never deleted, only marked stale. **Evaluated once** ([results](docs/benchmarks/phase2-memory-2026-11-01.md)): it does not pass. It makes repository Q&A much better (5 → 14 of 30 correct) and file choices more complete, but not source-file recall, and 55% of audited items are fully supported by their cited evidence. |
 | **Jobs** | Durable ingestion jobs in PostgreSQL: atomic claims, retries with backoff, recovery of stalled workers, cancellation, and a queue cap (HTTP 429). Redis only wakes workers up; they also poll. |
-| **Interfaces** | REST under `/api/v1`, MCP at `/mcp`, and the CLI `python -m app.cli`. Auth is static machine-to-machine bearer tokens with two scopes (admin, read). |
+| **Interfaces** | REST under `/api/v1`, MCP at `/mcp/`, and the CLI `python -m app.cli`. Auth is static machine-to-machine bearer tokens with two scopes (admin, read). |
 
 ## Architecture
 
@@ -135,7 +145,7 @@ curl -s -X POST localhost:8000/api/v1/search/code -H "Authorization: Bearer $PHA
 ### Connect an AI assistant (MCP)
 
 ```bash
-claude mcp add --transport http pharos http://localhost:8000/mcp \
+claude mcp add --transport http pharos http://localhost:8000/mcp/ \
   --header "Authorization: Bearer $PHAROS_READ_TOKEN"
 ```
 
@@ -246,8 +256,11 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
 - **Performance:** keyword ranking recomputes `to_tsvector` for every matched row. Indexing
   writes rows one at a time, at about 140 chunks/s plus embedding time.
 - **GPU / edge worker:** the CUDA image and the edge worker's GPU path are **not validated** in CI.
-- **Repository memory** is new and not yet evaluated. Its precision, grounding and usefulness are
-  defined in a locked [protocol](docs/benchmarks/phase2-eval-protocol.md) that has not been run.
+- **Repository memory** did not pass its first locked evaluation: 55% of audited items were fully
+  supported by their evidence (target 90%), and source-file recall did not improve. The
+  [report](docs/benchmarks/phase2-memory-2026-11-01.md) has the numbers. Evidence that proves counted
+  claims was added afterwards, and [protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md) tests it
+  on new repositories.
   - It is learned only on a machine with full git mirrors (`pharos learn`, or the learning worker).
   - The older `POST /api/patterns/learn` profiles are Python-only, partly wrong, and marked deprecated.
 - **Legacy modules** (papers/PDFs, resource graph, planning, monitoring) predate the code index.
@@ -277,7 +290,7 @@ dependency audit and a Docker build. See [CONTRIBUTING.md](CONTRIBUTING.md).
 backend/
   app/codeintel/      indexing, parsers, embeddings, retrieval, context, jobs (the core)
   app/modules/code/   /api/v1 code-intelligence endpoints
-  app/modules/mcp/    native MCP server (/mcp) and the legacy REST tool router
+  app/modules/mcp/    native MCP server (/mcp/) and the legacy REST tool router
   app/modules/…       legacy modules (resources, search, graph, planning, patterns, …)
   app/learning/       repository memory: miners, history, brief, recall (Phase 2)
   app/workers/        ingest_worker (CPU), learning_worker (Mac), main_worker (edge/GPU)
@@ -285,6 +298,9 @@ backend/
   benchmarks/         retrieval benchmark harness, dataset and results
   tests/codeintel/    tests for the core, parametrised over SQLite and PostgreSQL
 ```
+
+`frontend/` and `pharos-cli/` are earlier prototypes from before the code index. They are kept for
+history, are not covered by CI and are not maintained alongside the backend.
 
 ## License
 
