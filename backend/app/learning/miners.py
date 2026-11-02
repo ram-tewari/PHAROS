@@ -1063,8 +1063,8 @@ def mine_dependencies(snap: Snapshot) -> list[Candidate]:
 
 
 def mine_moves(snap: Snapshot) -> list[Candidate]:
-    out = []
-    for c in snap.history:
+    out, seen = [], set()
+    for c in snap.history:  # newest first: when a directory moved the same way twice, the latest move is kept
         groups: dict[tuple[str, str], int] = Counter()
         moved: dict[tuple[str, str], list[str]] = defaultdict(list)
         for old, new in c.renames:
@@ -1078,8 +1078,9 @@ def mine_moves(snap: Snapshot) -> list[Candidate]:
             groups[group] += 1
             moved[group].append(new)
         for (src, dst), count in groups.items():
-            if count < 5 or (dst != "." and not any(p.startswith(dst + "/") for p in snap.files)):
+            if count < 5 or (src, dst) in seen or (dst != "." and not any(p.startswith(dst + "/") for p in snap.files)):
                 continue
+            seen.add((src, dst))
             out.append(Candidate(
                 key=f"history/move/{src}->{dst}"[:255], kind="history", title=f"{src}/ moved to {dst}/",
                 body=f"{count} files moved from {src}/ to {dst}/ in {c.sha[:10]} ({c.date[:10]}): '{c.subject}'.",

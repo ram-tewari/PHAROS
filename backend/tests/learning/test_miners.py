@@ -91,3 +91,20 @@ def test_brief_conventions_keeps_only_the_conventions():
              "\n## Conventions\n- Tests live in tests/test_*.py.\n\n## Playbooks\n- add-plugin: steps\n")
     assert brief_conventions(brief, "shop") == "# shop conventions\n- Tests live in tests/test_*.py.\n"
     assert brief_conventions("# shop — repository brief\n\n## Layout\n- shop/\n", "shop") == ""
+
+
+def test_a_directory_moved_twice_is_one_item(tmp_path):
+    """Two commits that move src/ to src/unix/ (libuv did) must not give two items with the same key."""
+    from app.learning.history import Commit
+    from app.learning.miners import Snapshot, mine_moves
+
+    def move(sha, n):
+        return Commit(sha=sha * 40, date=f"2020-01-0{n}T00:00:00+00:00", author="a", subject=f"move {n}", parents=1,
+                      renames=[(f"src/f{n}{i}.c", f"src/unix/f{n}{i}.c") for i in range(5)])
+
+    snap = Snapshot(name="r", commit="c", checkout=tmp_path, mirror=tmp_path, chunks=[],
+                    files={f"src/unix/f{n}{i}.c" for n in (1, 2) for i in range(5)},
+                    history=[move("b", 2), move("a", 1)])
+    items = mine_moves(snap)
+    assert [i.key for i in items] == ["history/move/src->src/unix"]
+    assert items[0].evidence[0]["sha"] == "b" * 40  # the newest move
