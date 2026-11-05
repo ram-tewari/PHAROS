@@ -10,6 +10,10 @@
 ### Added
 - `benchmarks/phase2_v2_partial.py` reproduces those numbers from the checkpoint.
 
+### Fixed
+- README: the two retrieval benchmarks cover seven repositories in six languages, not seven. ky and
+  immer are both TypeScript.
+
 ## Unreleased — documentation
 
 ### Changed

@@ -16,7 +16,7 @@ returned. Everything is available over a REST API and a native
 **Measured results.** The quality numbers below come from locked test sets, each run once after tuning:
 
 - **Retrieval:** nDCG@10 rose from 0.394 to 0.697 and from 0.463 to 0.726 on two held-out sets
-  covering seven repositories in seven languages, on CPU only. Search takes p95 305 ms on a free
+  covering seven repositories in six languages, on CPU only. Search takes p95 305 ms on a free
   hosting tier. See [Retrieval quality](#retrieval-quality).
 - **Repository memory:** correct answers to repository questions rose from 5 to 14 of 30
   (McNemar p = 0.012). The same evaluation **failed its primary measure and its precision target**,
@@ -189,8 +189,9 @@ patterns, monitoring) are still mounted. They are maintained to a lower bar; see
 
 ## Retrieval quality
 
-Measured on two locked test sets: 101 hand-labelled questions over seven repositories in seven
-languages (click, ky, anyhow, curl, chi, gson, immer), pinned commits, CPU only. The full method,
+Measured on two locked test sets: 101 hand-labelled questions over seven repositories in six
+languages (Python, TypeScript, Rust, C, Go and Java; the repositories are click, ky, anyhow, curl,
+chi, gson and immer), pinned commits, CPU only. The full method,
 the development runs and the failures are in the
 [phase 1 report](docs/benchmarks/retrieval-phase1-2026-10-30.md).
 
