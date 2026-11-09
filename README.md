@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://repository-images.githubusercontent.com/1059904049/cb7d2ff4-a04b-4344-a1fd-ae1994c17823" alt="PHAROS — code intelligence, evidence at the source" width="800">
+</p>
+
 # PHAROS — A Code-Intelligence Backend for AI Coding Assistants
 
 [![CI](https://github.com/ram-tewari/PHAROS/actions/workflows/ci.yml/badge.svg)](https://github.com/ram-tewari/PHAROS/actions/workflows/ci.yml)
