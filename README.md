@@ -183,9 +183,7 @@ For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding pr
 | `GET /api/v1/system/status` | read | Embedding backend, available modes, repositories |
 | `GET /health` | public | Liveness |
 
-OpenAPI is served at `/docs`. Older routers (papers and PDFs, the legacy resource graph, planning,
-patterns, monitoring) are still mounted. They are maintained to a lower bar; see
-[Limitations](#limitations).
+OpenAPI is served at `/docs`.
 
 ## Retrieval quality
 
@@ -265,13 +263,6 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
   [protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md) run was
   [stopped early](docs/benchmarks/phase2-memory-v2-partial-2026-11-01.md).
   - It is learned only on a machine with full git mirrors (`pharos learn`, or the learning worker).
-  - The older `POST /api/patterns/learn` profiles are Python-only, partly wrong, and marked deprecated.
-- **Legacy modules** (papers/PDFs, resource graph, planning, monitoring) predate the code index.
-  Notably:
-  - document-graph entity extraction has no offline extractor and reports `unavailable`;
-  - parent-child search is PostgreSQL-only;
-  - "AI planning" returns a fixed template plan;
-  - URL resource ingestion still calls services that were removed earlier and logs errors for those steps.
 - **Database migrations:** the migrations were squashed in 2026-10. An existing database needs the
   one-time procedure in [docs/operations/database-migrations.md](docs/operations/database-migrations.md).
 
@@ -294,16 +285,13 @@ backend/
   app/codeintel/      indexing, parsers, embeddings, retrieval, context, jobs (the core)
   app/modules/code/   /api/v1 code-intelligence endpoints
   app/modules/mcp/    native MCP server (/mcp/) and the legacy REST tool router
-  app/modules/…       legacy modules (resources, search, graph, planning, patterns, …)
+  app/modules/…       legacy modules (resources, search, graph, planning)
   app/learning/       repository memory: miners, history, brief, recall (Phase 2)
   app/workers/        ingest_worker (CPU), learning_worker (Mac), main_worker (edge/GPU)
   alembic/            migrations (squashed 2026-10; history in alembic/archive)
   benchmarks/         retrieval benchmark harness, dataset and results
   tests/codeintel/    tests for the core, parametrised over SQLite and PostgreSQL
 ```
-
-`frontend/` and `pharos-cli/` are earlier prototypes from before the code index. They are kept for
-history, are not covered by CI and are not maintained alongside the backend.
 
 ## License
 
