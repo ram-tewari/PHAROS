@@ -1,5 +1,30 @@
 # Changelog
 
+## Unreleased — Phase 3 S2: rules that prove themselves
+
+### Added
+- `app/learning/checks.py`: predicates over a commit or an uncommitted diff (companion file, new-file
+  companion, test location, naming of new symbols, return types, commit message shape, forbidden lines,
+  added-line patterns, new-file contents), each with a one-line rendering and a JSON form.
+- `app/learning/backtest.py`: mine at a commit 600 first-parent commits back and check each rule on
+  the commits since; and the Phase 3 protocol's precision measure.
+- `benchmarks/rule_precision.py`: that measure per repository and pooled, with no LLM.
+- Migration `0005_memory_checks`: `predicate`, `holdout`, `strength`, and the counters `served`,
+  `complied`, `helped` on `memory_items`.
+
+### Changed
+- A checkable item is active only if its hold-out record clears the threshold (at least 10
+  applications, Wilson lower bound at least 0.6). It is then a requirement. A weaker pattern is an
+  observation: served by `search_memory` and `GET /memory/items`, not by `retrieve_context` or the brief.
+  Untested rules stay proposed; failed ones go stale with their record. Human decisions still win.
+- Commit style is one item per message shape; dropped dependencies add one import rule per manifest;
+  deprecated API gets a "do not call" rule; playbooks are served only while a step is a requirement.
+- Miner ties are broken by name, so two runs give the same items.
+
+### Evaluated
+- Development mirrors only: pooled precision of active checkable rules 67.2% → 94.2% on each mirror's
+  last 200 first-parent commits, with 951 → 42 rules. Report: `docs/benchmarks/phase3-s2-dev-2026-11.md`.
+
 ## Unreleased — learning phase 2: stopped v2 evaluation
 
 ### Evaluated

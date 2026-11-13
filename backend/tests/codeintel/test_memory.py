@@ -3,7 +3,8 @@
 Runs on SQLite and (with PHAROS_TEST_DATABASE_URL) PostgreSQL. The fixture
 repository gets a small history first: ``shop/auth.py`` changes together
 with ``CHANGES.md`` and its test eight times, and five plugins are added the
-same way (a playbook).
+same way (a playbook). Then the same habits continue for seven more commits,
+the hold-out window that :data:`ACTIVATION` backtests the rules on.
 """
 
 import json
@@ -18,32 +19,46 @@ from app.codeintel.git_source import parse_repo_spec
 from app.codeintel.indexer import CodeIndexer
 from app.database.models import LearningJob, MemoryItem, MemoryLedger, MemorySkill, RepoBrief, Repository
 from app.learning.brief import BRIEF_CHARS
+from app.learning.checks import Activation
 from app.learning.memory import Candidate, MemoryWriter, check_evidence, rollback_run, set_status
 from app.learning.pipeline import learn_repository, queue_unlearned, run_learning_job, submit_learning
 from app.learning.recall import search_memory
 from tests.codeintel.conftest import ADMIN_TOKEN, READ_TOKEN, auth
+
+# The fixture's history is short: hold out its last 7 commits and accept smaller samples than production.
+ACTIVATION = Activation(window=7, min_applied=3, min_lower=0.4, observe_lower=0.1)
+
+
+def _auth_change(repo, i: int, test: bool) -> None:
+    auth = (repo.path / "shop" / "auth.py").read_text()
+    auth += f"\n\ndef helper_{i}(value: int) -> int:\n    \"\"\"Helper {i}.\"\"\"\n    return value + {i}\n"
+    repo.write("shop/auth.py", auth)
+    repo.write("CHANGES.md", (repo.path / "CHANGES.md").read_text() + f"- Change {i}. #{i + 2}\n")
+    if test:
+        repo.write("tests/test_auth.py", (repo.path / "tests/test_auth.py").read_text()
+                   + f"\n\ndef test_helper_{i}():\n    assert helper_{i}(1) == {1 + i}\n")
+    repo.commit(f"auth: add helper {i}")
+
+
+def _add_plugin(repo, i: int) -> None:
+    repo.write(f"shop/plugins/plugin_{i}.py", f"def run_plugin_{i}() -> None:\n    \"\"\"Plugin {i}.\"\"\"\n")
+    repo.write("shop/__init__.py", (repo.path / "shop" / "__init__.py").read_text() + f"\n# plugin {i}\n")
+    repo.write("CHANGES.md", (repo.path / "CHANGES.md").read_text() + f"- Plugin {i}. #{i + 20}\n")
+    repo.commit(f"plugins: add plugin {i}")
 
 
 def _grow_history(repo) -> None:
     repo.write("CHANGES.md", "# Changes\n\n## Version 1.0\n\n- Initial release. #1\n")
     repo.write("tests/test_auth.py", "def test_hash():\n    assert True\n")
     repo.commit("Add changelog and auth test")
-    auth = (repo.path / "shop" / "auth.py").read_text()
     for i in range(8):
-        auth += f"\n\ndef helper_{i}(value: int) -> int:\n    \"\"\"Helper {i}.\"\"\"\n    return value + {i}\n"
-        repo.write("shop/auth.py", auth)
-        repo.write("CHANGES.md", (repo.path / "CHANGES.md").read_text() + f"- Change {i}. #{i + 2}\n")
-        if i < 6:
-            repo.write("tests/test_auth.py", (repo.path / "tests/test_auth.py").read_text()
-                       + f"\n\ndef test_helper_{i}():\n    assert helper_{i}(1) == {1 + i}\n")
-        repo.commit(f"auth: add helper {i}")
-    init = (repo.path / "shop" / "__init__.py").read_text()
+        _auth_change(repo, i, test=i < 6)
     for i in range(5):
-        repo.write(f"shop/plugins/plugin_{i}.py", f"def run_plugin_{i}() -> None:\n    \"\"\"Plugin {i}.\"\"\"\n")
-        init += f"\n# plugin {i}\n"
-        repo.write("shop/__init__.py", init)
-        repo.write("CHANGES.md", (repo.path / "CHANGES.md").read_text() + f"- Plugin {i}. #{i + 20}\n")
-        repo.commit(f"plugins: add plugin {i}")
+        _add_plugin(repo, i)
+    for i in range(8, 12):  # the hold-out window: the same habits
+        _auth_change(repo, i, test=True)
+    for i in range(5, 8):
+        _add_plugin(repo, i)
 
 
 @pytest.fixture
@@ -53,7 +68,7 @@ def learned(session, fixture_repo, embedder):
     CodeIndexer(session, embedder).index(ref)
     repo = session.execute(select(Repository).where(Repository.url == ref.canonical_url)).scalar_one()
     stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path,
-                             commit=repo.last_commit_sha, embedder=embedder)
+                             commit=repo.last_commit_sha, embedder=embedder, activation=ACTIVATION)
     return repo, stats
 
 
@@ -69,12 +84,20 @@ def test_learning_mines_grounded_memory_and_a_brief(session, learned, fixture_re
 
     cochange = _item(session, repo, "cochange/shop/auth.py")
     assert cochange.status == "active" and cochange.scope == {"paths": ["shop/auth.py"]}
-    assert "CHANGES.md 89%" in cochange.body and "tests/test_auth.py 67%" in cochange.body  # 8 and 6 of 9
+    assert "CHANGES.md 92%" in cochange.body and "tests/test_auth.py 77%" in cochange.body  # 12 and 10 of 13
+    # It is active because the same rule, learned 7 commits back, held on those 7 commits.
+    assert cochange.strength == "requirement" and cochange.predicate["kind"] == "companion"
+    assert cochange.holdout["outcome"] == "requirement" and cochange.holdout["window"]["commits"] == 7
+    assert (cochange.holdout["applied"], cochange.holdout["held"]) == (4, 4)
+    assert 'applied 4 times and held 4 times' in cochange.body  # the served text says what was measured
+    assert stats["outcomes"]["requirement"] >= 3 and stats["backtest"]["commits"] == 7
+    origin = _item(session, repo, "history/origin/shop/auth.py")
+    assert origin is None or (origin.strength == "advisory" and origin.predicate is None)
     changelog = _item(session, repo, "changelog/entries")
     assert changelog is not None and "CHANGES.md" in changelog.body
 
     skill = session.execute(select(MemorySkill).where(MemorySkill.name == "add-shop-plugins-py")).scalar_one()
-    assert skill.status == "active" and skill.support == 5
+    assert skill.status == "active" and skill.support == 8  # served: its steps held in the hold-out window
     assert {f["path"] for f in skill.resources["files"]} >= {"shop/__init__.py", "CHANGES.md"}
 
     # Grounding: every item's evidence re-checks against the commit it was learned at.
@@ -93,12 +116,12 @@ def test_learning_mines_grounded_memory_and_a_brief(session, learned, fixture_re
 def test_counts_carry_a_tally_that_rechecks(session, learned, fixture_repo):
     repo, _ = learned
     cochange = _item(session, repo, "cochange/shop/auth.py")
-    assert cochange.body.startswith("Files that change with shop/auth.py in the same commit (share of its last 9")
+    assert cochange.body.startswith("Files that change with shop/auth.py in the same commit (share of its last 13")
     tally = next(e for e in cochange.evidence if e["kind"] == "tally")
     rows = tally["groups"][0]["rows"]
-    assert tally["total"] == 9 and len(rows) == 9  # every counted commit, not examples
-    assert sum("CHANGES.md" in r["paths"] for r in rows) == 8
-    assert sum("tests/test_auth.py" in r["paths"] for r in rows) == 6
+    assert tally["total"] == 13 and len(rows) == 13  # every counted commit, not examples
+    assert sum("CHANGES.md" in r["paths"] for r in rows) == 12
+    assert sum("tests/test_auth.py" in r["paths"] for r in rows) == 10
     assert check_evidence(tally, fixture_repo.path, fixture_repo.path)
 
     forged = json.loads(json.dumps(tally))
@@ -110,7 +133,7 @@ def test_counts_carry_a_tally_that_rechecks(session, learned, fixture_repo):
 
     # A test home is a test file that uses the code, counted over focused commits only (not the 16-file initial one).
     testhome = _item(session, repo, "testhome/shop/auth.py")
-    assert "tests/test_auth.py (uses helper_0; in the same commit in 6 of shop/auth.py's last 8 commits" in testhome.body
+    assert "tests/test_auth.py (uses helper_0; in the same commit in 10 of shop/auth.py's last 12 commits" in testhome.body
     assert testhome.evidence[0]["kind"] == "code" and testhome.evidence[0]["path"] == "tests/test_auth.py"
 
     typing_item = _item(session, repo, "typing/python/annotations")
@@ -156,7 +179,7 @@ def test_relearning_is_incremental_and_respects_human_decisions(session, learned
     session.commit()
 
     again = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path,
-                             commit=repo.last_commit_sha, embedder=embedder)
+                             commit=repo.last_commit_sha, embedder=embedder, activation=ACTIVATION)
     assert again["added"] == 0 and again["staled"] == 0 and again["embedded"] == 0
     assert again["unchanged"] == first["added"]
     session.refresh(cochange)
@@ -343,7 +366,7 @@ def test_l2_extraction_is_grounded_gated_and_incremental(session, learned, fixtu
         {"op": "patch", "target": "M1", "title": "x", "body": "y", "evidence": ["D1"]},  # M1 is an L1 item
     ]])
     stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head,
-                             embedder=embedder, llm=first, max_llm_calls=3)
+                             embedder=embedder, activation=ACTIVATION, llm=first, max_llm_calls=3)
     l2 = stats["l2"]
     assert l2["calls"] == 1 and l2["added"] == 1
     assert l2["rejected"] == {"uncited_or_unknown_evidence": 1, "one_off": 1, "ungrounded_identifier": 1,
@@ -358,7 +381,7 @@ def test_l2_extraction_is_grounded_gated_and_incremental(session, learned, fixtu
     # Already-read evidence is not sent again; a later run can patch or retire the L2 item.
     again = FakeCodex([])
     stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head,
-                             embedder=embedder, llm=again, max_llm_calls=3)
+                             embedder=embedder, activation=ACTIVATION, llm=again, max_llm_calls=3)
     assert stats["l2"]["units_new"] == 0 and again.prompts == []
     set_status(session, item, "accept")
     session.commit()
@@ -374,7 +397,7 @@ def test_l2_extraction_is_grounded_gated_and_incremental(session, learned, fixtu
                                      "body": "Compare password hashes with hmac.compare_digest (constant time).",
                                      "evidence": ["D1"]}]])
     stats = learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head2,
-                             embedder=embedder, llm=patcher, max_llm_calls=3)
+                             embedder=embedder, activation=ACTIVATION, llm=patcher, max_llm_calls=3)
     session.refresh(item)
     # The old section's lines still hash the same, so only the new section is read.
     assert stats["l2"]["units_new"] >= 1 and stats["l2"]["patched"] == 1
@@ -385,6 +408,6 @@ def test_l2_extraction_is_grounded_gated_and_incremental(session, learned, fixtu
     CodeIndexer(session, embedder).index(parse_repo_spec(str(fixture_repo.path), allowed_hosts=[], allow_local=True))
     session.refresh(repo)
     learn_repository(session, repo, checkout=fixture_repo.path, mirror=fixture_repo.path, commit=head3,
-                     embedder=embedder, llm=FakeCodex([]), max_llm_calls=1)
+                     embedder=embedder, activation=ACTIVATION, llm=FakeCodex([]), max_llm_calls=1)
     session.refresh(item)
     assert item.status == "stale" and item.invalidated_at_commit == head3  # its evidence no longer holds

@@ -382,7 +382,8 @@ def cmd_memory(args) -> int:
             brief = get_brief(db, repo)
             print(brief.text if brief else f"# {repo.name}: no brief yet")
         for item in items:
-            print(f"[{item.status:8}] {item.tier} {item.key}  (support {item.support}, {item.confidence:.0%})")
+            print(f"[{item.status:8}] {item.tier} {item.key}  (support {item.support}, {item.confidence:.0%}"
+                  + (f", {item.strength}" if item.strength else "") + ")")
             print(f"           {item.body}")
         for skill in skills:
             print(f"[{skill.status:8}] skill {skill.name}: {skill.description}")
