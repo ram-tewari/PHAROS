@@ -1,9 +1,0 @@
-{
-  "autoLoadContext": false,
-  "excludePatterns": [
-    ".kiro/steering/**",
-    ".kiro/specs/**",
-    "backend/docs/**"
-  ],
-  "maxContextSize": 50000
-}

@@ -1,8 +1,0 @@
-# Keep JSON result files but ignore temporary files
-*.tmp
-*.log
-*.pyc
-__pycache__/
-
-# Keep all JSON results
-!*.json

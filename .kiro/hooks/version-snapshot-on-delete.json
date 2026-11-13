@@ -1,9 +1,0 @@
-{
-  "id": "version-snapshot-on-delete",
-  "name": "Version Snapshot on Delete",
-  "description": "Creates final snapshot when resource is deleted",
-  "why": "To maintain audit trail of deleted resources for compliance and recovery",
-  "filePatterns": "backend/app/api/resources.py,backend/app/services/resource_service.py,backend/app/services/version_service.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "When a resource is deleted:\n\n1. Before deletion, create a final version snapshot:\n   - version_service.create_version_snapshot(resource_id, 'delete', current_user_id)\n2. The snapshot captures the complete resource state before deletion\n3. This provides:\n   - Audit trail for compliance\n   - Ability to recover accidentally deleted resources\n   - Historical record of what was deleted and when\n4. Consider soft-delete pattern: mark as deleted but keep in database with version history intact"
-}

@@ -1,9 +1,0 @@
-{
-  "id": "user-profile-generator",
-  "name": "User Profile & Preference Generator",
-  "description": "Generates user profile system for preferences and customization",
-  "why": "To store user preferences for recommendations, search settings, and UI customization",
-  "filePatterns": "backend/app/models/user_profile.py,backend/app/services/user_profile_service.py,backend/app/api/user_profiles.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "Generate the User Profile & Preference system:\n\n1. **Model (backend/app/models/user_profile.py)**:\n   - UserProfile: id, user_id, preferred_classifications (JSON list), excluded_sources (JSON list), recommendation_settings (JSON), search_preferences (JSON), created_at, updated_at\n   - Add unique constraint on user_id\n\n2. **Service (backend/app/services/user_profile_service.py)**:\n   - get_or_create_profile(user_id)\n   - update_preferences(user_id, updates)\n   - get_filtered_recommendations(user_id) — respect excluded sources and classification preferences\n\n3. **Endpoints (backend/app/api/user_profiles.py)**:\n   - GET /users/{user_id}/profile\n   - PUT /users/{user_id}/profile\n   - GET /users/{user_id}/recommendations — filtered by profile\n\nEnsure proper user authentication and authorization checks."
-}

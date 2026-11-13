@@ -1,9 +1,0 @@
-{
-  "id": "citation-extraction-on-ingestion",
-  "name": "Citation Extraction on Ingestion",
-  "description": "Automatically extracts citations when resource ingestion completes",
-  "why": "To build the citation graph automatically as resources are added to the system",
-  "filePatterns": "backend/app/services/ingestion_service.py,backend/app/services/citation_service.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When resource ingestion completes successfully:\n\n1. In the ingestion completion handler (after resource is saved), add:\n   - background_tasks.add_task(citation_service.extract_citations, resource_id)\n2. The extract_citations background task should:\n   - Parse the resource content (HTML/PDF) for outbound links\n   - Extract context snippets around each link\n   - Determine citation_type based on link patterns\n   - Create Citation records in the database\n   - Attempt to resolve internal citations immediately\n3. Handle errors gracefully and log extraction failures"
-}

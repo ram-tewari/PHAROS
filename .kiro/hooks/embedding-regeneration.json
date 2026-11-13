@@ -1,9 +1,0 @@
-{
-  "id": "embedding-regeneration",
-  "name": "Embedding Regeneration Hook",
-  "description": "Regenerates embeddings when embedding-relevant fields change",
-  "why": "To keep embeddings in sync with resource content for accurate similarity search",
-  "filePatterns": "backend/app/services/resource_service.py,backend/app/api/resources.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When title, description, or subject fields change via PUT /resources/{id}:\n\n1. In update_resource() method, detect changed fields:\n   - fields_changed = set(update_data.keys())\n   - if fields_changed & {'title', 'description', 'subject'}:\n2. Enqueue background task:\n   - background_tasks.add_task(regenerate_embedding, resource_id)\n3. Update Resource.updated_at timestamp\n4. Invalidate related caches:\n   - Search result caches containing this resource\n   - Recommendation caches\n   - Graph neighbor caches\n5. The regenerate_embedding task should use existing EmbeddingGenerator service"
-}

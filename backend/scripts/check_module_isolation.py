@@ -8,9 +8,8 @@ This script validates that modules follow the vertical slice architecture rules:
 3. No circular dependencies exist
 4. Cross-module communication must use events
 
-Checks all 11 modules:
-- admin, github, graph, ingestion, mcp, monitoring
-- patterns, pdf_ingestion, planning, resources, search
+Checks the 6 legacy modules that remain (code, mcp, graph, planning,
+resources, search). The others were removed.
 
 Usage:
     python scripts/check_module_isolation.py
@@ -81,14 +80,9 @@ class ModuleIsolationChecker:
 
     # Expected modules in the system
     EXPECTED_MODULES = {
-        "admin",
         "code",
-        "github",
         "graph",
         "mcp",
-        "monitoring",
-        "patterns",
-        "pdf_ingestion",
         "planning",
         "resources",
         "search",

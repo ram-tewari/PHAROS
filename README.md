@@ -187,9 +187,9 @@ For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding pr
 | `GET /api/v1/system/status` | read | Embedding backend, available modes, repositories |
 | `GET /health` | public | Liveness |
 
-OpenAPI is served at `/docs`. Older routers (papers and PDFs, the legacy resource graph, planning,
-patterns, monitoring) are still mounted. They are maintained to a lower bar; see
-[Limitations](#limitations).
+OpenAPI is served at `/docs`. Four older routers (the resource store, its search, the legacy resource
+graph and planning) are still mounted, because the legacy REST tool router and the edge worker use
+them. They are maintained to a lower bar; see [Limitations](#limitations).
 
 ## Retrieval quality
 
@@ -270,10 +270,9 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
   [protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md) run was
   [stopped early](docs/benchmarks/phase2-memory-v2-partial-2026-11-01.md).
   - It is learned only on a machine with full git mirrors (`pharos learn`, or the learning worker).
-  - The older `POST /api/patterns/learn` profiles are Python-only, partly wrong, and marked deprecated.
-- **Legacy modules** (papers/PDFs, resource graph, planning, monitoring) predate the code index.
+- **Legacy modules** (resources, search, resource graph, planning) predate the code index and are
+  due for removal. The rest of the legacy code was removed in 2026-11 and is at tag `legacy-2026-11`.
   Notably:
-  - document-graph entity extraction has no offline extractor and reports `unavailable`;
   - parent-child search is PostgreSQL-only;
   - "AI planning" returns a fixed template plan;
   - URL resource ingestion still calls services that were removed earlier and logs errors for those steps.
@@ -299,16 +298,13 @@ backend/
   app/codeintel/      indexing, parsers, embeddings, retrieval, context, jobs (the core)
   app/modules/code/   /api/v1 code-intelligence endpoints
   app/modules/mcp/    native MCP server (/mcp/) and the legacy REST tool router
-  app/modules/…       legacy modules (resources, search, graph, planning, patterns, …)
+  app/modules/…       legacy modules (resources, search, graph, planning)
   app/learning/       repository memory: miners, history, brief, recall (Phase 2)
   app/workers/        ingest_worker (CPU), learning_worker (Mac), main_worker (edge/GPU)
   alembic/            migrations (squashed 2026-10; history in alembic/archive)
   benchmarks/         retrieval benchmark harness, dataset and results
   tests/codeintel/    tests for the core, parametrised over SQLite and PostgreSQL
 ```
-
-`frontend/` and `pharos-cli/` are earlier prototypes from before the code index. They are kept for
-history, are not covered by CI and are not maintained alongside the backend.
 
 ## License
 

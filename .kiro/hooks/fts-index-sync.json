@@ -1,9 +1,0 @@
-{
-  "id": "fts-index-sync",
-  "name": "FTS5 Index Sync Hook",
-  "description": "Syncs FTS5 index when searchable fields are updated",
-  "why": "To keep full-text search index in sync with resource content",
-  "filePatterns": "backend/app/services/resource_service.py,backend/app/services/search_service.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "When Resource fields used in FTS5 (title, description, subjects) are updated:\n\n1. In update_resource(), after saving changes:\n   - if fields_changed & {'title', 'description', 'subject'}:\n   - search_service.sync_fts_index(resource_id)\n2. The sync_fts_index() method should:\n   - Update FTS5 virtual table with new content\n   - Handle trigger-based sync if configured\n   - Validate FTS5 availability before writes\n   - Log sync failures for monitoring\n3. On startup, ensure FTS5 triggers are in place:\n   - search_service.ensure_fts_sync_triggers()\n   - search_service.validate_fts_index()\n4. Consider incremental vs full rebuild based on change volume"
-}

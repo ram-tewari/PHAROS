@@ -1,9 +1,0 @@
-{
-  "id": "annotation-system-generator",
-  "name": "Annotation & Highlight System Generator",
-  "description": "Generates annotation system for text highlighting and note-taking",
-  "why": "To allow users to highlight text spans and attach notes to resources",
-  "filePatterns": "backend/app/models/annotation.py,backend/app/services/annotation_service.py,backend/app/api/annotations.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "Generate the Annotation & Highlight system:\n\n1. **Model (backend/app/models/annotation.py)**:\n   - Annotation: id, resource_id, user_id, start_offset, end_offset, highlighted_text, note, created_at, updated_at, tags (JSON list)\n   - Add indexes on resource_id and user_id\n   - Add cascade delete relationship to Resource\n\n2. **Service (backend/app/services/annotation_service.py)**:\n   - create_annotation(resource_id, user_id, offsets, text, note)\n   - get_resource_annotations(resource_id, user_id)\n   - search_annotations(user_id, query, filters) — FTS5 on notes\n   - generate_annotation_embedding(annotation_id) — embed note for similarity search\n\n3. **Endpoints (backend/app/api/annotations.py)**:\n   - POST /resources/{id}/annotations\n   - GET /resources/{id}/annotations\n   - GET /annotations/search — cross-resource annotation search\n\nFollow existing patterns for user authentication and authorization."
-}

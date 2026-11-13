@@ -1,9 +1,0 @@
-{
-  "id": "recommendation-profile-refresh",
-  "name": "Recommendation Profile Refresh Hook",
-  "description": "Refreshes user recommendation profiles when library grows significantly",
-  "why": "To keep recommendation profiles current as user libraries evolve",
-  "filePatterns": "backend/app/services/recommendation_service.py,backend/app/services/resource_service.py",
-  "debounceTime": "LONG",
-  "outputPrompt": "When a user's library grows beyond profile size threshold:\n\n1. Track library size changes in resource addition/deletion\n2. When user_library_size > RECOMMENDATION_PROFILE_SIZE * 1.5:\n   - background_tasks.add_task(recommendation_service.refresh_profile, user_id)\n3. The refresh_profile() method should:\n   - Regenerate user profile vector from recent N resources\n   - Update top subjects from authority usage\n   - Clear recommendation cache for this user\n   - Pre-fetch fresh recommendation candidates\n4. Also trigger refresh:\n   - On schedule (e.g., every 24 hours for active users)\n   - When quality scores shift significantly\n5. Log refresh operations for monitoring"
-}

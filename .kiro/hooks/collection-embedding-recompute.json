@@ -1,9 +1,0 @@
-{
-  "id": "collection-embedding-recompute",
-  "name": "Collection Embedding Recompute",
-  "description": "Recomputes collection embeddings when resource_ids change",
-  "why": "To keep collection embeddings up-to-date for accurate collection-level recommendations",
-  "filePatterns": "backend/app/services/collection_service.py,backend/app/api/collections.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When a collection's resource_ids change (via add/remove operations), trigger background recomputation of the collection embedding:\n\n1. In add_resources_to_collection() and remove_resources_from_collection(), after modifying resource_ids:\n   - Add background task: background_tasks.add_task(compute_collection_embedding, collection_id)\n2. The compute_collection_embedding() function should:\n   - Fetch all resource embeddings for resources in the collection\n   - Compute the average embedding vector\n   - Store it in a collection_embedding field or cache\n   - Handle empty collections gracefully\n3. Use this embedding for GET /collections/{id}/recommendations endpoint"
-}

@@ -1,9 +1,0 @@
-{
-  "id": "authority-normalization",
-  "name": "Authority Normalization Hook",
-  "description": "Normalizes subjects, creators, and publishers during ingestion",
-  "why": "To maintain consistent authority control and track term variants",
-  "filePatterns": "backend/app/services/ingestion_service.py,backend/app/services/authority_service.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When new subjects, creators, or publishers are added during ingestion or updates:\n\n1. In process_ingestion(), after AI tagging:\n   - normalized_subjects = authority_service.normalize_subjects(ai_tags)\n   - normalized_creators = authority_service.normalize_creators(creator_list)\n   - normalized_publishers = authority_service.normalize_publishers(publisher_name)\n2. The normalize_* methods should:\n   - Map variants to canonical forms (e.g., 'ML' → 'Machine Learning')\n   - Increment usage_count for each term\n   - Track variants in authority tables\n   - Return normalized forms for persistence\n3. Log new authority entries for periodic review\n4. Use normalized forms in resource.subject, resource.creator, etc."
-}

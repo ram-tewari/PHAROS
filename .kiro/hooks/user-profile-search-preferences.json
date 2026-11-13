@@ -1,9 +1,0 @@
-{
-  "id": "user-profile-search-preferences",
-  "name": "User Profile Search Preferences",
-  "description": "Applies saved search preferences to search queries",
-  "why": "To provide personalized search experience based on user preferences",
-  "filePatterns": "backend/app/services/search_service.py,backend/app/services/user_profile_service.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When executing search queries:\n\n1. In search_service, if user is authenticated:\n   - Fetch profile: profile = user_profile_service.get_or_create_profile(user_id)\n   - Apply search_preferences:\n     - Default sort order (relevance, date, quality)\n     - Default filters (classification, date range, quality level)\n     - Hybrid weight preference (keyword vs semantic)\n2. Allow query parameters to override profile defaults\n3. Store successful search patterns back to profile for learning\n4. Respect privacy: make preference application opt-in"
-}

@@ -1,1 +1,0 @@
-"""Test commands package for Pharos CLI."""

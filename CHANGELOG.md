@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased — removed legacy modules, old frontend and old CLI
+
+### Removed
+- Legacy modules: patterns, PDF ingestion, GitHub, admin and monitoring, with their tests. Unused
+  helpers in `app/utils` were removed too.
+- The old `frontend/` and `pharos-cli/`, plus `notebooklm/`, `.kiro/`, archived docs and logs, ML
+  results and models.
+- Graph, planning, resources and search remain for now, because the MCP tools still call them.
+- All of this is available at tag `legacy-2026-11`.
+
 ## Unreleased — learning phase 2: stopped v2 evaluation
 
 ### Evaluated

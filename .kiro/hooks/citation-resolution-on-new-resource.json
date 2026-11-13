@@ -1,9 +1,0 @@
-{
-  "id": "citation-resolution-on-new-resource",
-  "name": "Citation Resolution on New Resource",
-  "description": "Resolves existing citation targets when a new resource is ingested",
-  "why": "To automatically link citations to resources when the target URL becomes available in the system",
-  "filePatterns": "backend/app/services/ingestion_service.py,backend/app/services/citation_service.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When a new resource is ingested, check if its URL matches any existing unresolved citation targets:\n\n1. After resource creation, add:\n   - background_tasks.add_task(citation_service.resolve_citations_for_url, resource.url, resource.id)\n2. The resolve_citations_for_url() function should:\n   - Query Citation table for records where target_url matches the new resource URL and target_resource_id is NULL\n   - Update those citations to set target_resource_id = new resource id\n   - Log the number of resolved citations\n3. This creates bidirectional citation links automatically"
-}

@@ -1,9 +1,0 @@
-{
-  "id": "version-snapshot-on-update",
-  "name": "Version Snapshot on Update",
-  "description": "Creates version snapshot before resource updates",
-  "why": "To maintain complete version history and enable rollback functionality",
-  "filePatterns": "backend/app/api/resources.py,backend/app/services/resource_service.py,backend/app/services/version_service.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "When a resource is updated via PUT /resources/{id}:\n\n1. Before applying the update, create a version snapshot:\n   - version_service.create_version_snapshot(resource_id, 'update', current_user_id)\n2. The snapshot should capture:\n   - Current state of all resource fields as JSON\n   - Auto-increment version_number\n   - Timestamp and user who made the change\n3. Then proceed with the update\n4. This enables rollback to any previous version\n5. Consider transaction safety: snapshot and update in same transaction"
-}

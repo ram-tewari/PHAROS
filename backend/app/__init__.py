@@ -60,11 +60,6 @@ def register_all_modules(app: FastAPI) -> None:
         ("graph", "app.modules.graph", ["graph_router", "citations_router", "discovery_router"]),
         ("planning", "app.modules.planning", ["ai_planning_router"]),
         ("mcp", "app.modules.mcp", ["mcp_router"]),
-        ("patterns", "app.modules.patterns", ["patterns_router"]),
-        ("pdf_ingestion", "app.modules.pdf_ingestion", ["router"]),
-        ("github", "app.modules.github", ["github_router"]),
-        ("admin", "app.modules.admin", ["admin_router"]),
-        ("monitoring", "app.modules.monitoring", ["monitoring_router"]),
     ]
 
     import importlib

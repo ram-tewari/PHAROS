@@ -1,9 +1,0 @@
-{
-  "id": "citation-tracking-generator",
-  "name": "Citation & Link Tracking Generator",
-  "description": "Generates citation tracking system with link extraction and citation graph capabilities",
-  "why": "To build a citation graph that tracks outbound links and relationships between resources",
-  "filePatterns": "backend/app/models/citation.py,backend/app/services/citation_service.py,backend/app/api/citations.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "Generate the Citation & Link Tracking system:\n\n1. **Model (backend/app/models/citation.py)**:\n   - Citation: id, source_resource_id, target_url, target_resource_id (nullable), citation_type (reference/dataset/code), context_snippet\n   - Add relationships to Resource model\n\n2. **Service (backend/app/services/citation_service.py)**:\n   - extract_citations(resource_id) — parse HTML/PDF for links, extract context\n   - resolve_internal_citations() — match target URLs to existing resources\n   - get_citation_graph(resource_id) — inbound and outbound citations\n   - compute_citation_importance() — PageRank-style scoring\n\n3. **Endpoints (backend/app/api/citations.py)**:\n   - GET /resources/{id}/citations — list citations with resolved targets\n   - GET /graph/citations — system-wide citation overview\n\nFollow existing project patterns for database models, service architecture, and API structure."
-}

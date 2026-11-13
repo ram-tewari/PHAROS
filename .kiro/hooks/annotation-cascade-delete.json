@@ -1,9 +1,0 @@
-{
-  "id": "annotation-cascade-delete",
-  "name": "Annotation Cascade Delete",
-  "description": "Deletes all annotations when a resource is deleted",
-  "why": "To maintain referential integrity and clean up orphaned annotations",
-  "filePatterns": "backend/app/models/annotation.py,backend/app/api/resources.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "Ensure annotations are cascade deleted when resources are removed:\n\n1. In the Annotation model, set up the relationship:\n   - resource = relationship('Resource', back_populates='annotations')\n   - Use cascade='all, delete-orphan' on the Resource side\n2. Or explicitly in the resource deletion handler:\n   - annotation_service.delete_resource_annotations(resource_id)\n3. Ensure this happens within the same transaction as resource deletion\n4. Log the number of annotations deleted for audit purposes"
-}
