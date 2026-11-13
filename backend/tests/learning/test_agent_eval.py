@@ -143,6 +143,21 @@ def test_scratch_databases_only():
     assert len(agent_eval.db_name("o__x-1@abc", "t0123456789")) < 64
 
 
+def test_an_index_is_reused_only_from_the_same_repository_and_code(tmp_path, monkeypatch):
+    def inst(iid, repo):
+        return SimpleNamespace(instance_id=iid, repo=repo)
+
+    a, b, c = inst("o__r-1@a", "o/r"), inst("o__r-2@b", "o/r"), inst("o__s-3@c", "o/s")
+    ck = agent_eval.SafeCheckpoint(tmp_path / "ck.json")
+    ck.put({"seconds": 1}, "instances", a.instance_id, "prep", "base_index", "k1")
+    ck.put({"seconds": 1}, "instances", c.instance_id, "prep", "base_index", "k1")
+    runner = SimpleNamespace(instances=[a, b, c], ck=ck, pg=SimpleNamespace(exists=lambda name: True))
+    donor = agent_eval.Runner.index_donor
+    assert donor(runner, b, "k1") == agent_eval.db_name(a.instance_id, "tk1")
+    assert donor(runner, b, "k2") is None  # other indexing code
+    assert donor(runner, inst("o__t-4@d", "o/t"), "k1") is None  # other repository
+
+
 # ── history truncation ──────────────────────────────────────────────────
 
 

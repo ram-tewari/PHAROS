@@ -106,7 +106,7 @@ FAKE_CLAUDE = textwrap.dedent("""\
         sys.exit(1)
     system = open(args[args.index("--system-prompt-file") + 1]).read()
     record = {{"argv": args, "prompt": prompt, "system": system, "cwd": os.getcwd(),
-              "api_key_seen": "ANTHROPIC_API_KEY" in os.environ,
+              "credential_seen": "ANTHROPIC_API_KEY" in os.environ,
               "schema": json.loads(args[args.index("--json-schema") + 1])}}
     print(json.dumps({{"type": "result", "subtype": "success", "is_error": False, "num_turns": 2,
                       "total_cost_usd": 0.01, "result": "{{}}",
@@ -140,7 +140,7 @@ def test_claude_print_mode_is_hardened_and_never_sees_an_api_key(claude):
     assert record["schema"] == SCHEMA and record["system"] == "Be brief."
     assert "the secret prompt" in record["prompt"] and not any("secret" in a for a in argv)
     assert not any("Be brief" in a for a in argv)  # instructions go through a file, not argv
-    assert record["api_key_seen"] is False
+    assert record["credential_seen"] is False
     assert llm.usage.calls == 1 and llm.usage.input_tokens == 114 and llm.usage.output_tokens == 3
     assert llm.usage.cache_read_tokens == 100 and llm.usage.cost_usd == pytest.approx(0.01)
 

@@ -150,7 +150,7 @@ def git(path: Path, *args: str, timeout: float = 1800, check: bool = True) -> st
     result = subprocess.run(["git", "-C", str(path), *args], capture_output=True, text=True, errors="replace",
                             timeout=timeout, env=env, check=False)
     if check and result.returncode != 0:
-        raise RuntimeError(f"git {' '.join(args[:3])} failed: {result.stderr.strip()[-400:]}")
+        raise ccrab.InfraError(f"git {' '.join(args[:3])} failed: {result.stderr.strip()[-400:]}")
     return result.stdout
 
 
@@ -362,6 +362,8 @@ def pharos_env(code: Path, database_url: str, embedder: str, tokens: dict[str, s
     env |= {"PYTHONPATH": str(code / "backend"), "DATABASE_URL": database_url, "ENV": "dev", "MODE": "CLOUD",
             "PHAROS_READ_TOKEN": tokens["read"], "PHAROS_ADMIN_TOKEN": tokens["admin"],
             "PYTHONDONTWRITEBYTECODE": "1"}
+    if os.getenv("EMBEDDING_ONNX_THREADS"):  # share the CPU with other work on the machine
+        env["EMBEDDING_ONNX_THREADS"] = os.environ["EMBEDDING_ONNX_THREADS"]
     if embedder == "hash":
         env["EMBEDDING_BACKEND"] = "hash"
     elif embedder.startswith("onnx="):
@@ -685,7 +687,10 @@ def report(data: dict, meta: dict[str, dict], arms: list[str]) -> dict:
     graded = {a: {i: inst_data[i]["grade"][a] for i in meta if (inst_data.get(i, {}).get("grade") or {}).get(a)}
               for a in arms}
     share = {a: {i: resolved_share(g, meta[i]["tests"]) for i, g in graded[a].items()} for a in arms}
-    out: dict = {"instances": len(meta), "arms": {}, "differences": {}}
+    out: dict = {"instances": len(meta), "arms": {}, "differences": {},
+                 "infra_failures": dict(Counter(k for i in meta for k, v in
+                                                ((inst_data.get(i) or {}).get("infra") or {}).items()
+                                                for _ in v))}
     for a in arms:
         vals = list(share[a].values())
         comments = sum(meta[i]["tests"] for i in share[a])
@@ -695,6 +700,7 @@ def report(data: dict, meta: dict[str, dict], arms: list[str]) -> dict:
             "scored": len(vals), "resolved_share": round(statistics.fmean(vals), 4) if vals else None,
             "comments_resolved": resolved, "comments": comments,
             "no_change": sum(1 for i in graded[a] if graded[a][i].get("no_change")),
+            "grade_errors": sum(1 for i in graded[a] if graded[a][i].get("error")),
             "changed_lines": _stats([agents[i]["changed_lines"] for i in agents]),
             "tokens": _stats([agents[i]["usage"]["total_tokens"] for i in agents]),
             "output_tokens": _stats([agents[i]["usage"]["output_tokens"] for i in agents]),
