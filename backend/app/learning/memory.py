@@ -8,10 +8,15 @@ human chose stays), and marked *stale* when its miner ran and no longer
 derives it. Nothing is deleted or rewritten wholesale, and every change goes
 to ``memory_ledger`` under the run's id, so a run can be rolled back.
 
-Activation: a deterministic (L1) candidate the miner marks ``eligible``
-(high support, see each miner) whose evidence checks out goes straight to
-``active``. Everything else, and everything an LLM derived, starts
-``proposed`` and needs a human to accept it.
+Activation. A *checkable* L1 candidate (one with a ``check``) is active only
+when its hold-out backtest clears :class:`~app.learning.checks.Activation`
+(see :func:`~app.learning.checks.decide`): it is then a *requirement*, or an
+*observation* when the pattern is real but too weak to require. Untested
+rules stay ``proposed``; failed ones go ``stale`` with their record. A
+deterministic candidate with no check (a history fact) keeps the old rule:
+``eligible`` and grounded means ``active``, as an *advisory* item. Everything
+an LLM derived starts ``proposed``. A human's accept, reject or archive
+always wins over a learning run.
 """
 
 from __future__ import annotations
@@ -26,6 +31,16 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from ..database.models import MemoryItem, MemoryLedger, MemorySkill
+from .checks import (
+    ADVISORY,
+    DEFAULT_ACTIVATION,
+    REQUIREMENT,
+    Activation,
+    Decision,
+    check_from_json,
+    decide,
+    holdout_sentence,
+)
 from .history import HistoryError, _git
 
 MIN_SUPPORT = 5
@@ -231,6 +246,7 @@ class Candidate:
     eligible: bool = False  # meets its miner's auto-activation rule
     valid_from_commit: str | None = None
     family: str = ""  # the miner that produced it; set by the pipeline
+    check: dict | None = None  # a checks.Check in JSON form when the claim can be tested on a change
 
 
 @dataclass
@@ -248,6 +264,7 @@ class SkillCandidate:
     tier: str = "L1"
     eligible: bool = False
     family: str = ""
+    rules: list[str] = field(default_factory=list)  # keys of the checkable items that test its steps
 
 
 @dataclass
@@ -259,6 +276,7 @@ class WriteStats:
     activated: int = 0
     proposed: int = 0
     ungrounded: int = 0
+    outcomes: dict = field(default_factory=dict)  # checkable items by backtest outcome (requirement, ...)
     changed_ids: list[uuid.UUID] = field(default_factory=list)
 
     def as_dict(self) -> dict:
@@ -277,11 +295,11 @@ def search_text(*parts: str) -> str:
 
 
 _SNAPSHOT_FIELDS = ("status", "title", "body", "support", "confidence", "scope", "evidence", "learned_at_commit",
-                    "invalidated_at_commit")
+                    "invalidated_at_commit", "strength", "predicate", "holdout")
 
 
 def _snapshot(row) -> dict:
-    fields = _SNAPSHOT_FIELDS if isinstance(row, MemoryItem) else _SNAPSHOT_FIELDS[:1] + (
+    fields = _SNAPSHOT_FIELDS if isinstance(row, MemoryItem) else ("status",) + (
         "title", "description", "body", "resources", "support", "confidence", "scope", "evidence",
         "learned_at_commit", "invalidated_at_commit")
     return {f: getattr(row, f) for f in dict.fromkeys(fields)}
@@ -291,14 +309,42 @@ class MemoryWriter:
     """Applies one run's candidates to one repository's memory."""
 
     def __init__(self, db: Session, repository_id: uuid.UUID, commit: str, run_id: str, actor: str = "learner",
-                 *, grounding=None) -> None:
+                 *, grounding=None, holdout: dict[str, dict] | None = None,
+                 activation: Activation = DEFAULT_ACTIVATION) -> None:
         self.db = db
         self.repository_id = repository_id
         self.commit = commit
         self.run_id = run_id
         self.actor = actor
         self.grounding = grounding  # callable(evidence) -> bool, or None to trust the miner
+        # key -> the rule's hold-out record (backtest.py); None when no backtest ran, so nothing checkable
+        # can become active.
+        self.holdout = holdout
+        self.activation = activation
+        self.decisions: dict[str, Decision] = {}
         self.stats = WriteStats()
+        self._accepted: set | None = None
+
+    def accepted(self) -> set:
+        """Ids of the items whose latest human decision is ``accept``: a learning run keeps them active."""
+        if self._accepted is None:
+            latest: dict = {}
+            for target, action in self.db.execute(
+                    select(MemoryLedger.target_id, MemoryLedger.action).where(
+                        MemoryLedger.repository_id == self.repository_id, MemoryLedger.target_type == "item",
+                        MemoryLedger.action.in_(("accept", "reject", "archive", "restore")))
+                    .order_by(MemoryLedger.created_at)):
+                latest[target] = action
+            self._accepted = {t for t, a in latest.items() if a == "accept"}
+        return self._accepted
+
+    def decision(self, cand: Candidate) -> Decision:
+        """What the candidate's own record earns, before any human decision."""
+        if getattr(cand, "check", None) is None or cand.tier != "L1":  # a fact, a skill or a model's rule
+            status = "active" if cand.tier == "L1" and cand.eligible else "proposed"
+            return Decision(status, ADVISORY, "advisory", "")
+        record = None if self.holdout is None else self.holdout.get(cand.key)
+        return decide(cand.check, record, self.activation)
 
     def _ledger(self, target_type: str, target_id, action: str, before: dict | None, after: dict | None) -> None:
         self.db.add(MemoryLedger(repository_id=self.repository_id, run_id=self.run_id, target_type=target_type,
@@ -309,14 +355,23 @@ class MemoryWriter:
             return False
         return self.grounding is None or all(self.grounding(e) for e in evidence)
 
-    def _status(self, cand, existing: str | None) -> str:
+    def _status(self, cand, existing: str | None, decision: Decision | None = None, row_id=None) -> str:
         if existing in HUMAN_STATUSES:
             return existing
-        if existing == "active" and cand.tier != "L1":
+        if existing == "active" and (cand.tier != "L1" or row_id in self.accepted()):
             return existing  # a human accepted it
-        if cand.tier == "L1" and cand.eligible:
-            return "active"
-        return "proposed"
+        return (decision or self.decision(cand)).status
+
+    def _holdout(self, cand: Candidate, decision: Decision) -> dict | None:
+        if cand.check is None or cand.tier != "L1":
+            return None
+        record = (self.holdout or {}).get(cand.key)
+        tested = record if record and record.get("check") == cand.check else None
+        out = {k: v for k, v in (tested or {}).items() if k != "check"}
+        a = self.activation
+        return out | {"outcome": decision.outcome, "reason": decision.reason,
+                      "activation": {"window": a.window, "min_applied": a.min_applied, "min_lower": a.min_lower,
+                                     "observe_lower": a.observe_lower}}
 
     def apply(self, candidates: Iterable[Candidate]) -> None:
         existing = {row.key: row for row in self.db.execute(
@@ -326,14 +381,26 @@ class MemoryWriter:
                 self.stats.ungrounded += 1
                 continue
             row = existing.get(cand.key)
-            body = cand.body[:MAX_BODY_CHARS]
+            decision = self.decision(cand)
+            self.decisions[cand.key] = decision
+            holdout = self._holdout(cand, decision)
+            if cand.check is not None and cand.tier == "L1":
+                self.stats.outcomes[decision.outcome] = self.stats.outcomes.get(decision.outcome, 0) + 1
+            # The served text says what the hold-out test measured, never more.
+            sentence = (holdout_sentence(holdout, check_from_json(cand.check).render())
+                        if holdout and holdout.get("window") else "")
+            body = cand.body[:MAX_BODY_CHARS - len(sentence)] + sentence
             text = search_text(cand.title, body, " ".join((cand.scope or {}).get("paths", [])))
+            strength = decision.strength
             if row is None:
+                status = self._status(cand, None, decision)
                 row = MemoryItem(repository_id=self.repository_id, key=cand.key, kind=cand.kind, title=cand.title,
                                  body=body, scope=cand.scope, evidence=cand.evidence, support=cand.support,
                                  confidence=round(cand.confidence, 4), source=cand.source, tier=cand.tier,
-                                 status=self._status(cand, None), learned_at_commit=self.commit,
-                                 valid_from_commit=cand.valid_from_commit or self.commit, search_text=text)
+                                 status=status, learned_at_commit=self.commit,
+                                 valid_from_commit=cand.valid_from_commit or self.commit, search_text=text,
+                                 predicate=cand.check, holdout=holdout, strength=strength,
+                                 invalidated_at_commit=self.commit if status == "stale" else None)
                 self.db.add(row)
                 self.db.flush()
                 self._ledger("item", row.id, "add", None, _snapshot(row))
@@ -341,11 +408,14 @@ class MemoryWriter:
                 self.stats.changed_ids.append(row.id)
             else:
                 before = _snapshot(row)
-                status = self._status(cand, row.status)
+                status = self._status(cand, row.status, decision, row.id)
+                if status == "active" and decision.status != "active" and cand.check is not None:
+                    strength = REQUIREMENT  # a human accepted it as a rule
                 if cand.tier != "L1" and row.status == "active" and (row.title, row.body) != (cand.title, body):
                     status = "proposed"  # a model rewrote an accepted item: it needs accepting again
-                same = (row.title, row.body, row.support, row.scope, row.evidence, row.status) == (
-                    cand.title, body, cand.support, cand.scope, cand.evidence, status)
+                same = (row.title, row.body, row.support, row.scope, row.evidence, row.status, row.predicate,
+                        row.holdout, row.strength) == (cand.title, body, cand.support, cand.scope, cand.evidence,
+                                                       status, cand.check, holdout, strength)
                 row.learned_at_commit = self.commit
                 if same:
                     self.stats.unchanged += 1
@@ -353,9 +423,15 @@ class MemoryWriter:
                     text_changed = (row.title, row.body) != (cand.title, body)
                     row.title, row.body, row.scope, row.evidence = cand.title, body, cand.scope, cand.evidence
                     row.support, row.confidence, row.search_text = cand.support, round(cand.confidence, 4), text
+                    row.predicate, row.holdout, row.strength = cand.check, holdout, strength
                     if row.status == "stale" and status != "stale":
                         row.invalidated_at_commit = None
-                    action = "activate" if status == "active" and row.status != "active" else "patch"
+                    elif status == "stale" and row.status != "stale":
+                        row.invalidated_at_commit = self.commit
+                    action = ("activate" if status == "active" and row.status != "active"
+                              else "stale" if status == "stale" and row.status != "stale" else "patch")
+                    if action == "stale":
+                        self.stats.staled += 1
                     row.status = status
                     self._ledger("item", row.id, action, before, _snapshot(row))
                     self.stats.patched += 1
@@ -395,6 +471,10 @@ class MemoryWriter:
                 self.stats.ungrounded += 1
                 continue
             seen.add(cand.name)
+            tested = [self.decisions[k] for k in cand.rules if k in self.decisions]
+            if tested:  # a playbook is served only while one of its steps is a requirement
+                cand.eligible = cand.eligible and any(d.strength == REQUIREMENT and d.status == "active"
+                                                      for d in tested)
             row = existing.get(cand.name)
             text = search_text(cand.title, cand.description, cand.body)
             if row is None:

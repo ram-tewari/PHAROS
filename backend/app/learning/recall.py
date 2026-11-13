@@ -1,13 +1,16 @@
 """Reading repository memory: what the API and MCP tools serve.
 
-Production imports only this module from ``app.learning``: no git, no LLM,
+Production imports only this module (and the pure predicates in ``checks``) from ``app.learning``: no git, no LLM,
 no writes. Three entry points:
 
 * :func:`memory_for_context` picks what leads a ``retrieve_context``
   answer: the repository brief, the active items scoped to the files that
   were retrieved (path globs) or to their languages, and the playbooks that
   touch those files.
-* :func:`search_memory` is hybrid search over active items (keyword overlap
+  Observations (checkable patterns too weak to require, see
+  ``checks.decide``) are never part of it.
+* :func:`search_memory` is hybrid search over active items, observations
+  included and labelled (``strength``) (keyword overlap
   fused with dense similarity when the items carry vectors of the query's
   embedding model).
 * :func:`get_brief`, :func:`list_skills`, :func:`get_skill` serve the rest
@@ -27,6 +30,7 @@ from sqlalchemy.orm import Session, defer
 from ..codeintel.text import query_terms
 from ..database.models import MemoryItem, MemorySkill, RepoBrief, Repository
 from ..shared.vector_type import EmbeddingVector
+from .checks import OBSERVATION, check_from_json
 
 MEMORY_CHARS = 4000
 # History facts (file origins, removals) answer "when / why" questions; in a coding
@@ -76,10 +80,18 @@ def item_to_dict(item: MemoryItem, *, full: bool = False) -> dict:
         "evidence": evidence if full else [_compact(e) for e in evidence], "learned_at_commit": item.learned_at_commit,
     }
     if full:
+        out |= {"strength": item.strength, "rule": rule_text(item), "predicate": item.predicate,
+                "holdout": item.holdout, "served": item.served, "complied": item.complied, "helped": item.helped}
         out |= {"valid_from_commit": item.valid_from_commit, "invalidated_at_commit": item.invalidated_at_commit,
                 "created_at": item.created_at.isoformat() if item.created_at else None,
                 "updated_at": item.updated_at.isoformat() if item.updated_at else None}
     return out
+
+
+def rule_text(item: MemoryItem) -> str | None:
+    """The item's predicate in one line, or None when it has none."""
+    check = check_from_json(item.predicate)
+    return check.render() if check else None
 
 
 def skill_to_dict(skill: MemorySkill, level: int = 0) -> dict:
@@ -144,7 +156,7 @@ def memory_for_context(db: Session, repos: list[Repository], chunks: list[dict],
     wants_history = bool(_HISTORY_QUERY_RE.search(query))
     scoped, general = [], []
     for item in _active_items(db, repo_ids):
-        if item.key in in_brief or (item.kind == "history" and not wants_history):
+        if item.key in in_brief or (item.kind == "history" and not wants_history) or item.strength == OBSERVATION:
             continue
         paths = (item.scope or {}).get("paths") or []
         if paths:
@@ -201,7 +213,8 @@ def search_memory(db: Session, embedder, query: str, repo_ids: list[uuid.UUID] |
         for rank, item_id in enumerate(ranking, start=1):
             scores[item_id] = scores.get(item_id, 0.0) + 1.0 / (RRF_K + rank)
     ranked = sorted(scores, key=lambda i: -scores[i])[:k]
-    return [item_to_dict(items[i]) | {"score": round(scores[i], 5)} for i in ranked]
+    return [item_to_dict(items[i]) | {"score": round(scores[i], 5), "strength": items[i].strength,
+                                      "rule": rule_text(items[i])} for i in ranked]
 
 
 def _dense(db: Session, qvec: list[float], model_id: str, ids: list[str], limit: int = 50) -> list[str]:

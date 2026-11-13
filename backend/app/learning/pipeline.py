@@ -27,11 +27,13 @@ from ..codeintel import jobs
 from ..codeintel.embeddings import Embedder
 from ..codeintel.retrieval import path_role
 from ..database.models import CodeEdge, DocumentChunk, LearningJob, MemoryItem, MemorySkill, RepoBrief, Repository
+from .backtest import holdout_records
 from .brief import compose_brief
+from .checks import DEFAULT_ACTIVATION, OBSERVATION, Activation
 from .extract import extract
 from .history import HistoryError, _git, ensure_mirror, load_history, mirror_name, worktree
 from .memory import MemoryWriter, check_diff, check_evidence, check_tally, commits_at
-from .miners import MINERS, Chunk, Snapshot, mine_playbooks, tracked_files
+from .miners import Chunk, Snapshot, mine_playbooks, run_miners, tracked_files
 from .reviews import check_review
 
 logger = logging.getLogger(__name__)
@@ -135,9 +137,14 @@ def embed_items(db: Session, repository_id, embedder: Embedder | None, batch: in
 def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: Path, commit: str,
                      embedder: Embedder | None = None, run_id: str | None = None,
                      families: list[str] | None = None, llm=None, max_llm_calls: int = 10,
-                     review_token: str | None = None,
+                     review_token: str | None = None, activation: Activation = DEFAULT_ACTIVATION,
+                     holdout: dict[str, dict] | None = None,
                      progress: Callable[[str], None] = lambda _m: None) -> dict:
     """Mine ``repo`` at ``commit`` (``checkout`` must be that commit's tree) and update its memory.
+
+    Checkable rules are backtested first (``backtest.holdout_records``): the miners run again on the
+    history before the last ``activation.window`` first-parent commits and each rule is checked on those
+    commits; that record decides whether it is served. ``holdout`` passes precomputed records instead.
 
     With ``llm`` (a ``CodexCLI``), L2 extraction runs after the deterministic
     miners, spending at most ``max_llm_calls`` calls on evidence it has not read.
@@ -147,26 +154,23 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
     snap = load_snapshot(db, repo, checkout, mirror, commit)
     progress(f"{repo.name}: {len(snap.chunks)} chunks, {len(snap.files)} files, {len(snap.history)} commits")
     timings = {"load": round(time.perf_counter() - t0, 2)}
-    candidates, ran, by_family = [], set(), {}
-    for family, miner in MINERS.items():
-        if families and family not in families:
-            continue
-        t = time.perf_counter()
-        try:
-            found = miner(snap)
-        except (HistoryError, OSError, ValueError) as exc:  # one miner failing never blocks the others
-            logger.warning("miner %s failed on %s: %s", family, repo.name, exc)
-            by_family[family] = f"failed: {exc}"[:200]
-            continue
-        for cand in found:
-            cand.family = family
-        candidates += found
-        ran.add(family)
-        by_family[family] = len(found)
-        timings[family] = round(time.perf_counter() - t, 2)
+    candidates, report = run_miners(
+        snap, families, on_error=lambda f, exc: logger.warning("miner %s failed on %s: %s", f, repo.name, exc))
+    ran, by_family = report["ran"], report["by_family"]
+    timings |= report["timings"]
     skills = mine_playbooks(snap) if not families or "playbooks" in families else []
     grounding = _grounding(snap, repo.url)
-    writer = MemoryWriter(db, repo.id, commit, run_id, grounding=grounding)
+    backtest = None
+    if holdout is None and activation.window > 0 and any(c.check for c in candidates):
+        t = time.perf_counter()
+        try:  # the same miners on the history before the hold-out window, checked on that window
+            holdout, backtest = holdout_records(mirror, commit, activation.window, families=families)
+        except (HistoryError, OSError, ValueError) as exc:
+            logger.warning("backtest failed on %s: %s", repo.name, exc)
+            backtest = {"error": f"{type(exc).__name__}: {exc}"[:300]}
+        timings["backtest"] = round(time.perf_counter() - t, 2)
+        progress(f"{repo.name}: backtest {backtest}")
+    writer = MemoryWriter(db, repo.id, commit, run_id, grounding=grounding, holdout=holdout, activation=activation)
     writer.apply(candidates)
     # A family's items are retired only when that family ran: an item's key prefix is its family.
     writer.retire(ran, {c.key for c in candidates})
@@ -188,8 +192,9 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
         progress(f"{repo.name}: L2 {l2['calls']} calls, {l2['added']} proposed, {l2['patched']} patched, "
                  f"rejected {l2['rejected']}")
     embedded = embed_items(db, repo.id, embedder)
-    items = db.execute(select(MemoryItem).where(MemoryItem.repository_id == repo.id,
-                                                MemoryItem.status == "active")).scalars().all()
+    items = [i for i in db.execute(select(MemoryItem).where(MemoryItem.repository_id == repo.id,
+                                                            MemoryItem.status == "active")).scalars()
+             if i.strength != OBSERVATION]  # observations are served on request, never in the brief
     active_skills = db.execute(select(MemorySkill).where(MemorySkill.repository_id == repo.id,
                                                          MemorySkill.status == "active")).scalars().all()
     text, sections = compose_brief(snap, list(items), list(active_skills))
@@ -203,6 +208,7 @@ def learn_repository(db: Session, repo: Repository, *, checkout: Path, mirror: P
     timings["total"] = round(time.perf_counter() - t0, 2)
     stats = {"run_id": run_id, "commit": commit, "candidates": len(candidates), "skills": len(skills),
              "by_family": by_family, **writer.stats.as_dict(), "embedded": embedded, "brief_chars": len(text),
+             "backtest": backtest,
              "l2": l2, "timings_s": timings}
     progress(f"{repo.name}: {stats['added']} added, {stats['patched']} patched, {stats['staled']} stale, "
              f"{stats['activated']} active, {stats['proposed']} proposed")

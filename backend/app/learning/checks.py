@@ -640,9 +640,12 @@ class Activation:
     **observation** (active, served only on request). One that applied too rarely stays
     ``proposed`` (untested); one below both bounds goes ``stale`` with its record."""
 
-    window: int = 200
+    # Chosen on development mirrors only (docs/benchmarks/phase3-s2-dev-2026-11.md): learning 400
+    # first-parent commits before their HEAD and checking the next 200, these gave the most rules
+    # for their precision. A rule must apply at least 10 times before it can be required.
+    window: int = 600
     min_applied: int = 10
-    min_lower: float = 0.7
+    min_lower: float = 0.6
     observe_lower: float = 0.2
 
 
