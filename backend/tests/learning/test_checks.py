@@ -287,7 +287,8 @@ def test_decide_without_a_matching_record():
 
 
 def test_holdout_sentence_states_what_was_measured():
-    record = {"window": {"from": "abcdef1234567", "to": "x", "commits": 200}, "applied": 12, "held": 11}
+    record = {"window": {"from": "abcdef1234567", "to": "x", "commits": 200},  # pragma: allowlist secret
+              "applied": 12, "held": 11}
     text = holdout_sentence(record, "When a.py changes, b.py changes.")
     assert text == (' Checked on the 200 first-parent commits after abcdef1234, the rule "When a.py changes, '
                     'b.py changes" applied 12 times and held 11 times.')

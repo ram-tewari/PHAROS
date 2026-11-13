@@ -215,7 +215,8 @@ class Paths:
             kind = " ".join(x for x in ("/".join(self.languages), " or ".join(self.roles)) if x) + " files"
             what = f"{kind} matching {what}" if what else kind
         if self.exclude:
-            what += " (except " + ", ".join(self.exclude) + ")"
+            what += (" (except " + ", ".join(self.exclude) + ")" if len(self.exclude) <= 2
+                     else f" (except {len(self.exclude)} excluded patterns)")
         return what or "any file"
 
     def to_json(self) -> dict:
