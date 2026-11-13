@@ -1,0 +1,53 @@
+{
+  "simple_citation_network": {
+    "input": {
+      "nodes": ["A", "B", "C", "D"],
+      "edges": [
+        {"from": "A", "to": "B"},
+        {"from": "A", "to": "C"},
+        {"from": "B", "to": "C"},
+        {"from": "C", "to": "D"}
+      ]
+    },
+    "expected": {
+      "pagerank": {
+        "A": 0.1205,
+        "B": 0.1716,
+        "C": 0.3175,
+        "D": 0.3904
+      },
+      "tolerance": 0.01
+    }
+  },
+  "disconnected_node": {
+    "input": {
+      "nodes": ["A", "B", "C"],
+      "edges": [
+        {"from": "A", "to": "B"}
+      ]
+    },
+    "expected": {
+      "related_to_C": [],
+      "pagerank": {
+        "A": 0.2597,
+        "B": 0.4805,
+        "C": 0.2597
+      },
+      "tolerance": 0.01
+    }
+  },
+  "large_network": {
+    "description": "Performance test case with 100+ nodes",
+    "input": {
+      "node_count": 100,
+      "edge_pattern": "random_scale_free",
+      "avg_degree": 5
+    },
+    "expected": {
+      "execution_time_ms": 50,
+      "top_nodes_count": 10,
+      "pagerank_sum_tolerance": 0.01
+    },
+    "note": "PageRank scores should sum to approximately 1.0 across all nodes"
+  }
+}

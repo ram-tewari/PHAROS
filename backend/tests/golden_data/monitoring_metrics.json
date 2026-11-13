@@ -1,0 +1,47 @@
+{
+  "performance_metrics_collection": {
+    "input": {
+      "cache_hits": 150,
+      "cache_misses": 50,
+      "total_requests": 200,
+      "slow_queries": 5,
+      "avg_response_time_ms": 125.5
+    },
+    "expected": {
+      "cache_hit_rate": 0.75,
+      "total_requests": 200,
+      "slow_query_count": 5,
+      "avg_response_time_ms": 125.5,
+      "status": "healthy"
+    }
+  },
+  "missing_metrics_handling": {
+    "input": {
+      "cache_hits": null,
+      "cache_misses": null,
+      "total_requests": 0
+    },
+    "expected": {
+      "cache_hit_rate": 0.0,
+      "total_requests": 0,
+      "status": "healthy",
+      "warnings": ["No cache metrics available"]
+    }
+  },
+  "event_bus_metrics": {
+    "input": {
+      "events_emitted": 1000,
+      "events_delivered": 980,
+      "handler_errors": 20,
+      "avg_latency_ms": 0.8
+    },
+    "expected": {
+      "events_emitted": 1000,
+      "events_delivered": 980,
+      "handler_errors": 20,
+      "delivery_rate": 0.98,
+      "avg_latency_ms": 0.8,
+      "status": "healthy"
+    }
+  }
+}

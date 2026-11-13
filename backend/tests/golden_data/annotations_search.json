@@ -1,0 +1,68 @@
+{
+  "semantic_search": {
+    "input": {
+      "query": "machine learning algorithms",
+      "query_embedding": [0.7, 0.3, 0.8, 0.2],
+      "annotations": [
+        {
+          "id": 1,
+          "text": "Deep learning models for image classification",
+          "embedding": [0.8, 0.2, 0.7, 0.3],
+          "resource_id": 10
+        },
+        {
+          "id": 2,
+          "text": "Quantum computing applications",
+          "embedding": [0.2, 0.8, 0.3, 0.7],
+          "resource_id": 11
+        },
+        {
+          "id": 3,
+          "text": "Neural network architectures and training",
+          "embedding": [0.75, 0.25, 0.8, 0.2],
+          "resource_id": 12
+        }
+      ]
+    },
+    "expected": {
+      "ranked_annotation_ids": [3, 1, 2],
+      "similarity_scores": {
+        "3": 0.998,
+        "1": 0.984,
+        "2": 0.603
+      },
+      "tolerance": 0.005
+    }
+  },
+  "text_range_overlap": {
+    "input": {
+      "resource_text": "The quick brown fox jumps over the lazy dog. This is a test sentence for annotation overlap detection.",
+      "annotations": [
+        {
+          "id": 1,
+          "start_offset": 0,
+          "end_offset": 19,
+          "text": "The quick brown fox"
+        },
+        {
+          "id": 2,
+          "start_offset": 10,
+          "end_offset": 29,
+          "text": "brown fox jumps over"
+        },
+        {
+          "id": 3,
+          "start_offset": 44,
+          "end_offset": 103,
+          "text": "This is a test sentence for annotation overlap detection."
+        }
+      ]
+    },
+    "expected": {
+      "overlapping_pairs": [
+        {"annotation_1": 1, "annotation_2": 2, "overlap_chars": 9}
+      ],
+      "non_overlapping": [3]
+    }
+  }
+}

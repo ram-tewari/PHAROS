@@ -1,0 +1,26 @@
+{
+  "completeness_partial": {
+    "score": 0.5,
+    "reasoning": ["Missing subject", "Missing language"],
+    "fields_present": ["title", "description", "creator"],
+    "fields_missing": ["subject", "language"]
+  },
+  "completeness_full": {
+    "score": 1.0,
+    "reasoning": [],
+    "fields_present": ["title", "description", "subject", "creator", "language", "type", "identifier"],
+    "fields_missing": []
+  },
+  "completeness_minimal": {
+    "score": 0.14285714285714285,
+    "reasoning": ["Missing description", "Missing subject", "Missing creator", "Missing language", "Missing type", "Missing identifier"],
+    "fields_present": ["title"],
+    "fields_missing": ["description", "subject", "creator", "language", "type", "identifier"]
+  },
+  "metadata_completeness_empty": {
+    "score": 0.0,
+    "reasoning": ["All required fields missing"],
+    "fields_present": [],
+    "fields_missing": ["title", "description", "subject", "creator", "language", "type", "identifier"]
+  }
+}

@@ -1,0 +1,183 @@
+{
+  "keyword_exact_match": {
+    "description": "Exact keyword matching in full-text search",
+    "query": "machine learning",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Machine Learning Basics",
+        "content": "Introduction to machine learning algorithms"
+      },
+      {
+        "id": "res_2",
+        "title": "Deep Learning",
+        "content": "Advanced machine learning with neural networks"
+      },
+      {
+        "id": "res_3",
+        "title": "Statistics",
+        "content": "Statistical methods for data analysis"
+      }
+    ],
+    "ranked_ids": ["res_1", "res_2"],
+    "match_count": 2
+  },
+  "boolean_and_operator": {
+    "description": "Boolean AND operator in search query",
+    "query": "machine AND learning",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Machine Learning Guide",
+        "content": "Complete guide to machine learning"
+      },
+      {
+        "id": "res_2",
+        "title": "Machine Vision",
+        "content": "Computer vision without algorithms"
+      },
+      {
+        "id": "res_3",
+        "title": "Learning Python",
+        "content": "Python programming for beginners"
+      }
+    ],
+    "ranked_ids": ["res_1"],
+    "match_count": 1
+  },
+  "boolean_or_operator": {
+    "description": "Boolean OR operator in search query",
+    "query": "python OR java",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Python Programming",
+        "content": "Learn Python from scratch"
+      },
+      {
+        "id": "res_2",
+        "title": "Java Development",
+        "content": "Java programming guide"
+      },
+      {
+        "id": "res_3",
+        "title": "JavaScript Basics",
+        "content": "Introduction to JavaScript"
+      }
+    ],
+    "ranked_ids": ["res_1", "res_2"],
+    "match_count": 2
+  },
+  "boolean_not_operator": {
+    "description": "Boolean NOT operator to exclude terms",
+    "query": "programming NOT python",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Java Programming",
+        "content": "Object-oriented programming with Java"
+      },
+      {
+        "id": "res_2",
+        "title": "Python Programming",
+        "content": "Programming in Python language"
+      },
+      {
+        "id": "res_3",
+        "title": "C++ Programming",
+        "content": "Systems programming with C++"
+      }
+    ],
+    "ranked_ids": ["res_1", "res_3"],
+    "match_count": 2
+  },
+  "phrase_search_exact": {
+    "description": "Exact phrase search with quotes",
+    "query": "\"neural networks\"",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Neural Networks Tutorial",
+        "content": "Understanding neural networks and their applications"
+      },
+      {
+        "id": "res_2",
+        "title": "Networks and Neural Systems",
+        "content": "Computer networks and neural systems overview"
+      },
+      {
+        "id": "res_3",
+        "title": "Deep Learning",
+        "content": "Neural and deep learning architectures"
+      }
+    ],
+    "ranked_ids": ["res_1"],
+    "match_count": 1
+  },
+  "phrase_search_partial": {
+    "description": "Phrase search with partial matches",
+    "query": "\"machine learning algorithms\"",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "ML Algorithms",
+        "content": "Common machine learning algorithms explained"
+      },
+      {
+        "id": "res_2",
+        "title": "Algorithms",
+        "content": "Machine learning and algorithms overview"
+      },
+      {
+        "id": "res_3",
+        "title": "Data Science",
+        "content": "Data science without machine learning"
+      }
+    ],
+    "ranked_ids": ["res_1"],
+    "match_count": 1
+  },
+  "wildcard_search": {
+    "description": "Wildcard search with asterisk",
+    "query": "comput*",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Computer Science",
+        "content": "Introduction to computer science"
+      },
+      {
+        "id": "res_2",
+        "title": "Computing Systems",
+        "content": "Modern computing architectures"
+      },
+      {
+        "id": "res_3",
+        "title": "Computation Theory",
+        "content": "Theoretical computation models"
+      }
+    ],
+    "ranked_ids": ["res_1", "res_2", "res_3"],
+    "match_count": 3
+  },
+  "empty_query": {
+    "description": "Empty search query returns no results",
+    "query": "",
+    "resources": [],
+    "ranked_ids": [],
+    "match_count": 0
+  },
+  "no_matches": {
+    "description": "Query with no matching documents",
+    "query": "nonexistent_term_xyz",
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Sample Document",
+        "content": "This is a sample document"
+      }
+    ],
+    "ranked_ids": [],
+    "match_count": 0
+  }
+}

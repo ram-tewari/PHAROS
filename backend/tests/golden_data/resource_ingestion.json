@@ -1,0 +1,47 @@
+{
+  "create_resource_success": {
+    "description": "Successful resource creation via API",
+    "request": {
+      "url": "https://example.com/article",
+      "title": "Test Article"
+    },
+    "expected_response": {
+      "status_code": 202,
+      "body_contains": ["id", "title", "ingestion_status"]
+    },
+    "expected_db_state": {
+      "ingestion_status": "pending",
+      "title": "Test Article"
+    },
+    "expected_events": [
+      {
+        "event_type": "resource.created",
+        "payload_contains": ["resource_id", "title", "source"]
+      }
+    ]
+  },
+  "create_resource_missing_url": {
+    "description": "Resource creation fails without URL",
+    "request": {
+      "title": "Test Article"
+    },
+    "expected_response": {
+      "status_code": 422
+    },
+    "expected_events": []
+  },
+  "create_resource_duplicate_url": {
+    "description": "Duplicate URL returns existing resource",
+    "request": {
+      "url": "https://example.com/existing",
+      "title": "Duplicate Article"
+    },
+    "expected_response": {
+      "status_code": 200
+    },
+    "expected_db_state": {
+      "is_existing": true
+    },
+    "expected_events": []
+  }
+}

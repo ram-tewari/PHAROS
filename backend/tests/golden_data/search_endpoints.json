@@ -1,0 +1,62 @@
+{
+  "search_endpoint_basic": {
+    "description": "Basic search endpoint with simple query",
+    "request": {
+      "query": "machine learning",
+      "method": "hybrid",
+      "limit": 10
+    }
+  },
+  "search_endpoint_empty_query": {
+    "description": "Search endpoint with empty query",
+    "request": {
+      "query": "",
+      "method": "keyword",
+      "limit": 10
+    }
+  },
+  "three_way_hybrid_basic": {
+    "description": "Three-way hybrid search with default weights",
+    "params": {
+      "query": "neural networks",
+      "limit": 10
+    }
+  },
+  "three_way_hybrid_weights": {
+    "description": "Three-way hybrid search with custom weights",
+    "params": {
+      "query": "deep learning",
+      "keyword_weight": 0.5,
+      "semantic_weight": 0.3,
+      "fulltext_weight": 0.2,
+      "limit": 10
+    }
+  },
+  "compare_methods_basic": {
+    "description": "Compare all search methods",
+    "params": {
+      "query": "artificial intelligence",
+      "limit": 5
+    }
+  },
+  "search_pagination": {
+    "description": "Search with pagination parameters",
+    "request": {
+      "query": "python programming",
+      "method": "keyword",
+      "limit": 5,
+      "offset": 0
+    }
+  },
+  "search_filtering": {
+    "description": "Search with filters applied",
+    "request": {
+      "query": "data science",
+      "method": "semantic",
+      "limit": 10,
+      "filters": {
+        "resource_type": "article"
+      }
+    }
+  }
+}

@@ -1,0 +1,3 @@
+# Golden Data Directory
+# This directory contains immutable JSON files that define expected test outcomes.
+# These files serve as the single source of truth for test assertions.

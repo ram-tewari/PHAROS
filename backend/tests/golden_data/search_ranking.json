@@ -1,0 +1,42 @@
+{
+  "rrf_fusion_scenario_1": {
+    "description": "Basic RRF fusion with three result lists",
+    "inputs": {
+      "dense_results": ["doc_A", "doc_B", "doc_C"],
+      "sparse_results": ["doc_C", "doc_A", "doc_D"],
+      "keyword_results": ["doc_B", "doc_A", "doc_E"]
+    },
+    "ranked_ids": ["doc_A", "doc_B", "doc_C", "doc_D", "doc_E"],
+    "scores": {
+      "doc_A": 0.04945355191256831,
+      "doc_B": 0.03306010928961749,
+      "doc_C": 0.03279569892473118,
+      "doc_D": 0.016129032258064516,
+      "doc_E": 0.016129032258064516
+    }
+  },
+  "rrf_fusion_empty_lists": {
+    "description": "RRF fusion with empty input lists",
+    "inputs": {
+      "dense_results": [],
+      "sparse_results": [],
+      "keyword_results": []
+    },
+    "ranked_ids": [],
+    "scores": {}
+  },
+  "rrf_fusion_single_list": {
+    "description": "RRF fusion with only one non-empty list",
+    "inputs": {
+      "dense_results": ["doc_X", "doc_Y", "doc_Z"],
+      "sparse_results": [],
+      "keyword_results": []
+    },
+    "ranked_ids": ["doc_X", "doc_Y", "doc_Z"],
+    "scores": {
+      "doc_X": 0.016666666666666666,
+      "doc_Y": 0.016393442622950819,
+      "doc_Z": 0.016129032258064516
+    }
+  }
+}

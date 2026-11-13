@@ -1,0 +1,80 @@
+{
+  "embedding_similarity_basic": {
+    "description": "Basic semantic similarity search with embedding vectors",
+    "query": "machine learning algorithms",
+    "query_embedding": [0.5, 0.3, 0.8, 0.2],
+    "resources": [
+      {
+        "id": "res_1",
+        "title": "Introduction to Machine Learning",
+        "embedding": [0.52, 0.31, 0.79, 0.21]
+      },
+      {
+        "id": "res_2",
+        "title": "Deep Learning Fundamentals",
+        "embedding": [0.48, 0.29, 0.82, 0.19]
+      },
+      {
+        "id": "res_3",
+        "title": "Cooking Recipes",
+        "embedding": [0.1, 0.9, 0.2, 0.7]
+      }
+    ],
+    "ranked_ids": ["res_1", "res_2", "res_3"],
+    "similarity_scores": {
+      "res_1": 0.9995,
+      "res_2": 0.9989,
+      "res_3": 0.5284
+    }
+  },
+  "embedding_empty_query": {
+    "description": "Semantic search with empty query",
+    "query": "",
+    "query_embedding": [],
+    "resources": [],
+    "ranked_ids": [],
+    "similarity_scores": {}
+  },
+  "embedding_no_results": {
+    "description": "Semantic search with no matching resources",
+    "query": "quantum computing",
+    "query_embedding": [0.9, 0.1, 0.1, 0.9],
+    "resources": [],
+    "ranked_ids": [],
+    "similarity_scores": {}
+  },
+  "embedding_ranking_order": {
+    "description": "Verify correct ranking by similarity score",
+    "query": "neural networks",
+    "query_embedding": [0.7, 0.5, 0.3, 0.1],
+    "resources": [
+      {
+        "id": "res_A",
+        "title": "Neural Network Basics",
+        "embedding": [0.71, 0.49, 0.31, 0.09]
+      },
+      {
+        "id": "res_B",
+        "title": "Convolutional Neural Networks",
+        "embedding": [0.69, 0.51, 0.29, 0.11]
+      },
+      {
+        "id": "res_C",
+        "title": "Recurrent Neural Networks",
+        "embedding": [0.68, 0.52, 0.28, 0.12]
+      },
+      {
+        "id": "res_D",
+        "title": "Gardening Tips",
+        "embedding": [0.2, 0.8, 0.6, 0.4]
+      }
+    ],
+    "ranked_ids": ["res_A", "res_B", "res_C", "res_D"],
+    "similarity_scores": {
+      "res_A": 0.999,
+      "res_B": 0.998,
+      "res_C": 0.997,
+      "res_D": 0.750
+    }
+  }
+}
