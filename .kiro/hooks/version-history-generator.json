@@ -1,9 +1,0 @@
-{
-  "id": "version-history-generator",
-  "name": "Version History & Audit Log Generator",
-  "description": "Generates version tracking system with rollback capability",
-  "why": "To track changes to resource metadata and provide rollback capability",
-  "filePatterns": "backend/app/models/version.py,backend/app/services/version_service.py,backend/app/api/versions.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "Generate the Version History & Audit Log system:\n\n1. **Model (backend/app/models/version.py)**:\n   - ResourceVersion: id, resource_id, version_number, snapshot_data (JSON), changed_by, changed_at, change_type (create/update/delete)\n   - Add index on resource_id and version_number\n\n2. **Service (backend/app/services/version_service.py)**:\n   - create_version_snapshot(resource_id, change_type, changed_by)\n   - get_version_history(resource_id)\n   - restore_version(resource_id, version_number) — rollback and create new version\n   - diff_versions(resource_id, version_a, version_b)\n\n3. **Endpoints (backend/app/api/versions.py)**:\n   - GET /resources/{id}/versions\n   - GET /resources/{id}/versions/{version_number}\n   - POST /resources/{id}/restore/{version_number}\n\nStore complete resource state as JSON snapshot for each version."
-}

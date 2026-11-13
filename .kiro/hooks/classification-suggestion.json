@@ -1,9 +1,0 @@
-{
-  "id": "classification-suggestion",
-  "name": "Classification Suggestion Hook",
-  "description": "Suggests alternative classifications when classification changes",
-  "why": "To help users discover better classifications and improve classification accuracy",
-  "filePatterns": "backend/app/services/classification_service.py,backend/app/api/classifications.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When a resource's classification_code is manually overridden or subjects change:\n\n1. In classify_resource() endpoint or update_resource() when classification changes:\n   - suggestions = classification_service.suggest_reclassification(resource_id)\n2. The suggest_reclassification() method should:\n   - Run classification algorithm on current resource state\n   - Return top 3-5 alternative classifications with confidence scores\n   - Log alternatives for ML training data\n3. Return suggestions to user:\n   - 'Applied classification: 500 (Science)'\n   - 'Suggestions: 510 (Mathematics, 0.85), 004 (Computer Science, 0.78)'\n4. Store manual overrides for periodic classifier retraining"
-}

@@ -1,9 +1,0 @@
-{
-  "id": "external-discovery-cache-invalidation",
-  "name": "External Discovery Cache Invalidation",
-  "description": "Invalidates external search cache when recommendation settings change",
-  "why": "To ensure fresh external discovery results when user preferences change",
-  "filePatterns": "backend/app/services/recommendation_service.py,backend/app/services/user_profile_service.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "When recommendation settings or profile keywords change:\n\n1. In update_preferences() method:\n   - if 'recommendation_settings' in updates or 'preferred_classifications' in updates:\n   - recommendation_service.invalidate_external_cache(user_id)\n2. The invalidate_external_cache() method should:\n   - Clear in-memory cache for external search results\n   - Cache key format: f'ext_search:{user_id}'\n   - Force fresh fetch on next recommendation request\n3. Use TTL ~5 minutes for external cache by default\n4. Log cache hit/miss rates for tuning\n5. Consider cache warming for active users"
-}

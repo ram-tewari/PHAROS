@@ -1,9 +1,0 @@
-{
-  "id": "user-profile-recommendation-filter",
-  "name": "User Profile Recommendation Filter",
-  "description": "Applies user profile filters to recommendation generation",
-  "why": "To personalize recommendations based on user preferences and exclusions",
-  "filePatterns": "backend/app/services/recommendation_service.py,backend/app/services/user_profile_service.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When generating recommendations:\n\n1. In recommendation_service, before returning recommendations:\n   - Fetch user profile: profile = user_profile_service.get_or_create_profile(user_id)\n   - Apply excluded_sources filter: remove resources from excluded domains/sources\n   - Apply preferred_classifications filter: boost or filter by classification preferences\n   - Apply recommendation_settings: respect diversity, recency, quality thresholds\n2. Cache filtered results with user_id in cache key\n3. Invalidate cache when user profile is updated\n4. Log filter effectiveness for tuning"
-}

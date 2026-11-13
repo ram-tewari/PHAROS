@@ -1,9 +1,0 @@
-{
-  "id": "quality-rescoring",
-  "name": "Quality Re-scoring Hook",
-  "description": "Recomputes quality scores when relevant fields change",
-  "why": "To keep quality scores accurate as resource metadata and content evolve",
-  "filePatterns": "backend/app/services/resource_service.py,backend/app/services/quality_service.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When resource fields affecting quality change:\n\n1. In update_resource(), detect quality-affecting changes:\n   - quality_fields = {'title', 'description', 'content', 'url', 'creator', 'publisher'}\n   - if fields_changed & quality_fields:\n2. Re-run quality assessment:\n   - new_score = quality_service.assess(resource_id)\n   - resource.quality_score = new_score.overall_quality_score\n   - resource.quality_level = new_score.quality_level\n3. If quality crosses threshold (e.g., LOW → MEDIUM):\n   - Trigger notification or collection promotion\n   - Log quality improvement for analytics\n4. Use existing ContentQualityAnalyzer service"
-}

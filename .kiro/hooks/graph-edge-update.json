@@ -1,9 +1,0 @@
-{
-  "id": "graph-edge-update",
-  "name": "Graph Edge Update Hook",
-  "description": "Updates graph edges when embeddings, subjects, or classifications change",
-  "why": "To keep the knowledge graph accurate and up-to-date with resource changes",
-  "filePatterns": "backend/app/services/resource_service.py,backend/app/services/graph_service.py",
-  "debounceTime": "LONG",
-  "outputPrompt": "When a resource's embedding, subjects, or classification changes:\n\n1. In update_resource() background task:\n   - if embedding_changed or subjects_changed or classification_changed:\n2. Update graph incrementally:\n   - graph_service.invalidate_cache(resource_id)\n   - graph_service.recompute_neighbors(resource_id, incremental=True)\n3. The incremental update should:\n   - Recompute hybrid similarity scores for existing neighbors\n   - Update edges touching this node only (not full graph rebuild)\n   - Update global overview if resource was in top edges\n4. Use GRAPH_VECTOR_MIN_SIM_THRESHOLD=0.85 to prune weak edges\n5. Cache results with TTL for performance"
-}

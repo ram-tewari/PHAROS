@@ -1,9 +1,0 @@
-{
-  "id": "resource-deletion-collection-cleanup",
-  "name": "Resource Deletion Collection Cleanup",
-  "description": "Automatically removes deleted resources from all collections",
-  "why": "To maintain data integrity by cleaning up collection references when resources are deleted",
-  "filePatterns": "backend/app/api/resources.py,backend/app/services/resource_service.py",
-  "debounceTime": "SHORT",
-  "outputPrompt": "When a resource is deleted (DELETE /resources/{id}), automatically remove it from all collections:\n\n1. In the resource deletion handler, add a call to collection_service.remove_resource_from_all_collections(resource_id)\n2. Implement remove_resource_from_all_collections() in collection_service.py that:\n   - Finds all collections containing the resource_id\n   - Removes the resource_id from each collection's resource_ids JSON list\n   - Logs the cleanup operation\n3. Ensure this happens within the same transaction as the resource deletion for atomicity"
-}

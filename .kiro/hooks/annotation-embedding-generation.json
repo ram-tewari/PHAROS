@@ -1,9 +1,0 @@
-{
-  "id": "annotation-embedding-generation",
-  "name": "Annotation Embedding Generation",
-  "description": "Generates embeddings for annotations with substantial notes",
-  "why": "To enable semantic search across user annotations",
-  "filePatterns": "backend/app/services/annotation_service.py,backend/app/api/annotations.py",
-  "debounceTime": "MEDIUM",
-  "outputPrompt": "When an annotation is created with a substantial note:\n\n1. In create_annotation(), after saving the annotation:\n   - Check if note length > 50 characters (or similar threshold)\n   - If yes: background_tasks.add_task(generate_annotation_embedding, annotation_id)\n2. The generate_annotation_embedding() function should:\n   - Use the existing EmbeddingGenerator service\n   - Generate embedding from the note text\n   - Store in annotation_embedding field or separate table\n   - Enable semantic similarity search across annotations\n3. Use these embeddings in the search_annotations() service method"
-}
