@@ -183,7 +183,9 @@ For a deployed server, add its hostname to `MCP_ALLOWED_HOSTS` (DNS-rebinding pr
 | `GET /api/v1/system/status` | read | Embedding backend, available modes, repositories |
 | `GET /health` | public | Liveness |
 
-OpenAPI is served at `/docs`.
+OpenAPI is served at `/docs`. Four older routers (the resource store, its search, the legacy resource
+graph and planning) are still mounted, because the legacy REST tool router and the edge worker use
+them. They are maintained to a lower bar; see [Limitations](#limitations).
 
 ## Retrieval quality
 
@@ -263,6 +265,12 @@ Every setting is documented in [`backend/config/.env.example`](backend/config/.e
   [protocol v2](docs/benchmarks/phase2-eval-protocol-v2.md) run was
   [stopped early](docs/benchmarks/phase2-memory-v2-partial-2026-11-01.md).
   - It is learned only on a machine with full git mirrors (`pharos learn`, or the learning worker).
+- **Legacy modules** (resources, search, resource graph, planning) predate the code index and are
+  due for removal. The rest of the legacy code was removed in 2026-11 and is at tag `legacy-2026-11`.
+  Notably:
+  - parent-child search is PostgreSQL-only;
+  - "AI planning" returns a fixed template plan;
+  - URL resource ingestion still calls services that were removed earlier and logs errors for those steps.
 - **Database migrations:** the migrations were squashed in 2026-10. An existing database needs the
   one-time procedure in [docs/operations/database-migrations.md](docs/operations/database-migrations.md).
 
