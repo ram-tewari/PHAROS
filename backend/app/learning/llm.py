@@ -1,4 +1,4 @@
-"""Codex CLI as PHAROS's offline LLM, for jobs that run on the owner's Mac.
+"""Codex CLI and Claude Code CLI as PHAROS's offline LLMs, for jobs that run on the owner's Mac.
 
 Port of the hardened ``codex exec`` provider in CognitiveOS's Valerie bridge:
 one subprocess per request from an empty temporary directory, every tool-like
@@ -6,6 +6,14 @@ feature disabled, user config and rules ignored, read-only sandbox, ephemeral
 session, prompt on stdin (never argv, which ``ps`` shows) and output held to a
 strict JSON schema. It uses the CLI's ChatGPT login; ``OPENAI_*`` and
 ``CODEX_API*`` variables are removed so it can never bill an API key.
+
+:class:`ClaudeCLI` has the same interface over ``claude -p``: restricted mode
+with every tool removed (``--restricted --tools ""``), no MCP servers
+(``--strict-mcp-config``), no session saved, the instructions as the whole
+system prompt (from a file, never argv), the prompt on stdin and the answer
+held to ``--json-schema``. It uses the CLI's Claude subscription login;
+``ANTHROPIC_API_KEY`` and ``ANTHROPIC_AUTH_TOKEN`` are removed for the same
+reason.
 
 Production never imports this: the API serves results, the Mac computes them.
 """
@@ -15,6 +23,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import shutil
 import signal
 import subprocess
@@ -36,7 +45,7 @@ TOOL_FEATURES = (
 
 
 class LLMUnavailable(RuntimeError):
-    """Codex is missing, signed out, timed out or returned nothing usable."""
+    """The CLI is missing, signed out, out of budget, timed out or returned nothing usable."""
 
 
 def find_codex() -> str | None:
@@ -49,6 +58,25 @@ def find_codex() -> str | None:
         return on_path
     bundled = sorted(Path.home().glob(".vscode/extensions/openai.chatgpt-*/bin/macos-aarch64/codex"))
     return str(bundled[-1]) if bundled else None
+
+
+def find_claude() -> str | None:
+    """PHAROS_CLAUDE_PATH, then PATH, then the newest binary bundled with the Claude Code VS Code extension."""
+    explicit = os.getenv("PHAROS_CLAUDE_PATH")
+    if explicit and Path(explicit).is_file():
+        return explicit
+    on_path = shutil.which("claude")
+    if on_path:
+        return on_path
+    bundled = sorted(Path.home().glob(".vscode/extensions/anthropic.claude-code-*/resources/native-binary/claude"),
+                     key=lambda p: _version_key(p.parts[-4]))
+    return str(bundled[-1]) if bundled else None
+
+
+def _version_key(directory: str) -> tuple:
+    """``anthropic.claude-code-2.1.322-darwin-arm64`` -> (2, 1, 322), so 2.1.10 sorts after 2.1.9."""
+    m = re.search(r"-(\d+)\.(\d+)\.(\d+)", directory)
+    return tuple(int(g) for g in m.groups()) if m else (0,)
 
 
 def openai_strict(node):
@@ -102,6 +130,9 @@ class Usage:
     output_tokens: int = 0
     seconds: float = 0.0
     failures: int = 0
+    cache_read_tokens: int = 0  # Claude: prompt tokens read from the cache (included in input_tokens)
+    cache_creation_tokens: int = 0  # Claude: prompt tokens written to the cache (included in input_tokens)
+    cost_usd: float = 0.0  # Claude: the CLI's own estimate (a subscription is not billed per call)
     per_call: list[dict] = field(default_factory=list)
 
 
@@ -213,6 +244,111 @@ class CodexCLI:
             self.usage.seconds += seconds
             self.usage.per_call.append({"seconds": round(seconds, 1), **usage})
             return result
+        except LLMUnavailable:
+            self.usage.failures += 1
+            raise
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)
+
+
+class ClaudeCLI:
+    """``complete(instructions, prompt, schema) -> dict`` through ``claude -p``, like :class:`CodexCLI`.
+
+    ``max_calls`` bounds one run; exceeding it raises ``LLMUnavailable``. ``effort`` is passed as
+    ``--effort`` when set (low, medium, high, xhigh, max).
+    """
+
+    def __init__(self, path: str | None = None, model: str | None = None, effort: str | None = None,
+                 timeout: float = 180, max_calls: int | None = None):
+        self.path = path or find_claude()
+        self.model = model or os.getenv("PHAROS_CLAUDE_MODEL") or None
+        self.effort = effort
+        self.timeout = timeout
+        self.max_calls = max_calls
+        self.usage = Usage()
+        self._ready: tuple[float, bool] | None = None
+
+    @staticmethod
+    def env() -> dict[str, str]:
+        return {k: v for k, v in os.environ.items() if k not in ("ANTHROPIC_API_KEY", "ANTHROPIC_AUTH_TOKEN")}
+
+    def ready(self) -> bool:
+        """Installed and signed in with a Claude subscription (cached for a minute)."""
+        if self._ready and time.monotonic() - self._ready[0] < 60:
+            return self._ready[1]
+        ok = False
+        if self.path and Path(self.path).is_file():
+            try:
+                out = subprocess.run([self.path, "auth", "status"], capture_output=True, text=True, timeout=15,
+                                     env=self.env(), cwd=tempfile.gettempdir())
+                status = json.loads(out.stdout or "{}")
+                ok = out.returncode == 0 and status.get("loggedIn") is True
+            except (OSError, subprocess.SubprocessError, ValueError):
+                ok = False
+        self._ready = (time.monotonic(), ok)
+        return ok
+
+    def argv(self, system_prompt_file: str, schema: dict, effort: str | None = None) -> list[str]:
+        argv = [self.path, "-p", "--output-format", "json", "--json-schema", json.dumps(schema),
+                "--restricted", "--tools", "", "--strict-mcp-config", "--mcp-config", '{"mcpServers":{}}',
+                "--no-session-persistence", "--disable-slash-commands", "--max-turns", "3",
+                "--system-prompt-file", system_prompt_file]
+        if self.model:
+            argv += ["--model", self.model]
+        if effort or self.effort:
+            argv += ["--effort", effort or self.effort]
+        return argv
+
+    def complete(self, instructions: str, prompt: str, schema: dict, *, effort: str | None = None,
+                 timeout: float | None = None) -> dict:
+        if self.max_calls is not None and self.usage.calls >= self.max_calls:
+            raise LLMUnavailable(f"call budget of {self.max_calls} reached")
+        if not self.ready():
+            raise LLMUnavailable("claude is not installed or not signed in (claude auth login)")
+        workdir = tempfile.mkdtemp(prefix="pharos-claude-")
+        t0 = time.monotonic()
+        self.usage.calls += 1
+        try:
+            system_path = os.path.join(workdir, "instructions.txt")
+            with open(system_path, "w") as handle:
+                handle.write(instructions)
+            process = subprocess.Popen(self.argv(system_path, schema, effort), stdin=subprocess.PIPE,
+                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, env=self.env(),
+                                       cwd=workdir, start_new_session=True)
+            try:
+                stdout, stderr = process.communicate(prompt, timeout=timeout or self.timeout)
+            except subprocess.TimeoutExpired as exc:
+                try:
+                    os.killpg(process.pid, signal.SIGKILL)
+                except OSError:
+                    pass
+                process.communicate()
+                raise LLMUnavailable("claude timed out") from exc
+            try:
+                out = json.loads(stdout.strip().splitlines()[-1]) if stdout.strip() else {}
+            except ValueError as exc:
+                raise LLMUnavailable("claude returned output that is not JSON") from exc
+            if process.returncode != 0 or out.get("is_error") or out.get("subtype") != "success":
+                logger.warning("claude -p failed (exit %s, %s): %s", process.returncode, out.get("subtype"),
+                               ((out.get("result") or "") + (stderr or ""))[-300:])
+                raise LLMUnavailable("claude -p failed")
+            result = out.get("structured_output")
+            if not isinstance(result, dict):
+                raise LLMUnavailable("claude returned no structured output")
+            usage = out.get("usage") or {}
+            cache_read = int(usage.get("cache_read_input_tokens") or 0)
+            cache_creation = int(usage.get("cache_creation_input_tokens") or 0)
+            seconds = time.monotonic() - t0
+            self.usage.input_tokens += int(usage.get("input_tokens") or 0) + cache_read + cache_creation
+            self.usage.output_tokens += int(usage.get("output_tokens") or 0)
+            self.usage.cache_read_tokens += cache_read
+            self.usage.cache_creation_tokens += cache_creation
+            self.usage.cost_usd += float(out.get("total_cost_usd") or 0)
+            self.usage.seconds += seconds
+            self.usage.per_call.append({"seconds": round(seconds, 1), "num_turns": out.get("num_turns"), **{
+                k: usage.get(k) for k in ("input_tokens", "output_tokens", "cache_read_input_tokens",
+                                          "cache_creation_input_tokens")}})
+            return drop_nulls(result)
         except LLMUnavailable:
             self.usage.failures += 1
             raise
