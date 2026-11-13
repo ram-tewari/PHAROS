@@ -1473,6 +1473,19 @@ class MemoryItem(Base):
     search_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     embedding: Mapped[List[float] | None] = mapped_column(EmbeddingVector(EMBEDDING_DIM), nullable=True)
     embedding_model: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    # Phase 3. ``predicate``: an ``app.learning.checks`` predicate in JSON form when the claim can be
+    # tested on a change (None: not checkable). ``holdout``: the backtest that decided the status
+    # (window, applied, held, Wilson lower bound, counter-example commits, outcome and reason).
+    predicate: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    holdout: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # requirement (served as "do this") | observation (a measured pattern, served only on request)
+    # | advisory (not checkable: a fact with its evidence)
+    strength: Mapped[str | None] = mapped_column(String(16), nullable=True)
+    # Utility counters, filled by a later stage: times served, times the agent's change complied,
+    # times it helped.
+    served: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    complied: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
+    helped: Mapped[int] = mapped_column(Integer, nullable=False, default=0, server_default="0")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), nullable=False, server_default=func.current_timestamp()
     )
