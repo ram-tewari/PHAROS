@@ -1,0 +1,1824 @@
+{
+ "name": "ccrab_phase3",
+ "source": {
+  "repository": "https://github.com/c-CRAB-Benchmark/dataset",
+  "commit": "856dfa3102b8996d168c4f195217b7603e1d1bc6",
+  "stage4_sha256": "12984d013921bbffb0542e4eafbc5dfede75760eed9953e1a7db82def6ef17d9",
+  "testgen_zip_sha256": "c5300efc426abf2d7e0a67f09e878b48186bf68ba1bd4f66a031747437502a42",
+  "images": "ghcr.io/c-crab-benchmark/<instance id before '@', lower-cased>"
+ },
+ "rule": "stage4_agent_resolved.jsonl grouped by repository: test = repositories with 4 or more instances, dev = 2 or 3, reserve = exactly 1. Every instance of a selected repository is included.",
+ "counts": {
+  "test": {
+   "repositories": 16,
+   "instances": 105,
+   "comments": 135
+  },
+  "dev": {
+   "repositories": 22,
+   "instances": 50,
+   "comments": 61
+  },
+  "reserve": {
+   "repositories": 29,
+   "instances": 29,
+   "comments": 38
+  }
+ },
+ "test": {
+  "PostHog/posthog": [
+   {
+    "instance_id": "PostHog__posthog-10293@7041fd3",
+    "pull_number": 10293,
+    "created_at": "2022-06-14T11:31:40Z",
+    "base_commit": "3ced2ae1188093b321de17c2082e2e132b2b4429",
+    "head_commit": "7041fd36affcf61d8ae87e9a09d92edad4a6f984",
+    "merged_commit": "523997af76fa2c40ffdee20a85c646f17c5b2580",
+    "comments": 1
+   },
+   {
+    "instance_id": "PostHog__posthog-4868@1372f68",
+    "pull_number": 4868,
+    "created_at": "2021-06-24T14:48:10Z",
+    "base_commit": "628b431b6c6c204a3d935cf6ffb32eba54329e29",
+    "head_commit": "1372f68ae98de671a869c6a83092f21fc537a8e6",
+    "merged_commit": "1bfa011e2121fea0225f2363bffcd05b48dd34b6",
+    "comments": 3
+   },
+   {
+    "instance_id": "PostHog__posthog-7569@db32271",
+    "pull_number": 7569,
+    "created_at": "2021-12-07T23:34:15Z",
+    "base_commit": "6017a39d7e8a4b66b459c3f8206ba58f197ae87a",
+    "head_commit": "db3227153817bdc72462508f87b8f0ccee48940d",
+    "merged_commit": "0690aa3a56468aea8b1b06a57232500408f8af1d",
+    "comments": 1
+   },
+   {
+    "instance_id": "PostHog__posthog-8874@960dad4",
+    "pull_number": 8874,
+    "created_at": "2022-03-04T20:41:06Z",
+    "base_commit": "e3dcdb5ca0bdf8ffca1eea88c3e04eb134993e62",
+    "head_commit": "960dad4b6cdd0b942bb76beb0d95d19677697366",
+    "merged_commit": "ee1733d4b8c5fd6b6e3cf71a670befa194a17de7",
+    "comments": 1
+   }
+  ],
+  "ansible/ansible": [
+   {
+    "instance_id": "ansible__ansible-20646@f695114",
+    "pull_number": 20646,
+    "created_at": "2017-01-25T16:20:35Z",
+    "base_commit": "28e39ca42f30373c0500282e77c622c45fa1f783",
+    "head_commit": "f695114736f7f7e4e00138b08806d1d2a232fd23",
+    "merged_commit": "cf48e5863135d954421c089050a35fbb0f644043",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-27435@da1a331",
+    "pull_number": 27435,
+    "created_at": "2017-07-28T17:53:10Z",
+    "base_commit": "c714da7fac136c84cfbba57a801c48d874234cff",
+    "head_commit": "da1a331704d851bcdea7ad6c6b5441b071333f90",
+    "merged_commit": "9ceea147af267f9f3e76cfb27e02a5b0774a8cd6",
+    "comments": 3
+   },
+   {
+    "instance_id": "ansible__ansible-33909@d516d5b",
+    "pull_number": 33909,
+    "created_at": "2017-12-14T11:33:25Z",
+    "base_commit": "5578193ae4f6caa5a28c831449911645eef12e68",
+    "head_commit": "d516d5b17d7546ac288890ada958ae24d5247b03",
+    "merged_commit": "acb18579cff10920f78ded1756d57b35469015ec",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-36996@4b45ffc",
+    "pull_number": 36996,
+    "created_at": "2018-03-05T10:08:57Z",
+    "base_commit": "4021194532dde444e34e8a33f254d91ef4e25be3",
+    "head_commit": "4b45ffcd9924f3f6c31d42fc313fcba36cc66b97",
+    "merged_commit": "0f2e693901a862f2ae1210470d0585a87b9d78b5",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-44951@91cfd5c",
+    "pull_number": 44951,
+    "created_at": "2018-08-31T08:32:29Z",
+    "base_commit": "c2fa0d2c4bc4c0d2229775c5394c026091e595cc",
+    "head_commit": "91cfd5c7d99c3dd4bf7e42646ca24c859d077800",
+    "merged_commit": "3c7b5870665f0de87fd3c441d33a856c1fe5f8e3",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-51415@fb988f5",
+    "pull_number": 51415,
+    "created_at": "2019-01-29T05:05:53Z",
+    "base_commit": "15303b05efea234eb348871244b8094c9c63d939",
+    "head_commit": "fb988f547604f88f45ca271ccc9189e7ece89fe1",
+    "merged_commit": "6a52024ce04eb05f6250815cbe634cb062a0bba8",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-54268@403b068",
+    "pull_number": 54268,
+    "created_at": "2019-03-22T22:07:26Z",
+    "base_commit": "919e310b993e65fa671bf8b83951144afc5472f2",
+    "head_commit": "403b068aa2687727d08ed78e7e1b56048d609d42",
+    "merged_commit": "850eab0b54caedb41f27a67622df0268b3cc2081",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-55379@060b0e9",
+    "pull_number": 55379,
+    "created_at": "2019-04-16T13:44:52Z",
+    "base_commit": "9495ddbc21da2a5c7967f01c4a958d32f203af65",
+    "head_commit": "060b0e9dfcfd87e986386c1b825ce204a5210e75",
+    "merged_commit": "762ce6507d4b223c3e45fe323367984c92a3321c",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-56679@5e79e31",
+    "pull_number": 56679,
+    "created_at": "2019-05-20T23:04:40Z",
+    "base_commit": "493cf817a920542fc3d791e1bafdc52c05cbc06d",
+    "head_commit": "5e79e318579490d50f7709170141369d986014c5",
+    "merged_commit": "7628898e9571169fa10a785a4c815e511d67890e",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-58383@531e457",
+    "pull_number": 58383,
+    "created_at": "2019-06-26T10:54:41Z",
+    "base_commit": "7e22c7482e85cc98e14c4cdbc8b8ffb543917425",
+    "head_commit": "531e4579eedd60402d2c5f6ca9fb494e4f98a916",
+    "merged_commit": "e2fd4642bddfe8e2a3bea515ef679930de675408",
+    "comments": 3
+   },
+   {
+    "instance_id": "ansible__ansible-59946@fbe8544",
+    "pull_number": 59946,
+    "created_at": "2019-08-01T17:55:51Z",
+    "base_commit": "26fff6f5c32fa4396a8c72872c729b367739499c",
+    "head_commit": "fbe854460ed2d86dc2b677e28e2970a1f1df4b33",
+    "merged_commit": "167b9142b6033418ac46be85be82e1552a2af4d1",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-60622@19d2ad7",
+    "pull_number": 60622,
+    "created_at": "2019-08-15T05:00:33Z",
+    "base_commit": "c2160274c66831c29e5543e9acdee3051d694e82",
+    "head_commit": "19d2ad71815c48ec5177053a868b5def6b670d33",
+    "merged_commit": "0be7822a0d2a5243099872b7ef8eedbffba93a88",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-62373@30950ec",
+    "pull_number": 62373,
+    "created_at": "2019-09-16T23:55:12Z",
+    "base_commit": "f8f76628500052ad3521fbec16c073ae7f99d287",
+    "head_commit": "30950ec14b548b4ac71ac756c6cb165e9a01f97f",
+    "merged_commit": "a5a73ca867e4f3fa1c2a1184057af99634f4c17e",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-65021@f63c26e",
+    "pull_number": 65021,
+    "created_at": "2019-11-18T21:58:01Z",
+    "base_commit": "7d4800deb12c0b2894b0715065e1e0ab4caea99f",
+    "head_commit": "f63c26e4f295d24fb9f5ee022708f1e87c4225e9",
+    "merged_commit": "9f66c5311f839e81360a3118b4070b5609be44a1",
+    "comments": 1
+   },
+   {
+    "instance_id": "ansible__ansible-71136@621cec5",
+    "pull_number": 71136,
+    "created_at": "2020-08-07T01:39:27Z",
+    "base_commit": "6ac4439a6abe8c87190d25d6ee53962c03b458a1",
+    "head_commit": "621cec5a3afdf4857aaa589309a17843909d704e",
+    "merged_commit": "6eb7a5b7673eef415f40a4b0b3c6ba281239d879",
+    "comments": 1
+   }
+  ],
+  "apache/airflow": [
+   {
+    "instance_id": "apache__airflow-16732@8ec4f26",
+    "pull_number": 16732,
+    "created_at": "2021-06-30T15:04:23Z",
+    "base_commit": "df06a71bfc5e637fda38d555864b791ab5f0ad7d",
+    "head_commit": "8ec4f26230b33bf9ba19fd2b6649c4da6d30b024",
+    "merged_commit": "ce3db5239ff2e41414b5a3f7aaea163093b392eb",
+    "comments": 1
+   },
+   {
+    "instance_id": "apache__airflow-26766@cf0c9a6",
+    "pull_number": 26766,
+    "created_at": "2022-09-29T01:01:08Z",
+    "base_commit": "9c73b3f7fc1d18925d0ed09e8719f53b8147b0f2",
+    "head_commit": "cf0c9a64ef6956ea73377302981119615d5f0201",
+    "merged_commit": "540c2d2304669f8c5a49b440bfb19d079ae4ebbe",
+    "comments": 1
+   },
+   {
+    "instance_id": "apache__airflow-32366@52228da",
+    "pull_number": 32366,
+    "created_at": "2023-07-05T08:43:55Z",
+    "base_commit": "7722b6f226e9db3a89b01b89db5fdb7a1ab2256f",
+    "head_commit": "52228da5114227c296a2c6e9a292954147c4123e",
+    "merged_commit": "a952ea1460cfb0ea47f4b2ca9c40b668d8aacf5e",
+    "comments": 1
+   },
+   {
+    "instance_id": "apache__airflow-8749@161c96c",
+    "pull_number": 8749,
+    "created_at": "2020-05-06T21:26:05Z",
+    "base_commit": "bd29ee3ad1ebe96533759494c9b39bb504af6e14",
+    "head_commit": "161c96c698bc76411ead1cacc2e68bf4c439f826",
+    "merged_commit": "e10608a5957fe01f2f43e0c6f988f7da0d438e8b",
+    "comments": 1
+   }
+  ],
+  "deepset-ai/haystack": [
+   {
+    "instance_id": "deepset-ai__haystack-1413@fc3b61a",
+    "pull_number": 1413,
+    "created_at": "2021-09-05T09:25:57Z",
+    "base_commit": "3deff26b6057cb9213cb1707cc04acc9849d59d9",
+    "head_commit": "fc3b61a3cf6ae7fd384a58bcf7d0db1462ac391b",
+    "merged_commit": "ac718260a51758cc856a91f7ff36fafc5040cf61",
+    "comments": 1
+   },
+   {
+    "instance_id": "deepset-ai__haystack-1604@78e9795",
+    "pull_number": 1604,
+    "created_at": "2021-10-15T15:24:42Z",
+    "base_commit": "5a6285f23fda7ead23e0993b4985db2bd2577fd4",
+    "head_commit": "78e9795e421745f0648b4a8f50da6620688df348",
+    "merged_commit": "62dda412efc0b6d7567535b525c500ea6c3b799f",
+    "comments": 3
+   },
+   {
+    "instance_id": "deepset-ai__haystack-3488@e07a8b3",
+    "pull_number": 3488,
+    "created_at": "2022-10-27T15:00:19Z",
+    "base_commit": "8ddeda811a809838f7c58b8edb8a1bdfea72482e",
+    "head_commit": "e07a8b3ed2f8d3087fa3782ef80eb53d007c23e0",
+    "merged_commit": "c070fcfc96b365dc98c71b8ba31f33794345d538",
+    "comments": 3
+   },
+   {
+    "instance_id": "deepset-ai__haystack-3546@a260299",
+    "pull_number": 3546,
+    "created_at": "2022-11-09T16:37:22Z",
+    "base_commit": "af06519fc4eb646ba77d97da261a7dd5ec3fc7f3",
+    "head_commit": "a2602992a4b6c323df467065896074d0f5496d2a",
+    "merged_commit": "144766d7bb37ab0ffea8d73fc8be8ccfe9d93fc8",
+    "comments": 1
+   },
+   {
+    "instance_id": "deepset-ai__haystack-5284@60a39ef",
+    "pull_number": 5284,
+    "created_at": "2023-07-06T09:46:09Z",
+    "base_commit": "ac412193ccca1abd624d9df67fe484146a39db43",
+    "head_commit": "60a39ef3c3b20ef3b65de872128a469553394e03",
+    "merged_commit": "b7d6b96638bc49d26c1e02b1b4db5649ec61a390",
+    "comments": 1
+   },
+   {
+    "instance_id": "deepset-ai__haystack-8457@2dd3777",
+    "pull_number": 8457,
+    "created_at": "2024-10-15T12:58:34Z",
+    "base_commit": "906177329bcc54f6946af361fcd3d0e334e6ce5f",
+    "head_commit": "2dd3777af49287f2b5f362c378f882ded6d8af4c",
+    "merged_commit": "3e851925e73e70c2130342d1731ad7e0e3393bf6",
+    "comments": 1
+   },
+   {
+    "instance_id": "deepset-ai__haystack-92@accd8b1",
+    "pull_number": 92,
+    "created_at": "2020-05-04T13:10:56Z",
+    "base_commit": "f4455ee42facc96db8fc43f94038d6be8f05530f",
+    "head_commit": "accd8b1860c41d894121ffc57e9198cd0f476959",
+    "merged_commit": "5af75269b9b55d35b6cd49668af0cbff89d914bb",
+    "comments": 1
+   }
+  ],
+  "keephq/keep": [
+   {
+    "instance_id": "keephq__keep-100@6a8be21",
+    "pull_number": 100,
+    "created_at": "2023-04-02T16:37:56Z",
+    "base_commit": "c8335a111b669f2c413c5efeebbd65700ef6a84d",
+    "head_commit": "6a8be211ffedd8c8126c9eb42e25a3b853cdf1cc",
+    "merged_commit": "dbefaebeec15d04423b84f193cacabd08c482fde",
+    "comments": 1
+   },
+   {
+    "instance_id": "keephq__keep-1984@e524fe8",
+    "pull_number": 1984,
+    "created_at": "2024-09-22T14:54:02Z",
+    "base_commit": "c41f345346278a49542156d46d9a6add5949177d",
+    "head_commit": "e524fe8b45332e767e537ee6f159929097f33f14",
+    "merged_commit": "0758182726684e237f44498b2000c801729d9f35",
+    "comments": 1
+   },
+   {
+    "instance_id": "keephq__keep-3054@2d23bf3",
+    "pull_number": 3054,
+    "created_at": "2025-01-18T19:34:44Z",
+    "base_commit": "4fd693764357c3afb00818317d9344e932414a1c",
+    "head_commit": "2d23bf39b9d56aed3ff6c006567a0d3392cc9816",
+    "merged_commit": "b616e03fc3df675a8fa5ab0723a917f3b5662102",
+    "comments": 2
+   },
+   {
+    "instance_id": "keephq__keep-4568@aaa03de",
+    "pull_number": 4568,
+    "created_at": "2025-04-17T04:48:18Z",
+    "base_commit": "7ef6766e111af9a10853f4fbb5ba13eb1bb27fc0",
+    "head_commit": "aaa03de40a1e7a624ed5b71385b462c779d64023",
+    "merged_commit": "41bc0df1b5119fc77d601287b799be4c25bd3eba",
+    "comments": 1
+   }
+  ],
+  "matplotlib/matplotlib": [
+   {
+    "instance_id": "matplotlib__matplotlib-17892@cb25841",
+    "pull_number": 17892,
+    "created_at": "2020-07-11T21:34:27Z",
+    "base_commit": "ec0132f66170dabc6352ba79d839b1dd9eb02157",
+    "head_commit": "cb25841bbb6f4bf515f3a1486028f86cebb02905",
+    "merged_commit": "1aab9adb3cef05ea6bdd45910edaabe3b8550148",
+    "comments": 1
+   },
+   {
+    "instance_id": "matplotlib__matplotlib-26151@c6a1bf5",
+    "pull_number": 26151,
+    "created_at": "2023-06-19T13:14:26Z",
+    "base_commit": "4dbba98f38575c9adc76e59d83e930aa8cff6149",
+    "head_commit": "c6a1bf5b26de11e4c328419d6bd5e87327179e53",
+    "merged_commit": "f780312df190236a3a8e710be1d75ea3d25058f4",
+    "comments": 1
+   },
+   {
+    "instance_id": "matplotlib__matplotlib-27172@9f80d55",
+    "pull_number": 27172,
+    "created_at": "2023-10-23T13:05:15Z",
+    "base_commit": "e50154367059dd321f5a4aa33e08009351aaff91",
+    "head_commit": "9f80d5598d0ffa101e8db0968788290caa72a105",
+    "merged_commit": "dbe82fe1a4a7d5b33a4d4dd5e66e66ed4f242f22",
+    "comments": 1
+   },
+   {
+    "instance_id": "matplotlib__matplotlib-30199@b5dfb32",
+    "pull_number": 30199,
+    "created_at": "2025-06-21T11:12:08Z",
+    "base_commit": "5a10e4d29d2929a4093a42f9263c8237b2be6360",
+    "head_commit": "b5dfb32058ef8ef10f931f0f337e9bffb2113338",
+    "merged_commit": "2f615827ce8771c1a541c6c442d38689c5368364",
+    "comments": 1
+   }
+  ],
+  "netbox-community/netbox": [
+   {
+    "instance_id": "netbox-community__netbox-10171@249b8b0",
+    "pull_number": 10171,
+    "created_at": "2022-08-26T17:48:23Z",
+    "base_commit": "e0741cc9af7bd1f3d5b583198517cdd7980c66c7",
+    "head_commit": "249b8b0363e6328ee9e091b718ae98b15daef9ad",
+    "merged_commit": "c8ee01ba0fa5838cc7f3b141170914cb17fffe1b",
+    "comments": 1
+   },
+   {
+    "instance_id": "netbox-community__netbox-13373@1d02196",
+    "pull_number": 13373,
+    "created_at": "2023-08-04T07:05:13Z",
+    "base_commit": "f5a1f83f9fa9d98c945d21eb0f7ccb8cd37fbf59",
+    "head_commit": "1d02196e0a6071bc7fb90b1dd9d18310e58d55d0",
+    "merged_commit": "08348c617f0dbd0255055a83a78c866ef95b9b0c",
+    "comments": 3
+   },
+   {
+    "instance_id": "netbox-community__netbox-14047@0ec158d",
+    "pull_number": 14047,
+    "created_at": "2023-10-16T14:08:12Z",
+    "base_commit": "14447befb9dd2479ef265ef1a52b9430ffa10ed5",
+    "head_commit": "0ec158d2c43f16dd727e82048b50dd0b23905aad",
+    "merged_commit": "7522d23933d2e6af43c1c76b843123ec7588e74b",
+    "comments": 1
+   },
+   {
+    "instance_id": "netbox-community__netbox-17674@1507840",
+    "pull_number": 17674,
+    "created_at": "2024-10-03T15:31:28Z",
+    "base_commit": "6ea0c0c3e910d1104fd0fbe5e6cd07198862d1fa",
+    "head_commit": "1507840f35e9fb86abc4dd7c9e1dd7739213cc96",
+    "merged_commit": "c34f01b32b05ebf4994fa2df18291289759102a7",
+    "comments": 1
+   },
+   {
+    "instance_id": "netbox-community__netbox-7662@7c147db",
+    "pull_number": 7662,
+    "created_at": "2021-10-27T20:49:22Z",
+    "base_commit": "04d145d6d8957956369bdd224a852d7cd172fecf",
+    "head_commit": "7c147db3241ce9c63ed3b9632c1fb9053baf22e5",
+    "merged_commit": "c72f25c69376bd423ab79b9026c58e11e9f97622",
+    "comments": 5
+   }
+  ],
+  "networkx/networkx": [
+   {
+    "instance_id": "networkx__networkx-4134@3b27fe2",
+    "pull_number": 4134,
+    "created_at": "2020-08-05T23:46:11Z",
+    "base_commit": "123fc2be585c6ebbf46b7fe876ba85dd34f92b2e",
+    "head_commit": "3b27fe2fb9cd1cc8baaadb8d9d840c75f8685680",
+    "merged_commit": "fafba0c6c30af9cc783a80a88f60ae2e3dbf963f",
+    "comments": 1
+   },
+   {
+    "instance_id": "networkx__networkx-4602@b2da108",
+    "pull_number": 4602,
+    "created_at": "2021-02-06T03:15:21Z",
+    "base_commit": "e8fbdcb90391673132bae043c7e3c45b2cdedeba",
+    "head_commit": "b2da108af7f70a507ed9232ea01466e972781d8a",
+    "merged_commit": "2e2a63eb076e32f00b51915ac6131d74721e5a04",
+    "comments": 1
+   },
+   {
+    "instance_id": "networkx__networkx-5305@072b960",
+    "pull_number": 5305,
+    "created_at": "2022-02-05T00:16:48Z",
+    "base_commit": "98060487ad192918cfc2415fc0b5c309ff2d3565",
+    "head_commit": "072b9603adf143579de1fb79fcb50ec52d0b5a8c",
+    "merged_commit": "5fef21e3eac881735d2193ff81db1b7484e284b3",
+    "comments": 2
+   },
+   {
+    "instance_id": "networkx__networkx-7159@7e65b7d",
+    "pull_number": 7159,
+    "created_at": "2023-12-14T07:02:12Z",
+    "base_commit": "1dade0d07ec0818bcdddd76f43fcca7d74a8649e",
+    "head_commit": "7e65b7d9b6cf550f5640360d89517f11444b8514",
+    "merged_commit": "62887bd1875a292d42b8632054f9c1a510fe3923",
+    "comments": 1
+   }
+  ],
+  "numpy/numpy": [
+   {
+    "instance_id": "numpy__numpy-12123@1c2abd3",
+    "pull_number": 12123,
+    "created_at": "2018-10-09T12:20:28Z",
+    "base_commit": "072c90ea848c753b7e8b7c42d2e359f53dfd0085",
+    "head_commit": "1c2abd36473d9c178557f4cc2ce50094c9b4636b",
+    "merged_commit": "263369c559bf8e7f78390eacb07aafab2cec4a4a",
+    "comments": 1
+   },
+   {
+    "instance_id": "numpy__numpy-14924@6a7e3f1",
+    "pull_number": 14924,
+    "created_at": "2019-11-17T22:02:42Z",
+    "base_commit": "9aeb7513019954718a3225fbab24bdbb98ca4fd5",
+    "head_commit": "6a7e3f152a0564cc40fee84ed88f28e03bcd21f7",
+    "merged_commit": "6b181c8e607f35b0de1a6a12dd280ddf2bc439f5",
+    "comments": 1
+   },
+   {
+    "instance_id": "numpy__numpy-15425@e603b5f",
+    "pull_number": 15425,
+    "created_at": "2020-01-24T08:55:54Z",
+    "base_commit": "31e53bfddef063eba9c023999f8e5923a608ba71",
+    "head_commit": "e603b5fdf7070381bf4b6ab5347df8b28a4233c0",
+    "merged_commit": "5f64d860cb49ca876ecbda708a40a2377448bbeb",
+    "comments": 1
+   },
+   {
+    "instance_id": "numpy__numpy-22997@8c57716",
+    "pull_number": 22997,
+    "created_at": "2023-01-11T21:04:03Z",
+    "base_commit": "55e47e36ec9dbdd47d58900a8b504d9e159f1beb",
+    "head_commit": "8c5771665400727b106daa009496a09aa88364b7",
+    "merged_commit": "11badd45c24b5ab5861ffdbaf14c9a8ff1d90448",
+    "comments": 1
+   }
+  ],
+  "pandas-dev/pandas": [
+   {
+    "instance_id": "pandas-dev__pandas-14737@8e4adbb",
+    "pull_number": 14737,
+    "created_at": "2016-11-25T06:43:10Z",
+    "base_commit": "725453deb2efae1b84d87131e785a42a22753659",
+    "head_commit": "8e4adbb6cf1f87c95440c4eb89fc61262645ffe9",
+    "merged_commit": "65eae672e7fe503a580a9c0900d96aeb893a50f3",
+    "comments": 4
+   },
+   {
+    "instance_id": "pandas-dev__pandas-16744@b8a6007",
+    "pull_number": 16744,
+    "created_at": "2017-06-21T11:24:41Z",
+    "base_commit": "8a98f5ed541c87a9bf101c9331bd6cfa8f007cc9",
+    "head_commit": "b8a6007e8b5f79249b63407b8a9e5f88422a6ce9",
+    "merged_commit": "36960cd3fef212a9d92e14a6031d70aa08b888a7",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-23141@1c22791",
+    "pull_number": 23141,
+    "created_at": "2018-10-13T22:20:38Z",
+    "base_commit": "fc64ca869670d24af46b5e017baba88fdd5e9532",
+    "head_commit": "1c227915634c0b6161c6dd1788b696ee3959f334",
+    "merged_commit": "9159b2dcc9da90128f63552fe7e83d7270d34518",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-23480@ab05b87",
+    "pull_number": 23480,
+    "created_at": "2018-11-04T06:16:18Z",
+    "base_commit": "8586644429a8c0054a74e645830601419da6613f",
+    "head_commit": "ab05b877832c4da2b29f71757ec8c18c6baa856c",
+    "merged_commit": "ac5cd2d677aa96142b15e72f80ece445cd6586e8",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-23866@45e5f06",
+    "pull_number": 23866,
+    "created_at": "2018-11-23T09:13:26Z",
+    "base_commit": "e5c90e5e355077c4ee5245a4a72833f4e8af72b9",
+    "head_commit": "45e5f06de759929fec452842bb7704e1d2eba351",
+    "merged_commit": "fbde055d3083886e5f28120cfe2a5390bfe0b07e",
+    "comments": 4
+   },
+   {
+    "instance_id": "pandas-dev__pandas-23886@d6a2d5b",
+    "pull_number": 23886,
+    "created_at": "2018-11-24T21:07:41Z",
+    "base_commit": "90961f2acad5c2db6aa957e2a79df8668f5b02d1",
+    "head_commit": "d6a2d5bc016f52cbbb6370f555f8541adc5eff86",
+    "merged_commit": "b34280bd9e7fec3dd77b4d43041452cb914c5869",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-28802@33c889c",
+    "pull_number": 28802,
+    "created_at": "2019-10-05T21:16:51Z",
+    "base_commit": "a1dba2c6d6140896cdb23d9c9f094d8c71094ccf",
+    "head_commit": "33c889cd77213e6d861b54fd7c4ca19b2fa9cd7f",
+    "merged_commit": "1cc400c52856b9c1a04305f7a4f18699720b7b77",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-34933@de64663",
+    "pull_number": 34933,
+    "created_at": "2020-06-22T11:28:39Z",
+    "base_commit": "f5b2e5a9a2431165b1e8002219c5d3962d7bc920",
+    "head_commit": "de6466384f5aa324bc097656f7f35ddc18fadcbb",
+    "merged_commit": "d8a198bad9ffe209463e5e57e4112e0f9ff2e198",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-35284@644bdf7",
+    "pull_number": 35284,
+    "created_at": "2020-07-15T11:57:25Z",
+    "base_commit": "b0468aa45f3912d6f8823d1cd418af34ffdcd2b1",
+    "head_commit": "644bdf716f0d342a26cf539d1458d8b861a89ece",
+    "merged_commit": "31330d27e20d5196a8f874c7a9a1ae422f4a193a",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-35974@d0a8a68",
+    "pull_number": 35974,
+    "created_at": "2020-08-29T10:15:23Z",
+    "base_commit": "b8448b2608bd85286e0062dcdcd84a2545511298",
+    "head_commit": "d0a8a68791f2ce76b82b85298ba03bc1bf55e3e1",
+    "merged_commit": "b242ca395110d08667df6779f65a0d63b522a5fe",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-42186@62d46c4",
+    "pull_number": 42186,
+    "created_at": "2021-06-22T08:48:17Z",
+    "base_commit": "4f0e2e9712dd06d3e445c5777fd979c21cd84c02",
+    "head_commit": "62d46c4e2c8ce4ddb28f8cf60de60406f1467ae7",
+    "merged_commit": "b58bbe3a1b4cdf567d3e447d92c4ef6547fcfabe",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-42635@59d4145",
+    "pull_number": 42635,
+    "created_at": "2021-07-20T18:46:56Z",
+    "base_commit": "06b9e49bca8350ff177461d985f200d46b8c61c9",
+    "head_commit": "59d4145c6f62d87bccd13bdc213fffe262903485",
+    "merged_commit": "970ed06055ec703159a26af5895127d28f105bc3",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-43930@fef88a7",
+    "pull_number": 43930,
+    "created_at": "2021-10-08T17:02:57Z",
+    "base_commit": "61e0eeff630fb901dac29a453206831be46384df",
+    "head_commit": "fef88a7e252fc594b8a7ef4afd7ac04d9ebc240d",
+    "merged_commit": "7fba6a29cdafd058d8271da7e6b12cbbb0e14553",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-50366@1e7613f",
+    "pull_number": 50366,
+    "created_at": "2022-12-20T21:17:43Z",
+    "base_commit": "3bc2203b05ffbf3d18e912ce818f94bbf7820474",
+    "head_commit": "1e7613f1e8db27d93a26840ee3fa908e05e0b310",
+    "merged_commit": "8543fc9cfe15597b791430e6de91a4d5d611b6e6",
+    "comments": 1
+   },
+   {
+    "instance_id": "pandas-dev__pandas-55938@b36d8d1",
+    "pull_number": 55938,
+    "created_at": "2023-11-13T14:16:35Z",
+    "base_commit": "8df36a2f9f787af7fcc08326c6d7b3456b3ff0b7",
+    "head_commit": "b36d8d16d3b03f40a31107e7954345e81aa3c34e",
+    "merged_commit": "49ef712530571a4f92298d1f2f004c931ca6bd04",
+    "comments": 1
+   }
+  ],
+  "python/mypy": [
+   {
+    "instance_id": "python__mypy-14517@78b0f55",
+    "pull_number": 14517,
+    "created_at": "2023-01-24T15:48:40Z",
+    "base_commit": "c245e91e1ba4d23ff28e77d08f5e103c43733bf5",
+    "head_commit": "78b0f552b28dafd700f5f0bf62bcbba72b0aee9a",
+    "merged_commit": "39c22d55a43766f3590eb4a2176c62d2a33baba1",
+    "comments": 1
+   },
+   {
+    "instance_id": "python__mypy-15353@65efb01",
+    "pull_number": 15353,
+    "created_at": "2023-06-02T13:41:45Z",
+    "base_commit": "781dc8f82adacce730293479517fd0fb5944c255",
+    "head_commit": "65efb01394a231a3b1fa10aa87a6988fd9b1c8cb",
+    "merged_commit": "5cb1b777d7a3545c5f9a78a93c73996af1488983",
+    "comments": 1
+   },
+   {
+    "instance_id": "python__mypy-6781@3a824fb",
+    "pull_number": 6781,
+    "created_at": "2019-05-06T19:04:10Z",
+    "base_commit": "2e098a2ee1fec57e46b21f49b673cdfe01f8dc21",
+    "head_commit": "3a824fb6e4136a380c382b5c8027ee2e60f54564",
+    "merged_commit": "c7ffba662ab1231e015bca240c05f42683397c83",
+    "comments": 2
+   },
+   {
+    "instance_id": "python__mypy-6803@8e6a9b8",
+    "pull_number": 6803,
+    "created_at": "2019-05-08T19:27:48Z",
+    "base_commit": "285b683bc8e616bee2a2c175e3e7995d521f5190",
+    "head_commit": "8e6a9b8bf8c1d257146e99a2b7c1b7640d2d18a9",
+    "merged_commit": "125510b9dc9f4215f13dc63be3bafecc5f36776b",
+    "comments": 2
+   },
+   {
+    "instance_id": "python__mypy-9629@13dc4d2",
+    "pull_number": 9629,
+    "created_at": "2020-10-23T08:44:33Z",
+    "base_commit": "af3c8be98f9a3fad3fd9c7a9839278c8c1d74455",
+    "head_commit": "13dc4d21b296c71da6b03a32d23dd5d88cde6781",
+    "merged_commit": "989512b8cd1873321e80475df1aa0ef472ae3e81",
+    "comments": 1
+   }
+  ],
+  "pytorch/vision": [
+   {
+    "instance_id": "pytorch__vision-2596@8859151",
+    "pull_number": 2596,
+    "created_at": "2020-08-19T21:01:02Z",
+    "base_commit": "de908627640151defa27be0fdd741720a0940048",
+    "head_commit": "8859151659e55a180f3bac7d1a7309ca347c5df1",
+    "merged_commit": "cf2935fcdce92b681d845e01047e8ede1f94daed",
+    "comments": 1
+   },
+   {
+    "instance_id": "pytorch__vision-2988@7ea166d",
+    "pull_number": 2988,
+    "created_at": "2020-11-11T12:05:16Z",
+    "base_commit": "80f41f8d32b1fcb380d5df2116063af7034ff29a",
+    "head_commit": "7ea166d463f958283dabd10bc3faaa8d1f104d13",
+    "merged_commit": "ada56a2442282752ccb83c935e10cb4fbbc0c8d5",
+    "comments": 1
+   },
+   {
+    "instance_id": "pytorch__vision-4457@231054c",
+    "pull_number": 4457,
+    "created_at": "2021-09-22T09:14:22Z",
+    "base_commit": "c6a03c760e05e59af5157fe8084c5a11ca099bef",
+    "head_commit": "231054c6f0e1e2a9bad9e5f241cafc91a6333c78",
+    "merged_commit": "a414551995ac196f9029afa4f82151ff140c00c0",
+    "comments": 1
+   },
+   {
+    "instance_id": "pytorch__vision-8316@92ec2fb",
+    "pull_number": 8316,
+    "created_at": "2024-03-13T17:06:29Z",
+    "base_commit": "2ba586d5b30948dd7c1a45c969ad9b9ec12b7788",
+    "head_commit": "92ec2fb3dc7bc0b1a2efe34c1123c56d4b42e12b",
+    "merged_commit": "ae595be0dd2187225451b727f9837c1ab8758a23",
+    "comments": 2
+   }
+  ],
+  "scikit-learn/scikit-learn": [
+   {
+    "instance_id": "scikit-learn__scikit-learn-12822@c451532",
+    "pull_number": 12822,
+    "created_at": "2018-12-18T22:52:58Z",
+    "base_commit": "39db9c4eca8d782932040e997d4e87ed9f450169",
+    "head_commit": "c451532bf834d8aa910ffe87b1645b1bfec58f70",
+    "merged_commit": "32c1eea3d0a7a2b26ee6279f23119beacc30b13d",
+    "comments": 1
+   },
+   {
+    "instance_id": "scikit-learn__scikit-learn-15277@594e3a6",
+    "pull_number": 15277,
+    "created_at": "2019-10-16T18:28:13Z",
+    "base_commit": "70351e6efca51de0ec2a2834831d67f024a9525b",
+    "head_commit": "594e3a63e3aac8d2ea529524e56d2403de981634",
+    "merged_commit": "add87dc4d612ed61e7779fda4c85355b1b5a7b23",
+    "comments": 1
+   },
+   {
+    "instance_id": "scikit-learn__scikit-learn-23548@cc5e175",
+    "pull_number": 23548,
+    "created_at": "2022-06-06T10:29:08Z",
+    "base_commit": "7d9bc179e7c222c6dc70750c840099f242e09a80",
+    "head_commit": "cc5e1752a11e4d26e5ef2553877127573f0072c5",
+    "merged_commit": "2c54c51ccffb4737312b0eaca9fe8f7a166c5108",
+    "comments": 1
+   },
+   {
+    "instance_id": "scikit-learn__scikit-learn-29401@819e167",
+    "pull_number": 29401,
+    "created_at": "2024-07-03T13:00:00Z",
+    "base_commit": "ecdc9570953f21d702e3e96394133abdad8e3b6a",
+    "head_commit": "819e167df9020453ac2f26e8d0230e97f0de6b20",
+    "merged_commit": "792bd4abe657f94a2c7d4297db35e47afdeaa061",
+    "comments": 1
+   },
+   {
+    "instance_id": "scikit-learn__scikit-learn-29442@3a19575",
+    "pull_number": 29442,
+    "created_at": "2024-07-09T20:09:54Z",
+    "base_commit": "f9776619f1144075289813634c5d450d5b31fa71",
+    "head_commit": "3a1957589f7dd56713ea9040b70228124dbd5fc7",
+    "merged_commit": "080c8469d2c14766b739da4bcdfd26eddd611c25",
+    "comments": 1
+   },
+   {
+    "instance_id": "scikit-learn__scikit-learn-9802@5c7da54",
+    "pull_number": 9802,
+    "created_at": "2017-09-19T18:22:44Z",
+    "base_commit": "3cfd1faf610e61f3572597992d4b03b3d98a3ad2",
+    "head_commit": "5c7da543c047666c3674f453834d39e7a6670149",
+    "merged_commit": "e5fc0f8173268967f78359bbe23c3e3778701941",
+    "comments": 1
+   }
+  ],
+  "skypilot-org/skypilot": [
+   {
+    "instance_id": "skypilot-org__skypilot-1144@36893af",
+    "pull_number": 1144,
+    "created_at": "2022-08-31T06:07:44Z",
+    "base_commit": "3c8b5e28487d8857d58c8d4fe6e3368f543c3fa4",
+    "head_commit": "36893afab87ad40b51bd5a6130712901e309ce3b",
+    "merged_commit": "aa004fe0ff0bd8abd318b3f1d18d2ed1e46c7ba1",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-1427@b01cb79",
+    "pull_number": 1427,
+    "created_at": "2022-11-17T08:10:27Z",
+    "base_commit": "79b389dbc8761bf85297bda71c07af2e96df1f9a",
+    "head_commit": "b01cb792c9c3f8fb2dddc129ee4ae62d5ea5912f",
+    "merged_commit": "14e1934ac8cb9d2d4327174fbd6e04d1e5add2eb",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-1489@1430d74",
+    "pull_number": 1489,
+    "created_at": "2022-12-05T09:35:45Z",
+    "base_commit": "e1c4121894bed919e2a59eba7096ec75a44ab65b",
+    "head_commit": "1430d74694d9f9dea952328b6b74c77586d128b2",
+    "merged_commit": "47ac24e66714ba87219555d397930134c68bec4f",
+    "comments": 3
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-3017@1f526ee",
+    "pull_number": 3017,
+    "created_at": "2024-01-23T22:17:03Z",
+    "base_commit": "47206ace8626c464cadeec402a1fadd097d35469",
+    "head_commit": "1f526eebec442acbb4585409a9d268db1dd2a83d",
+    "merged_commit": "79ea12301156229d4b2558121b29565d84bade90",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-4067@ff528a5",
+    "pull_number": 4067,
+    "created_at": "2024-10-10T23:31:30Z",
+    "base_commit": "340f38404fe5d3ebe35ea430a67cb3377241d1f3",
+    "head_commit": "ff528a5de1518737bc2c42ba9ff3f0d61fe41270",
+    "merged_commit": "8992f23822af058e90c9b11eb5f19502f25bacdf",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-5435@50d9632",
+    "pull_number": 5435,
+    "created_at": "2025-04-29T08:02:49Z",
+    "base_commit": "7b804dafe2f6b775f8a357ac6e147b83e792af93",
+    "head_commit": "50d96329de8bd979e5473ec3b9fc4b59be4b3c8b",
+    "merged_commit": "fcc3929fd3e9a4d025fb2f9df03b964e04e21dc8",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-569@1c4deb7",
+    "pull_number": 569,
+    "created_at": "2022-03-15T00:35:01Z",
+    "base_commit": "c6955a4828987252052459726c06586f2d8ab15a",
+    "head_commit": "1c4deb7e81c087b36e6005f625098f7dd68bc588",
+    "merged_commit": "89b18dec08b8b450e3818b0360823d219f4d02bc",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-614@ac824f0",
+    "pull_number": 614,
+    "created_at": "2022-03-19T00:17:56Z",
+    "base_commit": "b0438c4c2410967fc4516bce572f519650bfa4d7",
+    "head_commit": "ac824f0f0d384a5a08ed7e0c7574a855d28b637f",
+    "merged_commit": "48e5150ea3d1f9319a87588ba0b46a5a8e779444",
+    "comments": 1
+   },
+   {
+    "instance_id": "skypilot-org__skypilot-727@4fca3da",
+    "pull_number": 727,
+    "created_at": "2022-04-08T19:57:00Z",
+    "base_commit": "564f70b3d24a4747204296255cc42642e76aa4c7",
+    "head_commit": "4fca3da8be6444ff04455d808e776e4a25cba571",
+    "merged_commit": "37ca82cc46baf8cb5ae1001f34520c8381ad634d",
+    "comments": 1
+   }
+  ],
+  "sqlfluff/sqlfluff": [
+   {
+    "instance_id": "sqlfluff__sqlfluff-2121@d0d52a4",
+    "pull_number": 2121,
+    "created_at": "2021-12-16T07:58:13Z",
+    "base_commit": "b53c24a4ae8e7e513e16c8cb26fd04ba4544c66e",
+    "head_commit": "d0d52a4d7bbec7fa438833a72e14307fa725bc29",
+    "merged_commit": "d0c0941ee45ddaed84ec4537d25c9208dd321c9a",
+    "comments": 2
+   },
+   {
+    "instance_id": "sqlfluff__sqlfluff-494@554c74a",
+    "pull_number": 494,
+    "created_at": "2020-10-19T18:30:51Z",
+    "base_commit": "b6c993ca124189976b61d5396cb8dc7b1e8f96a2",
+    "head_commit": "554c74ab9caa582a0e5bfc1a4a0b7c3776a38960",
+    "merged_commit": "80f31edea5db32e64990086b3ff3f2dbf1c0e92d",
+    "comments": 1
+   },
+   {
+    "instance_id": "sqlfluff__sqlfluff-541@c5a16c3",
+    "pull_number": 541,
+    "created_at": "2020-11-09T20:25:30Z",
+    "base_commit": "a5665e0d82dc3d8177fbf4a589623976cb1288be",
+    "head_commit": "c5a16c3e8fce9064d69141acb3b608bfc883f3a7",
+    "merged_commit": "8f7e0e029655e1b104d438198e6a0dbf2ea38acb",
+    "comments": 1
+   },
+   {
+    "instance_id": "sqlfluff__sqlfluff-865@9e69af8",
+    "pull_number": 865,
+    "created_at": "2021-03-14T20:37:07Z",
+    "base_commit": "9a0c8f55075352325fc4b92fd21bbe2c8f3913ba",
+    "head_commit": "9e69af8f15fd65b68324321de5a229a13a60d776",
+    "merged_commit": "e92618957ce03df832fdadb41aa7329907f46ab2",
+    "comments": 1
+   }
+  ],
+  "sympy/sympy": [
+   {
+    "instance_id": "sympy__sympy-11818@ab1bcd5",
+    "pull_number": 11818,
+    "created_at": "2016-11-06T19:54:19Z",
+    "base_commit": "a221c376f3f382d251a600aa336b45e95f92b7fe",
+    "head_commit": "ab1bcd52134398f569a28184f6ff40688052c939",
+    "merged_commit": "d6e6e8335ae22f09a3c9b9177333a7fb84cd2be1",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-15346@99fe375",
+    "pull_number": 15346,
+    "created_at": "2018-10-05T17:25:21Z",
+    "base_commit": "9ef28fba5b4d6d0168237c9c005a550e6dc27d81",
+    "head_commit": "99fe375f997fe5405453905c23b8a65a20870d25",
+    "merged_commit": "83e1ba0b6514287d3da4a8f7c3c971c409d44b94",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-18605@a356458",
+    "pull_number": 18605,
+    "created_at": "2020-02-08T18:04:45Z",
+    "base_commit": "c0a02c3c928dbbc42c008ed460bb662fc602f9d4",
+    "head_commit": "a35645804aa33eb8d3d9c9d0470991cc9616377b",
+    "merged_commit": "f78af662c960b5bd42b0b01fc1ddb9071cdceadb",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-18630@9ca7e3a",
+    "pull_number": 18630,
+    "created_at": "2020-02-10T20:55:10Z",
+    "base_commit": "44664d9f625a1c68bc492006cfe1012cb0b49ee4",
+    "head_commit": "9ca7e3a08569ff3d574d3a8aceeb9f9523c0d4aa",
+    "merged_commit": "49528a69b52887d86b49fde442de2e1b1f074649",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-19254@8adfdbe",
+    "pull_number": 19254,
+    "created_at": "2020-05-04T13:38:13Z",
+    "base_commit": "e0ef1da13e2ab2a77866c05246f73c871ca9388c",
+    "head_commit": "8adfdbed18e6a0e06d862213752d2cb96a84218a",
+    "merged_commit": "ad5638b5189f92bcda642b93d195a5e4746c8166",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-19913@d466e06",
+    "pull_number": 19913,
+    "created_at": "2020-08-07T05:06:19Z",
+    "base_commit": "1b9a569fd62ca548149705652dfd6eefcba0ef38",
+    "head_commit": "d466e06844dd3c6558e20e5ed621d50e631c1aa3",
+    "merged_commit": "adf1b437bc3671c8340515acd6e2167011b6ce0f",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-22369@6eb7e6a",
+    "pull_number": 22369,
+    "created_at": "2021-10-25T17:34:13Z",
+    "base_commit": "0e4bab73562d6f90fcdf5fa079731f26a455347c",
+    "head_commit": "6eb7e6a42a9dd9dbdf9fe07922e083afa2932456",
+    "merged_commit": "4fca2b9b9a5b849cf56145506b371bbcf48deabe",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-22426@05cec82",
+    "pull_number": 22426,
+    "created_at": "2021-11-05T05:36:40Z",
+    "base_commit": "87cbdd9ac744e8c0c96eae71420f677970aa4e32",
+    "head_commit": "05cec82bd68167611a803f9f2e7923879ddf46b2",
+    "merged_commit": "e3e91177fef2661651bb5d53fa6ff1f429921ab4",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-24666@7d194c7",
+    "pull_number": 24666,
+    "created_at": "2023-02-06T08:51:03Z",
+    "base_commit": "9a1de69bf68064a304cc2c0e7e5328647be5ebd0",
+    "head_commit": "7d194c72f787c902ace7139a50313bcb0026390e",
+    "merged_commit": "a0871f8e479463db063790562dbfd0468e2ac626",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-26515@2c01ca9",
+    "pull_number": 26515,
+    "created_at": "2024-04-17T22:48:43Z",
+    "base_commit": "af0c8559a845df49a6d0f8855659cebd0ddc9bc8",
+    "head_commit": "2c01ca924ef4ff8aed4f4d0f5b3a222f44ac299a",
+    "merged_commit": "82c1557b6a7ea386e0182020b6930e4bfeb64763",
+    "comments": 1
+   },
+   {
+    "instance_id": "sympy__sympy-27352@b3187d6",
+    "pull_number": 27352,
+    "created_at": "2024-12-08T15:36:38Z",
+    "base_commit": "e53690af7e57eeef7e8c6dea1521a4dc0024cf95",
+    "head_commit": "b3187d679de12daa6b2224b521af4a58bc09f02c",
+    "merged_commit": "f838189e7b9ec735e12498ea23aef51cfc33b361",
+    "comments": 1
+   }
+  ]
+ },
+ "dev": {
+  "ManimCommunity/manim": [
+   {
+    "instance_id": "ManimCommunity__manim-1140@ed7dc3d",
+    "pull_number": 1140,
+    "created_at": "2021-03-21T19:45:11Z",
+    "base_commit": "196045b471acb8ad2a9bffaa9bca078624526174",
+    "head_commit": "ed7dc3dae4acd1d4a8bcab614c335a5b688b11f7",
+    "merged_commit": "ee924b80f206eb131e29605d77ff1c8a663d8a67",
+    "comments": 1
+   },
+   {
+    "instance_id": "ManimCommunity__manim-482@f2fd3e3",
+    "pull_number": 482,
+    "created_at": "2020-09-25T11:35:50Z",
+    "base_commit": "dc4504c29e92881f56c80cd8f16e86f44318b870",
+    "head_commit": "f2fd3e3b0655f34ba6894879cfc8ec5ca551e6d3",
+    "merged_commit": "79e58dd0712c65306d93a8205e3620fb540620fb",
+    "comments": 1
+   },
+   {
+    "instance_id": "ManimCommunity__manim-509@1cbc24f",
+    "pull_number": 509,
+    "created_at": "2020-10-03T11:25:38Z",
+    "base_commit": "16e18b26e5e2e230aa46c85fc04fdebf9f2fe1bf",
+    "head_commit": "1cbc24fafbf88889b3215f3899d228c27ad97f4e",
+    "merged_commit": "beae7786c9852cea6e6bd8b66a24504c13994041",
+    "comments": 1
+   }
+  ],
+  "PrefectHQ/prefect": [
+   {
+    "instance_id": "PrefectHQ__prefect-14313@d428713",
+    "pull_number": 14313,
+    "created_at": "2024-06-24T21:57:32Z",
+    "base_commit": "59352a2bcd2493057728c651aff8bd7026b3fff3",
+    "head_commit": "d4287131c1e9a3fb4eeaf017c8f1254d5e3915b8",
+    "merged_commit": "e9aa1c5c954bfd1cf57f60cd226dfa972e0b0a11",
+    "comments": 2
+   },
+   {
+    "instance_id": "PrefectHQ__prefect-18444@1ffae47",
+    "pull_number": 18444,
+    "created_at": "2025-07-07T01:34:51Z",
+    "base_commit": "19a4b4d5cc72b1f61855006b21be4e2a9906ef26",
+    "head_commit": "1ffae47744a262eb97239cdcebe34b1d9ab31f64",
+    "merged_commit": "fdeebcd59774925635072fb8f531d4fa88efc745",
+    "comments": 1
+   }
+  ],
+  "RasaHQ/rasa": [
+   {
+    "instance_id": "RasaHQ__rasa-5341@d8b1c24",
+    "pull_number": 5341,
+    "created_at": "2020-02-28T18:48:58Z",
+    "base_commit": "58e546be1c353e459f0480abd35fa5e3b0ab50c3",
+    "head_commit": "d8b1c24339c89b3017b843bd3bf9bffb7f47738b",
+    "merged_commit": "f182eb6e5a0e5988b6fac3d80e74a5c42bcc4ce0",
+    "comments": 1
+   },
+   {
+    "instance_id": "RasaHQ__rasa-7797@3d69847",
+    "pull_number": 7797,
+    "created_at": "2021-01-25T13:02:58Z",
+    "base_commit": "2ed20f6239e181788df98159c7470122887b83af",
+    "head_commit": "3d69847326a0614b79e732ee6832591ea5f5d936",
+    "merged_commit": "2b4257cdf6fdd0d9b0e5b394ee640bf9f3517852",
+    "comments": 1
+   }
+  ],
+  "ccxt/ccxt": [
+   {
+    "instance_id": "ccxt__ccxt-14582@83f50a7",
+    "pull_number": 14582,
+    "created_at": "2022-08-03T12:55:43Z",
+    "base_commit": "a5f2015d2ba1e7c2655956be3c8bcd4503897e3a",
+    "head_commit": "83f50a72c692360dc393354bea2ac003e9743ec3",
+    "merged_commit": "49dc03b66554d6d67ca834fd5d392e1c6ece487c",
+    "comments": 1
+   },
+   {
+    "instance_id": "ccxt__ccxt-14830@1d1701f",
+    "pull_number": 14830,
+    "created_at": "2022-08-31T05:17:07Z",
+    "base_commit": "225db92c70dc292053708da7b50a5f187bf7f6ee",
+    "head_commit": "1d1701fab41fc95aabc1a4c1ae9b54c2ba228006",
+    "merged_commit": "2cb53bb329cfad612ad11c934caf774d1ab9515c",
+    "comments": 1
+   },
+   {
+    "instance_id": "ccxt__ccxt-16729@284cdce",
+    "pull_number": 16729,
+    "created_at": "2023-02-03T07:57:12Z",
+    "base_commit": "ec5909917e8ca741c3b44762b28bbb85a315b772",
+    "head_commit": "284cdceed38f569f8670db7bc561eeecf4727efa",
+    "merged_commit": "4353dd95daa635fbaec2ff51a5221191e25c1980",
+    "comments": 1
+   }
+  ],
+  "certbot/certbot": [
+   {
+    "instance_id": "certbot__certbot-7270@65f464e",
+    "pull_number": 7270,
+    "created_at": "2019-07-26T09:10:24Z",
+    "base_commit": "e6bf3fe7f81ff7651b3e8be3d530be725090ed2c",
+    "head_commit": "65f464efeb4be98b1bf1870d3946e4c0769b4776",
+    "merged_commit": "f56bcc763fb3129d68baaa329e179eb421cc73d2",
+    "comments": 1
+   },
+   {
+    "instance_id": "certbot__certbot-9076@01f570d",
+    "pull_number": 9076,
+    "created_at": "2021-11-01T19:33:07Z",
+    "base_commit": "dedbdea1d9854761df9ba28d26e368bdd78d72c9",
+    "head_commit": "01f570dbf4082bd1b9e0d3c876b9b1675fc4729d",
+    "merged_commit": "1903841715e1e70fc70970eee5d143b56ad490e4",
+    "comments": 1
+   }
+  ],
+  "dbt-labs/dbt-core": [
+   {
+    "instance_id": "dbt-labs__dbt-core-7186@c6b5b12",
+    "pull_number": 7186,
+    "created_at": "2023-03-17T13:52:45Z",
+    "base_commit": "7872f6a67087b08e377cb580248a70355c6c3c76",
+    "head_commit": "c6b5b12daffdd555a15c09358a9b933a87eac0dd",
+    "merged_commit": "847eb2d6cd0c1ca3890712d490a9c863bfc1e6c9",
+    "comments": 1
+   },
+   {
+    "instance_id": "dbt-labs__dbt-core-7276@acfae95",
+    "pull_number": 7276,
+    "created_at": "2023-04-05T15:26:36Z",
+    "base_commit": "f1dddaa6e96b743498440925a55e66a7d5cdacfa",
+    "head_commit": "acfae95cf6fe9d886d1e2bd43e4dadafc91ccdf9",
+    "merged_commit": "7471b2f349227a91dfacb95154c4a70b887d5bc6",
+    "comments": 1
+   },
+   {
+    "instance_id": "dbt-labs__dbt-core-8743@fb6f32f",
+    "pull_number": 8743,
+    "created_at": "2023-09-28T20:30:15Z",
+    "base_commit": "bb6fd3029b5bf2fcdbb540528f0ff7ccebc50a41",
+    "head_commit": "fb6f32f5ff1ce910009089732ccc1592dda07f2e",
+    "merged_commit": "ada13fb92dbb9af8dc5a43105b49e5647111bee7",
+    "comments": 1
+   }
+  ],
+  "frappe/frappe": [
+   {
+    "instance_id": "frappe__frappe-13065@dfc23eb",
+    "pull_number": 13065,
+    "created_at": "2021-04-30T15:51:20Z",
+    "base_commit": "ed5ca19233dd2eea581b8d636db60ee8e664e82a",
+    "head_commit": "dfc23eb3a3e42869430cf686a29f0b4188894618",
+    "merged_commit": "b215921a971e3b95ff6f93d63da3ffc70a10766f",
+    "comments": 1
+   },
+   {
+    "instance_id": "frappe__frappe-16877@e78a251",
+    "pull_number": 16877,
+    "created_at": "2022-05-11T08:38:35Z",
+    "base_commit": "fea45bf34183ce01c8a689e0c33326daac26faf1",
+    "head_commit": "e78a2513b80c4431d8ee4df9aae1304f2d16dbea",
+    "merged_commit": "3296898b4864d977cfb9b4bbdb5a68ca64cbb4c5",
+    "comments": 1
+   }
+  ],
+  "geldata/gel": [
+   {
+    "instance_id": "geldata__gel-5130@2e5341f",
+    "pull_number": 5130,
+    "created_at": "2023-03-06T17:09:44Z",
+    "base_commit": "70599154f6d3d7333f2c152368411c120716c959",
+    "head_commit": "2e5341f596a81d43533ebd2240678b142dec94f9",
+    "merged_commit": "dd74ed348826b02b8e664c27fcf8fa19205e4dca",
+    "comments": 2
+   },
+   {
+    "instance_id": "geldata__gel-6352@24b4f19",
+    "pull_number": 6352,
+    "created_at": "2023-10-25T01:55:27Z",
+    "base_commit": "be6636687f63309c1e734f06498cedf2470848aa",
+    "head_commit": "24b4f199472d3a802a1fba1a10b6e5e55465c769",
+    "merged_commit": "61e615a90713ebc3c93a6d1dcb6ef7debfeee89c",
+    "comments": 1
+   }
+  ],
+  "getsentry/sentry": [
+   {
+    "instance_id": "getsentry__sentry-71711@d1652c4",
+    "pull_number": 71711,
+    "created_at": "2024-05-29T20:41:13Z",
+    "base_commit": "baaf8456ddb2402c5a898511777ed5cc45e79a01",
+    "head_commit": "d1652c43676873f507af91b3c2f198bf6e2a58f4",
+    "merged_commit": "621206aee5c3a46b3fc7efee6a88751cc4f88df3",
+    "comments": 2
+   },
+   {
+    "instance_id": "getsentry__sentry-71942@a4f03f3",
+    "pull_number": 71942,
+    "created_at": "2024-06-03T20:42:57Z",
+    "base_commit": "3f9d8460d6cfbdb862426abdbe32e138dc2ea0af",
+    "head_commit": "a4f03f3251a177ce649379ae9c9f8e1d89c68dde",
+    "merged_commit": "94d7a723bf03e4d842525cea58b58f8aaca2528b",
+    "comments": 1
+   }
+  ],
+  "goauthentik/authentik": [
+   {
+    "instance_id": "goauthentik__authentik-12630@7fed46f",
+    "pull_number": 12630,
+    "created_at": "2025-01-10T09:10:43Z",
+    "base_commit": "98f3b9ae972193fcd43d75a10d096729c9455079",
+    "head_commit": "7fed46f616813c96615aaae43645eedf3a5e9d47",
+    "merged_commit": "086ecda66b9a4d4ca24aac761def6c28638fe8de",
+    "comments": 1
+   },
+   {
+    "instance_id": "goauthentik__authentik-13602@50ea3f3",
+    "pull_number": 13602,
+    "created_at": "2025-03-20T17:16:45Z",
+    "base_commit": "ab7338b50ed71e35b2fb8885ac8ad56613946f3f",
+    "head_commit": "50ea3f3aeee2832421fabe31c3a24bfb5250f071",
+    "merged_commit": "4cb58c8f6bb2e28464f8fc947195f7832d76bd1e",
+    "comments": 1
+   }
+  ],
+  "home-assistant/core": [
+   {
+    "instance_id": "home-assistant__core-110255@a9d173a",
+    "pull_number": 110255,
+    "created_at": "2024-02-11T12:02:31Z",
+    "base_commit": "e38cb01d8155b1c46ecf59f0e843ac50a94bea3f",
+    "head_commit": "a9d173a14b65329e8b4ad15d89cefa3e70a9cb58",
+    "merged_commit": "ccdfc3575d66709859678c5793f081f7bf4e932a",
+    "comments": 1
+   },
+   {
+    "instance_id": "home-assistant__core-142977@fa60db7",
+    "pull_number": 142977,
+    "created_at": "2025-04-15T07:18:24Z",
+    "base_commit": "e7994b3da118fa5ccf35cf2d30b0739abf178dda",
+    "head_commit": "fa60db7e551da296518aabeb03b13822abf300ae",
+    "merged_commit": "a4e150af0ae477739e640ae98f511ae5ee061118",
+    "comments": 1
+   },
+   {
+    "instance_id": "home-assistant__core-146453@71eab0c",
+    "pull_number": 146453,
+    "created_at": "2025-06-10T13:01:25Z",
+    "base_commit": "d015dff855995760a2695584bac6637dab17b410",
+    "head_commit": "71eab0c5901862f659ae3f92be43b6458fec6500",
+    "merged_commit": "ca08d75cec1a09f0c640e6f2f2802f3f7722e75e",
+    "comments": 1
+   }
+  ],
+  "hpcaitech/ColossalAI": [
+   {
+    "instance_id": "hpcaitech__ColossalAI-4080@dc82ade",
+    "pull_number": 4080,
+    "created_at": "2023-06-25T10:33:24Z",
+    "base_commit": "95e95b6d588d27aeba8d62e6656392f771b69aee",
+    "head_commit": "dc82ade6e4bdcc37d26e6d0458f2ba20af90a4ff",
+    "merged_commit": "128ec4fa00858b2abbb75b95b6988f724db30c55",
+    "comments": 1
+   },
+   {
+    "instance_id": "hpcaitech__ColossalAI-6059@802df11",
+    "pull_number": 6059,
+    "created_at": "2024-09-11T09:37:11Z",
+    "base_commit": "a35a078f0849cf1c805dbae94abe5476b1615ca0",
+    "head_commit": "802df11d53de114e397f231f726697c003c636c8",
+    "merged_commit": "b1c1fcabe01c923dd777a2f34c6f521a782306e4",
+    "comments": 2
+   }
+  ],
+  "huggingface/diffusers": [
+   {
+    "instance_id": "huggingface__diffusers-4015@c63a53a",
+    "pull_number": 4015,
+    "created_at": "2023-07-10T04:57:09Z",
+    "base_commit": "b9feed87958c27074b0618cc543696c05f58e2c9",
+    "head_commit": "c63a53afd93d869b72c040d3bf7f3e9ae4776940",
+    "merged_commit": "3a75d211fe27f4313349bb3fd550fcbcc93b9114",
+    "comments": 1
+   },
+   {
+    "instance_id": "huggingface__diffusers-792@90385bb",
+    "pull_number": 792,
+    "created_at": "2022-10-10T10:38:14Z",
+    "base_commit": "f3983d16eed57e46742d217363d8913bef7f748d",
+    "head_commit": "90385bbd59f9011f2b12b71ec436df8a9ea50a98",
+    "merged_commit": "880f9f9ae1bf27a4b16e34f7194f515f9d99575e",
+    "comments": 1
+   }
+  ],
+  "microsoft/autogen": [
+   {
+    "instance_id": "microsoft__autogen-2225@9cf65ed",
+    "pull_number": 2225,
+    "created_at": "2024-03-31T19:19:57Z",
+    "base_commit": "e878be55a3663b7864bc0ef8b9526e2f0be2f88f",
+    "head_commit": "9cf65edb69a7436b5971165518ebc23666308c6c",
+    "merged_commit": "98cb7363db9ee25cb90f83575d97eb8b989f5aa3",
+    "comments": 1
+   },
+   {
+    "instance_id": "microsoft__autogen-4044@e5bddfc",
+    "pull_number": 4044,
+    "created_at": "2024-11-01T23:36:38Z",
+    "base_commit": "5e0b677acc10bbbf4fab889bbcc0c70f3f13abb8",
+    "head_commit": "e5bddfc3eb355ac4f73863dcc353fef821445c46",
+    "merged_commit": "ad1c22d865ead33090f375a6e311d80d8fd5ccde",
+    "comments": 1
+   },
+   {
+    "instance_id": "microsoft__autogen-5843@e07fb7a",
+    "pull_number": 5843,
+    "created_at": "2025-03-06T02:40:05Z",
+    "base_commit": "30b1b8f90cac1f44f4ae5f4fe134e9364380b60e",
+    "head_commit": "e07fb7a5f31a947ca033e809b90b6a008a2c4b08",
+    "merged_commit": "c1855941aa1be02361412c4846af0e6c799d7183",
+    "comments": 1
+   }
+  ],
+  "optuna/optuna": [
+   {
+    "instance_id": "optuna__optuna-1087@4177569",
+    "pull_number": 1087,
+    "created_at": "2020-04-04T01:35:04Z",
+    "base_commit": "2d27f9086eae6b839fcddea061d848b12f5adf46",
+    "head_commit": "4177569335b8000051a11b0084e3c7d49782e90d",
+    "merged_commit": "3c85ef1bff12f3017ea633dce17f315a4770249c",
+    "comments": 1
+   },
+   {
+    "instance_id": "optuna__optuna-972@1f4813a",
+    "pull_number": 972,
+    "created_at": "2020-03-02T13:03:03Z",
+    "base_commit": "2f896b2b51a99a6ebe7206310c5b9d3cb88fc782",
+    "head_commit": "1f4813a1403c78a3bb6b93ba4c98aa82b67c9ec5",
+    "merged_commit": "2d99eb8d6dd8817efdad68a5282fc9c0dd04af4e",
+    "comments": 1
+   }
+  ],
+  "python-telegram-bot/python-telegram-bot": [
+   {
+    "instance_id": "python-telegram-bot__python-telegram-bot-3514@d5c0a5c",
+    "pull_number": 3514,
+    "created_at": "2023-01-21T08:18:32Z",
+    "base_commit": "978251077927ff0832e32ebd30278811c88924bd",
+    "head_commit": "d5c0a5c041cf9a9d550a00eb263b77706348d244",
+    "merged_commit": "61671a68c3e08b465e4a2b42f2333604457d0e95",
+    "comments": 1
+   },
+   {
+    "instance_id": "python-telegram-bot__python-telegram-bot-4168@96ca73d",
+    "pull_number": 4168,
+    "created_at": "2024-03-23T11:14:11Z",
+    "base_commit": "2d8d43f2a5cb278a9681d7af44750f0fae9b190f",
+    "head_commit": "96ca73d6ca42389dc7f2e7196fa507367b477bd4",
+    "merged_commit": "485ac0ecfd91837c924a34891a5f1234f4374324",
+    "comments": 1
+   }
+  ],
+  "qutebrowser/qutebrowser": [
+   {
+    "instance_id": "qutebrowser__qutebrowser-3590@872cff2",
+    "pull_number": 3590,
+    "created_at": "2018-02-12T23:19:27Z",
+    "base_commit": "f7074b80d0a68eec6fdfd13f2f82acc94ff2951e",
+    "head_commit": "872cff2ae18b908a4c4c2f6f6ffa1a5911b98729",
+    "merged_commit": "b7159d780a69daf104da939438938d262cd86000",
+    "comments": 1
+   },
+   {
+    "instance_id": "qutebrowser__qutebrowser-7003@3656345",
+    "pull_number": 7003,
+    "created_at": "2022-02-05T10:55:47Z",
+    "base_commit": "3f31e36bc79516cd827ca739588abd5c3df3c34a",
+    "head_commit": "36563450763868f12a2481ca636efccb2c7a43cc",
+    "merged_commit": "55303587b8a88b729113a209c4692c62c72792f9",
+    "comments": 1
+   }
+  ],
+  "saleor/saleor": [
+   {
+    "instance_id": "saleor__saleor-4617@9c2907b",
+    "pull_number": 4617,
+    "created_at": "2019-08-08T12:47:08Z",
+    "base_commit": "1943069ece044de3412b5679a964174cdbb03eeb",
+    "head_commit": "9c2907bff402b2ec7e114eaf7cbe7dbef5357ce9",
+    "merged_commit": "0331a93277406ec6ce055cf0d658509b44a1dd1b",
+    "comments": 1
+   },
+   {
+    "instance_id": "saleor__saleor-5085@f8ed729",
+    "pull_number": 5085,
+    "created_at": "2019-12-18T15:00:17Z",
+    "base_commit": "728c545e15b6b6f7ca3940bb7aa5b295c2b3a52a",
+    "head_commit": "f8ed7294b141d248d28ca545b1b4e43f6025ea0c",
+    "merged_commit": "fb258085ae1c12bf42fb7828f6387f1745a88d06",
+    "comments": 1
+   },
+   {
+    "instance_id": "saleor__saleor-5611@a2d5871",
+    "pull_number": 5611,
+    "created_at": "2020-05-08T07:29:01Z",
+    "base_commit": "a1ec77677e1a769ad7995e3163c7c35295c13ed6",
+    "head_commit": "a2d5871826d57891255e4b810e4fadca88694650",
+    "merged_commit": "502eb81964d7ab92a112d2e2e4adc3f8ae871c44",
+    "comments": 1
+   }
+  ],
+  "scipy/scipy": [
+   {
+    "instance_id": "scipy__scipy-13893@4fcbd8b",
+    "pull_number": 13893,
+    "created_at": "2021-04-19T04:03:21Z",
+    "base_commit": "b2a003360d4a1d0ea0c8fe8b7834edf21761613c",
+    "head_commit": "4fcbd8b022a4a4a143acc945090697676e0a7c6f",
+    "merged_commit": "8e5256f7c9944f7ccfc74abe95d854e82c9366c9",
+    "comments": 1
+   },
+   {
+    "instance_id": "scipy__scipy-20393@c92a476",
+    "pull_number": 20393,
+    "created_at": "2024-04-05T09:47:17Z",
+    "base_commit": "86c3a5bf8d7bc965a7873b744127ee076a8c3fa1",
+    "head_commit": "c92a476cae41cb4898e40edf3c3b228efa020fb5",
+    "merged_commit": "3f58d5954a1b0e950648a3e7ef61e12b49b3a4d7",
+    "comments": 1
+   }
+  ],
+  "tobymao/sqlglot": [
+   {
+    "instance_id": "tobymao__sqlglot-2096@1794bf3",
+    "pull_number": 2096,
+    "created_at": "2023-08-18T16:23:19Z",
+    "base_commit": "a20794ab986b3b6401b016132cf2c5e36d50f4a9",
+    "head_commit": "1794bf3ae7203daaa3199be139d931bb4c1dbee1",
+    "merged_commit": "2235db2574d20057f171cb71e61de05e4f869950",
+    "comments": 2
+   },
+   {
+    "instance_id": "tobymao__sqlglot-5284@3f57fcd",
+    "pull_number": 5284,
+    "created_at": "2025-06-25T17:09:10Z",
+    "base_commit": "9a95af1c725cd70ffa8206f1d88452a7faab93b2",
+    "head_commit": "3f57fcd44964a60de94d6f044dac2db1d8c69f85",
+    "merged_commit": "b676df92bb07f1d1da23237c8ba942d2dfc66c88",
+    "comments": 1
+   }
+  ],
+  "xorbitsai/inference": [
+   {
+    "instance_id": "xorbitsai__inference-1168@f3ada96",
+    "pull_number": 1168,
+    "created_at": "2024-03-21T02:28:24Z",
+    "base_commit": "31032869b5e1f9a0915723d9e689a3a55eb9c9d0",
+    "head_commit": "f3ada96298b9d5f98f25547857e3b35452b5480a",
+    "merged_commit": "5acf72f6438e18f3c739e436b8456b94eff3ea79",
+    "comments": 5
+   },
+   {
+    "instance_id": "xorbitsai__inference-2079@5ae18b2",
+    "pull_number": 2079,
+    "created_at": "2024-08-13T09:57:28Z",
+    "base_commit": "f5229a2354cd1592abdd8f3c757fc02be90a744c",
+    "head_commit": "5ae18b28764237b353f12520b18eff114c26d36f",
+    "merged_commit": "e1afe8f15c1d0e974077fcafca1d2eab1a66f24f",
+    "comments": 1
+   }
+  ],
+  "zulip/zulip": [
+   {
+    "instance_id": "zulip__zulip-22583@37ae377",
+    "pull_number": 22583,
+    "created_at": "2022-07-25T16:04:47Z",
+    "base_commit": "69685c2864428e40d0f1ddab49058f70e86bfb8c",
+    "head_commit": "37ae377b954c207ebf8bc5ba53f648ada9e308c1",
+    "merged_commit": "71204abb5dbc43b96895194cc61e16115ed57de7",
+    "comments": 1
+   },
+   {
+    "instance_id": "zulip__zulip-25349@67de2a4",
+    "pull_number": 25349,
+    "created_at": "2023-04-30T13:05:01Z",
+    "base_commit": "7425079814d674672b5e1208f0742f800ba470c7",
+    "head_commit": "67de2a416521a98ac6b40ff448803d07d3c800d1",
+    "merged_commit": "102c68c211d3e565deff4bb04015234df7f062c6",
+    "comments": 3
+   }
+  ]
+ },
+ "reserve": {
+  "All-Hands-AI/OpenHands": [
+   {
+    "instance_id": "All-Hands-AI__OpenHands-8343@9d4e2af",
+    "pull_number": 8343,
+    "created_at": "2025-05-08T00:00:23Z",
+    "base_commit": "d5a8d4251cdd72f47cfae6f48756d128f7742bed",
+    "head_commit": "9d4e2af7927b387f6a1cd3108ee72b63cab2aca9",
+    "merged_commit": "7abdc5eb5766d424a2c79f7f404c59cc11e32320",
+    "comments": 2
+   }
+  ],
+  "Avaiga/taipy": [
+   {
+    "instance_id": "Avaiga__taipy-1042@a76a34b",
+    "pull_number": 1042,
+    "created_at": "2024-03-25T10:18:04Z",
+    "base_commit": "48b4f24b0a7de7764d85e5146369f5cffc77b4ac",
+    "head_commit": "a76a34b48b3cebe1a0d06f64dd01715693a14480",
+    "merged_commit": "a72cbb79ea8ad2976e87b132c6adb6cdd05e7048",
+    "comments": 1
+   }
+  ],
+  "Lightning-AI/pytorch-lightning": [
+   {
+    "instance_id": "Lightning-AI__pytorch-lightning-4654@89b962d",
+    "pull_number": 4654,
+    "created_at": "2020-11-13T12:02:19Z",
+    "base_commit": "c586e5db77614519c8c99871d0250c5a5790e3a2",
+    "head_commit": "89b962df49ef2ce54d1c8cb257d3fd140be69799",
+    "merged_commit": "c5ad5e83452f9babd557258b03109374700ce573",
+    "comments": 1
+   }
+  ],
+  "OpenMined/PySyft": [
+   {
+    "instance_id": "OpenMined__PySyft-4522@776c2e8",
+    "pull_number": 4522,
+    "created_at": "2020-09-02T14:43:54Z",
+    "base_commit": "c83e615a85bb8944245668d90582fb97c45e6e18",
+    "head_commit": "776c2e824d3e8bd7b3ddf35126200111b75f4c28",
+    "merged_commit": "4e86a1e4b8165b8e4f95c5d4aa177e2376cfc5a9",
+    "comments": 1
+   }
+  ],
+  "conan-io/conan": [
+   {
+    "instance_id": "conan-io__conan-16942@e62c6eb",
+    "pull_number": 16942,
+    "created_at": "2024-09-05T15:14:15Z",
+    "base_commit": "6acce7bd9cc864713f57e7fbdcda75bbff2de9c7",
+    "head_commit": "e62c6ebc3fadf6a0058d29bf90067e90c1d4822b",
+    "merged_commit": "d03623dc052761204539074aa457826dbefc43d5",
+    "comments": 2
+   }
+  ],
+  "cvat-ai/cvat": [
+   {
+    "instance_id": "cvat-ai__cvat-4062@ff04d8f",
+    "pull_number": 4062,
+    "created_at": "2021-12-22T13:11:48Z",
+    "base_commit": "40f05b27f1a8592cc872ede7aa33591fd3f82e28",
+    "head_commit": "ff04d8f112090583be262d9d5ad1b0f85a3a5b82",
+    "merged_commit": "a28841fcd0f23dccad6352c8cafa79bf94455df8",
+    "comments": 1
+   }
+  ],
+  "dask/dask": [
+   {
+    "instance_id": "dask__dask-7974@88a13f7",
+    "pull_number": 7974,
+    "created_at": "2021-08-02T10:08:04Z",
+    "base_commit": "4a59a6827578fdf8e105d1fb7e9d50d428c9d5fa",
+    "head_commit": "88a13f77f374a11425961c074f4e579f3befe721",
+    "merged_commit": "cf39759f10bc06107b48fa2cc307b6db6a3e42d0",
+    "comments": 4
+   }
+  ],
+  "freqtrade/freqtrade": [
+   {
+    "instance_id": "freqtrade__freqtrade-5846@da4344d",
+    "pull_number": 5846,
+    "created_at": "2021-11-05T21:53:26Z",
+    "base_commit": "d99eaccb5a6d87a27aacc9107140db09e570e46d",
+    "head_commit": "da4344d2166c7e802af44ccdea6ed15ed39b4455",
+    "merged_commit": "d0e192e20f54322c868c9ffaa4778286429d479b",
+    "comments": 1
+   }
+  ],
+  "getmoto/moto": [
+   {
+    "instance_id": "getmoto__moto-7406@26efd90",
+    "pull_number": 7406,
+    "created_at": "2024-02-28T20:19:10Z",
+    "base_commit": "131b78c82c9f48159584babea7002664b25adc3d",
+    "head_commit": "26efd90c7e34f78a7c4b41a2053fcc2fd2cfb52e",
+    "merged_commit": "3b09865f0cc1bbeaea97e23b177694a42509c48e",
+    "comments": 1
+   }
+  ],
+  "gradio-app/gradio": [
+   {
+    "instance_id": "gradio-app__gradio-3275@067f582",
+    "pull_number": 3275,
+    "created_at": "2023-02-21T21:49:01Z",
+    "base_commit": "cd99857e0fdc8753a00fd6f90972b6431078bf6a",
+    "head_commit": "067f582bba0494f3f82227945cdf3f13e6ea58d6",
+    "merged_commit": "41ec48c13b54dcaeb8252025ee55449bf96ecde8",
+    "comments": 2
+   }
+  ],
+  "huggingface/accelerate": [
+   {
+    "instance_id": "huggingface__accelerate-255@12e4b18",
+    "pull_number": 255,
+    "created_at": "2022-02-17T21:06:16Z",
+    "base_commit": "4fc586f5af650a5711dc907fb613367d2f009c9a",
+    "head_commit": "12e4b184a4b481fab1a0013095c9f70e1e6cf809",
+    "merged_commit": "f90b5779735fd0f4b112bf4895e7e632b487f757",
+    "comments": 1
+   }
+  ],
+  "huggingface/datasets": [
+   {
+    "instance_id": "huggingface__datasets-586@034c1c0",
+    "pull_number": 586,
+    "created_at": "2020-09-07T15:59:57Z",
+    "base_commit": "a82052fad3264c04bc65eddaafdcae9269a3fb8c",
+    "head_commit": "034c1c00cbf750766b0cb8825fb107a0d911057d",
+    "merged_commit": "e44f110b1163cf32a2a9ffefd0395182f91c0d4f",
+    "comments": 1
+   }
+  ],
+  "hummingbot/hummingbot": [
+   {
+    "instance_id": "hummingbot__hummingbot-4889@d8a242a",
+    "pull_number": 4889,
+    "created_at": "2021-12-09T06:47:14Z",
+    "base_commit": "e127fa59d2b8cf095bfb79ac7dabdad78c02dfc7",
+    "head_commit": "d8a242a309800370e2cdddf26ca9545de5e46af9",
+    "merged_commit": "b22ab74b1f6d38bd714d5c5a9b6456e52cf9c175",
+    "comments": 2
+   }
+  ],
+  "iterative/dvc": [
+   {
+    "instance_id": "iterative__dvc-2596@37847e7",
+    "pull_number": 2596,
+    "created_at": "2019-10-10T21:18:15Z",
+    "base_commit": "44264857c3994a67219a4a0c1b1fd67057abe3ca",
+    "head_commit": "37847e7c1c2831e2581cecfda202718adf950f8d",
+    "merged_commit": "2dfe3901aa31f052dcac22ba614e8c6eaf2eaca4",
+    "comments": 2
+   }
+  ],
+  "jina-ai/serve": [
+   {
+    "instance_id": "jina-ai__serve-1256@2f495e3",
+    "pull_number": 1256,
+    "created_at": "2020-11-10T10:35:49Z",
+    "base_commit": "8b324ab96e6abc6133768163ea576ed4ac5836f8",
+    "head_commit": "2f495e328e6916e4600d9007c088e1a5f20a27f5",
+    "merged_commit": "59a9a01e87f118d2aa3dd2bbac00c4242a043347",
+    "comments": 1
+   }
+  ],
+  "langflow-ai/langflow": [
+   {
+    "instance_id": "langflow-ai__langflow-918@c710c1c",
+    "pull_number": 918,
+    "created_at": "2023-09-14T17:35:41Z",
+    "base_commit": "57cba4233aad1e1b8bdffa013aabc85f26952cb5",
+    "head_commit": "c710c1ce82c715d922de8a0870be0e9455cd2fa0",
+    "merged_commit": "03a71b1fe8cae5442b0fc18c6e0979b573bce5d3",
+    "comments": 1
+   }
+  ],
+  "marimo-team/marimo": [
+   {
+    "instance_id": "marimo-team__marimo-4080@8a73f89",
+    "pull_number": 4080,
+    "created_at": "2025-03-13T01:30:26Z",
+    "base_commit": "1720b30bd274b9acbc68d7ed257ca57e1851f58a",
+    "head_commit": "8a73f89c6740004bd9f0973b1696172f42daee1c",
+    "merged_commit": "ca40ce030389ba5bb71687326c1d169c16186177",
+    "comments": 1
+   }
+  ],
+  "mlflow/mlflow": [
+   {
+    "instance_id": "mlflow__mlflow-1658@3f53b0b",
+    "pull_number": 1658,
+    "created_at": "2019-07-24T02:23:46Z",
+    "base_commit": "d70c9fae89087f45c9dccc5a2a7ad2b3bb75729f",
+    "head_commit": "3f53b0bf8d3ce8cef10abc641da07909c69d9c5a",
+    "merged_commit": "a25d5c376319934092a9874829c26dffde0e977c",
+    "comments": 1
+   }
+  ],
+  "modin-project/modin": [
+   {
+    "instance_id": "modin-project__modin-4215@69f9652",
+    "pull_number": 4215,
+    "created_at": "2022-02-17T09:11:13Z",
+    "base_commit": "a6acfe269c4812da3898231a54bb8e66ce96e82d",
+    "head_commit": "69f965213651368f313271fd984e37c3bd6c8e9a",
+    "merged_commit": "dab6907e3de87b0cacdb8810901d545a5cf7a581",
+    "comments": 1
+   }
+  ],
+  "numba/numba": [
+   {
+    "instance_id": "numba__numba-4282@a062e23",
+    "pull_number": 4282,
+    "created_at": "2019-07-08T09:50:09Z",
+    "base_commit": "ddd1cea985d61854bb1c07596a8c73c4f7f8468d",
+    "head_commit": "a062e23f020fd018d785d0863939c6eb450b9a69",
+    "merged_commit": "8f9205761e654d9622bb5f98c903b0d55a55d320",
+    "comments": 1
+   }
+  ],
+  "pwndbg/pwndbg": [
+   {
+    "instance_id": "pwndbg__pwndbg-2075@3d3a319",
+    "pull_number": 2075,
+    "created_at": "2024-03-19T09:52:17Z",
+    "base_commit": "06257f2f3f67495d7ac6e5bea7d7a862b9296714",
+    "head_commit": "3d3a31931277f5cf18eb299001b23ee4e233e405",
+    "merged_commit": "a57de95db6c3791c0d533dca4993b6b236b92228",
+    "comments": 1
+   }
+  ],
+  "pydantic/pydantic": [
+   {
+    "instance_id": "pydantic__pydantic-11468@92c01bd",
+    "pull_number": 11468,
+    "created_at": "2025-02-19T19:27:13Z",
+    "base_commit": "52fe6854ec3fd6440c8523c54341acb637ffa258",
+    "head_commit": "92c01bd6d780eac246c96a5de553cad9a80d29dd",
+    "merged_commit": "ffb5edd9c2fa4c625d6a431b6a093580dd96f240",
+    "comments": 1
+   }
+  ],
+  "pyg-team/pytorch_geometric": [
+   {
+    "instance_id": "pyg-team__pytorch_geometric-4635@498dbbf",
+    "pull_number": 4635,
+    "created_at": "2022-05-13T09:53:43Z",
+    "base_commit": "90fa81de6b6e63781ca305ebc35a18878179fc39",
+    "head_commit": "498dbbfaade9964eadc11093559429f508cfe39d",
+    "merged_commit": "30edadcbd89b52ce6b6067422a887098427e4d37",
+    "comments": 1
+   }
+  ],
+  "python-poetry/poetry": [
+   {
+    "instance_id": "python-poetry__poetry-4985@b350568",
+    "pull_number": 4985,
+    "created_at": "2022-01-05T17:58:31Z",
+    "base_commit": "b5279e0259e23ef23d4f8fca2104047e81d6ee56",
+    "head_commit": "b35056852072822af0673a621c6d98c0579353ce",
+    "merged_commit": "25a35ac2014b0eeec3e6b327be35f913897828c2",
+    "comments": 1
+   }
+  ],
+  "python/cpython": [
+   {
+    "instance_id": "python__cpython-104029@f78e70e",
+    "pull_number": 104029,
+    "created_at": "2023-05-01T05:09:29Z",
+    "base_commit": "4b27972f5fe816d3616f97f8643d8ad922473ab5",
+    "head_commit": "f78e70e9e452cb0107c59bb6d05f65064aa90bb2",
+    "merged_commit": "abd3ff1094c6b3429712b45e8570d09f32167fcb",
+    "comments": 2
+   }
+  ],
+  "ray-project/ray": [
+   {
+    "instance_id": "ray-project__ray-49918@04cf1ee",
+    "pull_number": 49918,
+    "created_at": "2025-01-17T14:08:29Z",
+    "base_commit": "ff59b415bc0b76a16481767d3bf6a88238be8d25",
+    "head_commit": "04cf1ee2c57e821accc3be5604f95e9ef218ed1d",
+    "merged_commit": "e5969297dd876ad3294b42a166cf9f5a891d783e",
+    "comments": 1
+   }
+  ],
+  "run-llama/llama_index": [
+   {
+    "instance_id": "run-llama__llama_index-13413@63620ed",
+    "pull_number": 13413,
+    "created_at": "2024-05-10T06:46:02Z",
+    "base_commit": "e17c64e5e3196c6e2ad89d36760a82f0957aa544",
+    "head_commit": "63620edd07b4aabcb42bcd552bb323bb8c39c43d",
+    "merged_commit": "bb5c40ea2c9652cd6d5d6e72358ed5dc02986433",
+    "comments": 1
+   }
+  ],
+  "scrapy/scrapy": [
+   {
+    "instance_id": "scrapy__scrapy-2456@c7bb2fa",
+    "pull_number": 2456,
+    "created_at": "2016-12-19T13:50:32Z",
+    "base_commit": "7fc11c13486ad47aaa007ec330e10075f2237064",
+    "head_commit": "c7bb2fa8ce2633d92a7ec2840f84b174a5494428",
+    "merged_commit": "3a0a86ed31df1d22fea3b5b05e853f212adc40c8",
+    "comments": 1
+   }
+  ],
+  "voxel51/fiftyone": [
+   {
+    "instance_id": "voxel51__fiftyone-4236@2af48de",
+    "pull_number": 4236,
+    "created_at": "2024-04-05T15:38:30Z",
+    "base_commit": "85339fcecf03978435fed6fd94565d1c63f58dd6",
+    "head_commit": "2af48de0332c1254bea0e992ff1b8067e4387b37",
+    "merged_commit": "5cdb08027d2acd1f7fa591916439d96a1ddd44b5",
+    "comments": 1
+   }
+  ]
+ }
+}
